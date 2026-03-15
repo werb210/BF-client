@@ -1,4 +1,4 @@
 {
-  "API_URL": "/",
-  "API_BASE_URL": "/api"
+  "API_URL": "https://server.boreal.financial",
+  "API_BASE_URL": "https://server.boreal.financial"
 }

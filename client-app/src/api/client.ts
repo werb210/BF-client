@@ -1,26 +1,11 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
+import { API_BASE } from "@/config/apiBase";
 
-declare global {
-  interface Window {
-    RUNTIME_CONFIG?: {
-      API_BASE_URL?: string;
-    };
-  }
-}
-
-function normalizeBase(url?: string) {
-  if (!url) return "";
-  return url.replace(/\/api\/?$/, "");
-}
-
-const base =
-  normalizeBase(import.meta.env.VITE_API_URL) ||
-  normalizeBase(window.RUNTIME_CONFIG?.API_BASE_URL) ||
-  "";
+const API_ROOT = `${API_BASE}/api`.replace(/\/$/, "");
 
 export const apiClient = axios.create({
-  baseURL: `${base}/api`,
+  baseURL: API_ROOT,
   withCredentials: true,
 });
 
@@ -59,8 +44,7 @@ export function buildApiUrl(path: string | ApiEndpoint): string {
     return pathPart;
   }
 
-  const root = `${base}/api`.replace(/\/$/, "");
-  return `${root}${pathPart}`;
+  return `${API_ROOT}${pathPart}`;
 }
 
 export async function apiRequest<T = unknown>(path: string | ApiEndpoint, options: RequestInit = {}): Promise<T> {

@@ -9,7 +9,7 @@ const requiredEnv = [
   'VITE_OPENAI_ASSISTANT_ID',
 ];
 
-const apiBase = process.env.VITE_API_BASE_URL || process.env.API_BASE_URL || 'https://api.boreal.financial';
+const apiBase = process.env.VITE_API_BASE_URL || process.env.API_BASE_URL || 'https://server.boreal.financial';
 const staffHealth = `${apiBase.replace(/\/$/, '')}/health`;
 const uploadEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/upload-document/diagnostic`;
 const chatEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/messages/diagnostic`;
