@@ -51,7 +51,7 @@ describe("PortalEntry OTP runtime", () => {
     });
 
     expect(startOtpMock).toHaveBeenCalledTimes(1);
-    expect(container.textContent).toContain("Invalid phone payload");
+    expect(container.textContent).toContain("Failed to send verification code");
     expect(container.textContent).not.toContain("Enter the 6-digit code sent to your phone.");
 
     const phoneField = container.querySelector("#portal-phone") as HTMLInputElement;
