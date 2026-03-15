@@ -10,6 +10,7 @@ const { startOtpMock, verifyOtpMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/services/auth", () => ({
+  normalizeOtpPhone: (value: string) => value.replace(/\D/g, "").slice(0, 10),
   startOtp: startOtpMock,
   verifyOtp: verifyOtpMock,
 }));
@@ -20,7 +21,7 @@ describe("PortalEntry OTP runtime", () => {
 
   beforeEach(() => {
     startOtpMock.mockReset();
-    startOtpMock.mockResolvedValue({ ok: true, sessionToken: "session-1" });
+    verifyOtpMock.mockReset();
     ClientProfileStore.setLastUsedPhone("(555) 111-2222");
 
     container = document.createElement("div");
@@ -35,17 +36,39 @@ describe("PortalEntry OTP runtime", () => {
     container.remove();
   });
 
-  it("renders OTP entry inputs after request-otp succeeds", async () => {
+  it("keeps phone step and shows error when request-otp fails", async () => {
+    startOtpMock.mockResolvedValue({ ok: false, status: 400, message: "Invalid phone payload" });
+
     await act(async () => {
       root.render(createElement(PortalEntry));
     });
 
-    const sendCodeButton = Array.from(container.querySelectorAll("button")).find(
-      (button) => button.textContent?.includes("Send code")
-    ) as HTMLButtonElement;
+    const form = container.querySelector("form") as HTMLFormElement;
 
     await act(async () => {
-      sendCodeButton.click();
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(startOtpMock).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain("Invalid phone payload");
+    expect(container.textContent).not.toContain("Enter the 6-digit code sent to your phone.");
+
+    const phoneField = container.querySelector("#portal-phone") as HTMLInputElement;
+    expect(phoneField.value).toContain("555");
+  });
+
+  it("renders OTP entry inputs after request-otp succeeds", async () => {
+    startOtpMock.mockResolvedValue({ ok: true });
+
+    await act(async () => {
+      root.render(createElement(PortalEntry));
+    });
+
+    const form = container.querySelector("form") as HTMLFormElement;
+
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       await Promise.resolve();
     });
 

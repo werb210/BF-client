@@ -8,16 +8,32 @@ describe("auth OTP service", () => {
     vi.restoreAllMocks();
   });
 
-  it("calls request OTP endpoint", async () => {
-    const apiSpy = vi.spyOn(clientApi, "apiRequest").mockResolvedValue({ success: true, sessionToken: "session-1" });
+  it("calls request OTP endpoint with phone payload", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ success: true, sessionToken: "session-1" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(requestOtp("(555) 111-2222")).resolves.toMatchObject({ ok: true });
 
-    expect(apiSpy).toHaveBeenCalledWith(API_ENDPOINTS.OTP_START, expect.any(Object));
+    expect(fetchMock).toHaveBeenCalledWith(
+      clientApi.buildApiUrl(API_ENDPOINTS.OTP_START),
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: "+15551112222" }),
+      })
+    );
   });
 
   it("keeps startOtp compatibility", async () => {
-    vi.spyOn(clientApi, "apiRequest").mockResolvedValue({ success: true });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true }) })
+    );
 
     await expect(startOtp("+15551112222")).resolves.toMatchObject({ ok: true });
   });
