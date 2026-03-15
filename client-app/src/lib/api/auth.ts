@@ -1,19 +1,21 @@
 export async function startOtp(phone: string) {
-  const response = await fetch("https://server.boreal.financial/api/auth/otp/start", {
+  const normalized = phone.replace(/[^\d+]/g, "").trim();
+
+  const res = await fetch("https://server.boreal.financial/api/auth/otp/start", {
     method: "POST",
-    credentials: "include",
     headers: {
       "Content-Type": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify({
-      phone: phone
+      phone: normalized
     })
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OTP start failed: ${error}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OTP start failed: ${text}`);
   }
 
-  return response.json();
+  return res.json();
 }

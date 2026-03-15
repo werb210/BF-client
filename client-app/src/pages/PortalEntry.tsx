@@ -53,22 +53,21 @@ export function PortalEntry() {
     setError("");
     setPhone(formatPhoneNumber(normalized, countryCode));
 
-    const result = await startOtp(normalized);
+    try {
+      const result = await startOtp(normalized);
 
-    if (!result?.ok) {
-      if (result?.status === 429) {
-        setError(result?.message || "Code already sent. Please wait a moment.");
-      } else {
-        setError(result?.message || "Unable to send code. Please try again.");
+      if (!result?.ok) {
+        throw new Error("OTP start failed");
       }
-      setSendingOtp(false);
-      return;
-    }
 
-    setOtpCode("");
-    setVerifying(false);
-    setStep("code");
-    setSendingOtp(false);
+      setOtpCode("");
+      setVerifying(false);
+      setStep("code");
+    } catch {
+      setError("Failed to send verification code");
+    } finally {
+      setSendingOtp(false);
+    }
   }
 
   async function handleVerifyOtp() {
