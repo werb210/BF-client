@@ -56,7 +56,8 @@ export function PortalEntry() {
     try {
       const result = await startOtp(normalized);
 
-      if (!result?.ok) {
+      // If backend did not confirm success, stay on phone step and show error
+      if (!result || !result.ok) {
         if (result?.status === 429) {
           setError(result?.message || "Code already sent. Please wait a moment.");
         } else {
@@ -65,10 +66,13 @@ export function PortalEntry() {
         return;
       }
 
+      // Only advance when OTP start succeeded
       setOtpCode("");
       setVerifying(false);
       setStep("code");
+
     } catch (err) {
+      console.error("OTP start error:", err);
       setError("Failed to send verification code");
     } finally {
       setSendingOtp(false);
