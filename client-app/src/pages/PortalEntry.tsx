@@ -57,13 +57,18 @@ export function PortalEntry() {
       const result = await startOtp(normalized);
 
       if (!result?.ok) {
-        throw new Error("OTP start failed");
+        if (result?.status === 429) {
+          setError(result?.message || "Code already sent. Please wait a moment.");
+        } else {
+          setError(result?.message || "Failed to send verification code");
+        }
+        return;
       }
 
       setOtpCode("");
       setVerifying(false);
       setStep("code");
-    } catch {
+    } catch (err) {
       setError("Failed to send verification code");
     } finally {
       setSendingOtp(false);
