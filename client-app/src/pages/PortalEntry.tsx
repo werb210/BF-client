@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 import { Card } from "../components/ui/Card";
 import { PhoneInput } from "../components/ui/PhoneInput";
 import { PrimaryButton } from "../components/ui/Button";
@@ -6,7 +6,7 @@ import { OtpInput } from "../components/OtpInput";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { formatPhoneNumber, getCountryCode } from "../utils/location";
 import { components, layout, scrollToFirstError } from "@/styles";
-import { startOtp, verifyOtp } from "@/services/auth";
+import { normalizeOtpPhone, startOtp, verifyOtp } from "@/services/auth";
 import { setToken } from "@/auth/tokenStorage";
 import { ensureClientSession, setActiveClientSessionToken } from "@/state/clientSession";
 
@@ -32,32 +32,43 @@ export function PortalEntry() {
     }
   }, [error]);
 
-  async function handleSendCode() {
-    const normalized = phone.trim();
-    if (!normalized || sendingOtp) {
-      if (!normalized) {
-        setError("Enter the phone number used for your application.");
-      }
+  async function handleSendCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (sendingOtp) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const phoneInputValue = String(formData.get("phone") || "");
+    const fallbackPhone = phoneInputValue || phone;
+    const normalized = normalizeOtpPhone(fallbackPhone);
+
+    if (!normalized) {
+      setError("Enter the phone number used for your application.");
       return;
     }
 
     setSendingOtp(true);
     setError("");
+    setPhone(formatPhoneNumber(normalized, countryCode));
+
+    const result = await startOtp(normalized);
+
+    if (!result?.ok) {
+      if (result?.status === 429) {
+        setError(result?.message || "Code already sent. Please wait a moment.");
+      } else {
+        setError(result?.message || "Unable to send code. Please try again.");
+      }
+      setSendingOtp(false);
+      return;
+    }
+
     setOtpCode("");
     setVerifying(false);
-
-    try {
-      await startOtp(normalized);
-      setStep("code");
-    } catch (err: any) {
-      if (err?.response?.status === 429) {
-        setError("Code already sent. Please wait a moment.");
-      } else {
-        setError("Unable to send code. Please try again.");
-      }
-    } finally {
-      setSendingOtp(false);
-    }
+    setStep("code");
+    setSendingOtp(false);
   }
 
   async function handleVerifyOtp() {
@@ -113,13 +124,14 @@ export function PortalEntry() {
           </div>
 
           {step === "phone" ? (
-            <>
+            <form onSubmit={handleSendCode}>
               <div style={layout.stackTight} data-error={Boolean(error)}>
                 <label htmlFor="portal-phone" style={components.form.label}>
                   Phone number
                 </label>
                 <PhoneInput
                   id="portal-phone"
+                  name="phone"
                   value={formatPhoneNumber(phone, countryCode)}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
                     setPhone(formatPhoneNumber(event.target.value, countryCode))
@@ -128,7 +140,7 @@ export function PortalEntry() {
                   hasError={Boolean(error)}
                   onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
                     if (event.key === "Enter") {
-                      handleSendCode();
+                      event.preventDefault();
                     }
                   }}
                 />
@@ -139,11 +151,10 @@ export function PortalEntry() {
                 )}
               </div>
 
-              <PrimaryButton style={{ width: "100%" }} onClick={handleSendCode} disabled={sendingOtp}>
+              <PrimaryButton style={{ width: "100%" }} type="submit" disabled={sendingOtp}>
                 {sendingOtp ? "Sending..." : "Send code"}
               </PrimaryButton>
-
-            </>
+            </form>
           ) : (
             <div style={layout.stackTight}>
               <div style={components.form.helperText}>
