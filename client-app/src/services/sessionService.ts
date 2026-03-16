@@ -13,6 +13,6 @@ export async function startOtp(payload: { phone?: string; email?: string }) {
   return startOtpAuth(phone);
 }
 
-export async function verifyOtp(code: string, phoneOrSessionToken = "") {
-  return verifyOtpAuth(phoneOrSessionToken, code);
+export async function verifyOtp(code: string, phone = "", otpSessionId = "") {
+  return verifyOtpAuth(phone, code, otpSessionId);
 }

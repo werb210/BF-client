@@ -38,11 +38,18 @@ describe("auth OTP service", () => {
     await expect(startOtp("+15551112222")).resolves.toMatchObject({ ok: true });
   });
 
-  it("calls verify OTP endpoint", async () => {
+  it("calls verify OTP endpoint with E.164 phone and otpSessionId", async () => {
     const apiSpy = vi.spyOn(clientApi, "apiRequest").mockResolvedValue({ success: true, token: "abc" });
 
-    await expect(verifyOtp("5551112222", "123456")).resolves.toMatchObject({ ok: true, sessionToken: "abc" });
+    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).resolves.toMatchObject({ ok: true, sessionToken: "abc" });
 
-    expect(apiSpy).toHaveBeenCalledWith(API_ENDPOINTS.OTP_VERIFY, expect.any(Object));
+    expect(apiSpy).toHaveBeenCalledWith(
+      API_ENDPOINTS.OTP_VERIFY,
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: "+15551112222", code: "123456", otpSessionId: "otp-session-1" }),
+      })
+    );
   });
 });
