@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requestOtp, startOtp, verifyOtp } from "../services/auth";
+import { normalizeOtpPhone, requestOtp, startOtp, verifyOtp } from "../services/auth";
 import * as clientApi from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
 
@@ -47,14 +47,20 @@ describe("auth OTP service", () => {
     );
   });
 
-  it('verifyOtp("5878881837", "123456", "otp-session-1") sends normalized payload with session id', async () => {
+  it("normalizes 10-digit NANP numbers to E.164", () => {
+    expect(normalizeOtpPhone("5878881837")).toBe("+15878881837");
+    expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
+  });
+
+  it('verifyOtp("5878881837", "123456") sends normalized payload', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, token: "abc" }),
+      status: 200,
+      text: async () => JSON.stringify({ success: true, token: "abc" }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyOtp("5878881837", "123456", "otp-session-1")).resolves.toMatchObject({
+    await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
       ok: true,
       sessionToken: "abc",
     });
@@ -63,17 +69,27 @@ describe("auth OTP service", () => {
       clientApi.buildApiUrl(API_ENDPOINTS.OTP_VERIFY),
       expect.objectContaining({
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "+15878881837", code: "123456", otpSessionId: "otp-session-1" }),
+        body: JSON.stringify({ phone: "+15878881837", code: "123456" }),
       })
     );
   });
 
-  it("throws when verify OTP request is not ok", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
-
-    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).rejects.toThrow(
-      "OTP verification failed"
+  it("returns stable error when verify OTP request is not ok", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ message: "Invalid code" }),
+      })
     );
+
+    await expect(verifyOtp("(555) 111-2222", "123456")).resolves.toMatchObject({
+      ok: false,
+      message: "Invalid code",
+      status: 400,
+    });
   });
 });

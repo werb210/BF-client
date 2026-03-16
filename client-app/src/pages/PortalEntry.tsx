@@ -5,7 +5,7 @@ import { PrimaryButton } from "../components/ui/Button";
 import { OtpInput } from "../components/OtpInput";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { components, layout, scrollToFirstError } from "@/styles";
-import { normalizeOtpPhone, startOtp, verifyOtp } from "@/services/auth";
+import { startOtp, verifyOtp } from "@/services/auth";
 import { setToken } from "@/auth/tokenStorage";
 import { ensureClientSession, setActiveClientSessionToken } from "@/state/clientSession";
 
@@ -43,9 +43,7 @@ export function PortalEntry() {
     const formData = new FormData(event.currentTarget);
     const phoneInputValue = String(formData.get("phone") || "");
     const fallbackPhone = phoneInputValue || phone;
-    const normalized = normalizeOtpPhone(fallbackPhone);
-
-    if (!normalized) {
+    if (!fallbackPhone.trim()) {
       setError("Enter the phone number used for your application.");
       return;
     }
@@ -54,7 +52,7 @@ export function PortalEntry() {
     setError("");
 
     try {
-      const result = await startOtp(normalized);
+      const result = await startOtp(fallbackPhone);
 
       // If backend did not confirm success, stay on phone step and show error
       if (!result || !result.ok) {
@@ -100,10 +98,10 @@ export function PortalEntry() {
     try {
       const normalizedPhone = phone.trim();
       const code = String(otpCode).trim();
-      const result = await verifyOtp(normalizedPhone, code, otpSessionId);
+      const result = await verifyOtp(normalizedPhone, code);
 
       if (!result?.ok || !result?.sessionToken) {
-        setError("Invalid code. Please try again.");
+        setError(result?.message || "Invalid code. Please try again.");
         return;
       }
 
