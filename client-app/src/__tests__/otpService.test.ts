@@ -39,17 +39,29 @@ describe("auth OTP service", () => {
   });
 
   it("calls verify OTP endpoint with E.164 phone and otpSessionId", async () => {
-    const apiSpy = vi.spyOn(clientApi, "apiRequest").mockResolvedValue({ success: true, token: "abc" });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, token: "abc" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).resolves.toMatchObject({ ok: true, sessionToken: "abc" });
 
-    expect(apiSpy).toHaveBeenCalledWith(
-      API_ENDPOINTS.OTP_VERIFY,
+    expect(fetchMock).toHaveBeenCalledWith(
+      clientApi.buildApiUrl(API_ENDPOINTS.OTP_VERIFY),
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: "+15551112222", code: "123456", otpSessionId: "otp-session-1" }),
       })
+    );
+  });
+
+  it("throws when verify OTP request is not ok", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false }));
+
+    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).rejects.toThrow(
+      "OTP verification failed"
     );
   });
 });
