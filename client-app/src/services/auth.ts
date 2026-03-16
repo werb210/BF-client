@@ -110,9 +110,10 @@ export async function startOtp(phone: string) {
   });
 }
 
-export async function verifyOtp(phone: string, code: string) {
+export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
   return api.post("/api/auth/otp/verify", {
     phone: phone.trim(),
     code: code.trim(),
+    otpSessionId,
   });
 }

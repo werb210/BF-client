@@ -55,7 +55,7 @@ export function PortalEntry() {
       const result = await startOtp(fallbackPhone);
 
       setOtpCode("");
-      setOtpSessionId(result?.otpSessionId || "pending");
+      setOtpSessionId(result.otpSessionId);
       setVerifying(false);
       setStep("code");
     } catch (err: any) {
@@ -80,7 +80,7 @@ export function PortalEntry() {
     setError("");
 
     try {
-      const result = await verifyOtp(phone, otpCode);
+      const result = await verifyOtp(phone, otpCode, otpSessionId);
       const sessionToken = result?.sessionToken as string;
 
       if (!sessionToken) {
@@ -103,7 +103,7 @@ export function PortalEntry() {
       verifyInFlightRef.current = false;
       setVerifying(false);
     }
-  }, [otpCode, phone, verifying]);
+  }, [otpCode, otpSessionId, phone, verifying]);
 
 
   useEffect(() => {
