@@ -105,14 +105,22 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
-  const digits = String(phone || "").replace(/\D/g, "");
-  const e164 = digits.startsWith("1") ? `+${digits}` : `+1${digits}`;
+  const formatE164 = (value: string) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    return digits.startsWith("1") ? `+${digits}` : `+1${digits}`;
+  };
 
-  const data = (await apiRequest(API_ENDPOINTS.OTP_VERIFY, {
+  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: e164, code, otpSessionId }),
-  }).catch(() => null)) as ApiPayload;
+    body: JSON.stringify({ phone: formatE164(phone), code, otpSessionId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("OTP verification failed");
+  }
+
+  const data = (await response.json().catch(() => null)) as ApiPayload;
 
   return {
     ok: isOk(data),
