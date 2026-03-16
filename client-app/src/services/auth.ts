@@ -35,17 +35,16 @@ export type OtpVerifyResult = {
   submittedToken?: string;
 };
 
-export function normalizeOtpPhone(phone: string): string {
-  const trimmed = String(phone || "").trim();
-  if (!trimmed) return "";
-
-  const digits = trimmed.replace(/\D/g, "");
-  if (!digits) return "";
+export function normalizePhone(phone: string): string {
+  const rawPhone = String(phone ?? "");
+  const digits = rawPhone.replace(/\D/g, "");
 
   if (digits.length === 10) return `+1${digits}`;
   if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return trimmed.startsWith("+") ? `+${digits}` : digits;
+  return rawPhone;
 }
+
+export const normalizeOtpPhone = normalizePhone;
 
 function hasExplicitOtpStartFlag(payload: ApiPayload): boolean {
   if (!payload || typeof payload !== "object") return false;
@@ -53,7 +52,7 @@ function hasExplicitOtpStartFlag(payload: ApiPayload): boolean {
 }
 
 export async function requestOtp(phone: string) {
-  const normalizedPhone = normalizeOtpPhone(phone);
+  const normalizedPhone = normalizePhone(phone);
 
   let response: Response;
   try {
@@ -105,15 +104,10 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
-  const formatE164 = (value: string) => {
-    const digits = String(value || "").replace(/\D/g, "");
-    return digits.startsWith("1") ? `+${digits}` : `+1${digits}`;
-  };
-
   const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: formatE164(phone), code, otpSessionId }),
+    body: JSON.stringify({ phone: normalizePhone(phone), code, otpSessionId }),
   });
 
   if (!response.ok) {

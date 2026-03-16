@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from "react";
 import { Card } from "../components/ui/Card";
 import { PhoneInput } from "../components/ui/PhoneInput";
 import { PrimaryButton } from "../components/ui/Button";
 import { OtpInput } from "../components/OtpInput";
 import { ClientProfileStore } from "../state/clientProfiles";
-import { formatPhoneNumber, getCountryCode } from "../utils/location";
 import { components, layout, scrollToFirstError } from "@/styles";
 import { normalizeOtpPhone, startOtp, verifyOtp } from "@/services/auth";
 import { setToken } from "@/auth/tokenStorage";
@@ -18,7 +17,8 @@ export function PortalEntry() {
   const [otpSessionId, setOtpSessionId] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
-  const countryCode = useMemo(() => getCountryCode("United States"), []);
+  const verifyInFlightRef = useRef(false);
+  const lastAutoSubmittedRef = useRef("");
 
   useEffect(() => {
     const lastPhone = ClientProfileStore.getLastUsedPhone();
@@ -32,12 +32,6 @@ export function PortalEntry() {
       scrollToFirstError();
     }
   }, [error]);
-
-  useEffect(() => {
-    if (step === "code" && otpCode.length === 6 && otpSessionId) {
-      void handleVerifyOtp();
-    }
-  }, [otpCode, otpSessionId, step]);
 
   async function handleSendCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,7 +52,6 @@ export function PortalEntry() {
 
     setSendingOtp(true);
     setError("");
-    setPhone(formatPhoneNumber(normalized, countryCode));
 
     try {
       const result = await startOtp(normalized);
@@ -87,8 +80,12 @@ export function PortalEntry() {
     }
   }
 
-  async function handleVerifyOtp() {
-    if (verifying) {
+  const handleVerifyOtp = useCallback(async () => {
+    if (verifyInFlightRef.current || verifying) {
+      return;
+    }
+
+    if (!otpSessionId) {
       return;
     }
 
@@ -96,6 +93,7 @@ export function PortalEntry() {
       return;
     }
 
+    verifyInFlightRef.current = true;
     setVerifying(true);
     setError("");
 
@@ -123,9 +121,32 @@ export function PortalEntry() {
     } catch (err) {
       setError("Invalid code. Please try again.");
     } finally {
+      verifyInFlightRef.current = false;
       setVerifying(false);
     }
-  }
+  }, [otpCode, otpSessionId, phone, verifying]);
+
+
+  useEffect(() => {
+    if (otpCode.length !== 6) {
+      lastAutoSubmittedRef.current = "";
+    }
+  }, [otpCode]);
+
+  useEffect(() => {
+    const autoSubmitKey = `${otpSessionId}:${otpCode}`;
+    if (
+      step === "code" &&
+      otpCode.length === 6 &&
+      otpSessionId &&
+      !verifying &&
+      !verifyInFlightRef.current &&
+      lastAutoSubmittedRef.current !== autoSubmitKey
+    ) {
+      lastAutoSubmittedRef.current = autoSubmitKey;
+      void handleVerifyOtp();
+    }
+  }, [handleVerifyOtp, otpCode, otpSessionId, step, verifying]);
 
   return (
     <div style={layout.page}>
@@ -148,10 +169,8 @@ export function PortalEntry() {
                 <PhoneInput
                   id="portal-phone"
                   name="phone"
-                  value={formatPhoneNumber(phone, countryCode)}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    setPhone(formatPhoneNumber(event.target.value, countryCode))
-                  }
+                  value={phone}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => setPhone(event.target.value)}
                   placeholder="(555) 555-5555"
                   hasError={Boolean(error)}
                   onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
