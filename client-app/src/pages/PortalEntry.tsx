@@ -54,6 +54,11 @@ export function PortalEntry() {
     try {
       const result = await startOtp(fallbackPhone);
 
+      if (!result?.ok) {
+        setError(result?.message || "Failed to send verification code");
+        return;
+      }
+
       setOtpCode("");
       setOtpSessionId(result.otpSessionId);
       setVerifying(false);
@@ -81,10 +86,15 @@ export function PortalEntry() {
 
     try {
       const result = await verifyOtp(phone, otpCode, otpSessionId);
+      if (!result?.ok) {
+        setError(result?.message || "Invalid code. Please try again.");
+        return;
+      }
+
       const sessionToken = result?.sessionToken as string;
 
       if (!sessionToken) {
-        setError("Invalid verification code");
+        setError("Invalid code. Please try again.");
         return;
       }
 
@@ -96,7 +106,7 @@ export function PortalEntry() {
       });
 
       ClientProfileStore.setLastUsedPhone(phone.trim());
-      window.location.href = "/portal";
+      window.location.href = "/application/start";
     } catch (err: any) {
       setError(err?.response?.data?.error?.message || "Invalid verification code");
     } finally {
