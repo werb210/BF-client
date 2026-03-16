@@ -32,7 +32,9 @@ export type OtpRequestResult = {
 export type OtpVerifyResult = {
   ok: boolean;
   sessionToken?: string;
+  token?: string;
   applicationToken?: string;
+  applicationId?: string;
   submittedToken?: string;
   message?: string;
   status?: number;
@@ -113,15 +115,16 @@ export async function startOtp(phone: string) {
 
   return {
     ok: response.ok,
+    normalizedPhone: data?.normalizedPhone ?? data?.phone ?? payload.phone,
     ...(data ?? {}),
   };
 }
 
-export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
+export async function verifyOtp(phone: string, code: string, otpSessionId = "") {
   const payload = {
     phone: normalizePhone(phone),
     code: code.trim(),
-    otpSessionId,
+    ...(otpSessionId ? { otpSessionId } : {}),
   };
 
   const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
@@ -136,9 +139,15 @@ export async function verifyOtp(phone: string, code: string, otpSessionId: strin
   const rawBody = await response.text();
   const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
 
+  const payloadOk = data?.ok === true || data?.success === true || data?.verified === true;
+
   return {
-    ok: response.ok,
+    ok: response.ok && (payloadOk || data?.ok === undefined),
     sessionToken: data?.sessionToken ?? data?.token ?? "",
+    token: data?.token ?? data?.sessionToken ?? "",
+    applicationToken: data?.applicationToken ?? data?.applicationId ?? "",
+    applicationId: data?.applicationId ?? data?.applicationToken ?? "",
+    submittedToken: data?.submittedToken ?? "",
     message: data?.message,
     status: response.status,
     ...(data ?? {}),

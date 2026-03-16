@@ -33,11 +33,11 @@ describe("auth OTP service", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ success: true }),
+      text: async () => JSON.stringify({ success: true, normalizedPhone: "+15878881837" }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(startOtp("5878881837")).resolves.toMatchObject({ ok: true });
+    await expect(startOtp("5878881837")).resolves.toMatchObject({ ok: true, normalizedPhone: "+15878881837" });
 
     expect(fetchMock).toHaveBeenCalledWith(
       clientApi.buildApiUrl(API_ENDPOINTS.OTP_START),
@@ -52,17 +52,18 @@ describe("auth OTP service", () => {
     expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
   });
 
-  it('verifyOtp("5878881837", "123456", "otp-session-1") sends normalized payload', async () => {
+  it('verifyOtp("5878881837", "123456", "") posts only phone and code', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ success: true, token: "abc" }),
+      text: async () => JSON.stringify({ ok: true, token: "abc" }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyOtp("5878881837", "123456", "otp-session-1")).resolves.toMatchObject({
+    await expect(verifyOtp("5878881837", "123456", "")).resolves.toMatchObject({
       ok: true,
       sessionToken: "abc",
+      token: "abc",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -71,7 +72,7 @@ describe("auth OTP service", () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "+15878881837", code: "123456", otpSessionId: "otp-session-1" }),
+        body: JSON.stringify({ phone: "+15878881837", code: "123456" }),
       })
     );
   });
