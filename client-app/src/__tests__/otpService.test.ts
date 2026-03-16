@@ -52,7 +52,7 @@ describe("auth OTP service", () => {
     expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
   });
 
-  it('verifyOtp("5878881837", "123456") sends normalized payload', async () => {
+  it('verifyOtp("5878881837", "123456", "otp-session-1") sends normalized payload', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -60,7 +60,7 @@ describe("auth OTP service", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
+    await expect(verifyOtp("5878881837", "123456", "otp-session-1")).resolves.toMatchObject({
       ok: true,
       sessionToken: "abc",
     });
@@ -71,7 +71,7 @@ describe("auth OTP service", () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "+15878881837", code: "123456" }),
+        body: JSON.stringify({ phone: "+15878881837", code: "123456", otpSessionId: "otp-session-1" }),
       })
     );
   });
@@ -86,7 +86,7 @@ describe("auth OTP service", () => {
       })
     );
 
-    await expect(verifyOtp("(555) 111-2222", "123456")).resolves.toMatchObject({
+    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).resolves.toMatchObject({
       ok: false,
       message: "Invalid code",
       status: 400,
