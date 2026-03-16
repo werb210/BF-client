@@ -25,6 +25,7 @@ export type OtpRequestResult = {
   demoCode?: string;
   message?: string;
   status?: number;
+  otpSessionId?: string;
 };
 
 export type OtpVerifyResult = {
@@ -95,6 +96,7 @@ export async function requestOtp(phone: string) {
     demoCode: pickFirstString(data, ["demoCode", "otp", "code", "verificationCode"]),
     message: pickFirstString(data, ["message", "error"]),
     status: response.status,
+    otpSessionId: pickFirstString(data, ["otpSessionId", "sessionToken"]),
   } satisfies OtpRequestResult;
 }
 
@@ -102,11 +104,14 @@ export async function startOtp(phone: string) {
   return requestOtp(phone);
 }
 
-export async function verifyOtp(phoneOrSessionToken: string, code: string) {
+export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  const e164 = digits.startsWith("1") ? `+${digits}` : `+1${digits}`;
+
   const data = (await apiRequest(API_ENDPOINTS.OTP_VERIFY, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sessionToken: phoneOrSessionToken, phone: phoneOrSessionToken, code }),
+    body: JSON.stringify({ phone: e164, code, otpSessionId }),
   }).catch(() => null)) as ApiPayload;
 
   return {

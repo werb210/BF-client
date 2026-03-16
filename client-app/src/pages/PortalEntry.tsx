@@ -15,6 +15,7 @@ export function PortalEntry() {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [otpSessionId, setOtpSessionId] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState("");
   const countryCode = useMemo(() => getCountryCode("United States"), []);
@@ -68,6 +69,7 @@ export function PortalEntry() {
 
       // Only advance when OTP start succeeded
       setOtpCode("");
+      setOtpSessionId(result?.otpSessionId || "");
       setVerifying(false);
       setStep("code");
 
@@ -94,7 +96,7 @@ export function PortalEntry() {
     try {
       const normalizedPhone = phone.trim();
       const code = String(otpCode).trim();
-      const result = await verifyOtp(normalizedPhone, code);
+      const result = await verifyOtp(normalizedPhone, code, otpSessionId);
 
       if (!result?.ok || !result?.sessionToken) {
         setError("Invalid code. Please try again.");
@@ -172,7 +174,7 @@ export function PortalEntry() {
               <PrimaryButton
                 style={{ width: "100%" }}
                 onClick={handleVerifyOtp}
-                disabled={otpCode.length !== 6 || verifying}
+                disabled={otpCode.length !== 6 || verifying || !otpSessionId}
               >
                 {verifying ? "Verifying..." : "Verify code"}
               </PrimaryButton>
