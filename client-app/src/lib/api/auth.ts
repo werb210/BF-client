@@ -1,15 +1,21 @@
-export async function startOtp(phone: string) {
-  const normalized = phone.replace(/[^\d+]/g, "").trim();
+function normalizePhone(input: string) {
+  const digits = input.replace(/\D/g, "")
+  if (digits.length === 10) return `+1${digits}`
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`
+  return `+${digits}`
+}
 
-  const res = await fetch("https://server.boreal.financial/api/auth/otp/start", {
+export async function startOtp(phoneInput: string) {
+  const payload = {
+    phone: normalizePhone(phoneInput)
+  }
+
+  const res = await fetch("/api/auth/otp/start", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    credentials: "include",
-    body: JSON.stringify({
-      phone: normalized
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!res.ok) {

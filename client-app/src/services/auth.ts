@@ -38,13 +38,12 @@ export type OtpVerifyResult = {
   status?: number;
 };
 
-export function normalizePhone(phone: string): string {
-  const rawPhone = String(phone ?? "");
-  const digits = rawPhone.replace(/\D/g, "");
+export function normalizePhone(input: string): string {
+  const digits = String(input ?? "").replace(/\D/g, "");
 
   if (digits.length === 10) return `+1${digits}`;
   if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return rawPhone;
+  return `+${digits}`;
 }
 
 export const normalizeOtpPhone = normalizePhone;
@@ -103,11 +102,26 @@ export async function requestOtp(phone: string) {
 }
 
 export async function startOtp(phone: string) {
-  const phoneRaw = phone.trim();
+  const payload = {
+    phone: normalizePhone(phone),
+  };
 
-  return api.post("/api/auth/otp/start", {
-    phone: phoneRaw,
+  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_START), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
+
+  const rawBody = await response.text();
+  const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
+
+  return {
+    ok: response.ok,
+    ...(data ?? {}),
+  };
 }
 
 export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
