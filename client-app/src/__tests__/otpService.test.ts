@@ -29,30 +29,42 @@ describe("auth OTP service", () => {
     );
   });
 
-  it("keeps startOtp compatibility", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({ ok: true, status: 200, text: async () => JSON.stringify({ success: true }) })
-    );
+  it('startOtp("5878881837") sends normalized E.164 payload', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ success: true }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
-    await expect(startOtp("+15551112222")).resolves.toMatchObject({ ok: true });
+    await expect(startOtp("5878881837")).resolves.toMatchObject({ ok: true });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      clientApi.buildApiUrl(API_ENDPOINTS.OTP_START),
+      expect.objectContaining({
+        body: JSON.stringify({ phone: "+15878881837" }),
+      })
+    );
   });
 
-  it("calls verify OTP endpoint with E.164 phone and otpSessionId", async () => {
+  it('verifyOtp("5878881837", "123456", "otp-session-1") sends normalized payload with session id', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, token: "abc" }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).resolves.toMatchObject({ ok: true, sessionToken: "abc" });
+    await expect(verifyOtp("5878881837", "123456", "otp-session-1")).resolves.toMatchObject({
+      ok: true,
+      sessionToken: "abc",
+    });
 
     expect(fetchMock).toHaveBeenCalledWith(
       clientApi.buildApiUrl(API_ENDPOINTS.OTP_VERIFY),
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "+15551112222", code: "123456", otpSessionId: "otp-session-1" }),
+        body: JSON.stringify({ phone: "+15878881837", code: "123456", otpSessionId: "otp-session-1" }),
       })
     );
   });
