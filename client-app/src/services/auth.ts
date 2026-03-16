@@ -127,29 +127,58 @@ export async function verifyOtp(phone: string, code: string, otpSessionId = "") 
     ...(otpSessionId ? { otpSessionId } : {}),
   };
 
-  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  let responseStatus = 500;
 
-  const rawBody = await response.text();
-  const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
+  try {
+    const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    responseStatus = response.status;
 
-  const payloadOk = data?.ok === true || data?.success === true || data?.verified === true;
+    const rawBody = await response.text();
+    const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
 
-  return {
-    ok: response.ok && (payloadOk || data?.ok === undefined),
-    sessionToken: data?.sessionToken ?? data?.token ?? "",
-    token: data?.token ?? data?.sessionToken ?? "",
-    applicationToken: data?.applicationToken ?? data?.applicationId ?? "",
-    applicationId: data?.applicationId ?? data?.applicationToken ?? "",
-    submittedToken: data?.submittedToken ?? "",
-    message: data?.message,
-    status: response.status,
-    ...(data ?? {}),
-  };
+    console.log("OTP_VERIFY_RESPONSE", data);
+
+    if (!data.ok) {
+      const error = new Error(data.error?.message || data.message || "Verification failed") as Error & {
+        status?: number;
+      };
+      error.status = response.status;
+      throw error;
+    }
+
+    return {
+      ok: true,
+      sessionToken: data?.sessionToken ?? data?.token ?? "",
+      token: data?.token ?? data?.sessionToken ?? "",
+      applicationToken: data?.applicationToken ?? data?.applicationId ?? "",
+      applicationId: data?.applicationId ?? data?.applicationToken ?? "",
+      submittedToken: data?.submittedToken ?? "",
+      message: data?.message,
+      status: response.status,
+      ...(data ?? {}),
+    };
+  } catch (err) {
+    console.error("OTP_VERIFY_ERROR", err);
+    const status = typeof (err as { status?: unknown })?.status === "number"
+      ? ((err as { status: number }).status)
+      : responseStatus;
+
+    return {
+      ok: false,
+      message: err instanceof Error ? err.message : "Verification failed",
+      sessionToken: "",
+      token: "",
+      applicationToken: "",
+      applicationId: "",
+      submittedToken: "",
+      status,
+    };
+  }
 }
