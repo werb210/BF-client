@@ -10,7 +10,6 @@ const { startOtpMock, verifyOtpMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/services/auth", () => ({
-  normalizeOtpPhone: (value: string) => value,
   startOtp: startOtpMock,
   verifyOtp: verifyOtpMock,
 }));
@@ -106,7 +105,32 @@ describe("PortalEntry OTP runtime", () => {
       await Promise.resolve();
     });
 
-    expect(verifyOtpMock).toHaveBeenCalledWith("(555) 111-2222", "123456", "otp-session-1");
+    expect(verifyOtpMock).toHaveBeenCalledWith("(555) 111-2222", "123456");
     expect(container.textContent).toContain("Invalid code. Please try again.");
+  });
+
+  it("preserves the visible phone input and does not force a leading 1", async () => {
+    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1" });
+
+    await act(async () => {
+      root.render(createElement(PortalEntry));
+    });
+
+    const phoneField = container.querySelector("#portal-phone") as HTMLInputElement;
+
+    await act(async () => {
+      phoneField.value = "5551112222";
+      phoneField.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
+    expect(phoneField.value).toBe("5551112222");
+
+    const form = container.querySelector("form") as HTMLFormElement;
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    expect(startOtpMock).toHaveBeenCalledWith("5551112222");
   });
 });

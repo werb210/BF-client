@@ -1,4 +1,4 @@
-import { apiRequest, buildApiUrl } from "../api/client";
+import { buildApiUrl } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
 
 type ApiPayload = Record<string, any> | null;
@@ -33,6 +33,8 @@ export type OtpVerifyResult = {
   sessionToken?: string;
   applicationToken?: string;
   submittedToken?: string;
+  message?: string;
+  status?: number;
 };
 
 export function normalizePhone(phone: string): string {
@@ -103,23 +105,50 @@ export async function startOtp(phone: string) {
   return requestOtp(phone);
 }
 
-export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
-  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: normalizePhone(phone), code, otpSessionId }),
-  });
-
-  if (!response.ok) {
-    throw new Error("OTP verification failed");
+export async function verifyOtp(phone: string, code: string) {
+  let response: Response;
+  try {
+    response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizePhone(phone), code: String(code).trim() }),
+    });
+  } catch (error) {
+    console.warn("OTP verify request failed", error);
+    return {
+      ok: false,
+      message: "Unable to verify code. Please try again.",
+    } satisfies OtpVerifyResult;
   }
 
-  const data = (await response.json().catch(() => null)) as ApiPayload;
+  const rawBody = await response.text();
+  let data: ApiPayload = null;
+
+  if (rawBody) {
+    try {
+      data = JSON.parse(rawBody) as ApiPayload;
+    } catch {
+      data = { message: rawBody };
+    }
+  }
+
+  const payloadOk = isOk(data);
+  const ok = response.ok && payloadOk;
+
+  if (!ok) {
+    console.warn("OTP verify rejected", {
+      status: response.status,
+      body: data,
+    });
+  }
 
   return {
-    ok: isOk(data),
+    ok,
     sessionToken: pickFirstString(data, ["sessionToken", "accessToken", "token"]),
     applicationToken: pickFirstString(data, ["applicationToken", "submissionId", "leadToken"]),
     submittedToken: pickFirstString(data, ["submittedToken", "portalToken"]),
+    message: pickFirstString(data, ["message", "error"]),
+    status: response.status,
   } satisfies OtpVerifyResult;
 }
