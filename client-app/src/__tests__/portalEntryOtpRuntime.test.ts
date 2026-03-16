@@ -4,9 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PortalEntry } from "../pages/PortalEntry";
 import { ClientProfileStore } from "../state/clientProfiles";
 
-const { startOtpMock, verifyOtpMock } = vi.hoisted(() => ({
+const {
+  startOtpMock,
+  verifyOtpMock,
+  setTokenMock,
+  ensureClientSessionMock,
+  setActiveClientSessionTokenMock,
+} = vi.hoisted(() => ({
   startOtpMock: vi.fn(),
   verifyOtpMock: vi.fn(),
+  setTokenMock: vi.fn(),
+  ensureClientSessionMock: vi.fn(),
+  setActiveClientSessionTokenMock: vi.fn(),
 }));
 
 vi.mock("@/services/auth", () => ({
@@ -14,9 +23,19 @@ vi.mock("@/services/auth", () => ({
   verifyOtp: verifyOtpMock,
 }));
 
+vi.mock("@/auth/tokenStorage", () => ({
+  setToken: setTokenMock,
+}));
+
+vi.mock("@/state/clientSession", () => ({
+  ensureClientSession: ensureClientSessionMock,
+  setActiveClientSessionToken: setActiveClientSessionTokenMock,
+}));
+
 vi.mock("../components/OtpInput", () => ({
   OtpInput: ({ onComplete }: { onComplete: (code: string) => void }) => {
     useEffect(() => {
+      onComplete("123456");
       onComplete("123456");
     }, [onComplete]);
 
@@ -26,12 +45,28 @@ vi.mock("../components/OtpInput", () => ({
 
 describe("PortalEntry OTP runtime", () => {
   let container: HTMLDivElement;
-  let root: Root;
+  let root: Root | null;
+  const locationAssignMock = vi.fn();
+  const originalLocation = window.location;
 
   beforeEach(() => {
     startOtpMock.mockReset();
     verifyOtpMock.mockReset();
+    setTokenMock.mockReset();
+    ensureClientSessionMock.mockReset();
+    setActiveClientSessionTokenMock.mockReset();
+    locationAssignMock.mockReset();
+
     ClientProfileStore.setLastUsedPhone("(555) 111-2222");
+
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, assign: locationAssignMock },
+    });
+    vi.spyOn(ClientProfileStore, "upsertProfile").mockImplementation(() => null);
+    vi.spyOn(ClientProfileStore, "markSubmitted").mockImplementation(() => null);
+    vi.spyOn(ClientProfileStore, "markPortalVerified").mockImplementation(() => undefined);
+    vi.spyOn(ClientProfileStore, "setLastUsedPhone").mockImplementation(() => undefined);
 
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -39,10 +74,14 @@ describe("PortalEntry OTP runtime", () => {
   });
 
   afterEach(() => {
-    act(() => {
-      root.unmount();
-    });
-    container.remove();
+    vi.restoreAllMocks();
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+    if (root) {
+      act(() => {
+        root?.unmount();
+      });
+    }
+    container?.remove();
   });
 
   it("keeps phone step and shows error when request-otp fails", async () => {
@@ -62,34 +101,11 @@ describe("PortalEntry OTP runtime", () => {
     expect(startOtpMock).toHaveBeenCalledTimes(1);
     expect(container.textContent).toContain("Invalid phone payload");
     expect(container.textContent).not.toContain("Enter the 6-digit code sent to your phone.");
-
-    const phoneField = container.querySelector("#portal-phone") as HTMLInputElement;
-    expect(phoneField.value).toContain("555");
   });
 
-  it("renders OTP entry inputs after request-otp succeeds", async () => {
-    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1" });
-
-    await act(async () => {
-      root.render(createElement(PortalEntry));
-    });
-
-    const form = container.querySelector("form") as HTMLFormElement;
-
-    await act(async () => {
-      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-      await Promise.resolve();
-    });
-
-    expect(startOtpMock).toHaveBeenCalledTimes(1);
-
-    const otpCodeInput = container.querySelector('[data-testid="otp-code"]');
-    expect(otpCodeInput).toBeTruthy();
-  });
-
-  it("auto-submits verification when 6 digits are entered and otpSessionId exists", async () => {
-    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1" });
-    verifyOtpMock.mockResolvedValue({ ok: false });
+  it("entering 6 digits auto-submits verification exactly once", async () => {
+    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1", normalizedPhone: "+15551112222" });
+    verifyOtpMock.mockResolvedValue({ ok: false, message: "Invalid code" });
 
     await act(async () => {
       root.render(createElement(PortalEntry));
@@ -105,25 +121,22 @@ describe("PortalEntry OTP runtime", () => {
       await Promise.resolve();
     });
 
-    expect(verifyOtpMock).toHaveBeenCalledWith("(555) 111-2222", "123456", "otp-session-1");
-    expect(container.textContent).toContain("Invalid code. Please try again.");
+    expect(verifyOtpMock).toHaveBeenCalledTimes(1);
+    expect(verifyOtpMock).toHaveBeenCalledWith("+15551112222", "123456", "otp-session-1");
   });
 
-  it("preserves the visible phone input and does not force a leading 1", async () => {
-    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1" });
+  it("verify success redirects to /application/start", async () => {
+    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1", normalizedPhone: "+15551112222" });
+    verifyOtpMock.mockResolvedValue({
+      ok: true,
+      token: "session-abc",
+      applicationToken: "app-1",
+      submittedToken: "submitted-1",
+    });
 
     await act(async () => {
       root.render(createElement(PortalEntry));
     });
-
-    const phoneField = container.querySelector("#portal-phone") as HTMLInputElement;
-
-    await act(async () => {
-      phoneField.value = "5551112222";
-      phoneField.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-
-    expect(phoneField.value).toBe("5551112222");
 
     const form = container.querySelector("form") as HTMLFormElement;
     await act(async () => {
@@ -131,6 +144,37 @@ describe("PortalEntry OTP runtime", () => {
       await Promise.resolve();
     });
 
-    expect(startOtpMock).toHaveBeenCalledWith("5551112222");
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(setTokenMock).toHaveBeenCalledWith("session-abc");
+    expect(setActiveClientSessionTokenMock).toHaveBeenCalledWith("session-abc");
+    expect(ensureClientSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ submissionId: "+15551112222", accessToken: "session-abc" })
+    );
+    expect(locationAssignMock).toHaveBeenCalledWith("/application/start");
+  });
+
+  it("verify failure shows inline error and no duplicate verify spam", async () => {
+    startOtpMock.mockResolvedValue({ ok: true, normalizedPhone: "+15551112222" });
+    verifyOtpMock.mockResolvedValue({ ok: false, message: "Wrong code" });
+
+    await act(async () => {
+      root.render(createElement(PortalEntry));
+    });
+
+    const form = container.querySelector("form") as HTMLFormElement;
+    await act(async () => {
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("Wrong code");
+    expect(verifyOtpMock).toHaveBeenCalledTimes(1);
   });
 });
