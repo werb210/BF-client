@@ -33,6 +33,12 @@ export function PortalEntry() {
     }
   }, [error]);
 
+  useEffect(() => {
+    if (step === "code" && otpCode.length === 6 && otpSessionId) {
+      void handleVerifyOtp();
+    }
+  }, [otpCode, otpSessionId, step]);
+
   async function handleSendCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
