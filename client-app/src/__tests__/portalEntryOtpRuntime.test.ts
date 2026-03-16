@@ -105,7 +105,7 @@ describe("PortalEntry OTP runtime", () => {
       await Promise.resolve();
     });
 
-    expect(verifyOtpMock).toHaveBeenCalledWith("(555) 111-2222", "123456");
+    expect(verifyOtpMock).toHaveBeenCalledWith("(555) 111-2222", "123456", "otp-session-1");
     expect(container.textContent).toContain("Invalid code. Please try again.");
   });
 

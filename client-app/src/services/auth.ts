@@ -1,6 +1,6 @@
 import { buildApiUrl } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
-import { api } from "@/api/ClientAppAPI";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 type ApiPayload = Record<string, any> | null;
 
@@ -38,14 +38,7 @@ export type OtpVerifyResult = {
   status?: number;
 };
 
-export function normalizePhone(input: string): string {
-  const digits = String(input ?? "").replace(/\D/g, "");
-
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return `+${digits}`;
-}
-
+export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
 function hasExplicitOtpStartFlag(payload: ApiPayload): boolean {
@@ -125,9 +118,29 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string, otpSessionId: string) {
-  return api.post("/api/auth/otp/verify", {
-    phone: phone.trim(),
+  const payload = {
+    phone: normalizePhone(phone),
     code: code.trim(),
     otpSessionId,
+  };
+
+  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
+
+  const rawBody = await response.text();
+  const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
+
+  return {
+    ok: response.ok,
+    sessionToken: data?.sessionToken ?? data?.token ?? "",
+    message: data?.message,
+    status: response.status,
+    ...(data ?? {}),
+  };
 }
