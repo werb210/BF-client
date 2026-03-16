@@ -1,5 +1,6 @@
 import { buildApiUrl } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
+import { api } from "@/api/ClientAppAPI";
 
 type ApiPayload = Record<string, any> | null;
 
@@ -102,53 +103,16 @@ export async function requestOtp(phone: string) {
 }
 
 export async function startOtp(phone: string) {
-  return requestOtp(phone);
+  const phoneRaw = phone.trim();
+
+  return api.post("/api/auth/otp/start", {
+    phone: phoneRaw,
+  });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  let response: Response;
-  try {
-    response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_VERIFY), {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizePhone(phone), code: String(code).trim() }),
-    });
-  } catch (error) {
-    console.warn("OTP verify request failed", error);
-    return {
-      ok: false,
-      message: "Unable to verify code. Please try again.",
-    } satisfies OtpVerifyResult;
-  }
-
-  const rawBody = await response.text();
-  let data: ApiPayload = null;
-
-  if (rawBody) {
-    try {
-      data = JSON.parse(rawBody) as ApiPayload;
-    } catch {
-      data = { message: rawBody };
-    }
-  }
-
-  const payloadOk = isOk(data);
-  const ok = response.ok && payloadOk;
-
-  if (!ok) {
-    console.warn("OTP verify rejected", {
-      status: response.status,
-      body: data,
-    });
-  }
-
-  return {
-    ok,
-    sessionToken: pickFirstString(data, ["sessionToken", "accessToken", "token"]),
-    applicationToken: pickFirstString(data, ["applicationToken", "submissionId", "leadToken"]),
-    submittedToken: pickFirstString(data, ["submittedToken", "portalToken"]),
-    message: pickFirstString(data, ["message", "error"]),
-    status: response.status,
-  } satisfies OtpVerifyResult;
+  return api.post("/api/auth/otp/verify", {
+    phone: phone.trim(),
+    code: code.trim(),
+  });
 }

@@ -54,36 +54,20 @@ export function PortalEntry() {
     try {
       const result = await startOtp(fallbackPhone);
 
-      // If backend did not confirm success, stay on phone step and show error
-      if (!result || !result.ok) {
-        if (result?.status === 429) {
-          setError(result?.message || "Code already sent. Please wait a moment.");
-        } else {
-          setError(result?.message || "Failed to send verification code");
-        }
-        return;
-      }
-
-      // Only advance when OTP start succeeded
       setOtpCode("");
-      setOtpSessionId(result?.otpSessionId || "");
+      setOtpSessionId(result?.otpSessionId || "pending");
       setVerifying(false);
       setStep("code");
-
-    } catch (err) {
+    } catch (err: any) {
       console.error("OTP start error:", err);
-      setError("Failed to send verification code");
+      setError(err?.response?.data?.error?.message || "Failed to send verification code");
     } finally {
       setSendingOtp(false);
     }
   }
 
-  const handleVerifyOtp = useCallback(async () => {
+  const onVerify = useCallback(async () => {
     if (verifyInFlightRef.current || verifying) {
-      return;
-    }
-
-    if (!otpSessionId) {
       return;
     }
 
@@ -96,33 +80,30 @@ export function PortalEntry() {
     setError("");
 
     try {
-      const normalizedPhone = phone.trim();
-      const code = String(otpCode).trim();
-      const result = await verifyOtp(normalizedPhone, code);
+      const result = await verifyOtp(phone, otpCode);
+      const sessionToken = result?.sessionToken as string;
 
-      if (!result?.ok || !result?.sessionToken) {
-        setError(result?.message || "Invalid code. Please try again.");
+      if (!sessionToken) {
+        setError("Invalid verification code");
         return;
       }
-
-      const sessionToken = result.sessionToken as string;
 
       setToken(sessionToken);
       setActiveClientSessionToken(sessionToken);
       ensureClientSession({
-        submissionId: normalizedPhone,
+        submissionId: phone.trim(),
         accessToken: sessionToken,
       });
 
-      ClientProfileStore.setLastUsedPhone(normalizedPhone);
+      ClientProfileStore.setLastUsedPhone(phone.trim());
       window.location.href = "/portal";
-    } catch (err) {
-      setError("Invalid code. Please try again.");
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || "Invalid verification code");
     } finally {
       verifyInFlightRef.current = false;
       setVerifying(false);
     }
-  }, [otpCode, otpSessionId, phone, verifying]);
+  }, [otpCode, phone, verifying]);
 
 
   useEffect(() => {
@@ -142,9 +123,9 @@ export function PortalEntry() {
       lastAutoSubmittedRef.current !== autoSubmitKey
     ) {
       lastAutoSubmittedRef.current = autoSubmitKey;
-      void handleVerifyOtp();
+      void onVerify();
     }
-  }, [handleVerifyOtp, otpCode, otpSessionId, step, verifying]);
+  }, [onVerify, otpCode, otpSessionId, step, verifying]);
 
   return (
     <div style={layout.page}>
@@ -196,7 +177,7 @@ export function PortalEntry() {
               <OtpInput length={6} onComplete={setOtpCode} />
               <PrimaryButton
                 style={{ width: "100%" }}
-                onClick={handleVerifyOtp}
+                onClick={onVerify}
                 disabled={otpCode.length !== 6 || verifying || !otpSessionId}
               >
                 {verifying ? "Verifying..." : "Verify code"}
