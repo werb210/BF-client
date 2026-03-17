@@ -116,31 +116,55 @@ export async function startOtp(phone: string): Promise<StartOtpResponse> {
   };
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
+export async function loginWithOtp(phone: string, code: string) {
   const normalizedPhone = normalizePhone(phone);
 
-  try {
-    const res = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
-      phone: normalizedPhone,
-      code,
-    });
+  const verify = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
+    phone: normalizedPhone,
+    code,
+  });
 
-    const data = (res.data ?? {}) as Record<string, any>;
+  const otpToken = pickFirstString(verify.data as ApiPayload, ["token", "sessionToken"]);
+
+  if (!otpToken) {
+    throw new Error("OTP verification returned no token");
+  }
+
+  localStorage.setItem("otp_token", otpToken);
+
+  const session = await apiClient.get("/api/continuation/session", {
+    headers: {
+      Authorization: `Bearer ${otpToken}`,
+    },
+  });
+
+  const authToken = pickFirstString(session.data as ApiPayload, ["token", "sessionToken"]);
+  const user = (session.data as Record<string, any> | undefined)?.user;
+
+  if (!authToken) {
+    throw new Error("Session exchange failed");
+  }
+
+  localStorage.removeItem("otp_token");
+  setToken(authToken);
+
+  return {
+    user,
+    authToken,
+    session: session.data,
+  };
+}
+
+export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
+  try {
+    const { authToken, session } = await loginWithOtp(phone, code);
+    const data = (session ?? {}) as Record<string, any>;
     const payload = (data.data ?? {}) as Record<string, any>;
 
-    const sessionToken =
-      pickFirstString(payload, ["sessionToken", "token"]) ||
-      pickFirstString(data, ["sessionToken", "token"]);
-
-    if (sessionToken) {
-      localStorage.setItem("auth_token", sessionToken);
-      setToken(sessionToken);
-    }
-
     return {
-      ok: isOk(data),
-      sessionToken: sessionToken || undefined,
-      token: pickFirstString(data, ["token"]) || undefined,
+      ok: true,
+      sessionToken: authToken,
+      token: authToken,
       applicationToken: pickFirstString(payload, ["applicationToken", "applicationId"])
         || pickFirstString(data, ["applicationToken", "applicationId"])
         || undefined,
@@ -156,7 +180,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpR
     const payload = (error?.response?.data ?? null) as ApiPayload;
     return {
       ok: false,
-      message: pickFirstString(payload, ["message", "error"]) || "Verification failed",
+      message: pickFirstString(payload, ["message", "error"]) || error?.message || "Verification failed",
     };
   }
 }

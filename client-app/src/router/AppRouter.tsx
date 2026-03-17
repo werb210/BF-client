@@ -9,7 +9,6 @@ import { OfflineStore } from "../state/offline";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { SessionGuard } from "../auth/sessionGuard";
 import PortalRoutes from "../routes/PortalRoutes";
-import { getOtpSession } from "../auth/session";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useClientSession } from "../hooks/useClientSession";
 import { useApplicationStore } from "../state/useApplicationStore";
@@ -91,8 +90,8 @@ function RequirePortalSession({ children }: GuardProps): JSX.Element {
 }
 
 function RequireOTP({ children }: GuardProps): JSX.Element {
-  const session = getOtpSession() || (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
-  if (!session) return <Navigate to="/otp" replace />;
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  if (!token) return <Navigate to="/otp" replace />;
   return children;
 }
 

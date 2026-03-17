@@ -1,10 +1,9 @@
 import axios, { AxiosError, AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
 import { API_BASE } from "@/config/apiBase";
-import { getToken } from "@/auth/tokenStorage";
 import { logout } from "@/auth/logout";
 
-const API_ROOT = `${API_BASE}/api`.replace(/\/$/, "");
+const API_ROOT = `${API_BASE}/api`.replace(/\/api\/api(?=\/|$)/, "/api").replace(/\/$/, "");
 
 export const apiClient = axios.create({
   baseURL: API_ROOT,
@@ -12,7 +11,7 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = localStorage.getItem("auth_token");
 
   if (token) {
     const headers = AxiosHeaders.from(config.headers);
