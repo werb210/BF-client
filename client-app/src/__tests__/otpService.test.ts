@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeOtpPhone, requestOtp, startOtp, verifyOtp } from "../services/auth";
+import { loginWithOtp, normalizeOtpPhone, requestOtp, startOtp } from "../services/auth";
 import * as clientApi from "../api/client";
 
 
@@ -64,20 +64,21 @@ describe("auth OTP service", () => {
     expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
   });
 
-  it('verifyOtp("5878881837", "123456") posts to verify endpoint and returns nextPath payload', async () => {
+  it('loginWithOtp("5878881837", "123456") posts to verify endpoint and returns token/user payload', async () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
-        data: { sessionToken: "abc", user: { id: "u-1" }, nextPath: "/application" },
+        token: "abc",
+        user: { id: "u-1" },
+        nextPath: "/application",
       },
     } as any);
 
-    await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
-      success: true,
+    await expect(loginWithOtp("5878881837", "123456")).resolves.toMatchObject({
+      authToken: "abc",
       nextPath: "/application",
-      data: {
-        sessionToken: "abc",
-        nextPath: "/application",
+      user: {
+        id: "u-1",
       },
     });
 
@@ -91,14 +92,11 @@ describe("auth OTP service", () => {
     );
   });
 
-  it("returns failed result when verify OTP request is not ok", async () => {
+  it("throws when verify OTP request is not ok", async () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: { ok: false, error: { message: "Invalid code" } },
     } as any);
 
-    const result = await verifyOtp("(555) 111-2222", "123456");
-
-    expect(result.success).toBe(false);
-    expect(result.message).toBe("Invalid code");
+    await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow("OTP failed");
   });
 });

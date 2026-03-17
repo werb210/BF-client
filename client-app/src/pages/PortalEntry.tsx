@@ -5,7 +5,7 @@ import { PrimaryButton } from "../components/ui/Button";
 import { OtpInput } from "../components/OtpInput";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { components, layout, scrollToFirstError } from "@/styles";
-import { startOtp, verifyOtp } from "@/services/auth";
+import { loginWithOtp, startOtp } from "@/services/auth";
 import { setToken } from "@/auth/tokenStorage";
 import { ensureClientSession, setActiveClientSessionToken } from "@/state/clientSession";
 import { logClientError } from "@/lib/logger";
@@ -15,7 +15,6 @@ export function PortalEntry() {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  const [otpSessionId, setOtpSessionId] = useState("");
   const [normalizedPhone, setNormalizedPhone] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +63,6 @@ export function PortalEntry() {
       const verifiedPhone = result?.normalizedPhone || result?.phone || fallbackPhone;
       setNormalizedPhone(verifiedPhone);
       setOtpCode("");
-      setOtpSessionId(result.otpSessionId || "");
       setVerifying(false);
       setStep("code");
     } catch (err: any) {
@@ -90,18 +88,8 @@ export function PortalEntry() {
 
     try {
       const verifyPhone = normalizedPhone || phone;
-      const result = await verifyOtp(verifyPhone, otpCode, otpSessionId);
-
-      if (!result.success) {
-        const message = typeof result?.error === "string" ? result.error : typeof result?.message === "string" ? result.message : "Authentication failed";
-        throw new Error(message);
-      }
-
-      const rawSessionToken = result.data?.token || result.data?.sessionToken;
-      if (typeof rawSessionToken !== "string" || !rawSessionToken) {
-        throw new Error("Authentication failed");
-      }
-      const sessionToken = rawSessionToken;
+      const result = await loginWithOtp(verifyPhone, otpCode);
+      const sessionToken = result.authToken;
 
       setToken(sessionToken);
       localStorage.setItem("auth_token", sessionToken);
@@ -113,18 +101,10 @@ export function PortalEntry() {
         accessToken: sessionToken,
       });
 
-      const applicationToken = (result?.data?.applicationToken || result?.data?.applicationId) as string | undefined;
-      const submittedToken = result?.data?.submittedToken as string | undefined;
-      if (applicationToken) {
-        ClientProfileStore.upsertProfile(persistedPhone, applicationToken);
-      }
-      if (submittedToken) {
-        ClientProfileStore.markSubmitted(persistedPhone, submittedToken);
-      }
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
 
-      window.location.href = result.nextPath;
+      window.location.href = result.nextPath || "/portal";
     } catch (err: any) {
       setOtpCode("");
       setError(err.message || "Authentication failed");
@@ -132,7 +112,7 @@ export function PortalEntry() {
       verifyInFlightRef.current = false;
       setVerifying(false);
     }
-  }, [normalizedPhone, otpCode, otpSessionId, phone, verifying]);
+  }, [normalizedPhone, otpCode, phone, verifying]);
 
 
   useEffect(() => {
@@ -142,7 +122,7 @@ export function PortalEntry() {
   }, [otpCode]);
 
   useEffect(() => {
-    const autoSubmitKey = `${otpSessionId}:${otpCode}`;
+    const autoSubmitKey = otpCode;
     if (
       step === "code" &&
       otpCode.length === 6 &&
@@ -153,7 +133,7 @@ export function PortalEntry() {
       lastAutoSubmittedRef.current = autoSubmitKey;
       void onVerify();
     }
-  }, [onVerify, otpCode, otpSessionId, step, verifying]);
+  }, [onVerify, otpCode, step, verifying]);
 
   return (
     <div style={layout.page}>

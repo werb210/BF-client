@@ -196,6 +196,12 @@ export default function AppRouter(): JSX.Element {
     }
 
     api.get("/auth/me")
+      .then((res) => {
+        const user = res?.data?.data?.user;
+        if (!user) {
+          window.localStorage.removeItem("auth_token");
+        }
+      })
       .catch(() => {
         window.localStorage.removeItem("auth_token");
       });

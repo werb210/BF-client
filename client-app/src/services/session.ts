@@ -1,13 +1,7 @@
-import { startOtp as startOtpAuth, verifyOtp as verifyOtpAuth } from "./auth";
+import { loginWithOtp, startOtp as startOtpAuth } from "./auth";
 
-export function getSession() {
-  return Promise.resolve(null);
-}
-
-export function startOtp(phone: string) {
-  return startOtpAuth(phone);
-}
+export const startOtp = (phone: string) => startOtpAuth(phone);
 
 export function verifyOtp(code: string, phone = "") {
-  return verifyOtpAuth(phone, code);
+  return loginWithOtp(phone, code);
 }
