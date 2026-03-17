@@ -6,13 +6,13 @@ import { ClientProfileStore } from "../state/clientProfiles";
 
 const {
   startOtpMock,
-  verifyOtpMock,
+  loginWithOtpMock,
   setTokenMock,
   ensureClientSessionMock,
   setActiveClientSessionTokenMock,
 } = vi.hoisted(() => ({
   startOtpMock: vi.fn(),
-  verifyOtpMock: vi.fn(),
+  loginWithOtpMock: vi.fn(),
   setTokenMock: vi.fn(),
   ensureClientSessionMock: vi.fn(),
   setActiveClientSessionTokenMock: vi.fn(),
@@ -20,7 +20,7 @@ const {
 
 vi.mock("@/services/auth", () => ({
   startOtp: startOtpMock,
-  verifyOtp: verifyOtpMock,
+  loginWithOtp: loginWithOtpMock,
 }));
 
 vi.mock("@/auth/tokenStorage", () => ({
@@ -50,7 +50,7 @@ describe("PortalEntry OTP runtime", () => {
 
   beforeEach(() => {
     startOtpMock.mockReset();
-    verifyOtpMock.mockReset();
+    loginWithOtpMock.mockReset();
     setTokenMock.mockReset();
     ensureClientSessionMock.mockReset();
     setActiveClientSessionTokenMock.mockReset();
@@ -103,7 +103,7 @@ describe("PortalEntry OTP runtime", () => {
 
   it("entering 6 digits auto-submits verification exactly once", async () => {
     startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1", normalizedPhone: "+15551112222" });
-    verifyOtpMock.mockResolvedValue({ ok: false, message: "Invalid code" });
+    loginWithOtpMock.mockRejectedValue(new Error("Invalid code"));
 
     await act(async () => {
       root.render(createElement(PortalEntry));
@@ -119,20 +119,16 @@ describe("PortalEntry OTP runtime", () => {
       await Promise.resolve();
     });
 
-    expect(verifyOtpMock).toHaveBeenCalledTimes(1);
-    expect(verifyOtpMock).toHaveBeenCalledWith("+15551112222", "123456", "otp-session-1");
+    expect(loginWithOtpMock).toHaveBeenCalledTimes(1);
+    expect(loginWithOtpMock).toHaveBeenCalledWith("+15551112222", "123456");
   });
 
   it("verify success redirects to /application/start", async () => {
-    startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1", normalizedPhone: "+15551112222" });
-    verifyOtpMock.mockResolvedValue({
-      success: true,
+    startOtpMock.mockResolvedValue({ ok: true, normalizedPhone: "+15551112222" });
+    loginWithOtpMock.mockResolvedValue({
+      authToken: "session-abc",
       nextPath: "/application/start",
-      data: {
-        token: "session-abc",
-        applicationToken: "app-1",
-        submittedToken: "submitted-1",
-      },
+      user: { id: "u-1" },
     });
 
     await act(async () => {
@@ -159,7 +155,7 @@ describe("PortalEntry OTP runtime", () => {
 
   it("verify failure shows inline error and no duplicate verify spam", async () => {
     startOtpMock.mockResolvedValue({ ok: true, normalizedPhone: "+15551112222" });
-    verifyOtpMock.mockResolvedValue({ ok: false, message: "Wrong code" });
+    loginWithOtpMock.mockRejectedValue(new Error("Wrong code"));
 
     await act(async () => {
       root.render(createElement(PortalEntry));
@@ -176,6 +172,6 @@ describe("PortalEntry OTP runtime", () => {
     });
 
     expect(container.textContent).toContain("Wrong code");
-    expect(verifyOtpMock).toHaveBeenCalledTimes(1);
+    expect(loginWithOtpMock).toHaveBeenCalledTimes(1);
   });
 });

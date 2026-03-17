@@ -1,10 +1,11 @@
-import axios, { type AxiosRequestConfig } from "axios";
+import { type AxiosRequestConfig } from "axios";
+import { createHttpClient } from "./httpClient";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "https://api.staff.boreal.financial/api";
 
-const api = axios.create({
+const api = createHttpClient({
   baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
