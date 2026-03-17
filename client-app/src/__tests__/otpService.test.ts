@@ -68,12 +68,13 @@ describe("auth OTP service", () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
-        data: { sessionToken: "abc", nextPath: "/application" },
+        data: { sessionToken: "abc", user: { id: "u-1" }, nextPath: "/application" },
       },
     } as any);
 
     await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
-      ok: true,
+      success: true,
+      nextPath: "/application",
       data: {
         sessionToken: "abc",
         nextPath: "/application",
@@ -97,7 +98,7 @@ describe("auth OTP service", () => {
 
     const result = await verifyOtp("(555) 111-2222", "123456");
 
-    expect(result.ok).toBe(false);
+    expect(result.success).toBe(false);
     expect(result.message).toBe("Invalid code");
   });
 });
