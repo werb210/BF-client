@@ -122,7 +122,7 @@ describe("PortalEntry OTP runtime", () => {
     });
 
     expect(verifyOtpMock).toHaveBeenCalledTimes(1);
-    expect(verifyOtpMock).toHaveBeenCalledWith("+15551112222", "123456", "otp-session-1");
+    expect(verifyOtpMock).toHaveBeenCalledWith("+15551112222", "123456");
   });
 
   it("verify success redirects to /application/start", async () => {

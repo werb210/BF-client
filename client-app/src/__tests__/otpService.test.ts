@@ -1,11 +1,22 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeOtpPhone, requestOtp, startOtp, verifyOtp } from "../services/auth";
 import * as clientApi from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
+import * as tokenStorage from "@/auth/tokenStorage";
 
 describe("auth OTP service", () => {
+  const originalLocation = window.location;
+
+  beforeEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, href: "" },
+    });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 
   it("calls request OTP endpoint with phone payload", async () => {
@@ -52,38 +63,32 @@ describe("auth OTP service", () => {
     expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
   });
 
-  it('verifyOtp("5878881837", "123456") posts phone and code to Boreal verify endpoint', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ ok: true, sessionToken: "abc" }),
+  it('verifyOtp("5878881837", "123456") uses apiClient, stores session token, and redirects to nextPath', async () => {
+    vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
+      data: {
+        ok: true,
+        data: { sessionToken: "abc", nextPath: "/application/start" },
+      },
     });
-    vi.stubGlobal("fetch", fetchMock);
+    const setTokenSpy = vi.spyOn(tokenStorage, "setToken").mockImplementation(() => undefined);
 
     await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
       ok: true,
-      sessionToken: "abc",
+      data: { sessionToken: "abc", nextPath: "/application/start" },
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "https://server.boreal.financial/api/auth/otp/verify",
-      expect.objectContaining({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "5878881837", code: "123456" }),
-      })
-    );
+    expect(clientApi.apiClient.post).toHaveBeenCalledWith("/auth/otp/verify", {
+      phone: "5878881837",
+      code: "123456",
+    });
+    expect(setTokenSpy).toHaveBeenCalledWith("abc");
+    expect(window.location.href).toBe("/application/start");
   });
 
   it("throws when verify OTP request is not ok", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 400,
-        json: async () => ({ ok: false, error: { message: "Invalid code" } }),
-      })
-    );
+    vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
+      data: { ok: false, error: { message: "Invalid code" } },
+    });
 
     await expect(verifyOtp("(555) 111-2222", "123456")).rejects.toThrow("Invalid code");
   });
