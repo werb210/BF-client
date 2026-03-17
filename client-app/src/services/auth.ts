@@ -5,6 +5,14 @@ import { normalizePhone } from "@/utils/normalizePhone";
 
 type ApiPayload = Record<string, any> | null;
 
+function unwrapEnvelope(payload: ApiPayload): ApiPayload {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.data && typeof payload.data === "object") {
+    return payload.data as ApiPayload;
+  }
+  return payload;
+}
+
 function pickFirstString(payload: ApiPayload, keys: string[]): string {
   for (const key of keys) {
     const value = payload?.[key];
@@ -75,6 +83,7 @@ export async function requestOtp(phone: string) {
   try {
     const response = await apiClient.post(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
     const data = (response.data ?? null) as ApiPayload;
+    const envelopeData = unwrapEnvelope(data);
     const payloadOk = isOk(data);
     const ok = response.status >= 200 && response.status < 300 && (!hasExplicitOtpStartFlag(data) || payloadOk);
 
@@ -87,10 +96,10 @@ export async function requestOtp(phone: string) {
 
     return {
       ok,
-      demoCode: pickFirstString(data, ["demoCode", "otp", "code", "verificationCode"]),
-      message: pickFirstString(data, ["message", "error"]),
+      demoCode: pickFirstString(envelopeData, ["demoCode", "otp", "code", "verificationCode"]),
+      message: pickFirstString(data, ["message", "error"]) || pickFirstString(envelopeData, ["message", "error"]),
       status: response.status,
-      otpSessionId: pickFirstString(data, ["otpSessionId", "sessionToken"]),
+      otpSessionId: pickFirstString(envelopeData, ["otpSessionId", "sessionToken"]),
     } satisfies OtpRequestResult;
   } catch (error) {
     console.warn("OTP start request failed", error);
@@ -102,9 +111,7 @@ export async function requestOtp(phone: string) {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  const res = await api.post<any>("/auth/otp/start", {
-    phone: normalizePhone(phone),
-  });
+  const res = await api.post<any>("/auth/otp/start", { phone: normalizePhone(phone) });
 
   if (!res.data?.ok) {
     throw new Error("OTP start failed");
@@ -130,8 +137,6 @@ export async function loginWithOtp(phone: string, code: string) {
     throw new Error("OTP verification returned no token");
   }
 
-  localStorage.setItem("otp_token", otpToken);
-
   const session = await api.get<any>("/continuation/session", {
     headers: {
       Authorization: `Bearer ${otpToken}`,
@@ -149,7 +154,6 @@ export async function loginWithOtp(phone: string, code: string) {
     throw new Error("Session token missing");
   }
 
-  localStorage.removeItem("otp_token");
   setToken(authToken);
 
   return {

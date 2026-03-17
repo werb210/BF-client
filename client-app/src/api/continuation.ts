@@ -120,7 +120,7 @@ export async function fetchReadinessBridge(
 
 export async function getContinuationSession(): Promise<ContinuationSessionResponse | null> {
   try {
-    const res = await api.get<ContinuationSessionResponse>("/api/continuation/session");
+    const res = await api.get<ContinuationSessionResponse>("/continuation/session");
     return res.data;
   } catch {
     return null;
