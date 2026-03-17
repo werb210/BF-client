@@ -38,17 +38,6 @@ export type OtpRequestResult = {
   otpSessionId?: string;
 };
 
-export type OtpVerifyResult = {
-  ok: boolean;
-  sessionToken?: string;
-  token?: string;
-  applicationToken?: string;
-  applicationId?: string;
-  submittedToken?: string;
-  message?: string;
-  status?: number;
-};
-
 export type StartOtpResponse = {
   ok: boolean;
   data?: Record<string, unknown>;
@@ -59,29 +48,10 @@ export type StartOtpResponse = {
   [key: string]: unknown;
 };
 
-export type VerifyOtpData = {
-  token?: string;
-  user?: Record<string, unknown>;
+export type LoginWithOtpResult = {
+  user: Record<string, unknown>;
+  authToken: string;
   nextPath?: string;
-  applicationToken?: string;
-  applicationId?: string;
-  submittedToken?: string;
-  [key: string]: unknown;
-};
-
-export type VerifyOtpResponse = {
-  success?: boolean;
-  ok: boolean;
-  data?: VerifyOtpData;
-  error?: string;
-  sessionToken?: string;
-  token?: string;
-  nextPath?: string;
-  applicationToken?: string;
-  applicationId?: string;
-  submittedToken?: string;
-  message?: string;
-  [key: string]: unknown;
 };
 
 export { normalizePhone };
@@ -142,79 +112,30 @@ export async function startOtp(phone: string): Promise<StartOtpResponse> {
   } as StartOtpResponse;
 }
 
-export async function loginWithOtp(phone: string, code: string) {
-  const verify = await api.post<any>("/auth/otp/verify", {
+export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {
+  const response = await apiClient.post<any>("/auth/otp/verify", {
     phone: normalizePhone(phone),
     code,
-  });
+  }, undefined);
 
-  if (!verify.data?.ok) {
-    throw new Error("OTP verification failed");
+  if (!response.data?.ok) {
+    throw new Error("OTP failed");
   }
 
-  const otpToken = verify.data?.data?.token;
+  const token = response.data.token ?? response.data?.data?.token;
+  const user = response.data.user ?? response.data?.data?.user;
+  const nextPath = response.data.nextPath ?? response.data?.data?.nextPath;
 
-  if (!otpToken) {
-    logClientError("OTP verify response missing token", verify.data);
+  if (!token) {
+    logClientError("OTP verify response missing token", response.data);
     throw new Error("OTP verification returned no token");
   }
 
-  const session = await api.get<any>("/continuation/session", {
-    headers: {
-      Authorization: `Bearer ${otpToken}`,
-    },
-  });
-
-  if (!session.data?.ok) {
-    throw new Error("Session exchange failed");
-  }
-
-  const authToken = session.data?.data?.token;
-  const user = session.data?.data?.user;
-
-  if (!authToken) {
-    throw new Error("Session token missing");
-  }
-
-  setToken(authToken);
+  setToken(token);
 
   return {
-    user,
-    authToken,
-    session: session.data,
-  };
-}
-
-export async function verifyOtp(phone: string, code: string, otpSessionId?: string): Promise<VerifyOtpResponse> {
-  const payload: Record<string, string> = { phone: normalizePhone(phone), code };
-  if (otpSessionId) {
-    payload.otpSessionId = otpSessionId;
-  }
-
-  const res = await apiClient.post("/auth/otp/verify", payload, undefined);
-
-  if (res.data?.error && typeof res.data.error === "object") {
-    res.data.message = res.data.error.message || res.data.message;
-  }
-
-  if (
-    res.data?.ok === true &&
-    res.data?.data &&
-    (res.data.data.token || res.data.data.sessionToken)
-  ) {
-    const token = res.data.data.token || res.data.data.sessionToken;
-
-    localStorage.setItem("auth_token", token);
-
-    return {
-      ...res.data,
-      success: true,
-      nextPath: res.data.data.nextPath || "/portal",
-    };
-  }
-
-  return {
-    ...res.data,
-    success: false,
+    user: user ?? {},
+    authToken: token,
+    nextPath,
   };
 }

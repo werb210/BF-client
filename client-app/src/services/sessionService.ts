@@ -1,11 +1,11 @@
-import { startOtp as startOtpAuth, verifyOtp as verifyOtpAuth } from "./auth";
+import { loginWithOtp, startOtp as startOtpAuth } from "./auth";
 
-export async function getSession() {
-  return null;
+export async function ensureSessionBootstrap() {
+  return Promise.resolve();
 }
 
-export async function refreshClientSession() {
-  return null;
+export async function refreshSession() {
+  return Promise.resolve();
 }
 
 export async function startOtp(payload: { phone?: string; email?: string }) {
@@ -14,5 +14,5 @@ export async function startOtp(payload: { phone?: string; email?: string }) {
 }
 
 export async function verifyOtp(code: string, phone = "") {
-  return verifyOtpAuth(phone, code);
+  return loginWithOtp(phone, code);
 }
