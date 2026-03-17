@@ -91,12 +91,15 @@ export function PortalEntry() {
       const verifyPhone = normalizedPhone || phone;
       const result = await verifyOtp(verifyPhone, otpCode);
 
-      if (!result?.ok || !result?.data?.token || !result?.data?.user) {
-        const message = typeof result?.error === "string" ? result.error : "Authentication failed";
+      if (!result.success) {
+        const message = typeof result?.error === "string" ? result.error : typeof result?.message === "string" ? result.message : "Authentication failed";
         throw new Error(message);
       }
 
-      const sessionToken = result.data.token;
+      const sessionToken = result.data?.token || result.data?.sessionToken;
+      if (!sessionToken) {
+        throw new Error("Authentication failed");
+      }
 
       setToken(sessionToken);
       localStorage.setItem("auth_token", sessionToken);
@@ -119,8 +122,7 @@ export function PortalEntry() {
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
 
-      const next = typeof result.data.nextPath === "string" ? result.data.nextPath : "/portal";
-      window.location.href = next;
+      window.location.href = result.nextPath;
     } catch (err: any) {
       setOtpCode("");
       setError(err.message || "Authentication failed");

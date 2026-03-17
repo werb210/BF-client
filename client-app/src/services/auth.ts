@@ -69,6 +69,7 @@ export type VerifyOtpData = {
 };
 
 export type VerifyOtpResponse = {
+  success?: boolean;
   ok: boolean;
   data?: VerifyOtpData;
   error?: string;
@@ -178,6 +179,31 @@ export async function loginWithOtp(phone: string, code: string) {
 }
 
 export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
-  const res = await apiClient.post("/auth/otp/verify", { phone, code });
-  return res.data;
+  const res = await apiClient.post("/auth/otp/verify", { phone: normalizePhone(phone), code }, undefined);
+
+  if (res.data?.error && typeof res.data.error === "object") {
+    res.data.message = res.data.error.message || res.data.message;
+  }
+
+  if (
+    res.data?.ok === true &&
+    res.data?.data &&
+    (res.data.data.token || res.data.data.sessionToken) &&
+    res.data.data.user
+  ) {
+    const token = res.data.data.token || res.data.data.sessionToken;
+
+    localStorage.setItem("auth_token", token);
+
+    return {
+      ...res.data,
+      success: true,
+      nextPath: res.data.data.nextPath || "/portal",
+    };
+  }
+
+  return {
+    ...res.data,
+    success: false,
+  };
 }

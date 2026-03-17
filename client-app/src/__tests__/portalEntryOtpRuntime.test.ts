@@ -46,7 +46,6 @@ vi.mock("../components/OtpInput", () => ({
 describe("PortalEntry OTP runtime", () => {
   let container: HTMLDivElement;
   let root: Root | null;
-  const locationAssignMock = vi.fn();
   const originalLocation = window.location;
 
   beforeEach(() => {
@@ -55,13 +54,12 @@ describe("PortalEntry OTP runtime", () => {
     setTokenMock.mockReset();
     ensureClientSessionMock.mockReset();
     setActiveClientSessionTokenMock.mockReset();
-    locationAssignMock.mockReset();
 
     ClientProfileStore.setLastUsedPhone("(555) 111-2222");
 
     Object.defineProperty(window, "location", {
       configurable: true,
-      value: { ...originalLocation, assign: locationAssignMock },
+      value: { ...originalLocation, href: "" },
     });
     vi.spyOn(ClientProfileStore, "upsertProfile").mockImplementation(() => null);
     vi.spyOn(ClientProfileStore, "markSubmitted").mockImplementation(() => null);
@@ -128,10 +126,13 @@ describe("PortalEntry OTP runtime", () => {
   it("verify success redirects to /application/start", async () => {
     startOtpMock.mockResolvedValue({ ok: true, otpSessionId: "otp-session-1", normalizedPhone: "+15551112222" });
     verifyOtpMock.mockResolvedValue({
-      ok: true,
-      token: "session-abc",
-      applicationToken: "app-1",
-      submittedToken: "submitted-1",
+      success: true,
+      nextPath: "/application/start",
+      data: {
+        token: "session-abc",
+        applicationToken: "app-1",
+        submittedToken: "submitted-1",
+      },
     });
 
     await act(async () => {
@@ -153,7 +154,7 @@ describe("PortalEntry OTP runtime", () => {
     expect(ensureClientSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({ submissionId: "+15551112222", accessToken: "session-abc" })
     );
-    expect(locationAssignMock).toHaveBeenCalledWith("/application/start");
+    expect(window.location.href).toBe("/application/start");
   });
 
   it("verify failure shows inline error and no duplicate verify spam", async () => {
