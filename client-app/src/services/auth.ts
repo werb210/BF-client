@@ -97,8 +97,10 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await apiClient.post("/auth/otp/verify", {
-    phone,
+  const normalizedPhone = normalizePhone(phone);
+
+  const res = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
+    phone: normalizedPhone,
     code,
   });
 
