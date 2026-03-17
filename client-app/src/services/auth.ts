@@ -62,6 +62,7 @@ export type VerifyOtpResponse = {
   ok: boolean;
   sessionToken?: string;
   token?: string;
+  nextPath?: string;
   applicationToken?: string;
   applicationId?: string;
   submittedToken?: string;
@@ -113,11 +114,11 @@ export async function requestOtp(phone: string) {
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
   const res = await api.post<any>("/auth/otp/start", { phone: normalizePhone(phone) });
 
-  if (!res.data?.ok) {
-    throw new Error("OTP start failed");
-  }
-
-  return (res.data.data || { ok: true }) as StartOtpResponse;
+  return {
+    ok: Boolean(res.data?.ok && res.data?.data?.sent),
+    ...(res.data?.data || {}),
+    message: res.data?.error?.message || res.data?.message,
+  } as StartOtpResponse;
 }
 
 export async function loginWithOtp(phone: string, code: string) {
@@ -165,24 +166,29 @@ export async function loginWithOtp(phone: string, code: string) {
 
 export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
   try {
-    const { authToken, session } = await loginWithOtp(phone, code);
-    const data = (session ?? {}) as Record<string, any>;
-    const payload = (data.data ?? {}) as Record<string, any>;
+    const verify = await api.post<any>("/auth/otp/verify", {
+      phone: normalizePhone(phone),
+      code,
+    });
+
+    const payload = (verify?.data?.data ?? {}) as Record<string, any>;
+    const sessionToken = pickFirstString(payload, ["sessionToken", "token"]);
 
     return {
-      ok: true,
-      sessionToken: authToken,
-      token: authToken,
+      ok: Boolean(verify?.data?.ok && sessionToken),
+      sessionToken,
+      token: sessionToken,
+      nextPath: pickFirstString(payload, ["nextPath"]),
       applicationToken: pickFirstString(payload, ["applicationToken", "applicationId"])
-        || pickFirstString(data, ["applicationToken", "applicationId"])
+        || pickFirstString(verify?.data, ["applicationToken", "applicationId"])
         || undefined,
-      applicationId: pickFirstString(payload, ["applicationId"]) || pickFirstString(data, ["applicationId"]) || undefined,
-      submittedToken: pickFirstString(payload, ["submittedToken"]) || pickFirstString(data, ["submittedToken"]) || undefined,
-      message: pickFirstString(data, ["message", "error"])
-        || pickFirstString(data?.error as ApiPayload, ["message"])
+      applicationId: pickFirstString(payload, ["applicationId"]) || pickFirstString(verify?.data, ["applicationId"]) || undefined,
+      submittedToken: pickFirstString(payload, ["submittedToken"]) || pickFirstString(verify?.data, ["submittedToken"]) || undefined,
+      message: pickFirstString(verify?.data, ["message", "error"])
+        || pickFirstString(verify?.data?.error as ApiPayload, ["message"])
         || undefined,
       ...payload,
-      ...data,
+      ...verify?.data,
     };
   } catch (error: any) {
     const payload = (error?.response?.data ?? null) as ApiPayload;
