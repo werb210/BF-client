@@ -1,4 +1,4 @@
-import { apiClient, buildApiUrl } from "../api/client";
+import { apiClient } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
 import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
@@ -52,14 +52,26 @@ function hasExplicitOtpStartFlag(payload: ApiPayload): boolean {
 export async function requestOtp(phone: string) {
   const normalizedPhone = normalizePhone(phone);
 
-  let response: Response;
   try {
-    response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_START), {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedPhone }),
-    });
+    const response = await apiClient.post(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
+    const data = (response.data ?? null) as ApiPayload;
+    const payloadOk = isOk(data);
+    const ok = response.status >= 200 && response.status < 300 && (!hasExplicitOtpStartFlag(data) || payloadOk);
+
+    if (!ok) {
+      console.warn("OTP start rejected", {
+        status: response.status,
+        body: data,
+      });
+    }
+
+    return {
+      ok,
+      demoCode: pickFirstString(data, ["demoCode", "otp", "code", "verificationCode"]),
+      message: pickFirstString(data, ["message", "error"]),
+      status: response.status,
+      otpSessionId: pickFirstString(data, ["otpSessionId", "sessionToken"]),
+    } satisfies OtpRequestResult;
   } catch (error) {
     console.warn("OTP start request failed", error);
     return {
@@ -67,34 +79,6 @@ export async function requestOtp(phone: string) {
       message: "Unable to send code. Please try again.",
     } satisfies OtpRequestResult;
   }
-
-  const rawBody = await response.text();
-  let data: ApiPayload = null;
-  if (rawBody) {
-    try {
-      data = JSON.parse(rawBody) as ApiPayload;
-    } catch {
-      data = { message: rawBody };
-    }
-  }
-
-  const payloadOk = isOk(data);
-  const ok = response.ok && (!hasExplicitOtpStartFlag(data) || payloadOk);
-
-  if (!ok) {
-    console.warn("OTP start rejected", {
-      status: response.status,
-      body: data,
-    });
-  }
-
-  return {
-    ok,
-    demoCode: pickFirstString(data, ["demoCode", "otp", "code", "verificationCode"]),
-    message: pickFirstString(data, ["message", "error"]),
-    status: response.status,
-    otpSessionId: pickFirstString(data, ["otpSessionId", "sessionToken"]),
-  } satisfies OtpRequestResult;
 }
 
 export async function startOtp(phone: string) {
@@ -102,20 +86,11 @@ export async function startOtp(phone: string) {
     phone: normalizePhone(phone),
   };
 
-  const response = await fetch(buildApiUrl(API_ENDPOINTS.OTP_START), {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const rawBody = await response.text();
-  const data = rawBody ? (JSON.parse(rawBody) as Record<string, any>) : {};
+  const response = await apiClient.post(API_ENDPOINTS.OTP_START, payload);
+  const data = (response.data ?? {}) as Record<string, any>;
 
   return {
-    ok: response.ok,
+    ok: response.status >= 200 && response.status < 300,
     normalizedPhone: data?.normalizedPhone ?? data?.phone ?? payload.phone,
     ...(data ?? {}),
   };

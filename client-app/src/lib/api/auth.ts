@@ -1,3 +1,5 @@
+import { apiClient } from "@/api/client";
+
 function normalizePhone(input: string) {
   const digits = input.replace(/\D/g, "")
   if (digits.length === 10) return `+1${digits}`
@@ -10,18 +12,11 @@ export async function startOtp(phoneInput: string) {
     phone: normalizePhone(phoneInput)
   }
 
-  const res = await fetch("/api/auth/otp/start", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
+  const res = await apiClient.post("/auth/otp/start", payload);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OTP start failed: ${text}`);
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`OTP start failed: ${JSON.stringify(res.data)}`);
   }
 
-  return res.json();
+  return res.data;
 }

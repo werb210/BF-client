@@ -1,12 +1,24 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
 import { API_BASE } from "@/config/apiBase";
+import { getToken } from "@/auth/tokenStorage";
 
 const API_ROOT = `${API_BASE}/api`.replace(/\/$/, "");
 
 export const apiClient = axios.create({
   baseURL: API_ROOT,
   withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 function normalizePath(url: string | ApiEndpoint): string {
