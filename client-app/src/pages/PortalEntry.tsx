@@ -17,7 +17,7 @@ export function PortalEntry() {
   const [otpSessionId, setOtpSessionId] = useState("");
   const [normalizedPhone, setNormalizedPhone] = useState("");
   const [verifying, setVerifying] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const verifyInFlightRef = useRef(false);
   const lastAutoSubmittedRef = useRef("");
 
@@ -50,7 +50,7 @@ export function PortalEntry() {
     }
 
     setSendingOtp(true);
-    setError("");
+    setError(null);
 
     try {
       const result = await startOtp(fallbackPhone);
@@ -85,7 +85,7 @@ export function PortalEntry() {
 
     verifyInFlightRef.current = true;
     setVerifying(true);
-    setError("");
+    setError(null);
 
     try {
       const verifyPhone = normalizedPhone || phone;
@@ -122,7 +122,7 @@ export function PortalEntry() {
       }
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
-      window.location.assign("/application/start");
+      window.location.assign(result?.nextPath || "/application/start");
     } catch (err: any) {
       setOtpCode("");
       setError(err?.response?.data?.error?.message || "Invalid verification code");
