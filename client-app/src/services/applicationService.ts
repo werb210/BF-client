@@ -1,4 +1,5 @@
 import { apiRequest } from "../api/client";
+import { getToken } from "@/auth/tokenStorage";
 
 export async function createApplication(data: unknown) {
   return apiRequest("/api/application", {
@@ -8,6 +9,8 @@ export async function createApplication(data: unknown) {
 }
 
 export async function updateApplication(data: unknown) {
+  if (!getToken()) return;
+
   return apiRequest("/api/application/update", {
     method: "POST",
     body: JSON.stringify(data),

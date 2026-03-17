@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosHeaders, type AxiosRequestConfig, type AxiosRes
 import type { ApiEndpoint } from "./endpoints";
 import { API_BASE } from "@/config/apiBase";
 import { getToken } from "@/auth/tokenStorage";
+import { logout } from "@/auth/logout";
 
 const API_ROOT = `${API_BASE}/api`.replace(/\/$/, "");
 
@@ -21,6 +22,23 @@ apiClient.interceptors.request.use((config) => {
 
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      error?.response?.status === 401
+      && typeof window !== "undefined"
+      && window.location.pathname !== "/otp"
+      && window.location.pathname !== "/portal"
+    ) {
+      logout();
+      window.location.reload();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 function normalizePath(url: string | ApiEndpoint): string {
   if (!url) return "/";

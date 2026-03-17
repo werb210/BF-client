@@ -1,5 +1,6 @@
 import type { AxiosRequestHeaders } from "axios";
 import { apiClient, buildApiUrl } from "./client";
+import { getToken } from "@/auth/tokenStorage";
 
 function getClientSessionToken() {
   if (typeof localStorage === "undefined") return null;
@@ -45,7 +46,7 @@ export function apiUrl(path: string) {
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getClientSessionToken();
+  const token = getToken() || getClientSessionToken();
   const response = await apiClient.request<T>({
     url: path,
     method: options.method || "GET",
