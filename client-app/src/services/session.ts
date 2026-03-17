@@ -8,6 +8,6 @@ export function startOtp(phone: string) {
   return startOtpAuth(phone);
 }
 
-export function verifyOtp(code: string, phone = "", otpSessionId = "") {
-  return verifyOtpAuth(phone, code, otpSessionId);
+export function verifyOtp(code: string, phone = "") {
+  return verifyOtpAuth(phone, code);
 }
