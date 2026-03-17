@@ -91,7 +91,7 @@ function RequirePortalSession({ children }: GuardProps): JSX.Element {
 }
 
 function RequireOTP({ children }: GuardProps): JSX.Element {
-  const session = getOtpSession();
+  const session = getOtpSession() || (typeof window !== "undefined" ? localStorage.getItem("auth_token") : null);
   if (!session) return <Navigate to="/otp" replace />;
   return children;
 }
