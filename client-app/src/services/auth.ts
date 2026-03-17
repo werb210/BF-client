@@ -133,6 +133,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpR
       pickFirstString(data, ["sessionToken", "token"]);
 
     if (sessionToken) {
+      localStorage.setItem("auth_token", sessionToken);
       setToken(sessionToken);
     }
 
