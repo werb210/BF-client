@@ -1,13 +1,6 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
 
-function normalizePath(url: string | ApiEndpoint): string {
-  if (!url) return "/";
-  if (/^https?:\/\//.test(url)) return url;
-  const normalized = url.startsWith("/") ? url : `/${url}`;
-  return normalized.replace(/^\/api(?=\/|$)/, "") || "/";
-}
-
 export const api = axios.create({
   baseURL: "https://server.boreal.financial/api",
   timeout: 20000,
@@ -24,23 +17,21 @@ api.interceptors.request.use((config) => {
     } as any;
   }
 
-  if (config.url) {
-    config.url = normalizePath(config.url as string);
-  }
-
   return config;
 });
 
 export const apiClient = api;
 
+function normalizePath(url: string | ApiEndpoint): string {
+  if (!url) return "/";
+  if (/^https?:\/\//.test(url)) return url;
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
 export function buildApiUrl(path: string | ApiEndpoint): string {
-  const pathPart = normalizePath(path);
-
-  if (/^https?:\/\//.test(pathPart)) {
-    return pathPart;
-  }
-
-  return `${api.defaults.baseURL}${pathPart}`;
+  const normalized = normalizePath(path);
+  if (/^https?:\/\//.test(normalized)) return normalized;
+  return `${api.defaults.baseURL}${normalized}`;
 }
 
 export async function apiRequest<T = unknown>(path: string | ApiEndpoint, options: RequestInit = {}): Promise<T> {
@@ -85,7 +76,7 @@ const apiDefault = {
   patch,
   delete: del,
   request: <T = unknown>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.request<T>({ ...config, url: normalizePath(config.url || "") }),
+    api.request<T>({ ...config, url: normalizePath((config.url as string) || "") }),
 };
 
 export default apiDefault;
