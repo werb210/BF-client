@@ -41,6 +41,26 @@ export type OtpVerifyResult = {
   status?: number;
 };
 
+export type StartOtpResponse = {
+  ok: boolean;
+  normalizedPhone?: string;
+  phone?: string;
+  message?: string;
+  otpSessionId?: string;
+  [key: string]: unknown;
+};
+
+export type VerifyOtpResponse = {
+  ok: boolean;
+  sessionToken?: string;
+  token?: string;
+  applicationToken?: string;
+  applicationId?: string;
+  submittedToken?: string;
+  message?: string;
+  [key: string]: unknown;
+};
+
 export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
@@ -81,7 +101,7 @@ export async function requestOtp(phone: string) {
   }
 }
 
-export async function startOtp(phone: string) {
+export async function startOtp(phone: string): Promise<StartOtpResponse> {
   const payload = {
     phone: normalizePhone(phone),
   };
@@ -96,33 +116,46 @@ export async function startOtp(phone: string) {
   };
 }
 
-export async function verifyOtp(phone: string, code: string) {
+export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
   const normalizedPhone = normalizePhone(phone);
 
-  const res = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
-    phone: normalizedPhone,
-    code,
-  });
+  try {
+    const res = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
+      phone: normalizedPhone,
+      code,
+    });
 
-  const data = res?.data;
+    const data = (res.data ?? {}) as Record<string, any>;
+    const payload = (data.data ?? {}) as Record<string, any>;
 
-  console.log("OTP_VERIFY_RESPONSE", data);
+    const sessionToken =
+      pickFirstString(payload, ["sessionToken", "token"]) ||
+      pickFirstString(data, ["sessionToken", "token"]);
 
-  if (!data?.ok) {
-    throw new Error(data?.error?.message || "Verification failed");
+    if (sessionToken) {
+      setToken(sessionToken);
+    }
+
+    return {
+      ok: isOk(data),
+      sessionToken: sessionToken || undefined,
+      token: pickFirstString(data, ["token"]) || undefined,
+      applicationToken: pickFirstString(payload, ["applicationToken", "applicationId"])
+        || pickFirstString(data, ["applicationToken", "applicationId"])
+        || undefined,
+      applicationId: pickFirstString(payload, ["applicationId"]) || pickFirstString(data, ["applicationId"]) || undefined,
+      submittedToken: pickFirstString(payload, ["submittedToken"]) || pickFirstString(data, ["submittedToken"]) || undefined,
+      message: pickFirstString(data, ["message", "error"])
+        || pickFirstString(data?.error as ApiPayload, ["message"])
+        || undefined,
+      ...payload,
+      ...data,
+    };
+  } catch (error: any) {
+    const payload = (error?.response?.data ?? null) as ApiPayload;
+    return {
+      ok: false,
+      message: pickFirstString(payload, ["message", "error"]) || "Verification failed",
+    };
   }
-
-  const sessionToken = data?.data?.sessionToken;
-
-  if (!sessionToken) {
-    throw new Error("Missing sessionToken");
-  }
-
-  setToken(sessionToken);
-
-  const nextPath = data?.data?.nextPath || "/application/start";
-
-  window.location.href = nextPath;
-
-  return data;
 }

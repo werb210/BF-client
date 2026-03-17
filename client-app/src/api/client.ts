@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
 import { API_BASE } from "@/config/apiBase";
 import { getToken } from "@/auth/tokenStorage";
@@ -14,8 +14,9 @@ apiClient.interceptors.request.use((config) => {
   const token = getToken();
 
   if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+    const headers = AxiosHeaders.from(config.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+    config.headers = headers;
   }
 
   return config;
