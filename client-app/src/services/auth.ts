@@ -1,4 +1,4 @@
-import api from "../api/client";
+import api, { apiClient } from "../api/client";
 import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
 
@@ -58,9 +58,20 @@ export type StartOtpResponse = {
   [key: string]: unknown;
 };
 
+export type VerifyOtpData = {
+  token?: string;
+  user?: Record<string, unknown>;
+  nextPath?: string;
+  applicationToken?: string;
+  applicationId?: string;
+  submittedToken?: string;
+  [key: string]: unknown;
+};
+
 export type VerifyOtpResponse = {
   ok: boolean;
-  data?: Record<string, unknown>;
+  data?: VerifyOtpData;
+  error?: string;
   sessionToken?: string;
   token?: string;
   nextPath?: string;
@@ -167,37 +178,6 @@ export async function loginWithOtp(phone: string, code: string) {
 }
 
 export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
-  try {
-    const verify = await api.post<any>("/auth/otp/verify", {
-      phone: normalizePhone(phone),
-      code,
-    }, undefined);
-
-    const payload = (verify?.data?.data ?? {}) as Record<string, any>;
-    const sessionToken = pickFirstString(payload, ["sessionToken", "token"]);
-
-    return {
-      ok: Boolean(verify?.data?.ok && sessionToken),
-      data: payload,
-      sessionToken,
-      token: sessionToken,
-      nextPath: pickFirstString(payload, ["nextPath"]),
-      applicationToken: pickFirstString(payload, ["applicationToken", "applicationId"])
-        || pickFirstString(verify?.data, ["applicationToken", "applicationId"])
-        || undefined,
-      applicationId: pickFirstString(payload, ["applicationId"]) || pickFirstString(verify?.data, ["applicationId"]) || undefined,
-      submittedToken: pickFirstString(payload, ["submittedToken"]) || pickFirstString(verify?.data, ["submittedToken"]) || undefined,
-      message: pickFirstString(verify?.data, ["message", "error"])
-        || pickFirstString(verify?.data?.error as ApiPayload, ["message"])
-        || undefined,
-      ...payload,
-      ...verify?.data,
-    };
-  } catch (error: any) {
-    const payload = (error?.response?.data ?? null) as ApiPayload;
-    return {
-      ok: false,
-      message: pickFirstString(payload, ["message", "error"]) || error?.message || "Verification failed",
-    };
-  }
+  const res = await apiClient.post("/auth/otp/verify", { phone, code });
+  return res.data;
 }

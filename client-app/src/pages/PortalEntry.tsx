@@ -90,20 +90,16 @@ export function PortalEntry() {
     try {
       const verifyPhone = normalizedPhone || phone;
       const result = await verifyOtp(verifyPhone, otpCode);
-      if (!result?.ok) {
-        setOtpCode("");
-        setError(result?.message || "Invalid code. Please try again.");
-        return;
+
+      if (!result?.ok || !result?.data?.token || !result?.data?.user) {
+        const message = typeof result?.error === "string" ? result.error : "Authentication failed";
+        throw new Error(message);
       }
 
-      const sessionToken = (result?.sessionToken || result?.token || "") as string;
-
-      if (!sessionToken) {
-        setError("Invalid code. Please try again.");
-        return;
-      }
+      const sessionToken = result.data.token;
 
       setToken(sessionToken);
+      localStorage.setItem("auth_token", sessionToken);
       setActiveClientSessionToken(sessionToken);
 
       const persistedPhone = (normalizedPhone || phone).trim();
@@ -112,8 +108,8 @@ export function PortalEntry() {
         accessToken: sessionToken,
       });
 
-      const applicationToken = result?.applicationToken || result?.applicationId;
-      const submittedToken = result?.submittedToken;
+      const applicationToken = (result?.data?.applicationToken || result?.data?.applicationId) as string | undefined;
+      const submittedToken = result?.data?.submittedToken as string | undefined;
       if (applicationToken) {
         ClientProfileStore.upsertProfile(persistedPhone, applicationToken);
       }
@@ -122,10 +118,12 @@ export function PortalEntry() {
       }
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
-      window.location.assign(result?.nextPath || "/application/start");
+
+      const next = typeof result.data.nextPath === "string" ? result.data.nextPath : "/portal";
+      window.location.href = next;
     } catch (err: any) {
       setOtpCode("");
-      setError(err?.response?.data?.error?.message || "Invalid verification code");
+      setError(err.message || "Authentication failed");
     } finally {
       verifyInFlightRef.current = false;
       setVerifying(false);
