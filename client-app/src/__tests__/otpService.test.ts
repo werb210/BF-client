@@ -52,45 +52,39 @@ describe("auth OTP service", () => {
     expect(normalizeOtpPhone("+1 (587) 888-1837")).toBe("+15878881837");
   });
 
-  it('verifyOtp("5878881837", "123456", "") posts only phone and code', async () => {
+  it('verifyOtp("5878881837", "123456") posts phone and code to Boreal verify endpoint', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      text: async () => JSON.stringify({ ok: true, token: "abc" }),
+      json: async () => ({ ok: true, sessionToken: "abc" }),
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyOtp("5878881837", "123456", "")).resolves.toMatchObject({
+    await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
       ok: true,
       sessionToken: "abc",
-      token: "abc",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      clientApi.buildApiUrl(API_ENDPOINTS.OTP_VERIFY),
+      "https://server.boreal.financial/api/auth/otp/verify",
       expect.objectContaining({
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: "+15878881837", code: "123456" }),
+        body: JSON.stringify({ phone: "5878881837", code: "123456" }),
       })
     );
   });
 
-  it("returns stable error when verify OTP request is not ok", async () => {
+  it("throws when verify OTP request is not ok", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: false,
         status: 400,
-        text: async () => JSON.stringify({ message: "Invalid code" }),
+        json: async () => ({ ok: false, error: { message: "Invalid code" } }),
       })
     );
 
-    await expect(verifyOtp("(555) 111-2222", "123456", "otp-session-1")).resolves.toMatchObject({
-      ok: false,
-      message: "Invalid code",
-      status: 400,
-    });
+    await expect(verifyOtp("(555) 111-2222", "123456")).rejects.toThrow("Invalid code");
   });
 });

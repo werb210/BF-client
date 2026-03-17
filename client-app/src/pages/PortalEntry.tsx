@@ -89,7 +89,7 @@ export function PortalEntry() {
 
     try {
       const verifyPhone = normalizedPhone || phone;
-      const result = await verifyOtp(verifyPhone, otpCode, otpSessionId);
+      const result = await verifyOtp(verifyPhone, otpCode);
       if (!result?.ok) {
         setOtpCode("");
         setError(result?.message || "Invalid code. Please try again.");
