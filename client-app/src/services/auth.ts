@@ -1,5 +1,4 @@
-import api, { apiClient } from "../api/client";
-import { API_ENDPOINTS } from "../api/endpoints";
+import api from "../api/client";
 import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
 
@@ -84,7 +83,7 @@ export async function requestOtp(phone: string) {
   const normalizedPhone = normalizePhone(phone);
 
   try {
-    const response = await apiClient.post(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
+    const response = await api.post("/auth/otp/start", { phone: normalizedPhone });
     const data = (response.data ?? null) as ApiPayload;
     const envelopeData = unwrapEnvelope(data);
     const payloadOk = isOk(data);
@@ -114,7 +113,7 @@ export async function requestOtp(phone: string) {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  const res = await api.post<any>("/auth/otp/start", { phone: normalizePhone(phone) });
+  const res = await api.post<any>("/auth/otp/start", { phone: normalizePhone(phone) }, undefined);
 
   return {
     ok: Boolean(res.data?.ok && res.data?.data?.sent),
@@ -172,7 +171,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpR
     const verify = await api.post<any>("/auth/otp/verify", {
       phone: normalizePhone(phone),
       code,
-    });
+    }, undefined);
 
     const payload = (verify?.data?.data ?? {}) as Record<string, any>;
     const sessionToken = pickFirstString(payload, ["sessionToken", "token"]);
