@@ -1,6 +1,7 @@
 import { apiRequest } from "../api/request";
 import { API_ENDPOINTS } from "../api/endpoints";
 import { getToken } from "@/auth/tokenStorage";
+import { logClientError } from "@/lib/logger";
 
 type CallStatus = {
   status: string;
@@ -28,7 +29,7 @@ export async function getCallStatus(): Promise<CallStatus> {
       timestamp: data?.timestamp,
     };
   } catch (error) {
-    console.error("Client telephony polling error:", error);
+    logClientError("Client telephony polling error", error);
 
     return {
       status: "offline",

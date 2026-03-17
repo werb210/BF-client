@@ -1,3 +1,5 @@
+import { logClientError } from "@/lib/logger";
+
 export function handleApiError(err: any) {
   if (err?.response?.status === 401) {
     localStorage.removeItem("auth_token");
@@ -5,5 +7,5 @@ export function handleApiError(err: any) {
     window.location.reload();
   }
 
-  console.error("API error:", err);
+  logClientError("API error", err);
 }

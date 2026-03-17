@@ -1,6 +1,7 @@
 import api, { apiClient } from "../api/client";
 import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
+import { logClientError, logClientWarning } from "@/lib/logger";
 
 type ApiPayload = Record<string, any> | null;
 
@@ -102,7 +103,7 @@ export async function requestOtp(phone: string) {
     const ok = response.status >= 200 && response.status < 300 && (!hasExplicitOtpStartFlag(data) || payloadOk);
 
     if (!ok) {
-      console.warn("OTP start rejected", {
+      logClientWarning("OTP start rejected", {
         status: response.status,
         body: data,
       });
@@ -116,7 +117,7 @@ export async function requestOtp(phone: string) {
       otpSessionId: pickFirstString(envelopeData, ["otpSessionId", "sessionToken"]),
     } satisfies OtpRequestResult;
   } catch (error) {
-    console.warn("OTP start request failed", error);
+    logClientWarning("OTP start request failed", error);
     return {
       ok: false,
       message: "Unable to send code. Please try again.",
@@ -126,9 +127,15 @@ export async function requestOtp(phone: string) {
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
   const res = await api.post<any>("/auth/otp/start", { phone: normalizePhone(phone) }, undefined);
+  const status = typeof res.status === "number" ? res.status : 200;
+  const data = (res.data ?? null) as ApiPayload;
+  const envelopeData = unwrapEnvelope(data);
+  const payloadOk = isOk(data);
+  const sentFlag = typeof envelopeData?.sent === "boolean" ? envelopeData.sent : null;
+  const ok = status >= 200 && status < 300 && (sentFlag === null ? payloadOk : sentFlag);
 
   return {
-    ok: Boolean(res.data?.ok && res.data?.data?.sent),
+    ok,
     data: res.data?.data || {},
     ...(res.data?.data || {}),
     message: res.data?.error?.message || res.data?.message,
@@ -148,7 +155,7 @@ export async function loginWithOtp(phone: string, code: string) {
   const otpToken = verify.data?.data?.token;
 
   if (!otpToken) {
-    console.error("OTP verify response", verify.data);
+    logClientError("OTP verify response missing token", verify.data);
     throw new Error("OTP verification returned no token");
   }
 
@@ -178,8 +185,13 @@ export async function loginWithOtp(phone: string, code: string) {
   };
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpResponse> {
-  const res = await apiClient.post("/auth/otp/verify", { phone: normalizePhone(phone), code }, undefined);
+export async function verifyOtp(phone: string, code: string, otpSessionId?: string): Promise<VerifyOtpResponse> {
+  const payload: Record<string, string> = { phone: normalizePhone(phone), code };
+  if (otpSessionId) {
+    payload.otpSessionId = otpSessionId;
+  }
+
+  const res = await apiClient.post("/auth/otp/verify", payload, undefined);
 
   if (res.data?.error && typeof res.data.error === "object") {
     res.data.message = res.data.error.message || res.data.message;
@@ -188,8 +200,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpR
   if (
     res.data?.ok === true &&
     res.data?.data &&
-    (res.data.data.token || res.data.data.sessionToken) &&
-    res.data.data.user
+    (res.data.data.token || res.data.data.sessionToken)
   ) {
     const token = res.data.data.token || res.data.data.sessionToken;
 

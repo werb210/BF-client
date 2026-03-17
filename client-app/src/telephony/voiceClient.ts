@@ -2,6 +2,7 @@ import { Device } from "@twilio/voice-sdk"
 import apiClient from "@/api/client"
 import { API_ENDPOINTS } from "@/api/endpoints"
 import { getToken } from "@/auth/tokenStorage"
+import { logClientError } from "@/lib/logger"
 
 let device: Device | null = null
 
@@ -13,12 +14,10 @@ export async function initializeVoice(identity: string) {
 
   device = new Device(data.token)
 
-  device.on("registered", () => {
-    console.log("Voice device ready")
-  })
+  device.on("registered", () => undefined)
 
   ;(device as any).on("error", (error: unknown) => {
-    console.error("Voice error", error)
+    logClientError("Voice error", error)
   })
 }
 
