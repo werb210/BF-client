@@ -1,5 +1,6 @@
-import { buildApiUrl } from "../api/client";
+import { apiClient, buildApiUrl } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
+import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
 
 type ApiPayload = Record<string, any> | null;
@@ -121,36 +122,30 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
+  const res = await apiClient.post("/auth/otp/verify", {
+    phone,
+    code,
+  });
 
-  const res = await fetch(
-    "https://server.boreal.financial/api/auth/otp/verify",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        phone,
-        code
-      })
-    }
-  )
+  const data = res?.data;
 
-  const data = await res.json()
+  console.log("OTP_VERIFY_RESPONSE", data);
 
-  console.log("OTP_VERIFY_RESPONSE", data)
-
-  if (!data.ok) {
-    throw new Error(data?.error?.message || "Verification failed")
+  if (!data?.ok) {
+    throw new Error(data?.error?.message || "Verification failed");
   }
 
-  if (data.sessionToken) {
-    localStorage.setItem("sessionToken", data.sessionToken)
+  const sessionToken = data?.data?.sessionToken;
+
+  if (!sessionToken) {
+    throw new Error("Missing sessionToken");
   }
 
-  if (data.nextPath) {
-    window.location.href = data.nextPath
-  }
+  setToken(sessionToken);
 
-  return data
+  const nextPath = data?.data?.nextPath || "/application/start";
+
+  window.location.href = nextPath;
+
+  return data;
 }
