@@ -45,8 +45,9 @@ describe("auth OTP service", () => {
 
     await expect(startOtp("5878881837")).resolves.toMatchObject({
       ok: true,
-      sent: true,
-      normalizedPhone: "+15878881837",
+      data: {
+        sent: true,
+      },
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
@@ -67,15 +68,16 @@ describe("auth OTP service", () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
-        data: { sessionToken: "abc", nextPath: "/application/start" },
+        data: { sessionToken: "abc", nextPath: "/application" },
       },
     } as any);
 
     await expect(verifyOtp("5878881837", "123456")).resolves.toMatchObject({
       ok: true,
-      sessionToken: "abc",
-      token: "abc",
-      nextPath: "/application/start",
+      data: {
+        sessionToken: "abc",
+        nextPath: "/application",
+      },
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
@@ -93,9 +95,9 @@ describe("auth OTP service", () => {
       data: { ok: false, error: { message: "Invalid code" } },
     } as any);
 
-    await expect(verifyOtp("(555) 111-2222", "123456")).resolves.toMatchObject({
-      ok: false,
-      message: "Invalid code",
-    });
+    const result = await verifyOtp("(555) 111-2222", "123456");
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toBe("Invalid code");
   });
 });

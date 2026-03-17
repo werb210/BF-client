@@ -51,6 +51,7 @@ export type OtpVerifyResult = {
 
 export type StartOtpResponse = {
   ok: boolean;
+  data?: Record<string, unknown>;
   normalizedPhone?: string;
   phone?: string;
   message?: string;
@@ -60,6 +61,7 @@ export type StartOtpResponse = {
 
 export type VerifyOtpResponse = {
   ok: boolean;
+  data?: Record<string, unknown>;
   sessionToken?: string;
   token?: string;
   nextPath?: string;
@@ -116,6 +118,7 @@ export async function startOtp(phone: string): Promise<StartOtpResponse> {
 
   return {
     ok: Boolean(res.data?.ok && res.data?.data?.sent),
+    data: res.data?.data || {},
     ...(res.data?.data || {}),
     message: res.data?.error?.message || res.data?.message,
   } as StartOtpResponse;
@@ -176,6 +179,7 @@ export async function verifyOtp(phone: string, code: string): Promise<VerifyOtpR
 
     return {
       ok: Boolean(verify?.data?.ok && sessionToken),
+      data: payload,
       sessionToken,
       token: sessionToken,
       nextPath: pickFirstString(payload, ["nextPath"]),
