@@ -1,4 +1,4 @@
-import { apiClient } from "../api/client";
+import api, { apiClient } from "../api/client";
 import { API_ENDPOINTS } from "../api/endpoints";
 import { setToken } from "@/auth/tokenStorage";
 import { normalizePhone } from "@/utils/normalizePhone";
@@ -102,47 +102,51 @@ export async function requestOtp(phone: string) {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  const payload = {
+  const res = await api.post<any>("/auth/otp/start", {
     phone: normalizePhone(phone),
-  };
+  });
 
-  const response = await apiClient.post(API_ENDPOINTS.OTP_START, payload);
-  const data = (response.data ?? {}) as Record<string, any>;
+  if (!res.data?.ok) {
+    throw new Error("OTP start failed");
+  }
 
-  return {
-    ok: response.status >= 200 && response.status < 300,
-    normalizedPhone: data?.normalizedPhone ?? data?.phone ?? payload.phone,
-    ...(data ?? {}),
-  };
+  return (res.data.data || { ok: true }) as StartOtpResponse;
 }
 
 export async function loginWithOtp(phone: string, code: string) {
-  const normalizedPhone = normalizePhone(phone);
-
-  const verify = await apiClient.post(API_ENDPOINTS.OTP_VERIFY, {
-    phone: normalizedPhone,
+  const verify = await api.post<any>("/auth/otp/verify", {
+    phone: normalizePhone(phone),
     code,
   });
 
-  const otpToken = pickFirstString(verify.data as ApiPayload, ["token", "sessionToken"]);
+  if (!verify.data?.ok) {
+    throw new Error("OTP verification failed");
+  }
+
+  const otpToken = verify.data?.data?.token;
 
   if (!otpToken) {
+    console.error("OTP verify response", verify.data);
     throw new Error("OTP verification returned no token");
   }
 
   localStorage.setItem("otp_token", otpToken);
 
-  const session = await apiClient.get("/api/continuation/session", {
+  const session = await api.get<any>("/continuation/session", {
     headers: {
       Authorization: `Bearer ${otpToken}`,
     },
   });
 
-  const authToken = pickFirstString(session.data as ApiPayload, ["token", "sessionToken"]);
-  const user = (session.data as Record<string, any> | undefined)?.user;
+  if (!session.data?.ok) {
+    throw new Error("Session exchange failed");
+  }
+
+  const authToken = session.data?.data?.token;
+  const user = session.data?.data?.user;
 
   if (!authToken) {
-    throw new Error("Session exchange failed");
+    throw new Error("Session token missing");
   }
 
   localStorage.removeItem("otp_token");

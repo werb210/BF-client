@@ -1,43 +1,5 @@
-import axios, { AxiosError, AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from "axios";
+import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiEndpoint } from "./endpoints";
-import { API_BASE } from "@/config/apiBase";
-import { logout } from "@/auth/logout";
-
-const API_ROOT = `${API_BASE}/api`.replace(/\/api\/api(?=\/|$)/, "/api").replace(/\/$/, "");
-
-export const apiClient = axios.create({
-  baseURL: API_ROOT,
-  withCredentials: true,
-});
-
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("auth_token");
-
-  if (token) {
-    const headers = AxiosHeaders.from(config.headers);
-    headers.set("Authorization", `Bearer ${token}`);
-    config.headers = headers;
-  }
-
-  return config;
-});
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (
-      error?.response?.status === 401
-      && typeof window !== "undefined"
-      && window.location.pathname !== "/otp"
-      && window.location.pathname !== "/portal"
-    ) {
-      logout();
-      window.location.reload();
-    }
-
-    return Promise.reject(error);
-  }
-);
 
 function normalizePath(url: string | ApiEndpoint): string {
   if (!url) return "/";
@@ -46,7 +8,42 @@ function normalizePath(url: string | ApiEndpoint): string {
   return normalized.replace(/^\/api(?=\/|$)/, "") || "/";
 }
 
-function toAxiosConfig(options: RequestInit = {}): AxiosRequestConfig {
+export const api = axios.create({
+  baseURL: "https://server.boreal.financial/api",
+  timeout: 20000,
+  withCredentials: true,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("auth_token");
+
+  if (token) {
+    config.headers = {
+      ...(config.headers as Record<string, unknown>),
+      Authorization: `Bearer ${token}`,
+    } as any;
+  }
+
+  if (config.url) {
+    config.url = normalizePath(config.url as string);
+  }
+
+  return config;
+});
+
+export const apiClient = api;
+
+export function buildApiUrl(path: string | ApiEndpoint): string {
+  const pathPart = normalizePath(path);
+
+  if (/^https?:\/\//.test(pathPart)) {
+    return pathPart;
+  }
+
+  return `${api.defaults.baseURL}${pathPart}`;
+}
+
+export async function apiRequest<T = unknown>(path: string | ApiEndpoint, options: RequestInit = {}): Promise<T> {
   const method = options.method || "GET";
   const body = options.body;
   let data: unknown = body;
@@ -59,59 +56,36 @@ function toAxiosConfig(options: RequestInit = {}): AxiosRequestConfig {
     }
   }
 
-  return {
+  const response = await api.request<T>({
+    url: normalizePath(path),
     method,
     data,
     headers: options.headers as AxiosRequestConfig["headers"],
     withCredentials: options.credentials === "include" ? true : undefined,
-  };
-}
+  });
 
-export function buildApiUrl(path: string | ApiEndpoint): string {
-  const pathPart = normalizePath(path);
-
-  if (/^https?:\/\//.test(pathPart)) {
-    return pathPart;
-  }
-
-  return `${API_ROOT}${pathPart}`;
-}
-
-export async function apiRequest<T = unknown>(path: string | ApiEndpoint, options: RequestInit = {}): Promise<T> {
-  try {
-    const response = await apiClient.request<T>({
-      url: normalizePath(path),
-      ...toAxiosConfig(options),
-    });
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<T>;
-    if (axiosError.response?.data) {
-      return axiosError.response.data;
-    }
-    return {} as T;
-  }
+  return response.data;
 }
 
 export const get = <T = unknown>(url: string | ApiEndpoint, config?: AxiosRequestConfig) =>
-  apiClient.get<T>(normalizePath(url), config);
+  api.get<T>(normalizePath(url), config);
 export const post = <T = unknown>(url: string | ApiEndpoint, data?: unknown, config?: AxiosRequestConfig) =>
-  apiClient.post<T>(normalizePath(url), data, config);
+  api.post<T>(normalizePath(url), data, config);
 export const put = <T = unknown>(url: string | ApiEndpoint, data?: unknown, config?: AxiosRequestConfig) =>
-  apiClient.put<T>(normalizePath(url), data, config);
+  api.put<T>(normalizePath(url), data, config);
 export const patch = <T = unknown>(url: string | ApiEndpoint, data?: unknown, config?: AxiosRequestConfig) =>
-  apiClient.patch<T>(normalizePath(url), data, config);
+  api.patch<T>(normalizePath(url), data, config);
 export const del = <T = unknown>(url: string | ApiEndpoint, config?: AxiosRequestConfig) =>
-  apiClient.delete<T>(normalizePath(url), config);
+  api.delete<T>(normalizePath(url), config);
 
-const api = {
+const apiDefault = {
   get,
   post,
   put,
   patch,
   delete: del,
   request: <T = unknown>(config: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    apiClient.request<T>({ ...config, url: normalizePath(config.url || "") }),
+    api.request<T>({ ...config, url: normalizePath(config.url || "") }),
 };
 
-export default api;
+export default apiDefault;
