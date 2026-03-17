@@ -1,4 +1,5 @@
 import React from "react";
+import { logClientError } from "@/lib/logger";
 
 type Props = { children: React.ReactNode };
 type State = { hasError: boolean };
@@ -14,7 +15,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("Application crash:", error, info);
+    logClientError("Application crash", { error, info });
   }
 
   render() {

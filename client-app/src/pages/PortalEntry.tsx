@@ -8,6 +8,7 @@ import { components, layout, scrollToFirstError } from "@/styles";
 import { startOtp, verifyOtp } from "@/services/auth";
 import { setToken } from "@/auth/tokenStorage";
 import { ensureClientSession, setActiveClientSessionToken } from "@/state/clientSession";
+import { logClientError } from "@/lib/logger";
 
 export function PortalEntry() {
   const [phone, setPhone] = useState("");
@@ -67,7 +68,7 @@ export function PortalEntry() {
       setVerifying(false);
       setStep("code");
     } catch (err: any) {
-      console.error("OTP start error:", err);
+      logClientError("OTP start error", err);
       setError(err?.response?.data?.error?.message || "Failed to send verification code");
     } finally {
       setSendingOtp(false);
@@ -89,17 +90,18 @@ export function PortalEntry() {
 
     try {
       const verifyPhone = normalizedPhone || phone;
-      const result = await verifyOtp(verifyPhone, otpCode);
+      const result = await verifyOtp(verifyPhone, otpCode, otpSessionId);
 
       if (!result.success) {
         const message = typeof result?.error === "string" ? result.error : typeof result?.message === "string" ? result.message : "Authentication failed";
         throw new Error(message);
       }
 
-      const sessionToken = result.data?.token || result.data?.sessionToken;
-      if (!sessionToken) {
+      const rawSessionToken = result.data?.token || result.data?.sessionToken;
+      if (typeof rawSessionToken !== "string" || !rawSessionToken) {
         throw new Error("Authentication failed");
       }
+      const sessionToken = rawSessionToken;
 
       setToken(sessionToken);
       localStorage.setItem("auth_token", sessionToken);

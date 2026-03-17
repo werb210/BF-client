@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { refreshSessionOnce, resetRefreshFailure } from "../sessionRefresh";
 import { clearServiceWorkerCaches } from "../../pwa/serviceWorker";
 import { ClientProfileStore } from "../../state/clientProfiles";
+import { apiRequest } from "../../api/client";
 
 vi.mock("../../pwa/serviceWorker", () => ({
   clearServiceWorkerCaches: vi.fn().mockResolvedValue(undefined),
@@ -13,10 +14,16 @@ vi.mock("../../state/clientProfiles", () => ({
   },
 }));
 
+vi.mock("../../api/client", () => ({
+  apiRequest: vi.fn(),
+}));
+
 describe("refreshSessionOnce", () => {
   beforeEach(() => {
     resetRefreshFailure();
-    vi.stubGlobal("fetch", vi.fn());
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem("auth_token", "session-token");
     Object.defineProperty(globalThis, "window", {
       value: {
         location: { assign: vi.fn() },
@@ -26,7 +33,7 @@ describe("refreshSessionOnce", () => {
   });
 
   it("redirects to OTP when refresh fails", async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response);
+    vi.mocked(apiRequest).mockRejectedValue(new Error("refresh failed"));
     const assignSpy = vi
       .spyOn(window.location, "assign")
       .mockImplementation(() => {});
@@ -42,13 +49,13 @@ describe("refreshSessionOnce", () => {
   });
 
   it("blocks repeated refresh attempts after a failure", async () => {
-    vi.mocked(fetch).mockResolvedValue({ ok: false } as Response);
+    vi.mocked(apiRequest).mockRejectedValue(new Error("refresh failed"));
     await refreshSessionOnce();
 
-    vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
+    vi.mocked(apiRequest).mockResolvedValue({ ok: true } as never);
     const result = await refreshSessionOnce();
 
     expect(result).toBe(false);
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(apiRequest).toHaveBeenCalledTimes(1);
   });
 });
