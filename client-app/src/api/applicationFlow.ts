@@ -1,10 +1,13 @@
 import { apiRequest } from "./client";
+import { getToken } from "@/auth/tokenStorage";
 
 export async function getContinuation() {
   return apiRequest("/api/application/continuation");
 }
 
 export async function updateApplication(payload: unknown) {
+  if (!getToken()) return;
+
   return apiRequest("/api/application/update", {
     method: "POST",
     body: JSON.stringify(payload)

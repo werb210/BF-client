@@ -1,5 +1,6 @@
 import { apiRequest } from "../api/request";
 import { API_ENDPOINTS } from "../api/endpoints";
+import { getToken } from "@/auth/tokenStorage";
 
 type CallStatus = {
   status: string;
@@ -8,6 +9,14 @@ type CallStatus = {
 };
 
 export async function getCallStatus(): Promise<CallStatus> {
+  const token = getToken();
+  if (!token) {
+    return {
+      status: "offline",
+      activeCall: false,
+    };
+  }
+
   try {
     const data = await apiRequest<Partial<CallStatus>>(API_ENDPOINTS.TELEPHONY_PRESENCE, {
       method: "GET",
