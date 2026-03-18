@@ -25,6 +25,7 @@ import {
   resolveReadinessSessionId,
 } from "@/api/website";
 import api from "../api/client";
+import { clearToken, getToken } from "@/lib/auth";
 
 const StatusPage = lazy(() => import("../pages/StatusPage").then((module) => ({ default: module.StatusPage })));
 const ApplicationPortalPage = lazy(() => import("../pages/ApplicationPortalPage").then((module) => ({ default: module.ApplicationPortalPage })));
@@ -91,7 +92,7 @@ function RequirePortalSession({ children }: GuardProps): JSX.Element {
 }
 
 function RequireOTP({ children }: GuardProps): JSX.Element {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = typeof window !== "undefined" ? getToken() : null;
   if (!token) return <Navigate to="/otp" replace />;
   return children;
 }
@@ -189,7 +190,7 @@ export default function AppRouter(): JSX.Element {
   const { isOffline } = useNetworkStatus();
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? window.localStorage.getItem("auth_token") : null;
+    const token = typeof window !== "undefined" ? getToken() : null;
 
     if (!token) {
       return;
@@ -199,11 +200,11 @@ export default function AppRouter(): JSX.Element {
       .then((res) => {
         const user = res?.data?.data?.user;
         if (!user) {
-          window.localStorage.removeItem("auth_token");
+          clearToken();
         }
       })
       .catch(() => {
-        window.localStorage.removeItem("auth_token");
+        clearToken();
       });
   }, []);
 

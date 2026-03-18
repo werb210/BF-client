@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handleAuthError } from "../sessionHandler";
 import {
   ensureClientSession,
@@ -7,26 +7,14 @@ import {
   setActiveClientSessionToken,
 } from "../../state/clientSession";
 
-class MemoryStorage {
-  private store = new Map<string, string>();
-
-  getItem(key: string) {
-    return this.store.get(key) ?? null;
-  }
-
-  setItem(key: string, value: string) {
-    this.store.set(key, value);
-  }
-
-  removeItem(key: string) {
-    this.store.delete(key);
-  }
-}
-
 describe("handleAuthError", () => {
   beforeEach(() => {
-    globalThis.localStorage = new MemoryStorage() as unknown as Storage;
-    globalThis.sessionStorage = new MemoryStorage() as unknown as Storage;
+    vi.spyOn(localStorage, "getItem").mockReturnValue(null);
+    vi.spyOn(localStorage, "setItem").mockImplementation(() => undefined);
+    vi.spyOn(localStorage, "removeItem").mockImplementation(() => undefined);
+    vi.spyOn(sessionStorage, "getItem").mockReturnValue(null);
+    vi.spyOn(sessionStorage, "setItem").mockImplementation(() => undefined);
+    vi.spyOn(sessionStorage, "removeItem").mockImplementation(() => undefined);
   });
 
   it("marks the active session as revoked on auth failures", async () => {
@@ -46,4 +34,3 @@ describe("handleAuthError", () => {
     expect(getClientSessionState(session!)).toBe("revoked");
   });
 });
-

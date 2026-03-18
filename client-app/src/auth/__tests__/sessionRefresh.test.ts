@@ -23,7 +23,8 @@ describe("refreshSessionOnce", () => {
     resetRefreshFailure();
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem("auth_token", "session-token");
+    vi.mocked(localStorage.getItem).mockImplementation((key: string) => key === "bf_token" ? "session-token" : null);
+    localStorage.setItem("bf_token", "session-token");
     Object.defineProperty(globalThis, "window", {
       value: {
         location: { assign: vi.fn() },

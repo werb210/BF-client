@@ -1,22 +1,6 @@
 import type { AxiosRequestHeaders } from "axios";
 import { apiClient, buildApiUrl } from "./client";
-import { getToken } from "@/auth/tokenStorage";
-
-function getClientSessionToken() {
-  if (typeof localStorage === "undefined") return null;
-
-  const stored = localStorage.getItem("client_session");
-  if (!stored) return null;
-
-  try {
-    const session = JSON.parse(stored);
-    if (typeof session?.token === "string") return session.token;
-  } catch {
-    if (typeof stored === "string") return stored;
-  }
-
-  return null;
-}
+import { getToken } from "@/lib/auth";
 
 function toHeaders(headers?: HeadersInit): AxiosRequestHeaders {
   if (!headers) return { "Content-Type": "application/json" } as AxiosRequestHeaders;
@@ -46,16 +30,15 @@ export function apiUrl(path: string) {
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken() || getClientSessionToken();
+  const token = getToken();
   const response = await apiClient.request<T>({
     url: path,
     method: options.method || "GET",
     data: toData(options.body),
     headers: {
       ...toHeaders(options.headers),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: token ? `Bearer ${token}` : "",
     },
-    withCredentials: true,
   });
 
   return response.data;

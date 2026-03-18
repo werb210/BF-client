@@ -1,8 +1,9 @@
+import { clearToken } from "@/lib/auth";
 import { logClientError } from "@/lib/logger";
 
 export function handleApiError(err: any) {
   if (err?.response?.status === 401) {
-    localStorage.removeItem("auth_token");
+    clearToken();
     sessionStorage.removeItem("boreal_client_token");
     window.location.reload();
   }

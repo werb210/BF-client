@@ -1,24 +1,24 @@
 import { type AxiosRequestConfig } from "axios";
+import { getToken } from "@/lib/auth";
 import { createHttpClient } from "./httpClient";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://api.staff.boreal.financial/api";
+const API_BASE_URL = "https://api.staff.boreal.financial";
 
 const api = createHttpClient({
   baseURL: API_BASE_URL,
   timeout: 15000,
   headers: {
-    "Content-Type": "application/json"
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("auth_token");
+  const token = getToken();
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  config.headers = {
+    ...(config.headers || {}),
+    Authorization: token ? `Bearer ${token}` : "",
+  };
 
   return config;
 });
@@ -55,7 +55,6 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     method,
     data,
     headers: options.headers as AxiosRequestConfig["headers"],
-    withCredentials: options.credentials === "include" ? true : undefined,
   });
 
   return response.data;
