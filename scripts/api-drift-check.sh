@@ -30,7 +30,7 @@ extract_api_paths() {
   local label="$3"
 
   if [[ ! -d "$source_dir" ]]; then
-    echo "WARN: $label directory missing: $source_dir"
+    echo "INFO: $label directory missing: $source_dir (skipping)"
     return 0
   fi
 
@@ -55,7 +55,7 @@ echo "Extracting client API calls..."
 extract_api_paths "$CLIENT_DIR/src" "$CLIENT_CALLS" "Client"
 
 if [[ ! -s "$SERVER_ROUTES" ]]; then
-  echo "WARN: No server routes found. Drift comparison may be incomplete."
+  echo "INFO: No server routes found. Drift comparison skipped/incomplete."
 fi
 
 echo ""

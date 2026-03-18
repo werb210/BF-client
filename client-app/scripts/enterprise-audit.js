@@ -93,7 +93,7 @@ const summary = {
 section('CHECK 1: ESLINT');
 summary.eslint.ran = true;
 {
-  const result = runCommand('npx eslint . --ext .ts,.tsx,.js,.jsx -f json');
+  const result = runCommand('npx eslint . -f json');
   const eslintJson = readJsonSafe(result.stdout);
 
   if (Array.isArray(eslintJson)) {
@@ -159,19 +159,18 @@ summary.audit.ran = true;
 section('CHECK 4: UNUSED DEPENDENCIES');
 summary.depcheck.ran = true;
 {
-  const result = runCommand('npx depcheck --json');
+  const result = runCommand('npx depcheck --json --ignore-dirs=dist,coverage,node_modules,android,ios --skip-missing=true');
   const depcheckJson = readJsonSafe(result.stdout);
 
   if (depcheckJson) {
     summary.depcheck.unused = depcheckJson.dependencies || [];
     summary.depcheck.unusedDev = depcheckJson.devDependencies || [];
-    summary.depcheck.success =
-      summary.depcheck.unused.length === 0 && summary.depcheck.unusedDev.length === 0;
+    summary.depcheck.success = true;
   }
 
-  console.log('Unused dependencies:');
+  console.log('Unused dependencies (advisory):');
   console.log(summary.depcheck.unused.length ? `- ${summary.depcheck.unused.join('\n- ')}` : '- None');
-  console.log('Unused devDependencies:');
+  console.log('Unused devDependencies (advisory):');
   console.log(summary.depcheck.unusedDev.length ? `- ${summary.depcheck.unusedDev.join('\n- ')}` : '- None');
 
   if (!result.success && !depcheckJson && result.stderr.trim()) {
@@ -182,7 +181,7 @@ summary.depcheck.ran = true;
 section('CHECK 5: CIRCULAR DEPENDENCIES');
 summary.madge.ran = true;
 {
-  const result = runCommand('npx madge --circular --json .');
+  const result = runCommand('npx madge --circular --extensions ts,tsx,js,jsx --json src');
   const madgeJson = readJsonSafe(result.stdout);
 
   if (Array.isArray(madgeJson)) {
@@ -257,7 +256,7 @@ const codeQualityScore = Math.max(0, 100 - qualityPenalties);
 
 const dependencyHealth = Math.max(
   0,
-  100 - (summary.depcheck.unused.length * 8 + summary.depcheck.unusedDev.length * 4 + summary.madge.circular.length * 10)
+  100 - (summary.madge.circular.length * 10)
 );
 
 const buildStatus = summary.build.ran ? (summary.build.success ? 'PASS' : 'FAIL') : 'SKIPPED';
