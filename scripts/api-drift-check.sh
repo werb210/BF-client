@@ -34,12 +34,8 @@ extract_api_paths() {
     return 0
   fi
 
-  rg -I -o -P "(?<=['\"])/api[^'\"]+" "$source_dir" \
-    -g '!**/__tests__/**' \
-    -g '!**/*.{test,spec}.{ts,tsx,js,jsx}' \
-    -g '!**/_artifacts/**' \
-    -g '!**/artifacts/**' \
-    | sed -E "s/[?#].*$//" \
+  rg "/api/" "$source_dir" \
+    | sed -nE 's/.*"(\/api[^"]+)".*/\1/p' \
     | sort -u > "$output_file" || true
 }
 
