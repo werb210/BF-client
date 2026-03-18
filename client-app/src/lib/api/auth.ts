@@ -1,4 +1,5 @@
 import { apiClient } from "@/api/client";
+import { API_ENDPOINTS } from "@/api/endpoints";
 
 function normalizePhone(input: string) {
   const digits = input.replace(/\D/g, "");
@@ -8,7 +9,7 @@ function normalizePhone(input: string) {
 }
 
 export async function startOtp(phoneInput: string) {
-  const response = await apiClient.post<{ ok?: boolean }>("/auth/otp/start", {
+  const response = await apiClient.post<{ ok?: boolean }>(API_ENDPOINTS.OTP_START, {
     phone: normalizePhone(phoneInput),
   });
 
@@ -21,7 +22,7 @@ export async function startOtp(phoneInput: string) {
 
 export async function verifyOtp(phoneInput: string, code: string) {
   const response = await apiClient.post<{ ok?: boolean; data?: { token: string; user: unknown; nextPath?: string } }>(
-    "/auth/otp/verify",
+    API_ENDPOINTS.OTP_VERIFY,
     {
       phone: normalizePhone(phoneInput),
       code,
