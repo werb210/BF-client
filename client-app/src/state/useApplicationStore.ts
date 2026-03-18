@@ -10,7 +10,7 @@ import { getSessionId, trackEvent } from "../utils/analytics";
 import { loadLocalBackup, useLocalBackup } from "../system/useLocalBackup";
 import { apiRequest } from "@/api/client";
 import { emptyApplicationDraft } from "../constants/applicationDraft";
-import { getToken } from "../auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 const emptyApp: ApplicationData = {
   applicationDraft: emptyApplicationDraft,
@@ -29,7 +29,7 @@ const emptyApp: ApplicationData = {
 };
 
 function hasActiveAuthSession() {
-  return Boolean(getToken());
+  return hasToken();
 }
 
 function buildApplicationDraft(source: ApplicationData) {

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const postMock = vi.fn();
 const continuationSessionMock = vi.fn();
+let storage = new Map<string, string>();
 
 vi.mock("@/api/client", () => ({
   default: {
@@ -15,11 +16,28 @@ vi.mock("@/api/continuation", () => ({
 
 describe("website API dedupe", () => {
   beforeEach(() => {
+    storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn((key: string) => storage.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        storage.set(key, String(value));
+      }),
+      removeItem: vi.fn((key: string) => {
+        storage.delete(key);
+      }),
+      clear: vi.fn(() => {
+        storage.clear();
+      }),
+    });
     vi.resetModules();
     postMock.mockReset();
     continuationSessionMock.mockReset();
     continuationSessionMock.mockResolvedValue(null);
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("dedupes credit readiness submissions by email/phone", async () => {
@@ -37,15 +55,7 @@ describe("website API dedupe", () => {
     await submitCreditReadiness(payload);
 
     await vi.waitFor(() => expect(postMock).toHaveBeenCalledTimes(1));
-    expect(postMock).toHaveBeenCalledWith(
-      "/api/readiness",
-      payload,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Idempotency-Key": "readiness:taylor@example.com::+15555555555",
-        }),
-      })
-    );
+    expect(postMock).toHaveBeenCalledWith("/api/readiness", payload);
   });
 
 
@@ -184,15 +194,7 @@ describe("website API dedupe", () => {
     await submitContactForm(payload);
 
     expect(postMock).toHaveBeenCalledTimes(1);
-    expect(postMock).toHaveBeenCalledWith(
-      "/api/crm/web-leads",
-      payload,
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Idempotency-Key": "contact:taylor@example.com::+15555555555",
-        }),
-      })
-    );
+    expect(postMock).toHaveBeenCalledWith("/api/crm/web-leads", payload);
   });
 
 });

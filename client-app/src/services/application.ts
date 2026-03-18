@@ -1,8 +1,8 @@
 import { apiRequest } from "../api/client";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 export async function updateApplication(payload: any) {
-  if (!getToken()) return;
+  if (!hasToken()) return;
 
   const data = await apiRequest("/api/application/update", {
     method: "POST",

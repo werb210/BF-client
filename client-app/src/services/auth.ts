@@ -1,4 +1,4 @@
-import api, { apiClient } from "../api/client";
+import { apiClient } from "../api/client";
 import { setToken } from "@/lib/auth";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { API_ENDPOINTS } from "@/api/endpoints";
@@ -32,9 +32,8 @@ function assertResponseContract<T extends { ok?: boolean; data?: unknown }>(resp
 
 export async function requestOtp(phone: string): Promise<OtpRequestResult> {
   const normalizedPhone = normalizePhone(phone);
-  const response = await api.post<{ ok?: boolean }>(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
-
-  if (!response.data?.ok) {
+  const response = await apiClient.post<{ ok?: boolean; data?: unknown }>(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
+  if (!response.data?.ok || !response.data?.data) {
     throw new Error("Invalid API response");
   }
 
@@ -45,9 +44,8 @@ export async function requestOtp(phone: string): Promise<OtpRequestResult> {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  const response = await apiClient.post<{ ok?: boolean }>(API_ENDPOINTS.OTP_START, { phone: normalizePhone(phone) });
-
-  if (!response.data?.ok) {
+  const response = await apiClient.post<{ ok?: boolean; data?: unknown }>(API_ENDPOINTS.OTP_START, { phone: normalizePhone(phone) });
+  if (!response.data?.ok || !response.data?.data) {
     throw new Error("Invalid API response");
   }
 
@@ -61,8 +59,7 @@ export async function loginWithOtp(phone: string, code: string): Promise<LoginWi
   });
 
   assertResponseContract(response.data);
-
-  const { token, user, nextPath } = response.data.data as OtpAuthData;
+  const { token, user, nextPath } = response.data.data;
 
   if (!token || !user) {
     throw new Error("Invalid API response");

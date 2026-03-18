@@ -38,6 +38,7 @@ describe("auth OTP service", () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
+        data: {},
       },
     } as any);
 

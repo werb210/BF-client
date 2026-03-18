@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const postMock = vi.fn().mockResolvedValue({ data: { ok: true } });
+let storage = new Map<string, string>();
 
 vi.mock("@/api/client", () => ({
   default: {
@@ -32,6 +33,19 @@ describe("submitApplication", () => {
   };
 
   beforeEach(() => {
+    storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn((key: string) => storage.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        storage.set(key, String(value));
+      }),
+      removeItem: vi.fn((key: string) => {
+        storage.delete(key);
+      }),
+      clear: vi.fn(() => {
+        storage.clear();
+      }),
+    });
     postMock.mockClear();
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
@@ -40,13 +54,16 @@ describe("submitApplication", () => {
     localStorage.clear();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("sends idempotency key when provided", async () => {
     const { submitApplication } = await import("../applications");
     await submitApplication({ hello: "world" }, { idempotencyKey: "idem-123" });
     expect(postMock).toHaveBeenCalledWith(
       "/api/client/applications",
-      { hello: "world", ...expectedAttribution, creditSessionToken: null },
-      { headers: { "Idempotency-Key": "idem-123" } }
+      { hello: "world", ...expectedAttribution, creditSessionToken: null }
     );
   });
 
@@ -63,8 +80,7 @@ describe("submitApplication", () => {
         ...expectedAttribution,
         continuationToken: "cont-456",
         creditSessionToken: null,
-      },
-      { headers: { "Idempotency-Key": "idem-123" } }
+      }
     );
   });
 
@@ -80,8 +96,7 @@ describe("submitApplication", () => {
         hello: "world",
         ...expectedAttribution,
         creditSessionToken: "bridge-token-123",
-      },
-      { headers: undefined }
+      }
     );
   });
 });

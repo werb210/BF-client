@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 export function createApplication(data: any) {
   return apiRequest("/api/application", {
@@ -9,7 +9,7 @@ export function createApplication(data: any) {
 }
 
 export function updateApplication(data: any) {
-  if (!getToken()) return;
+  if (!hasToken()) return;
 
   return apiRequest("/api/application/update", {
     method: "POST",

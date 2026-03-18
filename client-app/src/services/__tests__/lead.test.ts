@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const postMock = vi.fn();
+let storage = new Map<string, string>();
 
 vi.mock("@/api/client", () => ({
   default: {
@@ -10,6 +11,19 @@ vi.mock("@/api/client", () => ({
 
 describe("createLead dedupe", () => {
   beforeEach(() => {
+    storage = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: vi.fn((key: string) => storage.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        storage.set(key, String(value));
+      }),
+      removeItem: vi.fn((key: string) => {
+        storage.delete(key);
+      }),
+      clear: vi.fn(() => {
+        storage.clear();
+      }),
+    });
     postMock.mockReset();
     localStorage.clear();
   });
@@ -17,7 +31,7 @@ describe("createLead dedupe", () => {
   it("reuses existing lead by email/phone", async () => {
     const { createLead } = await import("../lead");
 
-    postMock.mockResolvedValueOnce({ data: { leadId: "lead-1", pendingApplicationId: "app-1" } });
+    postMock.mockResolvedValue({ data: { leadId: "lead-1", pendingApplicationId: "app-1" } });
 
     const payload = {
       companyName: "ACME",
@@ -32,5 +46,9 @@ describe("createLead dedupe", () => {
     expect(first.leadId).toBe("lead-1");
     expect(second.leadId).toBe("lead-1");
     expect(postMock).toHaveBeenCalledTimes(1);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 });

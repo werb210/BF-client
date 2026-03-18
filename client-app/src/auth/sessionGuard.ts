@@ -5,7 +5,6 @@ import { OfflineStore } from "../state/offline";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { clearClientStorage } from "./logout";
 import { refreshSessionOnce } from "./sessionRefresh";
-import { getToken } from "./tokenStorage";
 
 export type SessionGuardAction = "noop" | "redirect";
 
@@ -23,7 +22,7 @@ export function getSessionToken() {
 
   if (cookieToken) return cookieToken;
 
-  return getToken();
+  return localStorage.getItem("bf_token");
 }
 
 export function resolveSessionGuardAction(options: {

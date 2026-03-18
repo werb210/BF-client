@@ -30,7 +30,7 @@ import { initializeVoice } from "@/telephony/voiceClient";
 import CallUsButton from "@/telephony/components/CallUsButton";
 import { getCallStatus } from "@/services/telephonyService";
 import { safeFetch } from "@/utils/safeFetch";
-import { getToken, setToken } from "@/auth/tokenStorage";
+import { hasToken, setToken } from "@/lib/auth";
 
 type AppProps = {
   initialSession?: InitialSession | null;
@@ -87,7 +87,7 @@ export default function App({ initialSession = null }: AppProps) {
   useReadinessBridge(setStep1Data, setStep3Data, setStep4Data, !isOtpScreen);
 
   useEffect(() => {
-    if (session?.token && !getToken()) {
+    if (session?.token && !hasToken()) {
       setToken(session.token);
     }
 

@@ -1,6 +1,7 @@
 import { AxiosHeaders, type AxiosRequestConfig } from "axios";
 import { getToken } from "@/lib/auth";
 import { createHttpClient } from "./httpClient";
+import { API_ENDPOINTS } from "./endpoints";
 
 const API_BASE_URL = "https://api.staff.boreal.financial";
 
@@ -13,12 +14,28 @@ const api = createHttpClient({
 });
 
 api.interceptors.request.use((config) => {
-  const token = getToken();
   const headers = AxiosHeaders.from(config.headers || {});
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  } else {
+  const token = getToken();
+  const requestUrl = String(config.url || "");
+  const isOtpRequest =
+    requestUrl.includes(API_ENDPOINTS.OTP_START) ||
+    requestUrl.includes(API_ENDPOINTS.OTP_VERIFY);
+
+  headers.delete("X-Request-Id");
+  headers.delete("x-request-id");
+  headers.delete("X-Client-Id");
+  headers.delete("x-client-id");
+
+  if (isOtpRequest || !token) {
     headers.delete("Authorization");
+  } else {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const method = String(config.method || "get").toLowerCase();
+  const hasBody = method !== "get" && method !== "head";
+  if (!hasBody && !headers.has("Content-Type")) {
+    headers.delete("Content-Type");
   }
   config.headers = headers;
 

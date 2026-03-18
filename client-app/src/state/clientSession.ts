@@ -222,18 +222,3 @@ export function getActiveClientSessionToken() {
     return "";
   }
 }
-
-export function getClientSessionAuthHeader() {
-  const activeToken = getActiveClientSessionToken();
-  if (!activeToken) return {};
-  const session =
-    getClientSessionByToken(activeToken) ||
-    ensureClientSession({
-      submissionId: activeToken,
-      accessToken: activeToken,
-    });
-  if (!isClientSessionValid(session)) {
-    return {};
-  }
-  return { Authorization: `Bearer ${session.accessToken}` };
-}
