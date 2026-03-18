@@ -122,9 +122,9 @@ export async function loginWithOtp(phone: string, code: string): Promise<LoginWi
     throw new Error("OTP failed");
   }
 
-  const token = response.data.token ?? response.data?.data?.token;
-  const user = response.data.user ?? response.data?.data?.user;
-  const nextPath = response.data.nextPath ?? response.data?.data?.nextPath;
+  const token = response.data?.data?.token;
+  const user = response.data?.data?.user;
+  const nextPath = response.data?.data?.nextPath;
 
   if (!token) {
     logClientError("OTP verify response missing token", response.data);
@@ -136,6 +136,6 @@ export async function loginWithOtp(phone: string, code: string): Promise<LoginWi
   return {
     user: user ?? {},
     authToken: token,
-    nextPath,
+    nextPath: typeof nextPath === "string" ? nextPath : undefined,
   };
 }

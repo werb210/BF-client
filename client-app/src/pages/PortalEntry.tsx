@@ -104,7 +104,7 @@ export function PortalEntry() {
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
 
-      window.location.href = result.nextPath || "/portal";
+      window.location.href = "/portal";
     } catch (err: any) {
       setOtpCode("");
       setError(err.message || "Authentication failed");

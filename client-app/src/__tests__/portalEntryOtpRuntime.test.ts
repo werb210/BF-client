@@ -123,11 +123,11 @@ describe("PortalEntry OTP runtime", () => {
     expect(loginWithOtpMock).toHaveBeenCalledWith("+15551112222", "123456");
   });
 
-  it("verify success redirects to /application/start", async () => {
+  it("verify success redirects to /portal", async () => {
     startOtpMock.mockResolvedValue({ ok: true, normalizedPhone: "+15551112222" });
     loginWithOtpMock.mockResolvedValue({
       authToken: "session-abc",
-      nextPath: "/application/start",
+      nextPath: "/portal",
       user: { id: "u-1" },
     });
 
@@ -150,7 +150,7 @@ describe("PortalEntry OTP runtime", () => {
     expect(ensureClientSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({ submissionId: "+15551112222", accessToken: "session-abc" })
     );
-    expect(window.location.href).toBe("/application/start");
+    expect(window.location.href).toBe("/portal");
   });
 
   it("verify failure shows inline error and no duplicate verify spam", async () => {

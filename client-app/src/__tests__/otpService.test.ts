@@ -68,15 +68,17 @@ describe("auth OTP service", () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
-        token: "abc",
-        user: { id: "u-1" },
-        nextPath: "/application",
+        data: {
+          token: "abc",
+          user: { id: "u-1" },
+          nextPath: "/portal",
+        },
       },
     } as any);
 
     await expect(loginWithOtp("5878881837", "123456")).resolves.toMatchObject({
       authToken: "abc",
-      nextPath: "/application",
+      nextPath: "/portal",
       user: {
         id: "u-1",
       },
