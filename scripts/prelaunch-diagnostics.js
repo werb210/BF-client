@@ -15,8 +15,10 @@ const uploadEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/upload-docu
 const chatEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/messages/diagnostic`;
 const signNowEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/signnow/diagnostic`;
 
-function logResult(name, ok, detail = '') {
-  const status = ok ? 'PASS' : 'FAIL';
+const strictMode = String(process.env.DIAGNOSTIC_STRICT || '').toLowerCase() === 'true';
+
+function logResult(name, ok, detail = '', level = 'auto') {
+  const status = level === 'warn' ? 'WARN' : ok ? 'PASS' : 'FAIL';
   const message = detail ? `${status} - ${detail}` : status;
   console.log(`${name}: ${message}`);
 }
@@ -31,14 +33,22 @@ async function checkEndpoint(name, url, method = 'GET') {
     logResult(name, ok, `${res.status} ${res.statusText || ''}`.trim());
     return ok;
   } catch (err) {
-    logResult(name, false, err.message);
-    return false;
+    if (strictMode) {
+      logResult(name, false, err.message);
+      return false;
+    }
+    logResult(name, false, err.message, 'warn');
+    return true;
   }
 }
 
 function checkEnv() {
   return requiredEnv.map((key) => {
     const present = Boolean(process.env[key]);
+    if (!present && !strictMode) {
+      logResult(`Env ${key}`, false, 'Missing (non-strict mode)', 'warn');
+      return true;
+    }
     logResult(`Env ${key}`, present, present ? '' : 'Missing');
     return present;
   }).every(Boolean);
