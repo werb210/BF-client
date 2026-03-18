@@ -1,38 +1,17 @@
 import { vi } from "vitest";
+import { TextDecoder, TextEncoder } from "util";
 
-/**
- * Test environment stabilization for JSDOM
- */
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
 
-/* ------------------------------
-   Fix localStorage readonly error
-------------------------------- */
-
-const storageMock = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-  };
-})();
-
-vi.spyOn(Storage.prototype, "getItem").mockImplementation(storageMock.getItem);
-vi.spyOn(Storage.prototype, "setItem").mockImplementation(storageMock.setItem);
-vi.spyOn(Storage.prototype, "removeItem").mockImplementation(storageMock.removeItem);
-vi.spyOn(Storage.prototype, "clear").mockImplementation(storageMock.clear);
-
-/* ------------------------------
-   matchMedia polyfill
-------------------------------- */
+Object.defineProperty(window, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+});
 
 if (!window.matchMedia) {
   Object.defineProperty(window, "matchMedia", {
@@ -50,10 +29,6 @@ if (!window.matchMedia) {
   });
 }
 
-/* ------------------------------
-   ResizeObserver polyfill
-------------------------------- */
-
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -61,27 +36,9 @@ class ResizeObserverMock {
 }
 
 (globalThis as any).ResizeObserver = ResizeObserverMock;
-
-/* ------------------------------
-   scrollTo polyfill
-------------------------------- */
-
 window.scrollTo = vi.fn();
-
-/* ------------------------------
-   TextEncoder / TextDecoder
-------------------------------- */
-
-import { TextEncoder, TextDecoder } from "util";
-
 (globalThis as any).TextEncoder = TextEncoder;
 (globalThis as any).TextDecoder = TextDecoder;
-
-
-/* ------------------------------
-   React act + scrollIntoView polyfills
-------------------------------- */
-
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 if (!Element.prototype.scrollIntoView) {

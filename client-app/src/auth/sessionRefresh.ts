@@ -17,24 +17,7 @@ export async function refreshSessionOnce() {
   if (refreshFailed) return false;
   if (refreshPromise) return refreshPromise;
 
-  const localSessionToken = (() => {
-    if (typeof localStorage === "undefined") {
-      return "";
-    }
-
-    const stored = localStorage.getItem("client_session");
-    if (!stored) {
-      return "";
-    }
-
-    try {
-      const session = JSON.parse(stored);
-      return typeof session?.token === "string" ? session.token : "";
-    } catch {
-      return stored;
-    }
-  })();
-  const token = getActiveClientSessionToken() || getToken() || localSessionToken;
+  const token = getActiveClientSessionToken() || getToken();
   if (!token) return true;
 
   setSessionRefreshing(true);

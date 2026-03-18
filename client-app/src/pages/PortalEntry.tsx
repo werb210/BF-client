@@ -6,7 +6,7 @@ import { OtpInput } from "../components/OtpInput";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { components, layout, scrollToFirstError } from "@/styles";
 import { loginWithOtp, startOtp } from "@/services/auth";
-import { setToken } from "@/auth/tokenStorage";
+import { setToken } from "@/lib/auth";
 import { ensureClientSession, setActiveClientSessionToken } from "@/state/clientSession";
 import { logClientError } from "@/lib/logger";
 
@@ -56,11 +56,11 @@ export function PortalEntry() {
       const result = await startOtp(fallbackPhone);
 
       if (!result?.ok) {
-        setError(result?.message || "Failed to send verification code");
+        setError("Failed to send verification code");
         return;
       }
 
-      const verifiedPhone = result?.normalizedPhone || result?.phone || fallbackPhone;
+      const verifiedPhone = fallbackPhone;
       setNormalizedPhone(verifiedPhone);
       setOtpCode("");
       setVerifying(false);
@@ -89,10 +89,9 @@ export function PortalEntry() {
     try {
       const verifyPhone = normalizedPhone || phone;
       const result = await loginWithOtp(verifyPhone, otpCode);
-      const sessionToken = result.authToken;
+      const sessionToken = result.token;
 
       setToken(sessionToken);
-      localStorage.setItem("auth_token", sessionToken);
       setActiveClientSessionToken(sessionToken);
 
       const persistedPhone = (normalizedPhone || phone).trim();
@@ -104,7 +103,7 @@ export function PortalEntry() {
       ClientProfileStore.markPortalVerified(sessionToken);
       ClientProfileStore.setLastUsedPhone(persistedPhone);
 
-      window.location.href = "/portal";
+      window.location.href = result.nextPath || "/portal";
     } catch (err: any) {
       setOtpCode("");
       setError(err.message || "Authentication failed");

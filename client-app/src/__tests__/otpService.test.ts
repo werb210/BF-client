@@ -26,7 +26,6 @@ describe("auth OTP service", () => {
 
     await expect(requestOtp("(555) 111-2222")).resolves.toMatchObject({
       ok: true,
-      otpSessionId: "otp-session-1",
       status: 200,
     });
 
@@ -35,27 +34,22 @@ describe("auth OTP service", () => {
     });
   });
 
-  it('startOtp("5878881837") returns ok when server says data.sent=true', async () => {
+  it('startOtp("5878881837") returns ok when server says ok=true', async () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
         ok: true,
-        data: { sent: true, normalizedPhone: "+15878881837" },
       },
     } as any);
 
     await expect(startOtp("5878881837")).resolves.toMatchObject({
       ok: true,
-      data: {
-        sent: true,
-      },
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
       "/auth/otp/start",
       {
         phone: "+15878881837",
-      },
-      undefined
+      }
     );
   });
 
@@ -77,7 +71,7 @@ describe("auth OTP service", () => {
     } as any);
 
     await expect(loginWithOtp("5878881837", "123456")).resolves.toMatchObject({
-      authToken: "abc",
+      token: "abc",
       nextPath: "/portal",
       user: {
         id: "u-1",
@@ -89,8 +83,7 @@ describe("auth OTP service", () => {
       {
         phone: "+15878881837",
         code: "123456",
-      },
-      undefined
+      }
     );
   });
 
@@ -99,6 +92,6 @@ describe("auth OTP service", () => {
       data: { ok: false, error: { message: "Invalid code" } },
     } as any);
 
-    await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow("OTP failed");
+    await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow("Invalid API response");
   });
 });

@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const PRODUCTION_API_ORIGIN = "https://server.boreal.financial";
+const PRODUCTION_API_ORIGIN = "https://api.staff.boreal.financial";
 
 function normalizeBase(input?: string): string {
   const value = (input || "").trim();

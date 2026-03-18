@@ -1,30 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { syncRequiredDocumentsFromStatus } from "../requiredDocumentsCache";
-
-class MemoryStorage {
-  private store = new Map<string, string>();
-
-  getItem(key: string) {
-    return this.store.get(key) ?? null;
-  }
-
-  setItem(key: string, value: string) {
-    this.store.set(key, value);
-  }
-
-  removeItem(key: string) {
-    this.store.delete(key);
-  }
-
-  clear() {
-    this.store.clear();
-  }
-}
 
 describe("syncRequiredDocumentsFromStatus", () => {
   beforeEach(() => {
-    const storage = new MemoryStorage();
-    globalThis.localStorage = storage as unknown as Storage;
+    vi.spyOn(localStorage, "getItem").mockReturnValue(null);
+    vi.spyOn(localStorage, "setItem").mockImplementation(() => undefined);
+    vi.spyOn(localStorage, "removeItem").mockImplementation(() => undefined);
   });
 
   it("merges required documents from status and ensures bank statements", () => {
