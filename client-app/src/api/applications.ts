@@ -28,11 +28,7 @@ export async function submitApplication(
         }
       : payload;
 
-  const res = await api.post<any>("/api/client/applications", submissionPayload, {
-    headers: options?.idempotencyKey
-      ? { "Idempotency-Key": options.idempotencyKey }
-      : undefined,
-  });
+  const res = await api.post<any>("/api/client/applications", submissionPayload);
   localStorage.removeItem("creditSessionToken");
   return (res as { data?: unknown })?.data;
 }
@@ -53,13 +49,7 @@ export async function createPublicApplication(
         }
       : payload;
 
-  const res: unknown = await api.post("/api/applications", submissionPayload, {
-    headers: {
-      ...(options?.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {}),
-      ...(options?.readinessToken ? { "X-Readiness-Token": options.readinessToken } : {}),
-      ...(options?.sessionId ? { "X-Session-Id": options.sessionId } : {}),
-    },
-  });
+  const res: unknown = await api.post("/api/applications", submissionPayload);
   return parseApiResponse(
     PublicApplicationResponseSchema,
     (res as { data: unknown }).data,

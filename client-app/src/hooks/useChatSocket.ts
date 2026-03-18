@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getToken } from "@/lib/auth";
+import { hasToken } from "@/lib/auth";
 
 type ChatSocketStatus =
   | "idle"
@@ -26,7 +26,7 @@ const RETRY_JITTER_RATIO = 0.2;
 
 function getSocketUrl() {
   if (typeof window === "undefined") return "";
-  const token = getToken();
+  const token = localStorage.getItem("bf_token");
   if (!token) return "";
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   return `${protocol}://${window.location.host}/ws/chat?token=${encodeURIComponent(token)}`;
@@ -103,7 +103,7 @@ export function useChatSocket({
   }, [clearHeartbeatTimer, clearRetryTimer, setSafeStatus]);
 
   const connect = useCallback(() => {
-    if (!enabledRef.current || !sessionId || typeof window === "undefined") return;
+    if (!enabledRef.current || !sessionId || typeof window === "undefined" || !hasToken()) return;
 
     const socketUrl = getSocketUrl();
     if (!socketUrl) return;

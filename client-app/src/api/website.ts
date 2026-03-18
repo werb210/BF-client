@@ -47,17 +47,12 @@ function shouldRetryRequest(error: unknown, attempt: number) {
 
 async function postWithRetry<TPayload>(
   path: string,
-  payload: TPayload,
-  idempotencyKey: string
+  payload: TPayload
 ) {
   let attempt = 0;
   while (true) {
     try {
-      return await api.post(path, payload, {
-        headers: {
-          "X-Idempotency-Key": idempotencyKey,
-        },
-      });
+      return await api.post(path, payload);
     } catch (error) {
       attempt += 1;
       if (!shouldRetryRequest(error, attempt)) {
@@ -124,8 +119,7 @@ export async function submitCreditReadiness(payload: CreditReadinessPayload) {
 
     const res = await postWithRetry(
       "/api/readiness",
-      payload,
-      key !== "::" ? `readiness:${key}` : crypto.randomUUID()
+      payload
     );
     const responseData = res.data;
     if (hasValidReadinessSessionId(responseData as Record<string, any>)) {
@@ -169,8 +163,7 @@ export async function submitContactForm(payload: {
     try {
       const res = await postWithRetry(
         "/api/crm/web-leads",
-        payload,
-        key !== "::" ? `contact:${key}` : crypto.randomUUID()
+        payload
       );
       const responseData = res.data;
       if (hasValidReadinessSessionId(responseData as Record<string, any>)) {

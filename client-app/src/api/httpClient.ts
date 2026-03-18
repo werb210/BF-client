@@ -1,6 +1,4 @@
-import axios, { AxiosHeaders, type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios";
-
-const WRITE_METHODS = new Set(["post", "put", "patch", "delete"]);
+import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios";
 
 export class ApiError extends Error {
   status?: number;
@@ -14,33 +12,8 @@ export class ApiError extends Error {
   }
 }
 
-function randomId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
 export function createHttpClient(config: AxiosRequestConfig): AxiosInstance {
   const client = axios.create(config);
-
-  client.interceptors.request.use((requestConfig) => {
-    const method = (requestConfig.method || "get").toLowerCase();
-    const headers = AxiosHeaders.from(requestConfig.headers);
-
-    if (!headers.get("X-Request-Id")) {
-      headers.set("X-Request-Id", randomId());
-    }
-
-    if (WRITE_METHODS.has(method) && !headers.get("Idempotency-Key")) {
-      headers.set("Idempotency-Key", randomId());
-    }
-
-    requestConfig.headers = headers;
-
-    return requestConfig;
-  });
 
   client.interceptors.response.use(
     (response) => response,

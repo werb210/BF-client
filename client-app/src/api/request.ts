@@ -1,12 +1,11 @@
 import type { AxiosRequestHeaders } from "axios";
 import { apiClient, buildApiUrl } from "./client";
-import { getToken } from "@/lib/auth";
 
 function toHeaders(headers?: HeadersInit): AxiosRequestHeaders {
-  if (!headers) return { "Content-Type": "application/json" } as AxiosRequestHeaders;
+  if (!headers) return {} as AxiosRequestHeaders;
 
   const parsed = new Headers(headers);
-  const result: Record<string, string> = { "Content-Type": "application/json" };
+  const result: Record<string, string> = {};
   parsed.forEach((value, key) => {
     result[key] = value;
   });
@@ -30,10 +29,8 @@ export function apiUrl(path: string) {
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers = {
     ...toHeaders(options.headers),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   const response = await apiClient.request<T>({
     url: path,

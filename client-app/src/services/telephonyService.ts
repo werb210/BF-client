@@ -1,6 +1,6 @@
 import { apiRequest } from "../api/request";
 import { API_ENDPOINTS } from "../api/endpoints";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 import { logClientError } from "@/lib/logger";
 
 type CallStatus = {
@@ -10,8 +10,7 @@ type CallStatus = {
 };
 
 export async function getCallStatus(): Promise<CallStatus> {
-  const token = getToken();
-  if (!token) {
+  if (!hasToken()) {
     return {
       status: "offline",
       activeCall: false,

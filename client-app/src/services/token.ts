@@ -1,7 +1,7 @@
-import { clearToken, getToken } from "@/auth/tokenStorage"
+import { clearToken } from "@/auth/tokenStorage"
 
 export function getAccessToken(): string | null {
-  return getToken()
+  return localStorage.getItem("bf_token")
 }
 
 export function clearStoredAuth() {

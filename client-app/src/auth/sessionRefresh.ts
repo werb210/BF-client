@@ -3,7 +3,7 @@ import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
 import { setSessionRefreshing } from "../state/sessionRefresh";
 import { getActiveClientSessionToken } from "../state/clientSession";
 import { apiRequest } from "../api/client";
-import { getToken } from "./tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 let refreshPromise: Promise<boolean> | null = null;
 let refreshFailed = false;
@@ -17,15 +17,12 @@ export async function refreshSessionOnce() {
   if (refreshFailed) return false;
   if (refreshPromise) return refreshPromise;
 
-  const token = getActiveClientSessionToken() || getToken();
-  if (!token) return true;
+  const token = getActiveClientSessionToken();
+  if (!token && !hasToken()) return true;
 
   setSessionRefreshing(true);
   refreshPromise = (apiRequest("/api/client/session/refresh", {
     method: "POST",
-    headers: token
-      ? { Authorization: `Bearer ${token}` }
-      : undefined,
   }) as Promise<unknown>)
     .then(() => true)
     .catch(() => false)

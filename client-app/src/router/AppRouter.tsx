@@ -26,7 +26,7 @@ import {
 } from "@/api/website";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import api from "../api/client";
-import { clearToken, getToken } from "@/lib/auth";
+import { clearToken, hasToken } from "@/lib/auth";
 
 const StatusPage = lazy(() => import("../pages/StatusPage").then((module) => ({ default: module.StatusPage })));
 const ApplicationPortalPage = lazy(() => import("../pages/ApplicationPortalPage").then((module) => ({ default: module.ApplicationPortalPage })));
@@ -93,8 +93,8 @@ function RequirePortalSession({ children }: GuardProps): JSX.Element {
 }
 
 function RequireOTP({ children }: GuardProps): JSX.Element {
-  const token = typeof window !== "undefined" ? getToken() : null;
-  if (!token) return <Navigate to="/otp" replace />;
+  const tokenPresent = typeof window !== "undefined" ? hasToken() : false;
+  if (!tokenPresent) return <Navigate to="/otp" replace />;
   return children;
 }
 
@@ -191,15 +191,17 @@ export default function AppRouter(): JSX.Element {
   const { isOffline } = useNetworkStatus();
 
   useEffect(() => {
-    const token = typeof window !== "undefined" ? getToken() : null;
-
-    if (!token) {
+    if (typeof window === "undefined" || !hasToken()) {
       return;
     }
 
     api.get(API_ENDPOINTS.AUTH_ME)
       .then((res) => {
-        const user = res?.data?.data?.user;
+        if (!res?.data?.ok || !res?.data?.data) {
+          clearToken();
+          return;
+        }
+        const user = res.data.data.user;
         if (!user) {
           clearToken();
         }

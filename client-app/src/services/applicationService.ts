@@ -1,5 +1,5 @@
 import { apiRequest } from "../api/client";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 export async function createApplication(data: unknown) {
   return apiRequest("/api/application", {
@@ -9,7 +9,7 @@ export async function createApplication(data: unknown) {
 }
 
 export async function updateApplication(data: unknown) {
-  if (!getToken()) return;
+  if (!hasToken()) return;
 
   return apiRequest("/api/application/update", {
     method: "POST",

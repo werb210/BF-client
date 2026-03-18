@@ -1,12 +1,12 @@
 import { apiRequest } from "./client";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 export async function getContinuation() {
   return apiRequest("/api/application/continuation");
 }
 
 export async function updateApplication(payload: unknown) {
-  if (!getToken()) return;
+  if (!hasToken()) return;
 
   return apiRequest("/api/application/update", {
     method: "POST",

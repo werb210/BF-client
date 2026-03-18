@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import { getToken } from "@/auth/tokenStorage";
+import { hasToken } from "@/lib/auth";
 
 export interface SaveApplicationStepPayload {
   applicationId: string;
@@ -41,7 +41,7 @@ export async function saveApplicationProgress(data: any) {
 }
 
 export async function updateApplication(data: any) {
-  if (!getToken()) return;
+  if (!hasToken()) return;
 
   return apiRequest("/api/application/update", {
     method: "POST",
