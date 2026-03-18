@@ -31,14 +31,15 @@ export function apiUrl(path: string) {
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
+  const headers = {
+    ...toHeaders(options.headers),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
   const response = await apiClient.request<T>({
     url: path,
     method: options.method || "GET",
     data: toData(options.body),
-    headers: {
-      ...toHeaders(options.headers),
-      Authorization: token ? `Bearer ${token}` : "",
-    },
+    headers,
   });
 
   return response.data;

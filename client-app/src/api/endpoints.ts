@@ -1,7 +1,7 @@
 export const API_ENDPOINTS = {
-  OTP_START: "/auth/otp/start",
-  OTP_VERIFY: "/auth/otp/verify",
-  AUTH_ME: "/auth/me",
+  OTP_START: "/api/auth/otp/start",
+  OTP_VERIFY: "/api/auth/otp/verify",
+  AUTH_ME: "/api/auth/me",
   TELEPHONY_TOKEN: "/telephony/token",
   TELEPHONY_PRESENCE: "/telephony/presence",
 } as const;

@@ -24,6 +24,7 @@ import {
   clearStoredReadinessSession,
   resolveReadinessSessionId,
 } from "@/api/website";
+import { API_ENDPOINTS } from "@/api/endpoints";
 import api from "../api/client";
 import { clearToken, getToken } from "@/lib/auth";
 
@@ -196,7 +197,7 @@ export default function AppRouter(): JSX.Element {
       return;
     }
 
-    api.get("/auth/me")
+    api.get(API_ENDPOINTS.AUTH_ME)
       .then((res) => {
         const user = res?.data?.data?.user;
         if (!user) {
