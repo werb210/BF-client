@@ -1,28 +1,28 @@
-import { API_PATHS } from '@/config/api';
-import { assertOk } from '@/api/responseGuard';
-import { apiClient } from './client';
-import { normalizePhone } from '@/utils/phone';
+import { normalizePhone } from "../utils/phone";
 
-const EMAIL_FIELD = `e${'mail'}`;
+export async function sendOtp(phone: string) {
+  const res = await fetch("/api/auth/otp/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone: normalizePhone(phone) }),
+  });
 
-function assertNoEmail(payload: Record<string, unknown>) {
-  if (Object.prototype.hasOwnProperty.call(payload, EMAIL_FIELD)) {
-    throw new Error('AUTH CONTRACT VIOLATION: forbidden identifier found in auth payload');
-  }
+  if (!res.ok) throw new Error("OTP send failed");
+
+  return res.json();
 }
 
-export const startOtp = async (phone: string) => {
-  const payload = { phone: normalizePhone(phone) };
-  assertNoEmail(payload);
-  return assertOk(await apiClient.post(API_PATHS.AUTH_START, payload));
-};
+export async function verifyOtp(phone: string, code: string) {
+  const res = await fetch("/api/auth/otp/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: normalizePhone(phone),
+      code,
+    }),
+  });
 
-export const verifyOtp = async (phone: string, code: string) => {
-  const payload = { phone: normalizePhone(phone), code: code.trim() };
-  assertNoEmail(payload);
-  return assertOk(await apiClient.post(API_PATHS.AUTH_VERIFY, payload));
-};
+  if (!res.ok) throw new Error("OTP verify failed");
 
-export const getMe = async () => {
-  return assertOk(await apiClient.get(API_PATHS.AUTH_ME));
-};
+  return res.json();
+}
