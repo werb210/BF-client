@@ -1,0 +1,8 @@
+Server MUST include:
+
+app.use(cors({
+  origin: "https://staff.boreal.financial",
+  credentials: true
+}));
+
+Without this, auth WILL FAIL in production.

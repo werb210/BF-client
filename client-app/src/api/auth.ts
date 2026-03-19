@@ -1,11 +1,6 @@
-import axios from 'axios';
 import { API_PATHS } from '@/config/api';
 import { assertOk } from '@/api/responseGuard';
-
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
-});
+import { apiClient } from './client';
 
 const EMAIL_FIELD = `e${'mail'}`;
 
@@ -24,15 +19,15 @@ function assertNoEmail(payload: Record<string, unknown>) {
 export const startOtp = async (phone: string) => {
   const payload = { phone: normalizePhone(phone) };
   assertNoEmail(payload);
-  return assertOk(await API.post(API_PATHS.AUTH_START, payload));
+  return assertOk(await apiClient.post(API_PATHS.AUTH_START, payload));
 };
 
 export const verifyOtp = async (phone: string, code: string) => {
   const payload = { phone: normalizePhone(phone), code };
   assertNoEmail(payload);
-  return assertOk(await API.post(API_PATHS.AUTH_VERIFY, payload));
+  return assertOk(await apiClient.post(API_PATHS.AUTH_VERIFY, payload));
 };
 
 export const getMe = async () => {
-  return assertOk(await API.get(API_PATHS.AUTH_ME));
+  return assertOk(await apiClient.get(API_PATHS.AUTH_ME));
 };

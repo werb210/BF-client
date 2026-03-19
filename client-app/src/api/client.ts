@@ -3,11 +3,12 @@ import { getToken } from "@/lib/auth";
 import { createHttpClient } from "./httpClient";
 import { API_ENDPOINTS } from "./endpoints";
 
-const API_BASE_URL = "https://api.staff.boreal.financial";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.staff.boreal.financial";
 
 const api = createHttpClient({
   baseURL: API_BASE_URL,
   timeout: 15000,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
