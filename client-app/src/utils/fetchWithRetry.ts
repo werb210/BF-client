@@ -34,16 +34,8 @@ export async function safeFetch(
       data: init?.body,
       headers: init?.headers as Record<string, string> | undefined,
       signal: controller.signal,
-      validateStatus: () => true,
       withCredentials: true,
     });
-
-    if (response.status === 401) {
-      if (typeof window !== "undefined") {
-        window.location.assign("/apply/step-1");
-      }
-      throw new FetchRequestError("Unauthorized. Please restart at step 1.", 401);
-    }
 
     return new Response(JSON.stringify(response.data), {
       status: response.status,
@@ -58,8 +50,20 @@ export async function safeFetch(
       throw new FetchRequestError("Request timed out.", undefined, true);
     }
 
-    if (axios.isAxiosError(error) && error.code === "ERR_CANCELED") {
-      throw new FetchRequestError("Request timed out.", undefined, true);
+    if (axios.isAxiosError(error)) {
+      if (error.code === "ERR_CANCELED") {
+        throw new FetchRequestError("Request timed out.", undefined, true);
+      }
+
+      const status = error.response?.status;
+
+      if (status === 401 && typeof window !== "undefined") {
+        window.location.assign("/apply/step-1");
+      }
+
+      if (typeof status === "number") {
+        throw new FetchRequestError(`Request failed with status ${status}.`, status);
+      }
     }
 
     throw error;
@@ -84,7 +88,11 @@ export async function fetchWithRetry(
         return response;
       }
     } catch (error) {
-      if (attempt >= maxAttempts) {
+      const shouldRetry =
+        error instanceof FetchRequestError &&
+        (error.timedOut || (typeof error.status === "number" && RETRYABLE_STATUS.has(error.status)));
+
+      if (!shouldRetry || attempt >= maxAttempts) {
         throw error;
       }
     }
