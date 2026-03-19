@@ -1,7 +1,8 @@
+import { API_BASE } from "../config/api";
 import { normalizePhone } from "../utils/phone";
 
 export async function sendOtp(phone: string) {
-  const res = await fetch("/api/auth/otp/send", {
+  const res = await fetch(`${API_BASE}/api/auth/otp/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone: normalizePhone(phone) }),
@@ -13,7 +14,7 @@ export async function sendOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await fetch("/api/auth/otp/verify", {
+  const res = await fetch(`${API_BASE}/api/auth/otp/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
