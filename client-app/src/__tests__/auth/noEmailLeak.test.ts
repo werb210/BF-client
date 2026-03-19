@@ -27,7 +27,7 @@ describe('Auth contract enforcement', () => {
   });
 
   it('should only send phone for OTP start', async () => {
-    postMock.mockResolvedValue({ data: { ok: true } });
+    postMock.mockResolvedValue({ status: 200, data: { ok: true } });
     await startOtp('+15871234567');
     expect(postMock).toHaveBeenCalledTimes(1);
     const [, payload] = postMock.mock.calls[0];
@@ -35,7 +35,7 @@ describe('Auth contract enforcement', () => {
   });
 
   it('should only send phone + code for OTP verify', async () => {
-    postMock.mockResolvedValue({ data: { ok: true } });
+    postMock.mockResolvedValue({ status: 200, data: { ok: true } });
     await verifyOtp('+15871234567', '123456');
     const [, payload] = postMock.mock.calls[0];
     expect(payload).toEqual({ phone: '+15871234567', code: '123456' });
