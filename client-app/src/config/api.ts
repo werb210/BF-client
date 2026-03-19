@@ -1,3 +1,6 @@
+export const API_BASE =
+  import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export const API_PATHS = {
   AUTH_START: '/api/auth/otp/start',
   AUTH_VERIFY: '/api/auth/otp/verify',
