@@ -5,12 +5,10 @@ const { postMock, getMock } = vi.hoisted(() => ({
   getMock: vi.fn(),
 }));
 
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      post: postMock,
-      get: getMock,
-    })),
+vi.mock('@/api/client', () => ({
+  apiClient: {
+    post: postMock,
+    get: getMock,
   },
 }));
 

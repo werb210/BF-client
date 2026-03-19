@@ -31,6 +31,7 @@ import CallUsButton from "@/telephony/components/CallUsButton";
 import { getCallStatus } from "@/services/telephonyService";
 import { safeFetch } from "@/utils/safeFetch";
 import { hasToken, setToken } from "@/lib/auth";
+import { useAuth } from "@/auth/useAuth";
 
 type AppProps = {
   initialSession?: InitialSession | null;
@@ -43,6 +44,7 @@ export default function App({ initialSession = null }: AppProps) {
   const updateAvailable = useServiceWorkerUpdate();
   const [session] = useState<InitialSession | null>(initialSession);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [continuationError, setContinuationError] = useState<string | null>(null);
   const hasInitializedClientVoice = useRef(false);
   const pathname = typeof window !== "undefined" ? window.location.pathname : "";
@@ -209,9 +211,11 @@ export default function App({ initialSession = null }: AppProps) {
       });
   }, []);
 
-  if (loading) {
+  if (loading || authLoading) {
     return null;
   }
+
+  void user;
 
   if (refreshing) {
     return <SessionRefreshOverlay />;
