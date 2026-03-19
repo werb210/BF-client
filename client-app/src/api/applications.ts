@@ -1,4 +1,5 @@
 import api from "@/api/client";
+import { API_PATHS } from "@/config/api";
 import {
   ApplicationDocumentsResponseSchema,
   ApplicationOffersResponseSchema,
@@ -28,7 +29,7 @@ export async function submitApplication(
         }
       : payload;
 
-  const res = await api.post<any>("/api/client/applications", submissionPayload);
+  const res = await api.post<any>(API_PATHS.APPLICATIONS, submissionPayload);
   localStorage.removeItem("creditSessionToken");
   return (res as { data?: unknown })?.data;
 }
@@ -49,7 +50,7 @@ export async function createPublicApplication(
         }
       : payload;
 
-  const res: unknown = await api.post("/api/applications", submissionPayload);
+  const res: unknown = await api.post(API_PATHS.APPLICATIONS, submissionPayload);
   return parseApiResponse(
     PublicApplicationResponseSchema,
     (res as { data: unknown }).data,
@@ -96,7 +97,7 @@ export async function uploadApplicationDocument(
     throw new Error("file_too_large");
   }
 
-  const uploadUrl = `/documents/upload`;
+  const uploadUrl = API_PATHS.DOCUMENT_UPLOAD;
   const formData = new FormData();
   formData.append("document_category", payload.documentCategory);
   formData.append("application_id", id);

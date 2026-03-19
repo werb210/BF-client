@@ -13,7 +13,7 @@ export class ApiError extends Error {
 }
 
 export function createHttpClient(config: AxiosRequestConfig): AxiosInstance {
-  const client = axios.create(config);
+  const client = axios.create({ withCredentials: true, ...config });
 
   client.interceptors.response.use(
     (response) => response,

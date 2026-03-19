@@ -62,7 +62,7 @@ describe("submitApplication", () => {
     const { submitApplication } = await import("../applications");
     await submitApplication({ hello: "world" }, { idempotencyKey: "idem-123" });
     expect(postMock).toHaveBeenCalledWith(
-      "/api/client/applications",
+      "/api/applications",
       { hello: "world", ...expectedAttribution, creditSessionToken: null }
     );
   });
@@ -74,7 +74,7 @@ describe("submitApplication", () => {
       { idempotencyKey: "idem-123", continuationToken: "cont-456" }
     );
     expect(postMock).toHaveBeenCalledWith(
-      "/api/client/applications",
+      "/api/applications",
       {
         hello: "world",
         ...expectedAttribution,
@@ -91,7 +91,7 @@ describe("submitApplication", () => {
     await submitApplication({ hello: "world" });
 
     expect(postMock).toHaveBeenCalledWith(
-      "/api/client/applications",
+      "/api/applications",
       {
         hello: "world",
         ...expectedAttribution,
