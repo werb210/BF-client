@@ -25,7 +25,7 @@ function installSessionAdapter(): () => void {
       return {
         status: 200,
         statusText: 'OK',
-        headers: { 'set-cookie': 'session=otp-flow' },
+        headers: { 'set-cookie': ['session=otp-flow'] },
         config,
         data: { ok: true },
       };
@@ -46,7 +46,7 @@ function installSessionAdapter(): () => void {
       return {
         status: 200,
         statusText: 'OK',
-        headers: { 'set-cookie': 'session=verified' },
+        headers: { 'set-cookie': ['session=verified'] },
         config,
         data: { ok: true },
       };

@@ -1,0 +1,9 @@
+{
+  "name": "BF-client",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "typecheck": "npm --prefix client-app run typecheck",
+    "test": "npm --prefix client-app run test"
+  }
+}
