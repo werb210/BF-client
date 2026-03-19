@@ -7,3 +7,8 @@ export function getOtpSession(): string | null {
     return null;
   }
 }
+
+export function clearSession() {
+  localStorage.clear();
+  sessionStorage.clear();
+}

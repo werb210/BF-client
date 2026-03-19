@@ -11,6 +11,13 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
+    if (typeof window !== "undefined" && window.location.pathname === "/login") {
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
+
     void apiClient
       .get(API_ENDPOINTS.AUTH_ME)
       .then((res) => {
