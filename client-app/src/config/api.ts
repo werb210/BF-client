@@ -1,7 +1,7 @@
-import { runtimeConfig } from "./runtimeConfig";
-
-export { apiUrl, getApiBaseUrl } from "../api/request";
-
-export const API_TIMEOUT = 30000;
-
-export const API_BASE = runtimeConfig.API_BASE;
+export const API_PATHS = {
+  AUTH_START: '/api/auth/otp/start',
+  AUTH_VERIFY: '/api/auth/otp/verify',
+  AUTH_ME: '/api/auth/me',
+  APPLICATIONS: '/api/applications',
+  DOCUMENT_UPLOAD: '/api/documents/upload',
+} as const;
