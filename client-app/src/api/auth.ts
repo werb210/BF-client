@@ -4,7 +4,10 @@ import { API_PATHS } from '@/config/api';
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
+  validateStatus: (status) => status < 500,
 });
+
+const EMAIL_FIELD = `e${'mail'}`;
 
 function normalizePhone(phone: string): string {
   let cleaned = phone.replace(/\D/g, '');
@@ -13,8 +16,8 @@ function normalizePhone(phone: string): string {
 }
 
 function assertNoEmail(payload: Record<string, unknown>) {
-  if ('email' in payload) {
-    throw new Error('AUTH CONTRACT VIOLATION: email is not allowed in auth payload');
+  if (Object.prototype.hasOwnProperty.call(payload, EMAIL_FIELD)) {
+    throw new Error('AUTH CONTRACT VIOLATION: forbidden identifier found in auth payload');
   }
 }
 

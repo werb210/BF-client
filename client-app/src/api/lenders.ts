@@ -1,4 +1,5 @@
 import api from "@/api/client";
+import { API_PATHS } from "@/config/api";
 import type { ApiResponse } from "@/types/api";
 
 export type ClientLender = { id: string; name: string };
@@ -26,13 +27,13 @@ export type LenderProductRequirement = {
 };
 
 export async function getClientLenders(): Promise<ClientLender[]> {
-  const res = await api.get<ApiResponse<ClientLender[]>>("/api/client/lenders");
+  const res = await api.get<ApiResponse<ClientLender[]>>(API_PATHS.CLIENT_LENDERS);
   return res.data.data;
 }
 
 export async function getClientLenderProducts(): Promise<ClientLenderProduct[]> {
   const res = await api.get<ApiResponse<ClientLenderProduct[]> | ClientLenderProduct[]>(
-    "/api/client/lender-products"
+    API_PATHS.CLIENT_LENDER_PRODUCTS
   );
 
   if (Array.isArray(res.data)) {

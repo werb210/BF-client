@@ -1,9 +1,10 @@
-import { ClientProfileStore } from "../state/clientProfiles";
-import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
-import { setSessionRefreshing } from "../state/sessionRefresh";
-import { getActiveClientSessionToken } from "../state/clientSession";
-import { apiRequest } from "../api/client";
+import { API_PATHS } from "@/config/api";
 import { hasToken } from "@/lib/auth";
+import { apiRequest } from "../api/client";
+import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
+import { getActiveClientSessionToken } from "../state/clientSession";
+import { ClientProfileStore } from "../state/clientProfiles";
+import { setSessionRefreshing } from "../state/sessionRefresh";
 
 let refreshPromise: Promise<boolean> | null = null;
 let refreshFailed = false;
@@ -21,7 +22,7 @@ export async function refreshSessionOnce() {
   if (!token && !hasToken()) return true;
 
   setSessionRefreshing(true);
-  refreshPromise = (apiRequest("/api/client/session/refresh", {
+  refreshPromise = (apiRequest(API_PATHS.CLIENT_SESSION_REFRESH, {
     method: "POST",
   }) as Promise<unknown>)
     .then(() => true)

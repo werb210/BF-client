@@ -4,4 +4,7 @@ export const API_PATHS = {
   AUTH_ME: '/api/auth/me',
   APPLICATIONS: '/api/applications',
   DOCUMENT_UPLOAD: '/api/documents/upload',
+  CLIENT_LENDERS: '/api/lenders',
+  CLIENT_LENDER_PRODUCTS: '/api/lender-products',
+  CLIENT_SESSION_REFRESH: '/api/session/refresh',
 } as const;

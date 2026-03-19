@@ -1,3 +1,4 @@
+import { API_PATHS } from "@/config/api";
 import api from "../api/client";
 import { OfflineStore } from "../state/offline";
 
@@ -27,7 +28,7 @@ export const ProductSync = {
 
   async sync() {
     ProductSync.invalidateCache();
-    const res = await api.get("/api/client/lender-products");
+    const res = await api.get(API_PATHS.CLIENT_LENDER_PRODUCTS);
     const products = Array.isArray(res.data) ? res.data : [];
     if (!products.length) {
       throw new Error("No lender products returned from server.");

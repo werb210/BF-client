@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import { TextDecoder, TextEncoder } from "util";
 
 const localStorageMock = {
@@ -7,6 +7,16 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
+
+beforeEach(() => {
+  vi.spyOn(console, "error").mockImplementation((msg: unknown) => {
+    throw new Error(String(msg));
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
