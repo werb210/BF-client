@@ -1,14 +1,12 @@
 {
-<<<<<<< HEAD
   "name": "BF-client",
   "private": true,
   "version": "1.0.0",
   "scripts": {
     "typecheck": "npm --prefix client-app run typecheck",
     "test": "npm --prefix client-app run test"
-=======
+  },
   "devDependencies": {
     "msw": "^2.12.13"
->>>>>>> bc9a370b (fix: add msw dependency properly)
   }
 }
