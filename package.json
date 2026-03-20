@@ -7,5 +7,7 @@
     "test": "echo 'tests disabled (npm blocked)' && exit 0",
     "e2e": "playwright test"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "file:typescript-5.9.3.tgz"
+  }
 }
