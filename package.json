@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "typecheck": "tsc -p tsconfig.ci.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.ts",
     "e2e": "playwright test",
     "build": "npm --prefix client-app run build"
   },
