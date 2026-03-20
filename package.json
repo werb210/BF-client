@@ -3,11 +3,16 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "typecheck": "npm --prefix client-app run typecheck",
-    "test": "echo 'tests disabled (npm blocked)' && exit 0",
-    "e2e": "playwright test"
+    "typecheck": "tsc -p tsconfig.ci.json --noEmit",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "build": "npm --prefix client-app run build"
   },
   "devDependencies": {
-    "typescript": "file:typescript-5.9.3.tgz"
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^24.0.0",
+    "jsdom": "^26.0.0",
+    "typescript": "file:typescript-5.9.3.tgz",
+    "vitest": "^3.2.0"
   }
 }
