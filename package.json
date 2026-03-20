@@ -7,7 +7,5 @@
     "test": "vitest run",
     "e2e": "playwright test"
   },
-  "devDependencies": {
-    "msw": "^2.12.13"
-  }
+  "devDependencies": {}
 }
