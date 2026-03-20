@@ -5,8 +5,8 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.ci.json --noEmit",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "build": "npm --prefix client-app run build"
+    "build": "npm --prefix client-app run build",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
