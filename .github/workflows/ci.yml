@@ -2,18 +2,31 @@ name: BF Client CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Use Node 20
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - run: echo "Client CI passing (tests disabled due to npm restriction)"
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (FAIL HARD)
+        run: npx tsc --noEmit
+
+      - name: Build (FAIL HARD)
+        run: npm run build
+
+      - name: Run tests (FAIL HARD)
+        run: npm run test --if-present
