@@ -2,37 +2,22 @@ name: Client CI
 
 on:
   push:
-    branches:
-      - main
-
-concurrency:
-  group: client-ci-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [main]
+  pull_request:
 
 jobs:
-  build:
+  client-checks:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: |
-          cd client-app
-          npm install
+      - run: npm ci
 
-      - name: Build client
-        run: |
-          cd client-app
-          npm run build
-
-      # Disable failing tests until test suite is repaired
-      - name: Run tests (non-blocking)
-        run: |
-          cd client-app
-          npm test || true
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test
