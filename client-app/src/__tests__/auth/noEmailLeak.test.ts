@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { sendOtp, verifyOtp } from '@/api/auth';
+import { sendOtp, verifyOtpCode } from '@/api/auth';
 
 describe('Auth contract enforcement', () => {
   const fetchMock = vi.fn();
@@ -28,7 +28,7 @@ describe('Auth contract enforcement', () => {
   it('should only send phone + code for OTP verify', async () => {
     fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
 
-    await verifyOtp('+15871234567', '123456');
+    await verifyOtpCode('+15871234567', '123456');
 
     const [, requestInit] = fetchMock.mock.calls[0];
     expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '+15871234567', code: '123456' });

@@ -1,7 +1,7 @@
 import type { AxiosProgressEvent } from "axios";
 import { z } from "zod";
 import api from "@/api/client";
-import { buildUrl } from "@/config/api";
+import { buildUrl } from "@/lib/api";
 import {
   ClientAppMessagesResponseSchema,
   ClientAppStartResponseSchema,
