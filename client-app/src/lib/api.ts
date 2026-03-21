@@ -1,3 +1,5 @@
+import { API_CONTRACT } from "@/contracts";
+
 const RAW_BASE =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
@@ -6,7 +8,7 @@ const RAW_BASE =
 export const API_BASE = RAW_BASE.replace(/\/+$/, "");
 
 if (!API_BASE) {
-  console.error("Missing VITE_API_URL or VITE_API_BASE_URL");
+  console.error(`Missing VITE_API_URL or VITE_API_BASE_URL for ${API_CONTRACT.BASE}`);
 }
 
 export function buildUrl(path: string) {

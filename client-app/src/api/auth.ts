@@ -1,22 +1,17 @@
+import { AUTH_CONTRACT } from "@/contracts";
 import { apiFetch } from "@/lib/api";
 
-export async function sendOtp(data: unknown) {
-  const payload = typeof data === "string" ? { phone: data } : data;
-  return apiFetch("/api/auth/otp/start", {
+export async function sendOtp(data: any) {
+  return apiFetch(AUTH_CONTRACT.OTP_START, {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify(data)
   });
 }
 
-export async function verifyOtp(data: unknown, code?: string) {
-  const payload =
-    typeof data === "string" && typeof code === "string"
-      ? { phone: data, code }
-      : data;
-
-  return apiFetch("/api/auth/otp/verify", {
+export async function verifyOtp(data: any) {
+  return apiFetch(AUTH_CONTRACT.OTP_VERIFY, {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify(data)
   });
 }
 

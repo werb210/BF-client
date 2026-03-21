@@ -1,13 +1,25 @@
+import { DOCUMENT_CONTRACT } from "@/contracts";
 import { apiFetch } from "@/lib/api";
 
-export async function uploadDocument(file: File, applicationId: string, category: string) {
+export async function uploadDocument(file, applicationId, category) {
   const formData = new FormData();
 
-  formData.append("file", file);
-  formData.append("applicationId", applicationId);
-  formData.append("category", category);
+  formData.append(
+    DOCUMENT_CONTRACT.FIELDS.FILE,
+    file
+  );
 
-  return apiFetch("/api/documents/upload", {
+  formData.append(
+    DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID,
+    applicationId
+  );
+
+  formData.append(
+    DOCUMENT_CONTRACT.FIELDS.CATEGORY,
+    category
+  );
+
+  return apiFetch(DOCUMENT_CONTRACT.UPLOAD, {
     method: "POST",
     body: formData
   });
