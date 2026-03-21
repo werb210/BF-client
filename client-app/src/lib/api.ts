@@ -1,12 +1,12 @@
-const RAW_BASE =
+const RAW =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL;
 
-if (!RAW_BASE) {
-  throw new Error("Missing API base URL. Expected VITE_API_BASE_URL or VITE_API_URL.");
+if (!RAW) {
+  throw new Error("Missing API base URL");
 }
 
-const BASE = RAW_BASE.replace(/\/+$/, "");
+const BASE = RAW.replace(/\/+$/, "");
 
 export const API_BASE = BASE.endsWith("/api")
   ? BASE

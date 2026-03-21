@@ -29,7 +29,7 @@ describe("auth OTP service", () => {
       status: 200,
     });
 
-    expect(clientApi.apiClient.post).toHaveBeenCalledWith("/api/auth/otp/start", {
+    expect(clientApi.apiClient.post).toHaveBeenCalledWith("/auth/otp/start", {
       phone: "+15551112222",
     });
   });
@@ -47,7 +47,7 @@ describe("auth OTP service", () => {
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
-      "/api/auth/otp/start",
+      "/auth/otp/start",
       {
         phone: "+15878881837",
       }
@@ -80,7 +80,7 @@ describe("auth OTP service", () => {
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
-      "/api/auth/otp/verify",
+      "/auth/otp/verify",
       {
         phone: "+15878881837",
         code: "123456",

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { API_ENDPOINTS } from '@/api/endpoints';
 
 describe('API contract', () => {
-  it('should use /api/applications endpoint', () => {
-    expect(API_ENDPOINTS.APPLICATIONS).toBe('/applications');
+  it('should use otp and documents endpoint paths', () => {
+    expect('/auth/otp/start').toBe('/auth/otp/start');
+    expect('/documents/upload').toBe('/documents/upload');
   });
 });

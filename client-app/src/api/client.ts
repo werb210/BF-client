@@ -1,82 +1,66 @@
-import { AxiosHeaders, type AxiosRequestConfig } from "axios";
-import { getToken } from "@/lib/auth";
-import { createHttpClient } from "./httpClient";
-import { API_ENDPOINTS } from "./endpoints";
-import { API_BASE, buildUrl } from "@/config/api";
+import { buildUrl } from "@/lib/api";
 
-const api = createHttpClient({
-  baseURL: API_BASE,
-  timeout: 15000,
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-api.interceptors.request.use((config) => {
-  const headers = AxiosHeaders.from(config.headers || {});
-  const token = getToken();
-  const requestUrl = String(config.url || "");
-  const isOtpRequest =
-    requestUrl.includes(API_ENDPOINTS.OTP_START) ||
-    requestUrl.includes(API_ENDPOINTS.OTP_VERIFY);
-
-  headers.delete("X-Request-Id");
-  headers.delete("x-request-id");
-  headers.delete("X-Client-Id");
-  headers.delete("x-client-id");
-
-  if (isOtpRequest || !token) {
-    headers.delete("Authorization");
-  } else {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const method = String(config.method || "get").toLowerCase();
-  const hasBody = method !== "get" && method !== "head";
-  if (!hasBody && !headers.has("Content-Type")) {
-    headers.delete("Content-Type");
-  }
-  config.headers = headers;
-
-  return config;
-});
-
-export const apiClient = api;
-
-function normalizePath(url: string): string {
-  if (!url) return "/";
-  if (/^https?:\/\//.test(url)) return url;
-  const normalized = url.startsWith("/") ? url : `/${url}`;
-  return normalized.startsWith("/api/") ? normalized.slice(4) : normalized;
-}
-
-export function buildApiUrl(path: string): string {
-  if (/^https?:\/\//.test(path)) return path;
-  return buildUrl(normalizePath(path));
+export async function apiFetch(
+  path: string,
+  options: RequestInit = {}
+) {
+  return fetch(buildUrl(path), {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const method = options.method || "GET";
-  const body = options.body;
-  let data: unknown = body;
-
-  if (typeof body === "string") {
-    try {
-      data = JSON.parse(body);
-    } catch {
-      data = body;
-    }
+  const response = await apiFetch(path, options);
+  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return (await response.json()) as T;
   }
-
-  const response = await api.request<T>({
-    url: normalizePath(path),
-    method,
-    data,
-    headers: options.headers as AxiosRequestConfig["headers"],
-  });
-
-  return response.data;
+  return (await response.text()) as T;
 }
 
-export default api;
+const buildMethodOptions = (method: string, data?: unknown, headers?: Record<string, string>) => {
+  const isForm = typeof FormData !== "undefined" && data instanceof FormData;
+  return {
+    method,
+    body: data == null ? undefined : isForm ? (data as BodyInit) : JSON.stringify(data),
+    headers: isForm ? headers : { "Content-Type": "application/json", ...(headers || {}) }
+  } as RequestInit;
+};
+
+export const apiClient = {
+  interceptors: {
+    request: { use: () => undefined },
+    response: { use: () => undefined }
+  },
+  async request<T = unknown>(config: any): Promise<{ data: T; status: number }> {
+    const data = await apiRequest<T>(config.url, buildMethodOptions((config.method || "GET").toUpperCase(), config.data, config.headers));
+    return { data, status: 200 };
+  },
+  async get<T = unknown>(url: string): Promise<{ data: T; status: number }> {
+    return { data: await apiRequest<T>(url), status: 200 };
+  },
+  async post<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
+    return { data: await apiRequest<T>(url, buildMethodOptions("POST", data, config?.headers)), status: 200 };
+  },
+  async patch<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
+    return { data: await apiRequest<T>(url, buildMethodOptions("PATCH", data, config?.headers)), status: 200 };
+  },
+  async put<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
+    return { data: await apiRequest<T>(url, buildMethodOptions("PUT", data, config?.headers)), status: 200 };
+  },
+  async delete<T = unknown>(url: string): Promise<{ data: T; status: number }> {
+    return { data: await apiRequest<T>(url, { method: "DELETE" }), status: 200 };
+  }
+};
+
+export function buildApiUrl(path: string): string {
+  return buildUrl(path);
+}
+
+export default apiClient;

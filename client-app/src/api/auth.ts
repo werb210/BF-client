@@ -1,23 +1,26 @@
-import { buildUrl } from "../config/api";
+import { apiFetch } from "./client";
 
-export async function sendOtp(phone: string) {
-  const res = await fetch(buildUrl("/auth/otp/start"), {
+export async function startOtp(payload: any) {
+  return apiFetch("/auth/otp/start", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify(payload)
   });
-
-  if (!res.ok) throw new Error("OTP send failed");
-  return res.json();
 }
 
-export async function verifyOtp(phone: string, code: string) {
-  const res = await fetch(buildUrl("/auth/otp/verify"), {
+export async function verifyOtp(payload: any) {
+  return apiFetch("/auth/otp/verify", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, code }),
+    body: JSON.stringify(payload)
   });
+}
 
-  if (!res.ok) throw new Error("OTP verify failed");
-  return res.json();
+export async function sendOtp(phone: string) {
+  if (typeof phone !== "string") {
+    throw new Error("Phone must be a string");
+  }
+  return startOtp({ phone });
+}
+
+export async function verifyOtpCode(phone: string, code: string) {
+  return verifyOtp({ phone, code });
 }
