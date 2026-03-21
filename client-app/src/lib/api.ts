@@ -8,7 +8,7 @@ const RAW_BASE =
 export const API_BASE = RAW_BASE.replace(/\/+$/, "");
 
 if (!API_BASE) {
-  console.error(`Missing VITE_API_URL or VITE_API_BASE_URL for ${API_CONTRACT.BASE}`);
+  throw new Error("API base URL not configured");
 }
 
 export function buildUrl(path: string) {

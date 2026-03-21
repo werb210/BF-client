@@ -64,7 +64,7 @@ function normalizeDocumentEntry(
 ): ApplicationDocumentCategory | null {
   if (!entry) return null;
   const rawCategory =
-    entry.document_category ||
+    entry.category ||
     entry.category ||
     entry.documentType ||
     entry.document_type ||

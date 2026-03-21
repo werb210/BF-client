@@ -1,7 +1,7 @@
 import type { AxiosProgressEvent } from "axios";
 import { z } from "zod";
 import api from "@/api/client";
-import { buildUrl } from "@/lib/api";
+
 import {
   ClientAppMessagesResponseSchema,
   ClientAppStartResponseSchema,
@@ -9,6 +9,7 @@ import {
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
 import type { ApiError } from "@/types/api";
+import { API_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
 import { validateFile } from "@/utils/fileValidation";
 
 type ClientAppStartResponse = z.infer<typeof ClientAppStartResponseSchema>;
@@ -38,7 +39,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
 export const ClientAppAPI = {
   start(payload: unknown) {
     return withRetry(async () => {
-      const res = await api.post<ClientAppStartResponse>("/api/applications", payload);
+      const res = await api.post<ClientAppStartResponse>(API_CONTRACT.CLIENT_APPLICATIONS.ROOT, payload);
       parseApiResponse(
         ClientAppStartResponseSchema,
         res.data,
@@ -48,7 +49,7 @@ export const ClientAppAPI = {
     });
   },
   update(token: string, payload: unknown) {
-    return withRetry(() => api.patch<ClientAppStatusResponse>(`/api/applications/${token}`, payload));
+    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload));
   },
   uploadDoc(
     token: string,
@@ -60,7 +61,7 @@ export const ClientAppAPI = {
     }
   ) {
     return withRetry(() =>
-      api.patch<ClientAppStatusResponse>(`/api/applications/${token}`, payload)
+      api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload)
     );
   },
 
@@ -77,11 +78,11 @@ export const ClientAppAPI = {
       validateFile(payload.file);
 
       const formData = new FormData();
-      formData.append("file", payload.file);
-      formData.append("category", payload.documentType);
-      formData.append("applicationId", String(payload.applicationId ?? ""));
+      formData.append(DOCUMENT_CONTRACT.FIELDS.FILE, payload.file);
+      formData.append(DOCUMENT_CONTRACT.FIELDS.CATEGORY, payload.documentType);
+      formData.append(DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID, String(payload.applicationId ?? ""));
       if (payload.applicationToken) formData.append("application_token", payload.applicationToken);
-      const res = await api.post<GenericObjectResponse>(buildUrl("/documents/upload"), formData, {
+      const res = await api.post<GenericObjectResponse>(DOCUMENT_CONTRACT.UPLOAD, formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (event: AxiosProgressEvent) => {
           if (!event.total) return;
@@ -94,15 +95,15 @@ export const ClientAppAPI = {
   },
   deferDocuments(token: string) {
     return withRetry(() =>
-      api.patch<ClientAppStatusResponse>(`/api/applications/${token}`, { documentsDeferred: true })
+      api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, { documentsDeferred: true })
     );
   },
   submit(token: string) {
-    return withRetry(() => api.post<GenericObjectResponse>(`/api/applications/${token}/submit`));
+    return withRetry(() => api.post<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`));
   },
   status(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`/api/applications/${token}`);
+      const res = await api.get<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`);
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
@@ -113,7 +114,7 @@ export const ClientAppAPI = {
   },
   getApplication(applicationId: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`/api/applications/${applicationId}`);
+      const res = await api.get<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`);
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
@@ -123,11 +124,11 @@ export const ClientAppAPI = {
     });
   },
   updateApplication(applicationId: string, payload: unknown) {
-    return withRetry(() => api.patch<ClientAppStatusResponse>(`/api/applications/${applicationId}`, payload));
+    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`, payload));
   },
   getMessages(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppMessagesResponse>(`/api/applications/${token}/messages`);
+      const res = await api.get<ClientAppMessagesResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`);
       parseApiResponse(
         ClientAppMessagesResponseSchema,
         res.data,
@@ -138,10 +139,10 @@ export const ClientAppAPI = {
   },
   sendMessage(token: string, text: string) {
     return withRetry(() =>
-      api.post<GenericObjectResponse>(`/api/applications/${token}/messages`, { text })
+      api.post<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`, { text })
     );
   },
   getSignNowUrl(token: string) {
-    return withRetry(() => api.get<GenericObjectResponse>(`/api/applications/${token}/signnow`));
+    return withRetry(() => api.get<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/signnow`));
   },
 };

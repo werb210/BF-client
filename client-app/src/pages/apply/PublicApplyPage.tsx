@@ -16,6 +16,7 @@ import type { ApiError } from "@/types/api";
 import { fundingAmountSchema, emailSchema, phoneSchema } from "@/utils/validationSchema";
 import { executeCaptcha } from "@/security/useCaptcha";
 import { logClientError } from "@/lib/logger";
+import { API_CONTRACT } from "@/contracts";
 
 type FieldType =
   | "text"
@@ -655,7 +656,7 @@ export default function PublicApplyPage() {
       const draft = loadDraft();
       if (!draft) return;
 
-      await apiRequest("/api/drafts/save", {
+      await apiRequest(API_CONTRACT.DRAFTS.SAVE, {
         method: "POST",
         body: JSON.stringify(draft),
       }).catch((error) => {
@@ -672,7 +673,7 @@ export default function PublicApplyPage() {
 
     if (!resumeToken) return;
 
-    void (apiRequest(`/api/drafts/${resumeToken}`) as Promise<DraftPayload | null>)
+    void (apiRequest(`${API_CONTRACT.DRAFTS.PREFIX}${resumeToken}`) as Promise<DraftPayload | null>)
       .then((data: DraftPayload | null) => {
         if (data) {
           setValues((prev) => ({ ...prev, ...data }));
@@ -724,7 +725,7 @@ export default function PublicApplyPage() {
   }, [readinessSessionId, readinessToken]);
 
   useEffect(() => {
-    const draftId = localStorage.getItem("boreal_draft_application_id");
+    const draftId = localStorage.getItem("boreal_draft_applicationId");
     if (draftId) {
       window.location.href = `/apply/${draftId}`;
     }

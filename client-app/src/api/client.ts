@@ -28,12 +28,12 @@ const buildMethodOptions = (method: string, data?: unknown, headers?: Record<str
 
 export const apiClient = {
   interceptors: {
-    request: { use: () => undefined },
-    response: { use: () => undefined }
+    request: { use: (_onFulfilled?: (config: RequestInit) => RequestInit, _onRejected?: (error: unknown) => unknown) => undefined },
+    response: { use: (_onFulfilled?: (response: unknown) => unknown, _onRejected?: (error: unknown) => unknown) => undefined }
   },
-  async request<T = unknown>(config: any): Promise<{ data: T; status: number }> {
+  async request<T = unknown>(config: any): Promise<{ data: T; status: number; headers: Headers }> {
     const data = await apiRequest<T>(config.url, buildMethodOptions((config.method || "GET").toUpperCase(), config.data, config.headers));
-    return { data, status: 200 };
+    return { data, status: 200, headers: new Headers() };
   },
   async get<T = unknown>(url: string): Promise<{ data: T; status: number }> {
     return { data: await apiRequest<T>(url), status: 200 };

@@ -5,7 +5,10 @@ import App from "./app/App";
 import ErrorBoundary from "./components/ErrorBoundary";
 import "@/api/init";
 import { bootstrapSession } from "./app/bootstrap";
+import { forbidRawFetch } from "@/lib/apiGuard";
 import "./index.css";
+
+forbidRawFetch();
 
 async function start() {
   const session = await bootstrapSession();

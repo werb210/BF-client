@@ -1,4 +1,4 @@
-const KEY = "bf_application_id";
+const KEY = "bf_applicationId";
 
 export function setApplicationId(id: string): void {
   localStorage.setItem(KEY, id);
