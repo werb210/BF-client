@@ -6,6 +6,7 @@ import {
   PublicApplicationResponseSchema,
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
+import { DOCUMENT_CONTRACT } from "@/contracts";
 import { enqueueUpload } from "@/lib/uploadQueue";
 import { uploadDocument } from "@/services/documentService";
 import { getPersistedAttribution } from "@/utils/attribution";
@@ -96,11 +97,11 @@ export async function uploadApplicationDocument(
     throw new Error("file_too_large");
   }
 
-  const uploadUrl = "/api/documents/upload";
+  const uploadUrl = DOCUMENT_CONTRACT.UPLOAD;
   const formData = new FormData();
-  formData.append("category", payload.documentCategory);
-  formData.append("applicationId", id);
-  formData.append("file", payload.file);
+  formData.append(DOCUMENT_CONTRACT.FIELDS.CATEGORY, payload.documentCategory);
+  formData.append(DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID, id);
+  formData.append(DOCUMENT_CONTRACT.FIELDS.FILE, payload.file);
 
   if (!navigator.onLine) {
     await enqueueUpload({
