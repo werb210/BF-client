@@ -15,6 +15,7 @@ export const ClientAppMessagesResponseSchema = z.array(ClientAppMessageSchema);
 export const ApplicationDocumentSchema = z
   .object({
     category: z.string().optional(),
+    document_category: z.string().optional(),
     documentType: z.string().optional(),
     document_type: z.string().optional(),
     name: z.string().optional(),
@@ -191,6 +192,7 @@ export const ClientAppStartResponseSchema = z
 export const PublicApplicationResponseSchema = z
   .object({
     id: z.string().optional(),
+    application_id: z.string().optional(),
     applicationId: z.string().optional(),
     token: z.string().optional(),
     status: z.string().optional(),
@@ -278,6 +280,7 @@ export const clientApiContract = {
       additionalProperties: true,
       properties: {
         id: { type: "string" },
+        application_id: { type: "string" },
         applicationId: { type: "string" },
         token: { type: "string" },
         status: { type: "string" },
@@ -326,6 +329,7 @@ export const clientApiContract = {
       additionalProperties: true,
       properties: {
         category: { type: "string" },
+        document_category: { type: "string" },
         documentType: { type: "string" },
         document_type: { type: "string" },
         name: { type: "string" },

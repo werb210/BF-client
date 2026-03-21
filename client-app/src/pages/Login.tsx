@@ -8,7 +8,7 @@ export default function Login() {
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    await sendOtp({ phone });
+    await sendOtp(phone);
     setSent(true);
   };
 

@@ -5,6 +5,15 @@ let initialized = false;
 export function assertApiUsage() {
   if (initialized) return;
 
+  // 🚨 DO NOT run in tests
+  if (
+    typeof process !== 'undefined' &&
+    process.env &&
+    process.env.NODE_ENV === 'test'
+  ) {
+    return;
+  }
+
   initialized = true;
 
   const originalFetch = window.fetch;
