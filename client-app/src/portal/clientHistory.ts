@@ -103,7 +103,7 @@ export function buildClientHistoryEvents({
       (doc?.rejected ? "rejected" : "");
     if (String(rawStatus).toLowerCase() !== "rejected") return;
     const category =
-      doc?.document_category ||
+      doc?.category ||
       doc?.category ||
       doc?.documentType ||
       doc?.document_type ||

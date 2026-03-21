@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type React from "react";
 import { sendOtp, verifyOtp } from "../api/auth";
 
 export default function Login() {
@@ -7,25 +8,34 @@ export default function Login() {
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    await sendOtp(phone);
+    await sendOtp({ phone });
     setSent(true);
   };
 
   const handleVerify = async () => {
-    await verifyOtp(phone, code);
+    await verifyOtp({ phone, code });
     alert("SUCCESS");
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sent) {
+      void handleVerify();
+      return;
+    }
+    void handleSend();
+  };
+
   return (
-    <div>
+    <form onSubmit={handleSubmit}>
       <input value={phone} onChange={e => setPhone(e.target.value)} />
-      {!sent && <button onClick={handleSend}>Send OTP</button>}
+      {!sent && <button type="submit">Send OTP</button>}
       {sent && (
         <>
           <input value={code} onChange={e => setCode(e.target.value)} />
-          <button onClick={handleVerify}>Verify</button>
+          <button type="submit">Verify</button>
         </>
       )}
-    </div>
+    </form>
   );
 }

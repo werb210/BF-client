@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import { API_CONTRACT } from "@/contracts";
 import { hasToken } from "@/lib/auth";
 
 export interface SaveApplicationStepPayload {
@@ -23,18 +24,18 @@ export async function bootstrapContinuation() {
 }
 
 export async function fetchApplicationContinuation() {
-  return apiRequest("/api/application/continuation") as Promise<ContinuationSessionResponse>;
+  return apiRequest(API_CONTRACT.APPLICATION.CONTINUATION) as Promise<ContinuationSessionResponse>;
 }
 
 export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
-  await apiRequest("/api/application", {
+  await apiRequest(API_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function saveApplicationProgress(data: any) {
-  return apiRequest("/api/application", {
+  return apiRequest(API_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(data)
   });
@@ -43,21 +44,21 @@ export async function saveApplicationProgress(data: any) {
 export async function updateApplication(data: any) {
   if (!hasToken()) return;
 
-  return apiRequest("/api/application/update", {
+  return apiRequest(API_CONTRACT.APPLICATION.UPDATE, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
 export async function continueApplication(data: any) {
-  return apiRequest("/api/application/continuation", {
+  return apiRequest(API_CONTRACT.APPLICATION.CONTINUATION, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
 export async function submitApplication(data: any) {
-  return apiRequest("/api/readiness", {
+  return apiRequest(API_CONTRACT.READINESS.ROOT, {
     method: "POST",
     body: JSON.stringify(data)
   });

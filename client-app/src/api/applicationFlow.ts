@@ -1,40 +1,41 @@
 import { apiRequest } from "./client";
+import { API_CONTRACT } from "@/contracts";
 import { hasToken } from "@/lib/auth";
 
 export async function getContinuation() {
-  return apiRequest("/api/application/continuation");
+  return apiRequest(API_CONTRACT.APPLICATION.CONTINUATION);
 }
 
 export async function updateApplication(payload: unknown) {
   if (!hasToken()) return;
 
-  return apiRequest("/api/application/update", {
+  return apiRequest(API_CONTRACT.APPLICATION.UPDATE, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function createApplication(payload: unknown) {
-  return apiRequest("/api/application", {
+  return apiRequest(API_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function submitReadiness(payload: unknown) {
-  return apiRequest("/api/readiness", {
+  return apiRequest(API_CONTRACT.READINESS.ROOT, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function continueReadiness(payload: unknown) {
-  return apiRequest("/api/readiness/continue", {
+  return apiRequest(API_CONTRACT.READINESS.CONTINUE, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function getReadinessSession(sessionId: string) {
-  return apiRequest(`/api/readiness/${encodeURIComponent(sessionId)}`);
+  return apiRequest(`${API_CONTRACT.READINESS.SESSION_PREFIX}${encodeURIComponent(sessionId)}`);
 }

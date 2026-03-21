@@ -1,11 +1,13 @@
+import { API_CONTRACT, AUTH_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
+
 export const API_ENDPOINTS = {
-  OTP_START: "/auth/otp/start",
-  OTP_VERIFY: "/auth/otp/verify",
-  AUTH_ME: "/auth/me",
-  APPLICATIONS: "/applications",
-  DOCUMENT_UPLOAD: "/documents/upload",
-  TELEPHONY_TOKEN: "/telephony/token",
-  TELEPHONY_PRESENCE: "/telephony/presence",
+  OTP_START: AUTH_CONTRACT.OTP_START,
+  OTP_VERIFY: AUTH_CONTRACT.OTP_VERIFY,
+  AUTH_ME: API_CONTRACT.AUTH.ME,
+  APPLICATIONS: API_CONTRACT.CLIENT_APPLICATIONS.ROOT,
+  DOCUMENT_UPLOAD: DOCUMENT_CONTRACT.UPLOAD,
+  TELEPHONY_TOKEN: `${API_CONTRACT.BASE}/telephony/token`,
+  TELEPHONY_PRESENCE: `${API_CONTRACT.BASE}/telephony/presence`
 } as const;
 
 export type ApiEndpoint = (typeof API_ENDPOINTS)[keyof typeof API_ENDPOINTS];

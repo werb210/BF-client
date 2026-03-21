@@ -11,7 +11,7 @@ describe("buildClientHistoryEvents", () => {
       documents: [
         {
           status: "rejected",
-          document_category: "bank_statement",
+          category: "bank_statement",
           rejected_at: "2024-01-03T00:00:00Z",
           rejection_reason: "Blurry scan",
         },
@@ -49,7 +49,7 @@ describe("buildClientHistoryEvents", () => {
       documents: [
         {
           status: "rejected",
-          document_category: "license",
+          category: "license",
           rejected_at: "2024-02-02T00:00:00Z",
           rejection_reason: "Missing page",
           internal_code: "DOC-42",

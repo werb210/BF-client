@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loginWithOtp, normalizeOtpPhone, requestOtp, startOtp } from "../services/auth";
 import * as clientApi from "../api/client";
+import { AUTH_CONTRACT } from "@/contracts";
 
 
 describe("auth OTP service", () => {
@@ -29,7 +30,7 @@ describe("auth OTP service", () => {
       status: 200,
     });
 
-    expect(clientApi.apiClient.post).toHaveBeenCalledWith("/auth/otp/start", {
+    expect(clientApi.apiClient.post).toHaveBeenCalledWith(AUTH_CONTRACT.OTP_START, {
       phone: "+15551112222",
     });
   });
@@ -47,7 +48,7 @@ describe("auth OTP service", () => {
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
-      "/auth/otp/start",
+      AUTH_CONTRACT.OTP_START,
       {
         phone: "+15878881837",
       }
@@ -80,7 +81,7 @@ describe("auth OTP service", () => {
     });
 
     expect(clientApi.apiClient.post).toHaveBeenCalledWith(
-      "/auth/otp/verify",
+      AUTH_CONTRACT.OTP_VERIFY,
       {
         phone: "+15878881837",
         code: "123456",

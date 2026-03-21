@@ -147,7 +147,7 @@ export function Step6_Review(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    apiRequest<{ count?: number }>("/api/public/lender-count")
+    apiRequest<{ count?: number }>(API_CONTRACT.PUBLIC.LENDER_COUNT)
       .then((data) => {
         const count = Number(data?.count || 0);
         if (count > 0) setLenderCount(count);

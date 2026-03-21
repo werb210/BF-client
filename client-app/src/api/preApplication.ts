@@ -1,4 +1,5 @@
 import { apiRequest } from "@/api/client";
+import { API_CONTRACT } from "@/contracts";
 
 type PreApplicationLookupResponse = {
   token: string;
@@ -15,12 +16,12 @@ export async function lookupPreApplication(
   email: string
 ): Promise<PreApplicationLookupResponse | null> {
   return (apiRequest(
-    `/api/preapp/lookup?email=${encodeURIComponent(email)}`
+    `${API_CONTRACT.PREAPP.LOOKUP}?email=${encodeURIComponent(email)}`
   ) as Promise<PreApplicationLookupResponse>).catch((): null => null);
 }
 
 export async function consumePreApplication(token: string): Promise<any> {
-  return apiRequest("/api/preapp/consume", {
+  return apiRequest(API_CONTRACT.PREAPP.CONSUME, {
     method: "POST",
     body: JSON.stringify({ token }),
   });
