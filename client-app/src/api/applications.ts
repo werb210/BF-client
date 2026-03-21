@@ -96,7 +96,7 @@ export async function uploadApplicationDocument(
     throw new Error("file_too_large");
   }
 
-  const uploadUrl = "/documents/upload";
+  const uploadUrl = "/api/documents/upload";
   const formData = new FormData();
   formData.append("category", payload.documentCategory);
   formData.append("applicationId", id);

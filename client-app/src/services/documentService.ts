@@ -1,27 +1,14 @@
-import { buildUrl } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 
-export async function uploadApplicationDocument(payload: any) {
+export async function uploadDocument(file: File, applicationId: string, category: string) {
   const formData = new FormData();
 
-  formData.append(
-    "applicationId",
-    String(payload.applicationId ?? payload.application_id ?? "")
-  );
+  formData.append("file", file);
+  formData.append("applicationId", applicationId);
+  formData.append("category", category);
 
-  formData.append(
-    "category",
-    String(payload.category ?? payload.document_category ?? "")
-  );
-
-  formData.append("file", payload.file);
-
-  return fetch(buildUrl("/documents/upload"), {
+  return apiFetch("/api/documents/upload", {
     method: "POST",
-    body: formData,
-    credentials: "include"
+    body: formData
   });
 }
-
-
-export const uploadDocument = (file: File, applicationId: string, category = "") =>
-  uploadApplicationDocument({ file, applicationId, category });
