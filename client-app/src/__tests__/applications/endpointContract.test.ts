@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { API_PATHS } from '@/config/api';
+import { API_ENDPOINTS } from '@/api/endpoints';
 
 describe('API contract', () => {
   it('should use /api/applications endpoint', () => {
-    expect(API_PATHS.APPLICATIONS).toBe('/api/applications');
+    expect(API_ENDPOINTS.APPLICATIONS).toBe('/applications');
   });
 });

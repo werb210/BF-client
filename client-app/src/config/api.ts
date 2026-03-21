@@ -1,13 +1,18 @@
-export const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:3000";
+const RAW_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL;
 
-export const API_PATHS = {
-  AUTH_START: '/api/auth/otp/start',
-  AUTH_VERIFY: '/api/auth/otp/verify',
-  AUTH_ME: '/api/auth/me',
-  APPLICATIONS: '/api/applications',
-  DOCUMENT_UPLOAD: '/api/documents/upload',
-  CLIENT_LENDERS: '/api/lenders',
-  CLIENT_LENDER_PRODUCTS: '/api/lender-products',
-  CLIENT_SESSION_REFRESH: '/api/session/refresh',
-} as const;
+if (!RAW_BASE) {
+  throw new Error("Missing API base URL. Expected VITE_API_BASE_URL or VITE_API_URL.");
+}
+
+const BASE = RAW_BASE.replace(/\/+$/, "");
+
+export const API_BASE = BASE.endsWith("/api")
+  ? BASE
+  : `${BASE}/api`;
+
+export function buildUrl(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalized}`;
+}

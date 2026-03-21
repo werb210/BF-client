@@ -1,4 +1,3 @@
-import { API_PATHS } from "@/config/api";
 import { hasToken } from "@/lib/auth";
 import { apiRequest } from "../api/client";
 import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
@@ -22,7 +21,7 @@ export async function refreshSessionOnce() {
   if (!token && !hasToken()) return true;
 
   setSessionRefreshing(true);
-  refreshPromise = (apiRequest(API_PATHS.CLIENT_SESSION_REFRESH, {
+  refreshPromise = (apiRequest("/session/refresh", {
     method: "POST",
   }) as Promise<unknown>)
     .then(() => true)

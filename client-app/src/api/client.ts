@@ -2,11 +2,10 @@ import { AxiosHeaders, type AxiosRequestConfig } from "axios";
 import { getToken } from "@/lib/auth";
 import { createHttpClient } from "./httpClient";
 import { API_ENDPOINTS } from "./endpoints";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.staff.boreal.financial";
+import { API_BASE, buildUrl } from "@/config/api";
 
 const api = createHttpClient({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE,
   timeout: 15000,
   withCredentials: true,
   headers: {
@@ -48,13 +47,13 @@ export const apiClient = api;
 function normalizePath(url: string): string {
   if (!url) return "/";
   if (/^https?:\/\//.test(url)) return url;
-  return url.startsWith("/") ? url : `/${url}`;
+  const normalized = url.startsWith("/") ? url : `/${url}`;
+  return normalized.startsWith("/api/") ? normalized.slice(4) : normalized;
 }
 
 export function buildApiUrl(path: string): string {
-  const normalized = normalizePath(path);
-  if (/^https?:\/\//.test(normalized)) return normalized;
-  return `${api.defaults.baseURL}${normalized}`;
+  if (/^https?:\/\//.test(path)) return path;
+  return buildUrl(normalizePath(path));
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
