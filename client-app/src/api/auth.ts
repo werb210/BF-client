@@ -1,26 +1,25 @@
-import { apiFetch } from "./client";
+import { apiFetch } from "@/lib/api";
 
-export async function startOtp(payload: any) {
-  return apiFetch("/auth/otp/start", {
+export async function sendOtp(data: unknown) {
+  const payload = typeof data === "string" ? { phone: data } : data;
+  return apiFetch("/api/auth/otp/start", {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
-export async function verifyOtp(payload: any) {
-  return apiFetch("/auth/otp/verify", {
+export async function verifyOtp(data: unknown, code?: string) {
+  const payload =
+    typeof data === "string" && typeof code === "string"
+      ? { phone: data, code }
+      : data;
+
+  return apiFetch("/api/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
-export async function sendOtp(phone: string) {
-  if (typeof phone !== "string") {
-    throw new Error("Phone must be a string");
-  }
-  return startOtp({ phone });
-}
-
-export async function verifyOtpCode(phone: string, code: string) {
-  return verifyOtp({ phone, code });
+export async function verifyOtpCode(phone: string, otpCode: string) {
+  return verifyOtp({ phone, code: otpCode });
 }

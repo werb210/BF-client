@@ -1,17 +1,10 @@
-import { buildUrl } from "@/lib/api";
+import { apiFetch as baseApiFetch, buildUrl } from "@/lib/api";
 
 export async function apiFetch(
   path: string,
   options: RequestInit = {}
 ) {
-  return fetch(buildUrl(path), {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    ...options
-  });
+  return baseApiFetch(path, options);
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
