@@ -23,7 +23,6 @@ const isTest =
   process.env &&
   process.env.NODE_ENV === 'test';
 
-// In test, allow fallback to avoid crashes
 const API_BASE = isTest
   ? getEnv('VITE_API_URL') || 'http://localhost:3000'
   : required('VITE_API_URL', getEnv('VITE_API_URL'));
