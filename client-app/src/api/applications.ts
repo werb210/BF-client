@@ -1,5 +1,4 @@
 import api from "@/api/client";
-import { API_PATHS } from "@/config/api";
 import {
   ApplicationDocumentsResponseSchema,
   ApplicationOffersResponseSchema,
@@ -29,7 +28,7 @@ export async function submitApplication(
         }
       : payload;
 
-  const res = await api.post<any>(API_PATHS.APPLICATIONS, submissionPayload);
+  const res = await api.post<any>("/applications", submissionPayload);
   localStorage.removeItem("creditSessionToken");
   return (res as { data?: unknown })?.data;
 }
@@ -50,7 +49,7 @@ export async function createPublicApplication(
         }
       : payload;
 
-  const res: unknown = await api.post(API_PATHS.APPLICATIONS, submissionPayload);
+  const res: unknown = await api.post("/applications", submissionPayload);
   return parseApiResponse(
     PublicApplicationResponseSchema,
     (res as { data: unknown }).data,
@@ -97,10 +96,10 @@ export async function uploadApplicationDocument(
     throw new Error("file_too_large");
   }
 
-  const uploadUrl = API_PATHS.DOCUMENT_UPLOAD;
+  const uploadUrl = "/documents/upload";
   const formData = new FormData();
-  formData.append("document_category", payload.documentCategory);
-  formData.append("application_id", id);
+  formData.append("category", payload.documentCategory);
+  formData.append("applicationId", id);
   formData.append("file", payload.file);
 
   if (!navigator.onLine) {
@@ -112,7 +111,7 @@ export async function uploadApplicationDocument(
   }
 
   payload.onProgress?.(10);
-  const data = await uploadDocument(payload.file, id);
+  const data = await uploadDocument(payload.file, id, payload.documentCategory);
   payload.onProgress?.(100);
   return data as unknown;
 }

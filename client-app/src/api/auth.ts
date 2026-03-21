@@ -1,7 +1,7 @@
-import { API_BASE } from "../config/api";
+import { buildUrl } from "../config/api";
 
 export async function sendOtp(phone: string) {
-  const res = await fetch(`${API_BASE}/api/auth/otp/send`, {
+  const res = await fetch(buildUrl("/auth/otp/start"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
@@ -12,7 +12,7 @@ export async function sendOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await fetch(`${API_BASE}/api/auth/otp/verify`, {
+  const res = await fetch(buildUrl("/auth/otp/verify"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, code }),

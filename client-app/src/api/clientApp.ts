@@ -1,6 +1,7 @@
 import type { AxiosProgressEvent } from "axios";
 import { z } from "zod";
 import api from "@/api/client";
+import { buildUrl } from "@/config/api";
 import {
   ClientAppMessagesResponseSchema,
   ClientAppStartResponseSchema,
@@ -77,10 +78,10 @@ export const ClientAppAPI = {
 
       const formData = new FormData();
       formData.append("file", payload.file);
-      formData.append("document_type", payload.documentType);
-      if (payload.applicationId) formData.append("application_id", payload.applicationId);
+      formData.append("category", payload.documentType);
+      formData.append("applicationId", String(payload.applicationId ?? ""));
       if (payload.applicationToken) formData.append("application_token", payload.applicationToken);
-      const res = await api.post<GenericObjectResponse>("/documents/upload", formData, {
+      const res = await api.post<GenericObjectResponse>(buildUrl("/documents/upload"), formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (event: AxiosProgressEvent) => {
           if (!event.total) return;

@@ -6,8 +6,6 @@ declare global {
   }
 }
 
-const PRODUCTION_API_ORIGIN = "https://api.staff.boreal.financial";
-
 function normalizeBase(input?: string): string {
   const value = (input || "").trim();
   if (!value) return "";
@@ -21,7 +19,9 @@ function normalizeBase(input?: string): string {
 
 function resolveConfiguredBase(): string {
   const runtimeBase = normalizeBase(window.RUNTIME_CONFIG?.API_BASE_URL);
-  const envBase = normalizeBase(import.meta.env.VITE_API_URL);
+  const envBase =
+    normalizeBase(import.meta.env.VITE_API_BASE_URL) ||
+    normalizeBase(import.meta.env.VITE_API_URL);
   return runtimeBase || envBase;
 }
 
@@ -32,7 +32,7 @@ export function resolveApiBase(): string {
     return configuredBase;
   }
 
-  return import.meta.env.PROD ? PRODUCTION_API_ORIGIN : "";
+  return "";
 }
 
 export const API_BASE = resolveApiBase();
