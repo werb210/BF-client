@@ -1,29 +1,31 @@
-import { API_CONTRACT } from "@/contracts";
+// src/lib/api.ts
 
-const RAW_BASE =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "";
+import { runtimeConfig } from '../config/runtimeConfig';
 
-export const API_BASE = RAW_BASE.replace(/\/+$/, "");
-
-if (!API_BASE) {
-  throw new Error("API base URL not configured");
+function assertApiBase() {
+  if (!runtimeConfig.API_BASE) {
+    throw new Error('API base URL is not configured');
+  }
 }
 
-export function buildUrl(path: string) {
-  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+export function buildUrl(path: string): string {
+  assertApiBase();
+
+  if (!path.startsWith('/')) {
+    throw new Error(`Invalid API path: ${path}`);
+  }
+
+  return `${runtimeConfig.API_BASE}${path}`;
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  return fetch(buildUrl(path), {
+export async function apiFetch(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const url = buildUrl(path);
+
+  return fetch(url, {
+    credentials: 'include',
     ...options,
-    credentials: "include",
-    headers: {
-      ...(options.body instanceof FormData
-        ? {}
-        : { "Content-Type": "application/json" }),
-      ...(options.headers || {})
-    }
   });
 }
