@@ -1,7 +1,6 @@
-import { apiClient } from "../api/client";
+import { apiRequest } from "@/lib/api";
 import { setToken } from "@/lib/auth";
 import { normalizePhone } from "@/utils/normalizePhone";
-import { API_ENDPOINTS } from "@/api/endpoints";
 
 export type OtpRequestResult = {
   ok: boolean;
@@ -25,9 +24,7 @@ export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
 export async function requestOtp(phone: string): Promise<OtpRequestResult> {
-  const normalizedPhone = normalizePhone(phone);
-  await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
-
+  await startOtp(phone);
   return {
     ok: true,
     status: 200,
@@ -35,24 +32,30 @@ export async function requestOtp(phone: string): Promise<OtpRequestResult> {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.OTP_START, { phone: normalizePhone(phone) });
+  await apiRequest("/auth/otp/start", {
+    method: "POST",
+    body: JSON.stringify({ phone: normalizePhone(phone) }),
+  });
+
   return { ok: true };
 }
 
-export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {
-  const response = await apiClient.post<OtpAuthData>(API_ENDPOINTS.OTP_VERIFY, {
-    phone: normalizePhone(phone),
-    code,
+export async function verifyOtp(phone: string, otp: string): Promise<LoginWithOtpResult> {
+  const response = await apiRequest<OtpAuthData>("/auth/otp/verify", {
+    method: "POST",
+    body: JSON.stringify({ phone: normalizePhone(phone), otp }),
   });
 
-  const { token, user, nextPath } = response.data;
-
-  if (!token || !user) {
+  if (!response?.token || !response?.user) {
     throw new Error("Invalid API response");
   }
 
-  setToken(token);
-  localStorage.setItem("token", token);
+  setToken(response.token);
+  localStorage.setItem("token", response.token);
 
-  return { token, user, nextPath };
+  return response;
+}
+
+export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {
+  return verifyOtp(phone, code);
 }

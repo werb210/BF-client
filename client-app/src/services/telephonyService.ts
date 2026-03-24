@@ -1,5 +1,4 @@
-import { apiRequest } from "../api/request";
-import { API_ENDPOINTS } from "../api/endpoints";
+import { apiRequest } from "@/lib/api";
 import { hasToken } from "@/lib/auth";
 import { logClientError } from "@/lib/logger";
 
@@ -18,9 +17,7 @@ export async function getCallStatus(): Promise<CallStatus> {
   }
 
   try {
-    const data = await apiRequest<{ token?: string }>(API_ENDPOINTS.TELEPHONY_TOKEN, {
-      method: "GET",
-    });
+    const data = await apiRequest<{ token?: string }>("/telephony/token");
 
     if (!data?.token) {
       throw new Error("Invalid telephony token response");
