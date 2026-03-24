@@ -1,5 +1,4 @@
 import { apiRequest } from "@/lib/api";
-import { setToken } from "@/lib/auth";
 import { normalizePhone } from "@/utils/normalizePhone";
 
 export type OtpRequestResult = {
@@ -32,28 +31,25 @@ export async function requestOtp(phone: string): Promise<OtpRequestResult> {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  await apiRequest("/auth/otp/start", {
+  return apiRequest<StartOtpResponse>("/auth/otp/start", {
     method: "POST",
-    body: JSON.stringify({ phone: normalizePhone(phone) }),
+    body: JSON.stringify({ phone }),
   });
-
-  return { ok: true };
 }
 
 export async function verifyOtp(phone: string, otp: string): Promise<LoginWithOtpResult> {
-  const response = await apiRequest<OtpAuthData>("/auth/otp/verify", {
+  const res = await apiRequest<OtpAuthData>("/auth/otp/verify", {
     method: "POST",
-    body: JSON.stringify({ phone: normalizePhone(phone), otp }),
+    body: JSON.stringify({ phone, otp }),
   });
 
-  if (!response?.token) {
+  if (!res?.token) {
     throw new Error("Missing token");
   }
 
-  setToken(response.token);
-  localStorage.setItem("token", response.token);
+  localStorage.setItem("token", res.token);
 
-  return response;
+  return res;
 }
 
 export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {

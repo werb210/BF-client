@@ -10,7 +10,7 @@ export type ResumeSnapshot = {
 };
 
 type ResumeOptions = {
-  fetchStatus: (token: string) => Promise<{ data: unknown }>;
+  fetchStatus: (token: string) => Promise<unknown>;
   cached?: unknown;
   isOnline?: boolean;
 };
@@ -45,10 +45,10 @@ export async function resumeApplication({
 
   try {
     const res = await fetchStatus(cached.applicationToken);
-    const submitted = isApplicationSubmitted(res.data);
+    const submitted = isApplicationSubmitted(res);
     return {
       token: cached.applicationToken,
-      status: res.data,
+      status: res,
       cached,
       offline: false,
       submitted,

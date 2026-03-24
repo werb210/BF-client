@@ -12,6 +12,15 @@ import { uploadDocument } from "@/services/documentService";
 import { getPersistedAttribution } from "@/utils/attribution";
 import type { SubmitApplicationRequest } from "./submissionTypes";
 
+export const getApplications = () =>
+  apiRequest("/applications");
+
+export const createApplication = (data: any) =>
+  apiRequest("/applications", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
 export async function submitApplication(
   payload: unknown,
   options?: { idempotencyKey?: string; continuationToken?: string }

@@ -1,6 +1,5 @@
 import { Device } from "@twilio/voice-sdk"
-import apiClient from "@/api/client"
-import { API_ENDPOINTS } from "@/api/endpoints"
+import { apiRequest } from "@/lib/api"
 import { hasToken } from "@/lib/auth"
 import { logClientError } from "@/lib/logger"
 
@@ -9,12 +8,12 @@ let device: Device | null = null
 export async function initializeVoice(_identity: string) {
   if (!hasToken()) return
 
-  const token = await apiClient.get<{ token?: string }>(API_ENDPOINTS.TELEPHONY_TOKEN)
-  if (!token?.data?.token) {
+  const res = await apiRequest<{ token?: string }>("/telephony/token")
+  if (!res?.token) {
     throw new Error("Invalid telephony token response")
   }
 
-  device = new Device(token.data.token)
+  device = new Device(res.token)
 
   device.on("registered", () => undefined)
 

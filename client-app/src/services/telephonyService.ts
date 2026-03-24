@@ -8,7 +8,7 @@ type CallStatus = {
   timestamp?: string;
 };
 
-export const getToken = () => apiRequest<{ token?: string }>("/telephony/token");
+export const getTelephonyToken = () => apiRequest<{ token?: string }>("/telephony/token");
 
 export async function getCallStatus(): Promise<CallStatus> {
   if (!hasToken()) {
@@ -19,7 +19,7 @@ export async function getCallStatus(): Promise<CallStatus> {
   }
 
   try {
-    const data = await getToken();
+    const data = await getTelephonyToken();
 
     if (!data?.token) {
       throw new Error("Invalid telephony token response");
