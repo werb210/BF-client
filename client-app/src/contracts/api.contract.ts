@@ -8,6 +8,12 @@ export const API_CONTRACT = {
   DOCUMENTS: {
     UPLOAD: "/api/documents/upload"
   },
+  OFFERS: {
+    ROOT: "/api/offers"
+  },
+  TELEPHONY: {
+    TOKEN: "/api/telephony/token"
+  },
   APPLICATION: {
     ROOT: "/api/applications",
     UPDATE: "/api/applications/update",
