@@ -1,5 +1,5 @@
 // @ts-nocheck
-import api from "../api/client";
+import { apiRequest } from "@/lib/api";
 import {
   PortalSubmissionStatusResponseSchema,
   parseApiResponse,
@@ -64,10 +64,10 @@ export function saveSubmissionStatusCache(
 }
 
 export async function fetchSubmissionStatus(applicationId: string) {
-  const res = await api.get(`/api/portal/applications/${applicationId}`);
+  const res = await apiRequest(`/portal/applications/${applicationId}`);
   const parsed = parseApiResponse(
     PortalSubmissionStatusResponseSchema,
-    res.data,
+    res,
     "GET /api/portal/applications/{id}"
   );
   const submission =

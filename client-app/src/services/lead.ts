@@ -1,4 +1,4 @@
-import api from "@/api/client";
+import { apiRequest } from "@/lib/api";
 
 export interface LeadBootstrapPayload {
   companyName: string;
@@ -57,10 +57,11 @@ export async function createLead(payload: LeadBootstrapPayload) {
     }
   }
 
-  const request = api
-    .post<LeadBootstrapResponse>("/lead/bootstrap", payload)
-    .then((res) => {
-      const data = res.data;
+  const request = apiRequest<LeadBootstrapResponse>("/lead/bootstrap", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  })
+    .then((data) => {
       if (dedupKey !== "::" && data?.leadId) {
         const cache = readLeadCache();
         cache[dedupKey] = data;
@@ -82,6 +83,8 @@ export async function createLead(payload: LeadBootstrapPayload) {
 }
 
 export async function tagLead(leadId: string, tag: string) {
-  const res = await api.post("/lead/tag", { leadId, tag });
-  return res.data;
+  return apiRequest("/lead/tag", {
+    method: "POST",
+    body: JSON.stringify({ leadId, tag }),
+  });
 }

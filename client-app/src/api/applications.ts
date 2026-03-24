@@ -1,4 +1,3 @@
-import api from "@/api/client";
 import {
   ApplicationDocumentsResponseSchema,
   ApplicationOffersResponseSchema,
@@ -30,9 +29,12 @@ export async function submitApplication(
         }
       : payload;
 
-  const res = await api.post<any>("/applications", submissionPayload);
+  const res = await apiRequest<any>("/applications", {
+    method: "POST",
+    body: JSON.stringify(submissionPayload),
+  });
   localStorage.removeItem("creditSessionToken");
-  return (res as { data?: unknown })?.data;
+  return res;
 }
 
 export async function createPublicApplication(
@@ -51,10 +53,13 @@ export async function createPublicApplication(
         }
       : payload;
 
-  const res: unknown = await api.post("/applications", submissionPayload);
+  const res: unknown = await apiRequest("/applications", {
+    method: "POST",
+    body: JSON.stringify(submissionPayload),
+  });
   return parseApiResponse(
     PublicApplicationResponseSchema,
-    (res as { data: unknown }).data,
+    res,
     "POST /api/applications"
   );
 }
