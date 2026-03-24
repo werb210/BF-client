@@ -6,7 +6,10 @@
     "typecheck": "tsc -p tsconfig.ci.json --noEmit",
     "test": "vitest run",
     "build": "npm --prefix client-app run build",
-    "test:e2e": "echo 'run locally only'"
+    "test:e2e": "echo 'run locally only'",
+    "client:build": "npm --prefix client-app run build",
+    "client:test": "npm --prefix client-app run test",
+    "client:typecheck": "npm --prefix client-app run typecheck"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
