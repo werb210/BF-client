@@ -1,72 +1,48 @@
-// src/lib/api.ts
-
-import { runtimeConfig } from '../config/runtimeConfig';
-
-function assertApiBase() {
-  if (!runtimeConfig.API_BASE) {
-    throw new Error('API base URL is not configured');
-  }
-}
-
-export function buildUrl(path: string): string {
-  assertApiBase();
-
+function normalizeApiPath(path: string): string {
   if (!path.startsWith('/')) {
     throw new Error(`Invalid API path: ${path}`);
   }
 
-  return `${runtimeConfig.API_BASE}${path}`;
+  return path.startsWith('/api') ? path : `/api${path}`;
 }
 
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
+export function buildUrl(path: string): string {
+  return normalizeApiPath(path);
+}
+
+export async function apiRequest(path: string, options: RequestInit = {}) {
+  const token = localStorage.getItem('token') || localStorage.getItem('bf_token');
+
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
   }
 
-  return localStorage.getItem('token') || localStorage.getItem('bf_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(normalizeApiPath(path), {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
+  }
+
+  const json = await res.json();
+
+  return json?.data ?? json;
 }
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getAuthToken();
-  if (!token && path.startsWith('/api/') && !path.includes('/auth/')) {
-    throw new Error('Missing auth token');
-  }
-
-  const url = buildUrl(path);
-  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
-  const headers = new Headers(options.headers || {});
-
-  if (!isFormData && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
-  const res = await fetch(url, {
-    credentials: 'include',
-    ...options,
-    headers,
-  });
-
-  let json: any;
-  try {
-    json = await res.json();
-  } catch {
-    throw new Error('Invalid API response shape');
-  }
-
-  if (!res.ok) {
-    throw new Error(json?.error || 'Request failed');
-  }
-
-  if (!json || json.ok !== true || !('data' in json)) {
-    throw new Error('Invalid API response shape');
-  }
-
-  return json.data as T;
+  return (await apiRequest(path, options)) as T;
 }
