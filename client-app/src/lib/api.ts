@@ -30,8 +30,12 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = buildUrl(path);
   const token = getAuthToken();
+  if (!token && path.startsWith('/api/') && !path.includes('/auth/')) {
+    throw new Error('Missing auth token');
+  }
+
+  const url = buildUrl(path);
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = new Headers(options.headers || {});
 
@@ -49,17 +53,20 @@ export async function apiFetch<T = unknown>(
     headers,
   });
 
-  const contentType = res.headers.get('content-type') || '';
-  const payload = contentType.includes('application/json') ? await res.json() : null;
+  let json: any;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error('Invalid API response shape');
+  }
 
   if (!res.ok) {
-    const message = payload?.error || payload?.message || 'Request failed';
-    throw new Error(message);
+    throw new Error(json?.error || 'Request failed');
   }
 
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T;
+  if (!json || json.ok !== true || !('data' in json)) {
+    throw new Error('Invalid API response shape');
   }
 
-  return payload as T;
+  return json.data as T;
 }

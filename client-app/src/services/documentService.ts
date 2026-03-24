@@ -2,6 +2,10 @@ import { DOCUMENT_CONTRACT } from "@/contracts";
 import { apiFetch } from "@/lib/api";
 
 export async function uploadDocument(file, applicationId, category) {
+  if (!file) {
+    throw new Error("File is required");
+  }
+
   const formData = new FormData();
 
   formData.append(

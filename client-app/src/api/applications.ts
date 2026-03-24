@@ -7,6 +7,7 @@ import {
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
 import { DOCUMENT_CONTRACT } from "@/contracts";
+import { apiFetch } from "@/lib/api";
 import { enqueueUpload } from "@/lib/uploadQueue";
 import { uploadDocument } from "@/services/documentService";
 import { getPersistedAttribution } from "@/utils/attribution";
@@ -77,10 +78,15 @@ export async function fetchApplicationDocuments(id: string): Promise<any> {
 }
 
 export async function fetchApplicationOffers(id: string): Promise<any> {
-  const res: unknown = await api.get(`/api/offers?applicationId=${encodeURIComponent(id)}`);
+  const offers = await apiFetch(`/api/offers?applicationId=${encodeURIComponent(id)}`);
+
+  if (!Array.isArray(offers)) {
+    throw new Error("Invalid offers response");
+  }
+
   return parseApiResponse(
     ApplicationOffersResponseSchema,
-    (res as { data: unknown }).data,
+    offers,
     "GET /api/offers?applicationId={id}"
   );
 }

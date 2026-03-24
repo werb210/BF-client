@@ -18,14 +18,17 @@ export async function getCallStatus(): Promise<CallStatus> {
   }
 
   try {
-    const data = await apiRequest<Partial<CallStatus>>(API_ENDPOINTS.TELEPHONY_PRESENCE, {
+    const data = await apiRequest<{ token?: string }>(API_ENDPOINTS.TELEPHONY_TOKEN, {
       method: "GET",
     });
 
+    if (!data?.token) {
+      throw new Error("Invalid telephony token response");
+    }
+
     return {
-      status: data?.status ?? "unknown",
-      activeCall: data?.activeCall ?? false,
-      timestamp: data?.timestamp,
+      status: "online",
+      activeCall: false,
     };
   } catch (error) {
     logClientError("Client telephony polling error", error);

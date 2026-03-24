@@ -8,7 +8,7 @@ export async function checkContinuation(email: string): Promise<ContinuationResp
   const data = await api.get<ContinuationResponse>(
     `/api/applications/continuation?email=${encodeURIComponent(email)}`
   );
-  return data.data;
+  return data;
 }
 
 export async function loadContinuation(): Promise<null> {
