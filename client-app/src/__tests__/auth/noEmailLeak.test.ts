@@ -15,7 +15,7 @@ describe('Auth contract enforcement', () => {
   });
 
   it('should only send phone for OTP start', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: {} }) });
 
     await sendOtp('+15871234567');
 
@@ -26,7 +26,7 @@ describe('Auth contract enforcement', () => {
   });
 
   it('should only send phone + code for OTP verify', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: {} }) });
 
     await verifyOtpCode('+15871234567', '123456');
 
