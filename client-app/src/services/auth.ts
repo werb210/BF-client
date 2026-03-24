@@ -46,8 +46,8 @@ export async function verifyOtp(phone: string, otp: string): Promise<LoginWithOt
     body: JSON.stringify({ phone: normalizePhone(phone), otp }),
   });
 
-  if (!response?.token || !response?.user) {
-    throw new Error("Invalid API response");
+  if (!response?.token) {
+    throw new Error("Missing token");
   }
 
   setToken(response.token);
