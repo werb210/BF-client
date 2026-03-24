@@ -63,12 +63,9 @@ describe("auth OTP service", () => {
   it('loginWithOtp("5878881837", "123456") posts to verify endpoint and returns token/user payload', async () => {
     vi.spyOn(clientApi.apiClient, "post").mockResolvedValue({
       data: {
-        ok: true,
-        data: {
-          token: "abc",
-          user: { id: "u-1" },
-          nextPath: "/portal",
-        },
+        token: "abc",
+        user: { id: "u-1" },
+        nextPath: "/portal",
       },
     } as any);
 
