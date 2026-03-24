@@ -7,7 +7,7 @@ import {
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
 import { DOCUMENT_CONTRACT } from "@/contracts";
-import { apiFetch } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { enqueueUpload } from "@/lib/uploadQueue";
 import { uploadDocument } from "@/services/documentService";
 import { getPersistedAttribution } from "@/utils/attribution";
@@ -60,25 +60,25 @@ export async function createPublicApplication(
 }
 
 export async function fetchApplication(id: string): Promise<any> {
-  const res: unknown = await api.get(`/api/applications/${id}`);
+  const res: unknown = await apiRequest(`/applications/${id}`);
   return parseApiResponse(
     FetchApplicationResponseSchema,
-    (res as { data: unknown }).data,
+    res,
     "GET /api/applications/{id}"
   );
 }
 
 export async function fetchApplicationDocuments(id: string): Promise<any> {
-  const res: unknown = await api.get(`/api/applications/${id}/documents`);
+  const res: unknown = await apiRequest(`/applications/${id}/documents`);
   return parseApiResponse(
     ApplicationDocumentsResponseSchema,
-    (res as { data: unknown }).data,
+    res,
     "GET /api/applications/{id}/documents"
   );
 }
 
 export async function fetchApplicationOffers(id: string): Promise<any> {
-  const offers = await apiFetch(`/api/offers?applicationId=${encodeURIComponent(id)}`);
+  const offers = await apiRequest(`/offers?applicationId=${encodeURIComponent(id)}`);
 
   if (!Array.isArray(offers)) {
     throw new Error("Invalid offers response");
@@ -125,6 +125,5 @@ export async function uploadApplicationDocument(
 
 
 export async function acceptApplicationOffer(offerId: string): Promise<any> {
-  const res: unknown = await api.post(`/api/offers/${offerId}/accept`);
-  return (res as { data?: unknown }).data;
+  return apiRequest(`/offers/${offerId}/accept`, { method: "POST" });
 }

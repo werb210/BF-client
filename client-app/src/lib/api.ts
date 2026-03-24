@@ -6,11 +6,16 @@ function normalizeApiPath(path: string): string {
   return path.startsWith('/api') ? path : `/api${path}`;
 }
 
+function buildRequestUrl(path: string): string {
+  const normalizedPath = normalizeApiPath(path);
+  return new URL(normalizedPath, window.location.origin).toString();
+}
+
 export function buildUrl(path: string): string {
   return normalizeApiPath(path);
 }
 
-export async function apiRequest(path: string, options: RequestInit = {}) {
+export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token') || localStorage.getItem('bf_token');
 
   const headers: Record<string, string> = {
@@ -25,7 +30,7 @@ export async function apiRequest(path: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(normalizeApiPath(path), {
+  const res = await fetch(buildRequestUrl(path), {
     ...options,
     headers,
     credentials: 'include',
@@ -35,14 +40,18 @@ export async function apiRequest(path: string, options: RequestInit = {}) {
     throw new Error(`API error: ${res.status}`);
   }
 
+  if (res.status === 204) {
+    return null as T;
+  }
+
   const json = await res.json();
 
-  return json?.data ?? json;
+  return (json?.data ?? json) as T;
 }
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  return (await apiRequest(path, options)) as T;
+  return apiRequest<T>(path, options);
 }
