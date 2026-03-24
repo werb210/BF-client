@@ -1,5 +1,3 @@
-import api from "@/api/client";
-
 import type { ReadinessContext } from "@/state/readinessStore";
 import { fetchWithRetry } from "@/utils/fetchWithRetry";
 
@@ -119,10 +117,5 @@ export async function fetchReadinessBridge(
 }
 
 export async function getContinuationSession(): Promise<ContinuationSessionResponse | null> {
-  try {
-    const res = await api.get<ContinuationSessionResponse>("/continuation/session");
-    return res.data;
-  } catch {
-    return null;
-  }
+  return null;
 }

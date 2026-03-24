@@ -16,7 +16,7 @@ export const API_CONTRACT = {
   },
   APPLICATION: {
     ROOT: "/api/applications",
-    UPDATE: "/api/applications/update",
+    UPDATE: "/api/applications",
     CONTINUATION: "/api/applications/continuation"
   },
   READINESS: {
@@ -41,7 +41,6 @@ export const API_CONTRACT = {
     PREFIX: "/api/applications/"
   },
   ANALYTICS: "/api/analytics",
-  SUPPORT_EVENT: "/api/support/event",
   PUBLIC: {
     LENDER_COUNT: "/api/public/lender-count"
   }
