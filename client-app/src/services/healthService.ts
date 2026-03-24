@@ -1,6 +1,6 @@
-import { apiClient } from "../lib/apiClient";
+import { apiRequest } from "@/lib/api";
 
 export async function checkServerHealth() {
-  const res = await apiClient.get("/health");
-  return res.data;
+  const res = await apiRequest("/health");
+  return res;
 }
