@@ -249,7 +249,7 @@ export const clientApiContract = {
     "POST /api/applications/{id}/documents": {
       responseSchema: { type: "object", additionalProperties: true },
     },
-    "GET /api/applications/{id}/offers": {
+    "GET /api/offers?applicationId={id}": {
       responseSchema: { $ref: "#/$defs/ApplicationOffersResponse" },
     },
     "GET /api/applications/{id}/processing/status": {

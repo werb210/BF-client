@@ -24,48 +24,35 @@ export type LoginWithOtpResult = OtpAuthData;
 export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
-function assertResponseContract<T extends { ok?: boolean; data?: unknown }>(response: T): asserts response is T & { ok: true; data: Record<string, unknown> } {
-  if (!response?.ok || !response?.data) {
-    throw new Error("Invalid API response");
-  }
-}
-
 export async function requestOtp(phone: string): Promise<OtpRequestResult> {
   const normalizedPhone = normalizePhone(phone);
-  const response = await apiClient.post<{ ok?: boolean; data?: unknown }>(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
-  if (!response.data?.ok || !response.data?.data) {
-    throw new Error("Invalid API response");
-  }
+  await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.OTP_START, { phone: normalizedPhone });
 
   return {
     ok: true,
-    status: response.status,
+    status: 200,
   };
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  const response = await apiClient.post<{ ok?: boolean; data?: unknown }>(API_ENDPOINTS.OTP_START, { phone: normalizePhone(phone) });
-  if (!response.data?.ok || !response.data?.data) {
-    throw new Error("Invalid API response");
-  }
-
+  await apiClient.post<Record<string, unknown>>(API_ENDPOINTS.OTP_START, { phone: normalizePhone(phone) });
   return { ok: true };
 }
 
 export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {
-  const response = await apiClient.post<{ ok?: boolean; data?: OtpAuthData }>(API_ENDPOINTS.OTP_VERIFY, {
+  const response = await apiClient.post<OtpAuthData>(API_ENDPOINTS.OTP_VERIFY, {
     phone: normalizePhone(phone),
     code,
   });
 
-  assertResponseContract(response.data);
-  const { token, user, nextPath } = response.data.data;
+  const { token, user, nextPath } = response.data;
 
   if (!token || !user) {
     throw new Error("Invalid API response");
   }
 
   setToken(token);
+  localStorage.setItem("token", token);
 
   return { token, user, nextPath };
 }

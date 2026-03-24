@@ -6,10 +6,10 @@ import { logClientError } from "@/lib/logger"
 
 let device: Device | null = null
 
-export async function initializeVoice(identity: string) {
+export async function initializeVoice(_identity: string) {
   if (!hasToken()) return
 
-  const { data } = await apiClient.post<{ token: string }>(API_ENDPOINTS.TELEPHONY_TOKEN, { identity })
+  const { data } = await apiClient.get<{ token: string }>(API_ENDPOINTS.TELEPHONY_TOKEN)
 
   device = new Device(data.token)
 

@@ -1,20 +1,14 @@
 import { apiFetch as baseApiFetch, buildUrl } from "@/lib/api";
 
-export async function apiFetch(
+export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
-) {
-  return baseApiFetch(path, options);
+): Promise<T> {
+  return baseApiFetch<T>(path, options);
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await apiFetch(path, options);
-  if (!response.ok) throw new Error(`Request failed: ${response.status}`);
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return (await response.json()) as T;
-  }
-  return (await response.text()) as T;
+  return apiFetch<T>(path, options);
 }
 
 const buildMethodOptions = (method: string, data?: unknown, headers?: Record<string, string>) => {
