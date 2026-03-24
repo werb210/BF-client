@@ -77,11 +77,11 @@ export async function fetchApplicationDocuments(id: string): Promise<any> {
 }
 
 export async function fetchApplicationOffers(id: string): Promise<any> {
-  const res: unknown = await api.get(`/api/applications/${id}/offers`);
+  const res: unknown = await api.get(`/api/offers?applicationId=${encodeURIComponent(id)}`);
   return parseApiResponse(
     ApplicationOffersResponseSchema,
     (res as { data: unknown }).data,
-    "GET /api/applications/{id}/offers"
+    "GET /api/offers?applicationId={id}"
   );
 }
 

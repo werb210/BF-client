@@ -22,8 +22,8 @@ export function useAuth() {
       .get(API_ENDPOINTS.AUTH_ME)
       .then((res) => {
         if (!mounted) return;
-        const payload = (res.data ?? {}) as { data?: { user?: Record<string, unknown> }; user?: Record<string, unknown> };
-        setUser(payload.data?.user ?? payload.user ?? null);
+        const payload = (res.data ?? {}) as { user?: Record<string, unknown> };
+        setUser(payload.user ?? null);
       })
       .catch(() => {
         if (mounted) {

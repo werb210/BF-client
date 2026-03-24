@@ -5,10 +5,10 @@ export interface ContinuationResponse {
 }
 
 export async function checkContinuation(email: string): Promise<ContinuationResponse> {
-  const res = await api.get<ContinuationResponse>(
-    `/api/application/continuation?email=${encodeURIComponent(email)}`
+  const data = await api.get<ContinuationResponse>(
+    `/api/applications/continuation?email=${encodeURIComponent(email)}`
   );
-  return res.data;
+  return data.data;
 }
 
 export async function loadContinuation(): Promise<null> {

@@ -9,9 +9,9 @@ export const API_CONTRACT = {
     UPLOAD: "/api/documents/upload"
   },
   APPLICATION: {
-    ROOT: "/api/application",
-    UPDATE: "/api/application/update",
-    CONTINUATION: "/api/application/continuation"
+    ROOT: "/api/applications",
+    UPDATE: "/api/applications/update",
+    CONTINUATION: "/api/applications/continuation"
   },
   READINESS: {
     ROOT: "/api/readiness",

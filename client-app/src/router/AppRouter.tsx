@@ -195,13 +195,9 @@ export default function AppRouter(): JSX.Element {
       return;
     }
 
-    api.get<{ ok?: boolean; data?: { user?: unknown } }>(API_ENDPOINTS.AUTH_ME)
+    api.get<{ user?: unknown }>(API_ENDPOINTS.AUTH_ME)
       .then((res) => {
-        if (!res?.data?.ok || !res?.data?.data) {
-          clearToken();
-          return;
-        }
-        const user = res.data.data.user;
+        const user = res?.data?.user;
         if (!user) {
           clearToken();
         }

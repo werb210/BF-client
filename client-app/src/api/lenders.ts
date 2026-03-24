@@ -1,5 +1,4 @@
 import api from "@/api/client";
-import type { ApiResponse } from "@/types/api";
 
 export type ClientLender = { id: string; name: string };
 export type ClientLenderProduct = {
@@ -26,18 +25,12 @@ export type LenderProductRequirement = {
 };
 
 export async function getClientLenders(): Promise<ClientLender[]> {
-  const res = await api.get<ApiResponse<ClientLender[]>>("/lenders");
-  return res.data.data;
+  const res = await api.get<ClientLender[]>("/lenders");
+  return Array.isArray(res.data) ? res.data : [];
 }
 
 export async function getClientLenderProducts(): Promise<ClientLenderProduct[]> {
-  const res = await api.get<ApiResponse<ClientLenderProduct[]> | ClientLenderProduct[]>(
-    "/lender-products"
-  );
+  const res = await api.get<ClientLenderProduct[]>("/lender-products");
 
-  if (Array.isArray(res.data)) {
-    return res.data;
-  }
-
-  return Array.isArray(res.data.data) ? res.data.data : [];
+  return Array.isArray(res.data) ? res.data : [];
 }
