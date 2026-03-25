@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { components, layout, tokens } from "@/styles";
 import { createLead } from "@/services/lead";
 import { apiRequest } from "@/api/client";
-import { API_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type Step4Values = {
   firstName: string;
@@ -54,7 +54,7 @@ export default function ApplyStep4() {
 
       localStorage.setItem("leadId", lead.leadId);
 
-      await apiRequest(API_CONTRACT.CLIENT_APPLICATIONS.ROOT, {
+      await apiRequest(API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.ROOT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

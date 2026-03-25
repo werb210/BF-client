@@ -9,7 +9,7 @@ import {
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
 import type { ApiError } from "@/types/api";
-import { API_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
 import { validateFile } from "@/utils/fileValidation";
 
 type ClientAppStartResponse = z.infer<typeof ClientAppStartResponseSchema>;
@@ -39,7 +39,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
 export const ClientAppAPI = {
   start(payload: unknown) {
     return withRetry(async () => {
-      const res = await api.post<ClientAppStartResponse>(API_CONTRACT.CLIENT_APPLICATIONS.ROOT, payload);
+      const res = await api.post<ClientAppStartResponse>(API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.ROOT, payload);
       parseApiResponse(
         ClientAppStartResponseSchema,
         res.data,
@@ -49,7 +49,7 @@ export const ClientAppAPI = {
     });
   },
   update(token: string, payload: unknown) {
-    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload));
+    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload));
   },
   uploadDoc(
     token: string,
@@ -61,7 +61,7 @@ export const ClientAppAPI = {
     }
   ) {
     return withRetry(() =>
-      api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload)
+      api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, payload)
     );
   },
 
@@ -95,15 +95,15 @@ export const ClientAppAPI = {
   },
   deferDocuments(token: string) {
     return withRetry(() =>
-      api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, { documentsDeferred: true })
+      api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, { documentsDeferred: true })
     );
   },
   submit(token: string) {
-    return withRetry(() => api.post<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`));
+    return withRetry(() => api.post<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`));
   },
   status(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`);
+      const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`);
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
@@ -114,7 +114,7 @@ export const ClientAppAPI = {
   },
   getApplication(applicationId: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`);
+      const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`);
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
@@ -124,11 +124,11 @@ export const ClientAppAPI = {
     });
   },
   updateApplication(applicationId: string, payload: unknown) {
-    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`, payload));
+    return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`, payload));
   },
   getMessages(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppMessagesResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`);
+      const res = await api.get<ClientAppMessagesResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`);
       parseApiResponse(
         ClientAppMessagesResponseSchema,
         res.data,
@@ -139,10 +139,10 @@ export const ClientAppAPI = {
   },
   sendMessage(token: string, text: string) {
     return withRetry(() =>
-      api.post<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`, { text })
+      api.post<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`, { text })
     );
   },
   getSignNowUrl(token: string) {
-    return withRetry(() => api.get<GenericObjectResponse>(`${API_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/signnow`));
+    return withRetry(() => api.get<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/signnow`));
   },
 };

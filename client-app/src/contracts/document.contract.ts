@@ -1,5 +1,5 @@
 export const DOCUMENT_CONTRACT = {
-  UPLOAD: "/api/documents/upload",
+  UPLOAD: "/documents/upload",
   FIELDS: {
     FILE: "file",
     APPLICATION_ID: "applicationId",

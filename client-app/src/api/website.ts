@@ -1,6 +1,6 @@
 import api from "@/api/client";
 import { getContinuationSession } from "@/api/continuation";
-import { API_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export interface CreditReadinessPayload {
   companyName: string;
@@ -119,7 +119,7 @@ export async function submitCreditReadiness(payload: CreditReadinessPayload) {
     }
 
     const res = await postWithRetry(
-      API_CONTRACT.READINESS.ROOT,
+      API_ENDPOINTS_CONTRACT.READINESS.ROOT,
       payload
     );
     const responseData = res.data;
@@ -163,7 +163,7 @@ export async function submitContactForm(payload: {
   contactInFlight = (async () => {
     try {
       const res = await postWithRetry(
-        API_CONTRACT.CRM.WEB_LEADS,
+        API_ENDPOINTS_CONTRACT.CRM.WEB_LEADS,
         payload
       );
       const responseData = res.data;

@@ -1,6 +1,6 @@
 import { getPersistedAttribution } from "./attribution";
 import { apiRequest } from "@/api/client";
-import { API_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export function track(event: string) {
   if (import.meta.env.DEV) {
@@ -92,7 +92,7 @@ export const trackEvent = (
     window.clarity("set", eventName, payload);
   }
 
-  void apiRequest(API_CONTRACT.ANALYTICS, {
+  void apiRequest(API_ENDPOINTS_CONTRACT.ANALYTICS, {
     method: "POST",
     body: JSON.stringify({
       event_name: eventName,

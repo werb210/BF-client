@@ -8,12 +8,14 @@ let device: Device | null = null
 export async function initializeVoice(_identity: string) {
   if (!hasToken()) return
 
-  const res = await apiRequest<{ token?: string }>("/telephony/token")
-  if (!res?.token) {
+  const res = await apiRequest("/telephony/token")
+  const token = res.token;
+
+  if (!token) {
     throw new Error("Invalid telephony token response")
   }
 
-  device = new Device(res.token)
+  device = new Device(token)
 
   device.on("registered", () => undefined)
 

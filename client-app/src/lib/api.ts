@@ -1,57 +1,34 @@
-function normalizeApiPath(path: string): string {
-  if (!path.startsWith('/')) {
-    throw new Error(`Invalid API path: ${path}`);
-  }
+const BASE_URL = "https://boreal-staff-server-e4hmaqbkb2g5hgfv.canadacentral-01.azurewebsites.net";
 
-  return path.startsWith('/api') ? path : `/api${path}`;
-}
+export async function apiRequest(path: string, options: any = {}) {
+  const token = localStorage.getItem("token");
 
-function buildRequestUrl(path: string): string {
-  const normalizedPath = normalizeApiPath(path);
-  return new URL(normalizedPath, window.location.origin).toString();
-}
-
-export function buildUrl(path: string): string {
-  return normalizeApiPath(path);
-}
-
-export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('token') || localStorage.getItem('bf_token');
-
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (!(options.body instanceof FormData)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(buildRequestUrl(path), {
+  const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    headers,
-    credentials: 'include',
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(options.headers || {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
-
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status}`);
-  }
-
-  if (res.status === 204) {
-    return null as T;
-  }
 
   const json = await res.json();
 
-  return (json?.data ?? json) as T;
+  if (!res.ok) {
+    throw new Error(json?.error || "API request failed");
+  }
+
+  return json;
 }
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  return apiRequest<T>(path, options);
+  return apiRequest(path, options) as Promise<T>;
+}
+
+export function buildUrl(path: string): string {
+  return path;
 }

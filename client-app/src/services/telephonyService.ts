@@ -1,5 +1,4 @@
 import { apiRequest } from "@/lib/api";
-import { TelephonyToken } from "@/contracts";
 import { hasToken } from "@/lib/auth";
 import { logClientError } from "@/lib/logger";
 
@@ -10,14 +9,11 @@ type CallStatus = {
 };
 
 export async function getTelephonyToken() {
-  const res = await apiRequest("/telephony/token");
-
-  const parsed = TelephonyToken.response.parse({
-    ok: true,
-    data: res,
+  const result = await apiRequest("/telephony/token", {
+    method: "GET",
   });
 
-  return parsed.data.token;
+  return result.token;
 }
 
 export async function getCallStatus(): Promise<CallStatus> {
