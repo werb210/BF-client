@@ -30,5 +30,5 @@ export async function apiFetch<T = unknown>(
 }
 
 export function buildUrl(path: string): string {
-  return path;
+  return `${BASE_URL}${path}`;
 }

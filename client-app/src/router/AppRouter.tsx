@@ -24,9 +24,7 @@ import {
   clearStoredReadinessSession,
   resolveReadinessSessionId,
 } from "@/api/website";
-import { API_ENDPOINTS } from "@/api/endpoints";
-import api from "../api/client";
-import { clearToken, hasToken } from "@/lib/auth";
+import { hasToken } from "@/lib/auth";
 
 const StatusPage = lazy(() => import("../pages/StatusPage").then((module) => ({ default: module.StatusPage })));
 const ApplicationPortalPage = lazy(() => import("../pages/ApplicationPortalPage").then((module) => ({ default: module.ApplicationPortalPage })));
@@ -189,23 +187,6 @@ function ReadinessLoader(): null {
 
 export default function AppRouter(): JSX.Element {
   const { isOffline } = useNetworkStatus();
-
-  useEffect(() => {
-    if (typeof window === "undefined" || !hasToken()) {
-      return;
-    }
-
-    api.get<{ user?: unknown }>(API_ENDPOINTS.AUTH_ME)
-      .then((res) => {
-        const user = res?.data?.user;
-        if (!user) {
-          clearToken();
-        }
-      })
-      .catch(() => {
-        clearToken();
-      });
-  }, []);
 
   if (isOffline) {
     return (

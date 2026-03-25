@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest'
 
 describe('Auth UI Flow', () => {
   it('handles login success response', () => {
-    const res = { success: true, data: { token: 'abc' } }
-    expect(res.success).toBe(true)
-    expect(res.data.token).toBeDefined()
+    const res = { ok: true, token: 'abc' }
+    expect(res.ok).toBe(true)
+    expect(res.token).toBeDefined()
   })
 
   it('handles login failure response', () => {
