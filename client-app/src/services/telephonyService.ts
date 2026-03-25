@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { TelephonyToken } from "@/contracts";
 import { hasToken } from "@/lib/auth";
 import { logClientError } from "@/lib/logger";
 
@@ -8,7 +9,16 @@ type CallStatus = {
   timestamp?: string;
 };
 
-export const getTelephonyToken = () => apiRequest<{ token?: string }>("/telephony/token");
+export async function getTelephonyToken() {
+  const res = await apiRequest("/telephony/token");
+
+  const parsed = TelephonyToken.response.parse({
+    ok: true,
+    data: res,
+  });
+
+  return parsed.data.token;
+}
 
 export async function getCallStatus(): Promise<CallStatus> {
   if (!hasToken()) {
@@ -19,11 +29,7 @@ export async function getCallStatus(): Promise<CallStatus> {
   }
 
   try {
-    const data = await getTelephonyToken();
-
-    if (!data?.token) {
-      throw new Error("Invalid telephony token response");
-    }
+    await getTelephonyToken();
 
     return {
       status: "online",

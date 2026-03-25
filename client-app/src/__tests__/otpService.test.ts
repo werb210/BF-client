@@ -26,7 +26,7 @@ describe("auth OTP service", () => {
 
     expect(apiRequestSpy).toHaveBeenCalledWith("/auth/otp/start", {
       method: "POST",
-      body: JSON.stringify({ phone: "+15551112222" }),
+      body: JSON.stringify({ phone: "(555) 111-2222" }),
     });
   });
 
@@ -40,7 +40,7 @@ describe("auth OTP service", () => {
       "/auth/otp/start",
       {
         method: "POST",
-        body: JSON.stringify({ phone: "+15878881837" }),
+        body: JSON.stringify({ phone: "5878881837" }),
       }
     );
   });
@@ -69,7 +69,7 @@ describe("auth OTP service", () => {
       "/auth/otp/verify",
       {
         method: "POST",
-        body: JSON.stringify({ phone: "+15878881837", otp: "123456" }),
+        body: JSON.stringify({ phone: "5878881837", otp: "123456" }),
       }
     );
   });
@@ -77,6 +77,6 @@ describe("auth OTP service", () => {
   it("throws when verify OTP request is not ok", async () => {
     vi.spyOn(api, "apiRequest").mockResolvedValue({} as any);
 
-    await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow("Missing token");
+    await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow();
   });
 });

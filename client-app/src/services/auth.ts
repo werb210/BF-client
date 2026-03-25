@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { OtpVerify } from "@/contracts";
 import { normalizePhone } from "@/utils/normalizePhone";
 
 export type OtpRequestResult = {
@@ -31,25 +32,26 @@ export async function requestOtp(phone: string): Promise<OtpRequestResult> {
 }
 
 export async function startOtp(phone: string): Promise<StartOtpResponse> {
-  return apiRequest<StartOtpResponse>("/auth/otp/start", {
+  return apiRequest("/auth/otp/start", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
 }
 
 export async function verifyOtp(phone: string, otp: string): Promise<LoginWithOtpResult> {
-  const res = await apiRequest<OtpAuthData>("/auth/otp/verify", {
+  const res = await apiRequest("/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify({ phone, otp }),
   });
 
-  if (!res?.token) {
-    throw new Error("Missing token");
-  }
+  const parsed = OtpVerify.response.parse({
+    ok: true,
+    data: res,
+  });
 
-  localStorage.setItem("token", res.token);
+  localStorage.setItem("token", parsed.data.token);
 
-  return res;
+  return parsed.data;
 }
 
 export async function loginWithOtp(phone: string, code: string): Promise<LoginWithOtpResult> {
