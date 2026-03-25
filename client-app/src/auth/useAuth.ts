@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiClient } from '../api/client';
-import { API_ENDPOINTS } from '../api/endpoints';
+import { hasToken } from '@/lib/auth';
 
 type AuthUser = Record<string, unknown> | null;
 
@@ -9,36 +8,8 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    if (typeof window !== "undefined" && window.location.pathname === "/login") {
-      setLoading(false);
-      return () => {
-        mounted = false;
-      };
-    }
-
-    void apiClient
-      .get(API_ENDPOINTS.AUTH_ME)
-      .then((res) => {
-        if (!mounted) return;
-        const payload = (res.data ?? {}) as { user?: Record<string, unknown> };
-        setUser(payload.user ?? null);
-      })
-      .catch(() => {
-        if (mounted) {
-          setUser(null);
-        }
-      })
-      .finally(() => {
-        if (mounted) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
+    setUser(hasToken() ? {} : null);
+    setLoading(false);
   }, []);
 
   return { user, loading };
