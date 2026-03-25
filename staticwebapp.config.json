@@ -1,20 +1,10 @@
 {
-  "navigationFallback": {
-    "rewrite": "/index.html",
-    "exclude": [
-      "/assets/*",
-      "/images/*",
-      "/icons/*",
-      "/manifest.webmanifest",
-      "/sw.js",
-      "/*.css",
-      "/*.js",
-      "/*.png",
-      "/*.jpg",
-      "/*.jpeg",
-      "/*.svg",
-      "/*.ico",
-      "/*.webmanifest"
-    ]
-  }
+  "routes": [
+    {
+      "route": "/*",
+      "headers": {
+        "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://server.boreal.financial https://voice-js.twilio.com https://eventgw.twilio.com https://media.twiliocdn.com https://sdk.twilio.com wss://voice-js.twilio.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+      }
+    }
+  ]
 }
