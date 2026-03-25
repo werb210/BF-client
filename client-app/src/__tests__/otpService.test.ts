@@ -26,7 +26,7 @@ describe("auth OTP service", () => {
 
     expect(apiRequestSpy).toHaveBeenCalledWith("/auth/otp/start", {
       method: "POST",
-      body: JSON.stringify({ phone: "(555) 111-2222" }),
+      body: { phone: "(555) 111-2222" },
     });
   });
 
@@ -40,7 +40,7 @@ describe("auth OTP service", () => {
       "/auth/otp/start",
       {
         method: "POST",
-        body: JSON.stringify({ phone: "5878881837" }),
+        body: { phone: "5878881837" },
       }
     );
   });
@@ -69,7 +69,7 @@ describe("auth OTP service", () => {
       "/auth/otp/verify",
       {
         method: "POST",
-        body: JSON.stringify({ phone: "5878881837", otp: "123456" }),
+        body: { phone: "5878881837", code: "123456" },
       }
     );
   });

@@ -16,7 +16,7 @@ import type { ApiError } from "@/types/api";
 import { fundingAmountSchema, emailSchema, phoneSchema } from "@/utils/validationSchema";
 import { executeCaptcha } from "@/security/useCaptcha";
 import { logClientError } from "@/lib/logger";
-import { API_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type FieldType =
   | "text"
@@ -656,7 +656,7 @@ export default function PublicApplyPage() {
       const draft = loadDraft();
       if (!draft) return;
 
-      await apiRequest(API_CONTRACT.DRAFTS.SAVE, {
+      await apiRequest(API_ENDPOINTS_CONTRACT.DRAFTS.SAVE, {
         method: "POST",
         body: JSON.stringify(draft),
       }).catch((error) => {
@@ -673,7 +673,7 @@ export default function PublicApplyPage() {
 
     if (!resumeToken) return;
 
-    void (apiRequest(`${API_CONTRACT.DRAFTS.PREFIX}${resumeToken}`) as Promise<DraftPayload | null>)
+    void (apiRequest(`${API_ENDPOINTS_CONTRACT.DRAFTS.PREFIX}${resumeToken}`) as Promise<DraftPayload | null>)
       .then((data: DraftPayload | null) => {
         if (data) {
           setValues((prev) => ({ ...prev, ...data }));

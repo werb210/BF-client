@@ -1,5 +1,5 @@
 import api from "@/api/client";
-import { API_CONTRACT } from "@/contracts";
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export type LeadPayload = {
   companyName?: string;
@@ -20,5 +20,5 @@ export type LeadPayload = {
 };
 
 export async function createLead(payload: LeadPayload) {
-  return api.post(API_CONTRACT.CRM.LEADS, payload);
+  return api.post(API_ENDPOINTS_CONTRACT.CRM.LEADS, payload);
 }
