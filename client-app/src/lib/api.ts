@@ -1,4 +1,4 @@
-const BASE_URL = "https://boreal-staff-server-e4hmaqbkb2g5hgfv.canadacentral-01.azurewebsites.net";
+const BASE_URL = "https://server.boreal.financial";
 
 export async function apiRequest(path: string, options: any = {}) {
   const token = localStorage.getItem("token");

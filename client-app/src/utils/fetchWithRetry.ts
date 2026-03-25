@@ -34,7 +34,6 @@ export async function safeFetch(
       data: init?.body,
       headers: init?.headers as Record<string, string> | undefined,
       signal: controller.signal,
-      withCredentials: true,
     });
 
     return new Response(JSON.stringify(response.data), {
