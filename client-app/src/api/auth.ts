@@ -1,4 +1,3 @@
-import { AUTH_ENDPOINTS } from "@/contracts";
 import { apiFetch } from "@/lib/api";
 
 export async function sendOtp(phone: string) {
@@ -6,17 +5,20 @@ export async function sendOtp(phone: string) {
     throw new Error("Phone must be a string");
   }
 
-  return apiFetch(AUTH_ENDPOINTS.OTP_START, {
+  return apiFetch("/auth/otp/start", {
     method: "POST",
     body: { phone },
   });
 }
 
-export async function verifyOtp(data: any) {
-  return apiFetch(AUTH_ENDPOINTS.OTP_VERIFY, {
+export async function verifyOtp(data: { phone: string; code: string }) {
+  const result = await apiFetch<{ ok: true; token: string }>("/auth/otp/verify", {
     method: "POST",
-    body: data
+    body: { phone: data.phone, code: data.code },
   });
+
+  localStorage.setItem("token", result.token);
+  return result;
 }
 
 export async function verifyOtpCode(phone: string, otpCode: string) {
