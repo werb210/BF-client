@@ -5,6 +5,10 @@ if (!BASE_URL) {
 }
 
 export const request = async (path: string, options: RequestInit = {}) => {
+  if (path.startsWith('/api')) {
+    throw new Error('Remove /api prefix');
+  }
+
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -17,7 +21,7 @@ export const request = async (path: string, options: RequestInit = {}) => {
   });
 
   if (!res.ok) {
-    throw new Error(`API error ${res.status}`);
+    throw new Error(`HTTP ${res.status}`);
   }
 
   return res.json();
