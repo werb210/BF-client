@@ -22,16 +22,16 @@ describe('Auth contract enforcement', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [, requestInit] = fetchMock.mock.calls[0];
     expect(JSON.stringify(requestInit)).not.toContain('email');
-    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '+15871234567' });
+    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '15871234567' });
   });
 
   it('should only send phone + code for OTP verify', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: {} }) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ token: 'token-123' }) });
 
     await verifyOtpCode('+15871234567', '123456');
 
     const [, requestInit] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '+15871234567', code: '123456' });
+    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '15871234567', code: '123456' });
     expect(JSON.stringify(requestInit)).not.toContain('email');
   });
 });
