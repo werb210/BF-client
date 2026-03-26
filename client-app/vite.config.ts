@@ -1,21 +1,21 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   build: {
     sourcemap: true,
     minify: false,
-    target: "es2020",
+    target: 'es2020',
   },
   esbuild: {
-    drop: mode === "production" ? ["console", "debugger"] : [],
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
-      "@twilio/voice-sdk": path.resolve(__dirname, "src/shims/twilio-voice-sdk.ts"),
+      '@': '/src',
+      '@twilio/voice-sdk': path.resolve(__dirname, 'src/shims/twilio-voice-sdk.ts'),
     },
   },
   server: {
