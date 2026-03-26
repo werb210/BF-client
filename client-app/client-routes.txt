@@ -4,8 +4,8 @@
 /api/application/update
 /api/applications
 /api/auth/me
-/api/auth/otp/start
-/api/auth/otp/verify
+/auth/otp/start
+/auth/otp/verify
 /api/auth/request
 /api/auth/request-otp
 /api/auth/verify
@@ -26,5 +26,5 @@
 /api/readiness/session-2
 /api/readiness/session/session-2
 /api/support/event
-/api/telephony/presence
-/api/telephony/token
+/telephony/presence
+/telephony/token
