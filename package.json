@@ -14,8 +14,12 @@
   "devDependencies": {
     "@testing-library/react": "^16.0.0",
     "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^4.0.3",
     "jsdom": "^24.0.0",
-    "typescript": "file:typescript-5.9.3.tgz",
+    "typescript": "^5.4.0",
     "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6"
   }
 }
