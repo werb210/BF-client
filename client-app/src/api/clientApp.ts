@@ -43,7 +43,7 @@ export const ClientAppAPI = {
       parseApiResponse(
         ClientAppStartResponseSchema,
         res.data,
-        "POST /api/applications"
+        "POST /applications"
       );
       return res;
     });
@@ -107,7 +107,7 @@ export const ClientAppAPI = {
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
-        "GET /api/applications/{token}"
+        "GET /applications/{token}"
       );
       return res;
     });
@@ -118,7 +118,7 @@ export const ClientAppAPI = {
       parseApiResponse(
         ClientAppStatusResponseSchema,
         res.data,
-        "GET /api/applications/{applicationId}"
+        "GET /applications/{applicationId}"
       );
       return res;
     });
@@ -132,7 +132,7 @@ export const ClientAppAPI = {
       parseApiResponse(
         ClientAppMessagesResponseSchema,
         res.data,
-        "GET /api/applications/{token}/messages"
+        "GET /applications/{token}/messages"
       );
       return res;
     });

@@ -1,5 +1,5 @@
 {
   "globalHeaders": {
-    "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://boreal-staff-server-e4hmaqbkb2g5hgfv.canadacentral-01.azurewebsites.net https://voice-js.twilio.com https://eventgw.twilio.com https://media.twiliocdn.com https://sdk.twilio.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; frame-src https://voice-js.twilio.com; object-src 'none';"
+    "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://api.staff.boreal.financial https://voice-js.twilio.com https://eventgw.twilio.com https://media.twiliocdn.com https://sdk.twilio.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; frame-src https://voice-js.twilio.com; object-src 'none';"
   }
 }

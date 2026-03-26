@@ -69,7 +69,7 @@ export async function createPublicApplication(
   return parseApiResponse(
     PublicApplicationResponseSchema,
     res,
-    "POST /api/applications"
+    "POST /applications"
   );
 }
 
@@ -78,7 +78,7 @@ export async function fetchApplication(id: string): Promise<any> {
   return parseApiResponse(
     FetchApplicationResponseSchema,
     res,
-    "GET /api/applications/{id}"
+    "GET /applications/{id}"
   );
 }
 
@@ -87,7 +87,7 @@ export async function fetchApplicationDocuments(id: string): Promise<any> {
   return parseApiResponse(
     ApplicationDocumentsResponseSchema,
     res,
-    "GET /api/applications/{id}/documents"
+    "GET /applications/{id}/documents"
   );
 }
 
@@ -101,7 +101,7 @@ export async function fetchApplicationOffers(id: string): Promise<any> {
   return parseApiResponse(
     ApplicationOffersResponseSchema,
     offers,
-    "GET /api/offers?applicationId={id}"
+    "GET /offers?applicationId={id}"
   );
 }
 

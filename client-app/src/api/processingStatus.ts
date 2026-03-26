@@ -76,7 +76,7 @@ export async function fetchProcessingStatus(
   const raw = parseApiResponse(
     ProcessingStatusResponseSchema,
     response.data,
-    "GET /api/applications/{id}/processing/status"
+    "GET /applications/{id}/processing/status"
   ) as unknown as ProcessingStatusPayload;
 
   const documentSource =

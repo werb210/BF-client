@@ -68,7 +68,7 @@ export async function fetchSubmissionStatus(applicationId: string) {
   const parsed = parseApiResponse(
     PortalSubmissionStatusResponseSchema,
     res,
-    "GET /api/portal/applications/{id}"
+    "GET /portal/applications/{id}"
   );
   const submission =
     (parsed as unknown)?.submission ?? (parsed as unknown)?.data?.submission ?? (parsed as unknown)?.data ?? {};

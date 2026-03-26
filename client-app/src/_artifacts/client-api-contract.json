@@ -1,40 +1,40 @@
 {
   "version": "v1",
   "endpoints": {
-    "POST /api/applications": {
+    "POST /applications": {
       "responseSchema": { "$ref": "#/$defs/PublicApplicationResponse" }
     },
-    "GET /api/applications/{id}": {
+    "GET /applications/{id}": {
       "responseSchema": { "$ref": "#/$defs/FetchApplicationResponse" }
     },
-    "GET /api/applications/{id}/documents": {
+    "GET /applications/{id}/documents": {
       "responseSchema": { "$ref": "#/$defs/ApplicationDocumentsResponse" }
     },
-    "POST /api/applications/{id}/documents": {
+    "POST /applications/{id}/documents": {
       "responseSchema": { "type": "object", "additionalProperties": true }
     },
-    "GET /api/offers?applicationId={id}": {
+    "GET /offers?applicationId={id}": {
       "responseSchema": { "$ref": "#/$defs/ApplicationOffersResponse" }
     },
-    "GET /api/applications/{id}/processing/status": {
+    "GET /applications/{id}/processing/status": {
       "responseSchema": { "$ref": "#/$defs/ProcessingStatusResponse" }
     },
-    "GET /api/portal/applications/{id}": {
+    "GET /portal/applications/{id}": {
       "responseSchema": { "$ref": "#/$defs/PortalSubmissionStatusResponse" }
     },
-    "POST /api/applications/{token}/submit": {
+    "POST /applications/{token}/submit": {
       "responseSchema": { "type": "object", "additionalProperties": true }
     },
-    "PATCH /api/applications/{token}": {
+    "PATCH /applications/{token}": {
       "responseSchema": { "type": "object", "additionalProperties": true }
     },
-    "GET /api/applications/{token}/messages": {
+    "GET /applications/{token}/messages": {
       "responseSchema": { "$ref": "#/$defs/ClientAppMessagesResponse" }
     },
-    "POST /api/applications/{token}/messages": {
+    "POST /applications/{token}/messages": {
       "responseSchema": { "type": "object", "additionalProperties": true }
     },
-    "GET /api/applications/{token}/signnow": {
+    "GET /applications/{token}/signnow": {
       "responseSchema": { "type": "object", "additionalProperties": true }
     }
   },
