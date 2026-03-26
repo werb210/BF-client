@@ -1,8 +1,56 @@
-Server MUST include:
+Server canonical configuration (required):
+
+1) Global CORS (register before all routes)
+
+import cors from "cors";
 
 app.use(cors({
-  origin: "https://staff.boreal.financial",
+  origin: process.env.CORS_ALLOWED_ORIGINS?.split(",") || "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
 
-Without this, auth WILL FAIL in production.
+// Handle preflight explicitly
+app.options("*", cors());
+
+2) Route registration (no duplication)
+
+import authRoutes from "./modules/auth/auth.routes";
+import telephonyRoutes from "./routes/telephony";
+import pwaRoutes from "./routes/pwa";
+
+app.use("/auth", authRoutes);
+app.use("/telephony", telephonyRoutes);
+app.use("/pwa", pwaRoutes);
+
+3) Auth/Telephony response contract
+
+POST /auth/otp/start
+BODY: { phone }
+RESP: 200
+
+POST /auth/otp/verify
+BODY: { phone, code }
+RESP: { token }
+
+GET /telephony/token
+RESP: { token }
+
+4) Twilio env normalization
+
+const TWILIO_VOICE_APP_SID =
+  process.env.TWILIO_VOICE_APP_SID ||
+  process.env.TWILIO_TWIML_APP_SID;
+
+if (!TWILIO_VOICE_APP_SID) {
+  throw new Error("Missing Twilio Voice App SID");
+}
+
+5) Deployment guarantees
+
+- OPTIONS /auth/otp/start -> 200
+- POST /auth/otp/start -> 200
+- No CORS errors
+- No duplicate route mounts
+- Consistent token response format

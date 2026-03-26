@@ -3,8 +3,8 @@
 /api/application/continuation
 /api/application/update
 /api/applications
-/api/auth/otp/start
-/api/auth/otp/verify
+/auth/otp/start
+/auth/otp/verify
 /api/client/applications
 /api/client/lender-products
 /api/client/lenders
@@ -21,4 +21,4 @@
 /api/readiness/session-2
 /api/readiness/session/session-2
 /api/support/event
-/api/telephony/token
+/telephony/token
