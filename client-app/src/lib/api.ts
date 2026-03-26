@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/config/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 function isFormDataBody(body: BodyInit | null | undefined): body is FormData {
   return typeof FormData !== "undefined" && body instanceof FormData;
@@ -13,7 +13,7 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = localStorage.getItem("token");
-  const url = `${API_BASE_URL}${path}`;
+  const url = `${BASE_URL}${path}`;
   const headers = new Headers(options.headers ?? {});
 
   const requestBody = options.body;
@@ -68,5 +68,5 @@ export async function apiRequest<T = unknown>(
 }
 
 export function buildUrl(path: string): string {
-  return `${API_BASE_URL}${path}`;
+  return `${BASE_URL}${path}`;
 }

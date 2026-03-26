@@ -4,16 +4,16 @@ const os = require('os');
 const path = require('path');
 
 const requiredEnv = [
-  'VITE_API_BASE_URL',
+  'VITE_API_URL',
   'VITE_OPENAI_API_KEY',
   'VITE_OPENAI_ASSISTANT_ID',
 ];
 
-const apiBase = process.env.VITE_API_BASE_URL || process.env.API_BASE_URL || 'https://server.boreal.financial';
+const apiBase = process.env.VITE_API_URL || '';
 const staffHealth = `${apiBase.replace(/\/$/, '')}/health`;
-const uploadEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/upload-document/diagnostic`;
-const chatEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/messages/diagnostic`;
-const signNowEndpoint = `${apiBase.replace(/\/$/, '')}/api/client/app/signnow/diagnostic`;
+const uploadEndpoint = `${apiBase.replace(/\/$/, '')}/client/app/upload-document/diagnostic`;
+const chatEndpoint = `${apiBase.replace(/\/$/, '')}/client/app/messages/diagnostic`;
+const signNowEndpoint = `${apiBase.replace(/\/$/, '')}/client/app/signnow/diagnostic`;
 
 const strictMode = String(process.env.DIAGNOSTIC_STRICT || '').toLowerCase() === 'true';
 
