@@ -18,7 +18,7 @@ Validated these targets without applying fixes:
 ### 1) Auth
 **Result: PARTIAL PASS (core OTP flow covered and passing).**
 
-- **Sends phone:** Covered. OTP service tests assert `/auth/otp/start` payload contains normalized `phone` (E.164), and OTP verify posts phone+code to `/auth/otp/verify`.
+- **Sends phone:** Covered. OTP service tests assert `/api/auth/otp/start` payload contains normalized `phone` (E.164), and OTP verify posts phone+code to `/api/auth/otp/verify`.
 - **NOT sending email:** No explicit negative assertion found that email is excluded in OTP requests.
 - **OTP flow works end-to-end:** Covered at runtime-component level. Portal entry tests cover send failure behavior, single auto-submit verify behavior, success redirect to `/portal`, and failure inline errors.
 

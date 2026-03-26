@@ -42,8 +42,8 @@ Result: ✅ Build succeeded and preview served at `http://localhost:4173`.
 - Opened: `http://localhost:4173/otp`
 - Triggered OTP send + verify flow in browser automation.
 - Captured network requests:
-  - `POST https://server.boreal.financial/auth/otp/start`
-  - `POST https://server.boreal.financial/auth/otp/verify`
+  - `POST https://server.boreal.financial/api/auth/otp/start`
+  - `POST https://server.boreal.financial/api/auth/otp/verify`
 
 Result: ✅ OTP auth flow routes to BF-Server endpoints.
 
