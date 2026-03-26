@@ -19,24 +19,24 @@ describe("auth OTP service", () => {
   });
 
   it("calls requestOtp endpoint with normalized phone payload", async () => {
-    const apiRequestSpy = vi.spyOn(api, "apiRequest").mockResolvedValue({ sent: true } as any);
+    const apiFetchSpy = vi.spyOn(api, "apiFetch").mockResolvedValue({ sent: true } as any);
 
     const res = await requestOtp("(555) 111-2222");
     expect(res).toBeDefined();
 
-    expect(apiRequestSpy).toHaveBeenCalledWith("/auth/otp/start", {
+    expect(apiFetchSpy).toHaveBeenCalledWith("/auth/otp/start", {
       method: "POST",
       body: { phone: "(555) 111-2222" },
     });
   });
 
   it('startOtp("5878881837") returns ok when server says ok=true', async () => {
-    const apiRequestSpy = vi.spyOn(api, "apiRequest").mockResolvedValue({ sent: true } as any);
+    const apiFetchSpy = vi.spyOn(api, "apiFetch").mockResolvedValue({ sent: true } as any);
 
     const res = await startOtp("5878881837");
     expect(res).toBeDefined();
 
-    expect(apiRequestSpy).toHaveBeenCalledWith(
+    expect(apiFetchSpy).toHaveBeenCalledWith(
       "/auth/otp/start",
       {
         method: "POST",
@@ -51,7 +51,7 @@ describe("auth OTP service", () => {
   });
 
   it('loginWithOtp("5878881837", "123456") posts to verify endpoint and returns token/user payload', async () => {
-    const apiRequestSpy = vi.spyOn(api, "apiRequest").mockResolvedValue({
+    const apiFetchSpy = vi.spyOn(api, "apiFetch").mockResolvedValue({
       token: "abc",
       user: { id: "u-1" },
       nextPath: "/portal",
@@ -65,7 +65,7 @@ describe("auth OTP service", () => {
       },
     });
 
-    expect(apiRequestSpy).toHaveBeenCalledWith(
+    expect(apiFetchSpy).toHaveBeenCalledWith(
       "/auth/otp/verify",
       {
         method: "POST",
@@ -75,7 +75,7 @@ describe("auth OTP service", () => {
   });
 
   it("throws when verify OTP request is not ok", async () => {
-    vi.spyOn(api, "apiRequest").mockResolvedValue({} as any);
+    vi.spyOn(api, "apiFetch").mockResolvedValue({} as any);
 
     await expect(loginWithOtp("(555) 111-2222", "123456")).rejects.toThrow();
   });

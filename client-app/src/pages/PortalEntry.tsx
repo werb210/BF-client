@@ -65,9 +65,10 @@ export function PortalEntry() {
       setOtpCode("");
       setVerifying(false);
       setStep("code");
-    } catch (err: any) {
+    } catch (err: unknown) {
       logClientError("OTP start error", err);
-      setError(err?.response?.data?.error?.message || "Failed to send verification code");
+      const message = err instanceof Error ? err.message : "Failed to send verification code";
+      setError(message || "Failed to send verification code");
     } finally {
       setSendingOtp(false);
     }
