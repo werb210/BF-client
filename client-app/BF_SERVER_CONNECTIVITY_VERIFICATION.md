@@ -6,18 +6,17 @@ This verification confirms BF-Client uses the unified API client and triggers OT
 - File checked: `src/config/runtimeConfig.ts`
 - `runtimeConfig.API_BASE` resolves in this order:
   1. `import.meta.env.VITE_API_URL`
-  2. `window.RUNTIME_CONFIG?.API_BASE_URL`
-  3. `"/api"`
 
-Result: ✅ Matches requirement (`VITE_API_URL` or `/api`).
+
+Result: ✅ Matches requirement (`VITE_API_URL`).
 
 ## Step 2 — API Client
 - File checked: `src/api/apiClient.ts`
 - `apiClient` is created using `axios.create({...})` with:
   - `baseURL: runtimeConfig.API_BASE`
-  - `withCredentials: true`
 
-Result: ✅ Unified axios client exists and is configured from runtime API base.
+
+Result: ✅ Unified API client exists and is configured from runtime API base.
 
 ## Step 3 — No Direct axios.get/post/patch Calls in src
 Command run:
@@ -42,8 +41,8 @@ Result: ✅ Build succeeded and preview served at `http://localhost:4173`.
 - Opened: `http://localhost:4173/otp`
 - Triggered OTP send + verify flow in browser automation.
 - Captured network requests:
-  - `POST https://server.boreal.financial/api/auth/otp/start`
-  - `POST https://server.boreal.financial/api/auth/otp/verify`
+  - `POST https://api.staff.boreal.financial/auth/otp/start`
+  - `POST https://api.staff.boreal.financial/auth/otp/verify`
 
 Result: ✅ OTP auth flow routes to BF-Server endpoints.
 

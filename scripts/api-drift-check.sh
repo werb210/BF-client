@@ -34,8 +34,8 @@ extract_api_paths() {
     return 0
   fi
 
-  rg "/api/" "$source_dir" \
-    | sed -nE 's/.*"(\/api[^"]+)".*/\1/p' \
+  rg '"/[a-zA-Z0-9_-]' "$source_dir" \
+    | sed -nE 's/.*"(\/[a-zA-Z0-9_\/-]+)".*/\1/p' \
     | sort -u > "$output_file" || true
 }
 

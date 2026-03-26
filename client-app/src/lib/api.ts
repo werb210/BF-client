@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 function isFormDataBody(body: BodyInit | null | undefined): body is FormData {
   return typeof FormData !== "undefined" && body instanceof FormData;
@@ -13,7 +13,7 @@ export async function apiFetch<T = unknown>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = localStorage.getItem("token");
-  const url = `${BASE_URL}${path}`;
+  const url = `${API_BASE_URL}${path}`;
   const headers = new Headers(options.headers ?? {});
 
   const requestBody = options.body;
@@ -37,7 +37,6 @@ export async function apiFetch<T = unknown>(
   try {
     const res = await fetch(url, {
       ...options,
-      credentials: "include",
       headers,
       body: shouldSerializeBody ? JSON.stringify(requestBody) : requestBody,
     });
@@ -68,5 +67,5 @@ export async function apiRequest<T = unknown>(
 }
 
 export function buildUrl(path: string): string {
-  return `${BASE_URL}${path}`;
+  return `${API_BASE_URL}${path}`;
 }

@@ -3,7 +3,7 @@
 ## Scope requested
 Validated these targets without applying fixes:
 1. Auth (phone-only send, no email send, OTP end-to-end)
-2. Application submission (`POST /api/applications` auth vs unauth and payload shape)
+2. Application submission (`POST /applications` auth vs unauth and payload shape)
 3. Step form logic (7-step render, state persistence, per-step validation)
 4. Document upload (high risk)
 5. Retry / API handling
@@ -18,7 +18,7 @@ Validated these targets without applying fixes:
 ### 1) Auth
 **Result: PARTIAL PASS (core OTP flow covered and passing).**
 
-- **Sends phone:** Covered. OTP service tests assert `/api/auth/otp/start` payload contains normalized `phone` (E.164), and OTP verify posts phone+code to `/api/auth/otp/verify`.
+- **Sends phone:** Covered. OTP service tests assert `/auth/otp/start` payload contains normalized `phone` (E.164), and OTP verify posts phone+code to `/auth/otp/verify`.
 - **NOT sending email:** No explicit negative assertion found that email is excluded in OTP requests.
 - **OTP flow works end-to-end:** Covered at runtime-component level. Portal entry tests cover send failure behavior, single auto-submit verify behavior, success redirect to `/portal`, and failure inline errors.
 
@@ -28,12 +28,12 @@ Validated these targets without applying fixes:
 **Result: PARTIAL PASS with endpoint mismatch risk.**
 
 - Existing tests cover application submit payload behavior and expected enrichment (attribution fields, continuation token, persisted credit session token).
-- Submission test target in code is `"/api/client/applications"`, not `"/api/applications"`.
+- Submission test target in code is `"/client/applications"`, not `"/applications"`.
 - No direct automated assertion found for:
-  - `POST /api/applications with auth -> 200`
-  - `POST /api/applications without auth -> 401`
+  - `POST /applications with auth -> 200`
+  - `POST /applications without auth -> 401`
 
-**Interpretation:** Payload structure assertions are present and passing for current client submission path, but requested auth/unauth status checks for `/api/applications` are not directly covered by current tests.
+**Interpretation:** Payload structure assertions are present and passing for current client submission path, but requested auth/unauth status checks for `/applications` are not directly covered by current tests.
 
 ### 3) Step form logic
 **Result: PARTIAL PASS with requirement mismatch.**
@@ -74,7 +74,7 @@ Validated these targets without applying fixes:
 
 ## High-signal gap list (not fixed)
 1. No direct test proving OTP requests never include email as a field.
-2. Requested `/api/applications` auth-vs-unauth 200/401 checks are not directly present (tests currently target `/api/client/applications`).
+2. Requested `/applications` auth-vs-unauth 200/401 checks are not directly present (tests currently target `/client/applications`).
 3. Requested “all 7 steps render” does not align with current 6-step route and inventory tests.
 4. Silent-failure risk remains in document status refresh catch block.
 
