@@ -1,21 +1,25 @@
-import { apiRequest } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import { normalizePhone } from "@/utils/normalizePhone";
 
 export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
 export async function startOtp(phone: string) {
-  return apiRequest("/auth/otp/start", {
+  return apiFetch("/auth/otp/start", {
     method: "POST",
     body: { phone },
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const result = await apiRequest("/auth/otp/verify", {
+  const result = await apiFetch<{ token?: string } & Record<string, unknown>>("/auth/otp/verify", {
     method: "POST",
     body: { phone, code },
   });
+
+  if (!result?.token || typeof result.token !== "string") {
+    throw new Error("Invalid OTP verification response");
+  }
 
   localStorage.setItem("token", result.token);
   return result;

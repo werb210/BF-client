@@ -1,34 +1,72 @@
-const BASE_URL = "https://server.boreal.financial";
+import { API_BASE_URL } from "@/config/api";
 
-export async function apiRequest(path: string, options: any = {}) {
-  const token = localStorage.getItem("token");
+function isFormDataBody(body: BodyInit | null | undefined): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData;
+}
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...(options.headers || {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
-
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json?.error || "API request failed");
-  }
-
-  return json;
+function hasJsonContentType(headers: Headers): boolean {
+  return headers.get("Content-Type")?.includes("application/json") ?? false;
 }
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  return apiRequest(path, options) as Promise<T>;
+  const token = localStorage.getItem("token");
+  const url = `${API_BASE_URL}${path}`;
+  const headers = new Headers(options.headers ?? {});
+
+  const requestBody = options.body;
+  const isFormBody = isFormDataBody(requestBody);
+  const shouldSerializeBody =
+    requestBody != null &&
+    !isFormBody &&
+    typeof requestBody !== "string" &&
+    !(requestBody instanceof Blob) &&
+    !(requestBody instanceof URLSearchParams) &&
+    !(requestBody instanceof ArrayBuffer);
+
+  if (!isFormBody && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      credentials: "include",
+      headers,
+      body: shouldSerializeBody ? JSON.stringify(requestBody) : requestBody,
+    });
+
+    const responseText = await res.text();
+    const responseData =
+      responseText && hasJsonContentType(res.headers)
+        ? (JSON.parse(responseText) as T)
+        : ((responseText as unknown) as T);
+
+    if (!res.ok) {
+      console.error("API error:", res.status, responseText);
+      throw new Error(`API error ${res.status}`);
+    }
+
+    return responseData;
+  } catch (err) {
+    console.error("Fetch failed:", err);
+    throw err;
+  }
+}
+
+export async function apiRequest<T = unknown>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  return apiFetch<T>(path, options);
 }
 
 export function buildUrl(path: string): string {
-  return `${BASE_URL}${path}`;
+  return `${API_BASE_URL}${path}`;
 }
