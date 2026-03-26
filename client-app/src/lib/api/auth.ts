@@ -1,5 +1,2 @@
-export {
-  loginWithOtp as verifyOtp,
-  normalizeOtpPhone as normalizePhone,
-  requestOtp as startOtp,
-} from "@/services/auth";
+export { verifyOtp, sendOtp as startOtp } from "@/api/auth";
+export { normalizePhone } from "@/lib/phone";

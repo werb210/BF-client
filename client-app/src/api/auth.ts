@@ -1,26 +1,26 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "../lib/apiFetch";
+import { normalizePhone } from "../lib/phone";
 
 export async function sendOtp(phone: string) {
-  if (typeof phone !== "string") {
-    throw new Error("Phone must be a string");
-  }
-
   return apiFetch("/auth/otp/start", {
     method: "POST",
-    body: { phone },
+    body: JSON.stringify({ phone: normalizePhone(phone) }),
   });
 }
 
-export async function verifyOtp(data: { phone: string; code: string }) {
-  const result = await apiFetch<{ ok: true; token: string }>("/auth/otp/verify", {
+export async function verifyOtp(phone: string, code: string) {
+  const res = await apiFetch<{ token?: string }>("/auth/otp/verify", {
     method: "POST",
-    body: { phone: data.phone, code: data.code },
+    body: JSON.stringify({ phone: normalizePhone(phone), code }),
   });
 
-  localStorage.setItem("token", result.token);
-  return result;
+  if (!res.token) throw new Error("Missing token");
+
+  localStorage.setItem("token", res.token);
+
+  return res.token;
 }
 
 export async function verifyOtpCode(phone: string, otpCode: string) {
-  return verifyOtp({ phone, code: otpCode });
+  return verifyOtp(phone, otpCode);
 }

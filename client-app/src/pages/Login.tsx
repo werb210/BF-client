@@ -13,7 +13,7 @@ export default function Login() {
   };
 
   const handleVerify = async () => {
-    await verifyOtp({ phone, code });
+    await verifyOtp(phone, code);
     alert("SUCCESS");
   };
 
