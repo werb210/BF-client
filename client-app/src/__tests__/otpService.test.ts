@@ -41,7 +41,7 @@ describe("auth OTP service", () => {
   });
 
   it('loginWithOtp("5878881837", "123456") posts to verify endpoint and returns token payload', async () => {
-    const verifyOtpSpy = vi.spyOn(api, "verifyOtp").mockResolvedValue("abc");
+    const verifyOtpSpy = vi.spyOn(api, "verifyOtp").mockResolvedValue({ token: "abc" } as any);
 
     await expect(loginWithOtp("5878881837", "123456")).resolves.toMatchObject({
       token: "abc",

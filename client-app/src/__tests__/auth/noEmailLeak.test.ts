@@ -1,13 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import api from '@/lib/api';
 import { sendOtp, verifyOtpCode } from '@/api/auth';
 
 describe('Auth contract enforcement', () => {
-  const fetchMock = vi.fn();
-
   beforeEach(() => {
-    fetchMock.mockReset();
-    vi.stubGlobal('fetch', fetchMock);
+    vi.restoreAllMocks();
   });
 
   it('should NOT allow email in payload', async () => {
@@ -15,23 +13,25 @@ describe('Auth contract enforcement', () => {
   });
 
   it('should only send phone for OTP start', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ ok: true, data: {} }) });
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { ok: true } } as any);
 
     await sendOtp('+15871234567');
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [, requestInit] = fetchMock.mock.calls[0];
-    expect(JSON.stringify(requestInit)).not.toContain('email');
-    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '15871234567' });
+    expect(postSpy).toHaveBeenCalledTimes(1);
+    const [url, body] = postSpy.mock.calls[0];
+    expect(url).toBe('/api/auth/otp/start');
+    expect(body).toEqual({ phone: '+15871234567' });
+    expect(JSON.stringify(body)).not.toContain('email');
   });
 
   it('should only send phone + code for OTP verify', async () => {
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ token: 'token-123' }) });
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValue({ data: { token: 'token-123' } } as any);
 
     await verifyOtpCode('+15871234567', '123456');
 
-    const [, requestInit] = fetchMock.mock.calls[0];
-    expect(JSON.parse(String(requestInit?.body))).toEqual({ phone: '15871234567', code: '123456' });
-    expect(JSON.stringify(requestInit)).not.toContain('email');
+    const [url, body] = postSpy.mock.calls[0];
+    expect(url).toBe('/api/auth/otp/verify');
+    expect(body).toEqual({ phone: '+15871234567', code: '123456' });
+    expect(JSON.stringify(body)).not.toContain('email');
   });
 });

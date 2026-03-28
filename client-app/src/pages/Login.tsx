@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type React from "react";
-import { sendOtp, verifyOtp } from "../api/auth";
+import { startOtp, verifyOtp } from "../api/auth";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
@@ -8,7 +8,7 @@ export default function Login() {
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    await sendOtp(phone);
+    await startOtp(phone);
     setSent(true);
   };
 

@@ -1,57 +1,48 @@
-import axios, { type AxiosRequestConfig } from "axios";
-import { API_BASE_URL } from "@/config/api";
-import { getToken } from "@/lib/auth";
+import axios from "axios";
 
-type ApiRequestOptions = RequestInit & {
-  data?: unknown;
-  params?: Record<string, unknown>;
-};
+const API_BASE_URL = "https://server.boreal.financial";
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+  withCredentials: false,
 });
 
 api.interceptors.request.use((config) => {
-  const token = getToken();
+  const token = localStorage.getItem("auth_token");
+
   if (token) {
-    const headers = (config.headers || {}) as Record<string, string>;
-    headers.Authorization = `Bearer ${token}`;
-    config.headers = headers as any;
+    config.headers = {
+      ...config.headers,
+      Authorization: `Bearer ${token}`,
+    } as any;
   }
+
   return config;
 });
 
-function normalizeBody(body: BodyInit | null | undefined): unknown {
-  if (body == null) return undefined;
-  if (typeof FormData !== "undefined" && body instanceof FormData) return body;
-  if (typeof body === "string") {
-    try {
-      return JSON.parse(body);
-    } catch {
-      return body;
-    }
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("API ERROR:", error?.response || error.message);
+    return Promise.reject(error);
   }
-  return body;
-}
+);
 
-export const request = async (path: string, options: ApiRequestOptions = {}) => {
-  const config: AxiosRequestConfig = {
+export default api;
+export { api };
+
+export const request = async (path: string, options: RequestInit & { data?: unknown } = {}) => {
+  const body = options.data ?? options.body;
+  const { data } = await api.request({
     url: path,
     method: options.method,
-    headers: options.headers as Record<string, string> | undefined,
-    params: options.params,
-    data: options.data ?? normalizeBody(options.body),
-    withCredentials: options.credentials === "omit" ? false : true,
-  };
-
-  const response = await api.request(config);
-  return response.data;
+    headers: options.headers as any,
+    data: body,
+  });
+  return data;
 };
 
-export const apiRequest = <T = unknown>(path: string, options: ApiRequestOptions = {}) =>
+export const apiRequest = <T = unknown>(path: string, options: RequestInit & { data?: unknown } = {}) =>
   request(path, options) as Promise<T>;
 
 export const buildUrl = (path: string): string => `${API_BASE_URL}${path}`;
-
-export default api;

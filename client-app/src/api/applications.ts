@@ -1,136 +1,59 @@
-import {
-  ApplicationDocumentsResponseSchema,
-  ApplicationOffersResponseSchema,
-  FetchApplicationResponseSchema,
-  PublicApplicationResponseSchema,
-  parseApiResponse,
-} from "@/contracts/clientApiSchemas";
-import { DOCUMENT_CONTRACT } from "@/contracts";
-import { api, apiRequest } from "@/lib/api";
-import { enqueueUpload } from "@/lib/uploadQueue";
-import { uploadDocument } from "@/services/documentService";
-import { getPersistedAttribution } from "@/utils/attribution";
-import type { SubmitApplicationRequest } from "./submissionTypes";
+import api, { apiRequest } from "../lib/api";
 
-export const getApplications = () =>
-  apiRequest("/applications");
-
-export const createApplication = async (data: any) => {
-  const res = await api.post("/api/applications", data);
-  return res.data;
+export const createApplication = async (payload: any) => {
+  const { data } = await api.post("/api/applications", payload);
+  return data;
 };
 
-export async function submitApplication(
-  payload: unknown,
-  options?: { idempotencyKey?: string; continuationToken?: string }
-): Promise<any> {
-  const creditSessionToken = localStorage.getItem("creditSessionToken");
-  const attribution = getPersistedAttribution();
-
-  const submissionPayload: SubmitApplicationRequest | unknown =
-    payload && typeof payload === "object" && !Array.isArray(payload)
-      ? {
-          ...(payload as SubmitApplicationRequest),
-          ...attribution,
-          ...(options?.continuationToken ? { continuationToken: options.continuationToken } : {}),
-          creditSessionToken,
-        }
-      : payload;
-
-  const res = await api.post<any>("/api/applications", submissionPayload);
-  localStorage.removeItem("creditSessionToken");
-  return res.data;
-}
-
-export async function createPublicApplication(
-  payload: unknown,
-  options?: { idempotencyKey?: string; readinessToken?: string; sessionId?: string }
-): Promise<any> {
-  const attribution = getPersistedAttribution();
-
-  const submissionPayload: SubmitApplicationRequest | unknown =
-    payload && typeof payload === "object" && !Array.isArray(payload)
-      ? {
-          ...(payload as SubmitApplicationRequest),
-          ...attribution,
-          readinessToken: options?.readinessToken,
-          sessionId: options?.sessionId,
-        }
-      : payload;
-
-  const res = await api.post("/api/applications", submissionPayload);
-  return parseApiResponse(
-    PublicApplicationResponseSchema,
-    res.data,
-    "POST /applications"
-  );
-}
-
-export async function fetchApplication(id: string): Promise<any> {
-  const res: unknown = await apiRequest(`/applications/${id}`);
-  return parseApiResponse(
-    FetchApplicationResponseSchema,
-    res,
-    "GET /applications/{id}"
-  );
-}
-
-export async function fetchApplicationDocuments(id: string): Promise<any> {
-  const res: unknown = await apiRequest(`/applications/${id}/documents`);
-  return parseApiResponse(
-    ApplicationDocumentsResponseSchema,
-    res,
-    "GET /applications/{id}/documents"
-  );
-}
-
-export async function fetchApplicationOffers(id: string): Promise<any> {
-  const offers = await apiRequest(`/offers?applicationId=${encodeURIComponent(id)}`);
-
-  if (!Array.isArray(offers)) {
-    throw new Error("Invalid offers response");
+export const submitApplication = async (payloadOrId: any) => {
+  if (typeof payloadOrId === "string") {
+    const { data } = await api.post(`/api/applications/${payloadOrId}/submit`);
+    return data;
   }
 
-  return parseApiResponse(
-    ApplicationOffersResponseSchema,
-    offers,
-    "GET /offers?applicationId={id}"
-  );
-}
+  const { data } = await api.post("/api/applications", payloadOrId);
+  return data;
+};
 
-export async function uploadApplicationDocument(
+export const createPublicApplication = async (payload: any) => {
+  const { data } = await api.post("/api/applications", payload);
+  return data;
+};
+
+export const fetchApplication = async (id: string) => {
+  const { data } = await api.get(`/api/applications/${id}`);
+  return data;
+};
+
+export const fetchApplicationDocuments = async (id: string) => {
+  const { data } = await api.get(`/api/applications/${id}/documents`);
+  return data;
+};
+
+export const fetchApplicationOffers = async (id: string) => {
+  const { data } = await api.get(`/api/offers?applicationId=${encodeURIComponent(id)}`);
+  return data;
+};
+
+export const uploadApplicationDocument = async (
   id: string,
-  payload: {
-    documentCategory: string;
-    file: File;
-    onProgress?: (progress: number) => void;
-  }
-): Promise<any> {
-  if (payload.file.size > 25 * 1024 * 1024) {
-    throw new Error("file_too_large");
-  }
-
-  const uploadUrl = DOCUMENT_CONTRACT.UPLOAD;
+  payload: { documentCategory: string; file: File; onProgress?: (progress: number) => void }
+) => {
   const formData = new FormData();
-  formData.append(DOCUMENT_CONTRACT.FIELDS.CATEGORY, payload.documentCategory);
-  formData.append(DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID, id);
-  formData.append(DOCUMENT_CONTRACT.FIELDS.FILE, payload.file);
-
-  if (!navigator.onLine) {
-    await enqueueUpload({
-      url: uploadUrl,
-      formData,
-    });
-    return { queued: true };
-  }
+  formData.append("file", payload.file);
+  formData.append("applicationId", id);
+  formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const data = await uploadDocument(payload.file, id, payload.documentCategory);
+  const { data } = await api.post("/api/documents/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   payload.onProgress?.(100);
-  return data as unknown;
-}
 
+  return data;
+};
 
-export async function acceptApplicationOffer(offerId: string): Promise<any> {
-  return apiRequest(`/offers/${offerId}/accept`, { method: "POST" });
-}
+export const acceptApplicationOffer = async (offerId: string) =>
+  apiRequest(`/api/offers/${offerId}/accept`, { method: "POST" });
