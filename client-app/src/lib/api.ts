@@ -1,28 +1,42 @@
 import axios, { AxiosRequestConfig } from "axios";
 
+const API_BASE = import.meta.env.VITE_API_URL
+
+if (!API_BASE) {
+  throw new Error('VITE_API_URL is not defined')
+}
+
 /**
  * Single axios instance used everywhere
  * MUST use VITE_API_URL for SWA
  */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "",
+  baseURL: API_BASE,
   withCredentials: true,
 });
 
 /**
  * Central request wrapper (required by contract guards)
  */
-export async function apiRequest<T = unknown>(
-  configOrUrl: AxiosRequestConfig | string,
-  maybeConfig?: AxiosRequestConfig
+export async function apiRequest<T = any>(
+  url: string,
+  config: AxiosRequestConfig & { data?: any } = {}
 ): Promise<T> {
-  const config =
-    typeof configOrUrl === "string"
-      ? ({ ...(maybeConfig || {}), url: configOrUrl } as AxiosRequestConfig)
-      : configOrUrl;
+  const token = localStorage.getItem('token')
 
-  const response = await api.request<T>(config);
-  return response.data;
+  const res = await axios({
+    url: `${API_BASE}${url}`,
+    method: config.method || 'GET',
+    data: config.data,
+    withCredentials: true,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...config.headers,
+    },
+  })
+
+  return res.data
 }
 
 /**
@@ -43,12 +57,11 @@ export function request<T = unknown>(
   path: string,
   options: AxiosRequestConfig = {}
 ): Promise<T> {
-  return apiRequest<T>({ ...options, url: path });
+  return apiRequest<T>(path, options as AxiosRequestConfig & { data?: any });
 }
 
 export function buildUrl(path: string): string {
-  const base = import.meta.env.VITE_API_URL || "";
-  return `${base}${path}`;
+  return `${API_BASE}${path}`;
 }
 
 export { api };

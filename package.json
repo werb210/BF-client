@@ -22,5 +22,8 @@
   },
   "dependencies": {
     "cors": "^2.8.6"
+  },
+  "engines": {
+    "node": ">=20.10.0 <21"
   }
 }
