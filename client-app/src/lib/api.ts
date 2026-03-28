@@ -1,4 +1,6 @@
 import axios from "axios";
+import { assertApiResponse } from "./assertApiResponse";
+import { getToken } from "./auth";
 
 const BASE_URL = "https://server.boreal.financial";
 
@@ -7,7 +9,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("auth_token");
+  const token = getToken();
 
   if (!token) {
     throw new Error("Missing auth token");
@@ -23,10 +25,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    console.error("API ERROR:", err?.response || err.message);
-    return Promise.reject(err);
-  }
+  (err) => Promise.reject(err)
 );
 
 const request = async (path: string, options: RequestInit & { data?: unknown } = {}) => {
@@ -37,7 +36,8 @@ const request = async (path: string, options: RequestInit & { data?: unknown } =
     headers: options.headers as any,
     data: body,
   });
-  return data;
+
+  return assertApiResponse(data);
 };
 
 const apiRequest = <T = unknown>(path: string, options: RequestInit & { data?: unknown } = {}) =>

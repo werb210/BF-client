@@ -5,12 +5,13 @@ import { getApplicationId } from "../../utils/applicationSession";
 export default function ApplicationStep2() {
   const [amount, setAmount] = useState("");
   const [purpose, setPurpose] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const submit = async () => {
     const applicationId = getApplicationId();
 
     if (!applicationId) {
-      alert("No application in progress. Please start again.");
+      setErrorMessage("No application in progress. Please start again.");
       window.location.href = "/apply/start";
       return;
     }
@@ -39,6 +40,8 @@ export default function ApplicationStep2() {
         value={purpose}
         onChange={(event) => setPurpose(event.target.value)}
       />
+
+      {errorMessage && <p role="alert">{errorMessage}</p>}
 
       <button onClick={() => void submit()} type="button">
         Continue

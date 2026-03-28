@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { createLead } from "@/api/crm";
 import { products } from "@/data/products";
+import { useState } from "react";
 
 export default function ProductDetail() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const product = products.find((item) => item.slug === slug) ?? products[0];
+  const [message, setMessage] = useState<string>("");
 
   const handleInterest = async () => {
     await createLead({
@@ -17,7 +19,7 @@ export default function ProductDetail() {
       source: "product_page",
     });
 
-    alert("Interest recorded.");
+    setMessage("Interest recorded.");
   };
 
   return (
@@ -40,6 +42,8 @@ export default function ProductDetail() {
           Speak With Advisor
         </button>
       </div>
+
+      {message && <p role="status">{message}</p>}
     </div>
   );
 }
