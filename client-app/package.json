@@ -20,7 +20,7 @@
     "cap:open:android": "cap open android"
   },
   "engines": {
-    "node": ">=20.10 <23"
+    "node": ">=20"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.56.20",
@@ -60,12 +60,13 @@
     "npm-check-updates": "^17.1.12",
     "postcss": "^8.4.41",
     "semver": "^7.6.3",
-    "tailwindcss": "^3.4.10",
+    "tailwindcss": "^4.1.0",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.46.2",
     "vite": "^5.2.0",
     "vite-plugin-pwa": "^0.20.0",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "@tailwindcss/postcss": "^4.1.0"
   },
   "engineStrict": true
 }
