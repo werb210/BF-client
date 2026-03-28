@@ -1,15 +1,5 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html"
-  },
-  "routes": [
-    {
-      "route": "/api/*",
-      "statusCode": 404
-    }
-  ],
-  "globalHeaders": {
-    "Access-Control-Allow-Origin": "https://server.boreal.financial",
-    "Access-Control-Allow-Credentials": "true"
   }
 }

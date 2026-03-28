@@ -39,18 +39,18 @@ const client = {
   },
   async post<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.post<T>(url, data, config);
-    const { data, status } = res;
-    return { data, status };
+    const { data: responseData, status } = res;
+    return { data: responseData, status };
   },
   async patch<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.patch<T>(url, data, config);
-    const { data, status } = res;
-    return { data, status };
+    const { data: responseData, status } = res;
+    return { data: responseData, status };
   },
   async put<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.put<T>(url, data, config);
-    const { data, status } = res;
-    return { data, status };
+    const { data: responseData, status } = res;
+    return { data: responseData, status };
   },
   async delete<T = unknown>(url: string): Promise<{ data: T; status: number }> {
     const res = await api.delete<T>(url);

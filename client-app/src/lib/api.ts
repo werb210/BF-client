@@ -1,49 +1,55 @@
-import axios from "axios";
-import { assertApiResponse } from "./assertApiResponse";
-import { getToken } from "./auth";
+import axios, { AxiosRequestConfig } from "axios";
 
-const BASE_URL = "https://server.boreal.financial";
-
+/**
+ * Single axios instance used everywhere
+ * MUST use VITE_API_URL for SWA
+ */
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || "",
+  withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  const token = getToken();
+/**
+ * Central request wrapper (required by contract guards)
+ */
+export async function apiRequest<T = unknown>(
+  configOrUrl: AxiosRequestConfig | string,
+  maybeConfig?: AxiosRequestConfig
+): Promise<T> {
+  const config =
+    typeof configOrUrl === "string"
+      ? ({ ...(maybeConfig || {}), url: configOrUrl } as AxiosRequestConfig)
+      : configOrUrl;
+
+  const response = await api.request<T>(config);
+  return response.data;
+}
+
+/**
+ * Required by App.tsx
+ */
+export function requireAuth(): string {
+  const token = localStorage.getItem("token");
 
   if (!token) {
-    throw new Error("Missing auth token");
+    window.location.href = "/login";
+    throw new Error("Not authenticated");
   }
 
-  config.headers = {
-    ...config.headers,
-    Authorization: `Bearer ${token}`,
-  } as any;
+  return token;
+}
 
-  return config;
-});
+export function request<T = unknown>(
+  path: string,
+  options: AxiosRequestConfig = {}
+): Promise<T> {
+  return apiRequest<T>({ ...options, url: path });
+}
 
-api.interceptors.response.use(
-  (res) => res,
-  (err) => Promise.reject(err)
-);
+export function buildUrl(path: string): string {
+  const base = import.meta.env.VITE_API_URL || "";
+  return `${base}${path}`;
+}
 
-const request = async (path: string, options: RequestInit & { data?: unknown } = {}) => {
-  const body = options.data ?? options.body;
-  const { data } = await api.request({
-    url: path,
-    method: options.method,
-    headers: options.headers as any,
-    data: body,
-  });
-
-  return assertApiResponse(data);
-};
-
-const apiRequest = <T = unknown>(path: string, options: RequestInit & { data?: unknown } = {}) =>
-  request(path, options) as Promise<T>;
-
-const buildUrl = (path: string): string => `${BASE_URL}${path}`;
-
+export { api };
 export default api;
-export { api, request, apiRequest, buildUrl };
