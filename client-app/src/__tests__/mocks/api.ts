@@ -18,6 +18,6 @@ export function installApiMock() {
   vi.mock("@/api/client", () => ({
     default: mockedApi,
     apiRequest: vi.fn(async () => applicationFixture),
-    buildApiUrl: vi.fn((path: string) => `http://localhost${path}`),
+    buildApiUrl: vi.fn((path: string) => `https://server.boreal.financial${path}`),
   }));
 }
