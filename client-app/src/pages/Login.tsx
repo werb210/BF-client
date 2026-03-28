@@ -14,6 +14,15 @@ export default function Login() {
 
   const handleVerify = async () => {
     await verifyOtp(phone, code);
+
+    await new Promise((r) => setTimeout(r, 200));
+
+    const token = localStorage.getItem("auth_token");
+
+    if (!token) {
+      throw new Error("Auth failed");
+    }
+
     alert("SUCCESS");
   };
 
