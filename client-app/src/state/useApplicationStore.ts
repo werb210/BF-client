@@ -72,6 +72,7 @@ function buildApplicationDraft(source: ApplicationData) {
 const CLIENT_DRAFT_KEY = "boreal_client_draft";
 const BOREAL_DRAFT_KEY = "boreal_draft";
 const APPLICATION_STATE_KEY = "application_state";
+const APPLICATION_DATA_KEY = "application_data";
 
 function loadClientDraft(): ApplicationData | null {
   try {
@@ -87,7 +88,7 @@ function loadClientDraft(): ApplicationData | null {
 
 function loadApplicationStateDraft(): ApplicationData | null {
   try {
-    const raw = localStorage.getItem(APPLICATION_STATE_KEY);
+    const raw = localStorage.getItem(APPLICATION_DATA_KEY) || localStorage.getItem(APPLICATION_STATE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ApplicationData;
   } catch {
@@ -201,6 +202,7 @@ export function useApplicationStore() {
     const serialized = JSON.stringify(app);
     localStorage.setItem(BOREAL_DRAFT_KEY, serialized);
     localStorage.setItem(APPLICATION_STATE_KEY, serialized);
+    localStorage.setItem(APPLICATION_DATA_KEY, serialized);
   }, [app]);
 
   const saveToServer = useMemo(
@@ -276,6 +278,7 @@ export function useApplicationStore() {
     localStorage.removeItem(CLIENT_DRAFT_KEY);
     localStorage.removeItem(BOREAL_DRAFT_KEY);
     localStorage.removeItem(APPLICATION_STATE_KEY);
+    localStorage.removeItem(APPLICATION_DATA_KEY);
     clearDraft();
     clearSubmissionIdempotencyKey();
   }
@@ -344,6 +347,7 @@ export function useApplicationStore() {
   useEffect(() => {
     const persist = () => {
       localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
+      localStorage.setItem(APPLICATION_DATA_KEY, JSON.stringify(app));
     };
 
     window.addEventListener("blur", persist);

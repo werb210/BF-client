@@ -1,9 +1,10 @@
-import api from '../lib/api';
+import { api } from "../lib/api";
 
 export async function getVoiceToken() {
-  const res = await api.get<{ token?: string }>('/telephony/token');
+  const res = await api.get<{ token?: string }>("/telephony/token");
+  const token = res.data?.token;
 
-  if (!res.token) throw new Error('Missing telephony token');
+  if (!token) throw new Error("Missing telephony token");
 
-  return res.token;
+  return token;
 }

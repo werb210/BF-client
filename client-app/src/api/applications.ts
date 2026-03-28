@@ -6,7 +6,7 @@ import {
   parseApiResponse,
 } from "@/contracts/clientApiSchemas";
 import { DOCUMENT_CONTRACT } from "@/contracts";
-import { apiRequest } from "@/lib/api";
+import { api, apiRequest } from "@/lib/api";
 import { enqueueUpload } from "@/lib/uploadQueue";
 import { uploadDocument } from "@/services/documentService";
 import { getPersistedAttribution } from "@/utils/attribution";
@@ -15,11 +15,10 @@ import type { SubmitApplicationRequest } from "./submissionTypes";
 export const getApplications = () =>
   apiRequest("/applications");
 
-export const createApplication = (data: any) =>
-  apiRequest("/applications", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+export const createApplication = async (data: any) => {
+  const res = await api.post("/api/applications", data);
+  return res.data;
+};
 
 export async function submitApplication(
   payload: unknown,
@@ -38,12 +37,9 @@ export async function submitApplication(
         }
       : payload;
 
-  const res = await apiRequest<any>("/applications", {
-    method: "POST",
-    body: JSON.stringify(submissionPayload),
-  });
+  const res = await api.post<any>("/api/applications", submissionPayload);
   localStorage.removeItem("creditSessionToken");
-  return res;
+  return res.data;
 }
 
 export async function createPublicApplication(
@@ -62,13 +58,10 @@ export async function createPublicApplication(
         }
       : payload;
 
-  const res: unknown = await apiRequest("/applications", {
-    method: "POST",
-    body: JSON.stringify(submissionPayload),
-  });
+  const res = await api.post("/api/applications", submissionPayload);
   return parseApiResponse(
     PublicApplicationResponseSchema,
-    res,
+    res.data,
     "POST /applications"
   );
 }
