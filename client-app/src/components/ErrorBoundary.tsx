@@ -1,7 +1,7 @@
 import React from "react";
 import { logClientError } from "@/lib/logger";
 
-type Props = { children: React.ReactNode };
+type Props = { children: React.ReactNode; fallback?: React.ReactNode };
 type State = { hasError: boolean };
 
 class ErrorBoundary extends React.Component<Props, State> {
@@ -20,7 +20,7 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
+      return this.props.fallback ?? (
         <div style={{ padding: 40 }}>
           <h2>Application Error</h2>
           <p>Please refresh the page.</p>

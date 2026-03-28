@@ -39,7 +39,8 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     headers,
   });
 
-  return response.data;
+  const { data } = response;
+  return data;
 }
 
 export function getApiBaseUrl() {

@@ -11,7 +11,9 @@ export async function clearBrowserCaches() {
   if (!("caches" in globalThis)) return;
   try {
     const keys = await caches.keys();
-    await Promise.all(keys.map((key) => caches.delete(key)));
+    for (const key of keys) {
+      await caches.delete(key);
+    }
   } catch {
     // ignore cache clear failures
   }
@@ -22,7 +24,9 @@ export async function unregisterServiceWorkers() {
   if (!("serviceWorker" in navigator)) return;
   try {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
+    for (const registration of registrations) {
+      await registration.unregister();
+    }
   } catch {
     // ignore cache clear failures
   }
@@ -47,11 +51,11 @@ export function logout(options?: { redirectTo?: string }): void {
   const redirectTo = options?.redirectTo ?? "/portal";
   clearClientStorage();
 
-  void Promise.all([
-    clearServiceWorkerCaches("logout"),
-    clearBrowserCaches(),
-    unregisterServiceWorkers(),
-  ]);
+  void (async () => {
+    await clearServiceWorkerCaches("logout");
+    await clearBrowserCaches();
+    await unregisterServiceWorkers();
+  })();
 
   if (typeof window === "undefined") return;
   window.location.assign(redirectTo);

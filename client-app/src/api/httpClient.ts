@@ -20,7 +20,7 @@ export function createHttpClient(): AxiosInstance {
       if (error.response) {
         const status = error.response.status;
         const message = `Request failed with status ${status}`;
-        throw new ApiError(message, status, error.response.data);
+        throw new ApiError(message, status, error.response?.["data"]);
       }
 
       throw error;

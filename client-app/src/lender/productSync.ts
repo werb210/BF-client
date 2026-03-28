@@ -28,7 +28,8 @@ export const ProductSync = {
   async sync() {
     ProductSync.invalidateCache();
     const res = await api.get("/lender-products");
-    const products = Array.isArray(res.data) ? res.data : [];
+    const { data } = res;
+    const products = Array.isArray(data) ? data : [];
     if (!products.length) {
       throw new Error("No lender products returned from server.");
     }

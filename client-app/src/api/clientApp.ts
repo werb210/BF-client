@@ -40,9 +40,10 @@ export const ClientAppAPI = {
   start(payload: unknown) {
     return withRetry(async () => {
       const res = await api.post<ClientAppStartResponse>(API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.ROOT, payload);
+      const { data: resPayload } = res;
       parseApiResponse(
         ClientAppStartResponseSchema,
-        res.data,
+        resPayload,
         "POST /applications"
       );
       return res;
@@ -104,9 +105,10 @@ export const ClientAppAPI = {
   status(token: string) {
     return withRetry(async () => {
       const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`);
+      const { data: resPayload } = res;
       parseApiResponse(
         ClientAppStatusResponseSchema,
-        res.data,
+        resPayload,
         "GET /applications/{token}"
       );
       return res;
@@ -115,9 +117,10 @@ export const ClientAppAPI = {
   getApplication(applicationId: string) {
     return withRetry(async () => {
       const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`);
+      const { data: resPayload } = res;
       parseApiResponse(
         ClientAppStatusResponseSchema,
-        res.data,
+        resPayload,
         "GET /applications/{applicationId}"
       );
       return res;
@@ -129,9 +132,10 @@ export const ClientAppAPI = {
   getMessages(token: string) {
     return withRetry(async () => {
       const res = await api.get<ClientAppMessagesResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`);
+      const { data: resPayload } = res;
       parseApiResponse(
         ClientAppMessagesResponseSchema,
-        res.data,
+        resPayload,
         "GET /applications/{token}/messages"
       );
       return res;

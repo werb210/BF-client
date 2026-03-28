@@ -122,7 +122,7 @@ export async function submitCreditReadiness(payload: CreditReadinessPayload) {
       API_ENDPOINTS_CONTRACT.READINESS.ROOT,
       payload
     );
-    const responseData = res.data;
+    const { data: responseData } = res;
     if (hasValidReadinessSessionId(responseData as Record<string, any>)) {
       persistReadinessSession(responseData as Record<string, any>);
     }
@@ -166,7 +166,7 @@ export async function submitContactForm(payload: {
         API_ENDPOINTS_CONTRACT.CRM.WEB_LEADS,
         payload
       );
-      const responseData = res.data;
+      const { data: responseData } = res;
       if (hasValidReadinessSessionId(responseData as Record<string, any>)) {
         persistReadinessSession(responseData as Record<string, any>);
       }

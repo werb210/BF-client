@@ -9,11 +9,15 @@ export function assertApiResponse<T = unknown>(res: unknown): T {
     throw new Error("Invalid API response");
   }
 
-  const response = res as ApiEnvelope<T>;
+  const envelope = res as ApiEnvelope<T>;
 
-  if (response.success !== true) {
-    throw new Error(response.error || "API failure");
+  if (envelope.success !== true) {
+    throw new Error(envelope.error || "API failure");
   }
 
-  return response.data as T;
+  if (!envelope.data) {
+    throw new Error("Missing data");
+  }
+
+  return envelope.data;
 }

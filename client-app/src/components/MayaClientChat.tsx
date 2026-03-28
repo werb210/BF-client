@@ -57,11 +57,12 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
     const load = async () => {
       try {
         const response = await api.get(`/messages/${applicationId}`);
+        const { data } = response;
         if (!active) return;
-        const list = Array.isArray((response.data as any)?.messages)
-          ? (response.data as any).messages
-          : Array.isArray(response.data)
-            ? (response.data as any)
+        const list = Array.isArray((data as any)?.messages)
+          ? (data as any).messages
+          : Array.isArray(data)
+            ? (data as any)
             : [];
         setMessages(
           list.map((entry: any, index: number) => ({
@@ -109,10 +110,11 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
       });
 
       const response = await api.get(`/messages/${applicationId}`);
-      const list = Array.isArray((response.data as any)?.messages)
-        ? (response.data as any).messages
-        : Array.isArray(response.data)
-          ? (response.data as any)
+        const { data } = response;
+      const list = Array.isArray((data as any)?.messages)
+        ? (data as any).messages
+        : Array.isArray(data)
+          ? (data as any)
           : [];
       setMessages(
         list.map((entry: any, index: number) => ({

@@ -23,7 +23,8 @@ export default function ContinueApplication() {
       try {
         const res = await api.get(`/applications/${token}`);
         if (!active) return;
-        loadFromServer(res.data);
+        const { data } = res;
+        loadFromServer(data);
         navigate("/apply", { replace: true });
       } catch {
         if (!active) return;

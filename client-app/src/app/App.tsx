@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import AppRouter from "../router/AppRouter";
+import AppRoutes from "./AppRoutes";
 import { Header } from "../components/Header";
 import { OfflineBanner } from "../components/OfflineBanner";
 import { InstallPromptBanner } from "../components/InstallPromptBanner";
@@ -32,6 +32,8 @@ import { getCallStatus } from "@/services/telephonyService";
 import { safeFetch } from "@/utils/safeFetch";
 import { hasToken, setToken } from "@/lib/auth";
 import { useAuth } from "@/auth/useAuth";
+import ErrorBoundary from "../components/ErrorBoundary";
+import FatalErrorScreen from "./FatalErrorScreen";
 
 type AppProps = {
   initialSession?: InitialSession | null;
@@ -241,7 +243,7 @@ export default function App({ initialSession = null }: AppProps) {
         </div>
       )}
       <main className="max-w-7xl mx-auto px-6 py-14 md:py-20 w-full flex-1">
-        <AppRouter />
+        <ErrorBoundary fallback={<FatalErrorScreen />}><AppRoutes /></ErrorBoundary>
       </main>
       <footer className="bg-brand-bgAlt border-t border-subtle py-8 text-center text-sm text-gray-300">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row gap-4 justify-center">

@@ -89,7 +89,9 @@ export const uploadDocuments = async (
     throw new Error("Missing applicationId");
   }
 
-  await Promise.all(documents.map((document) => uploadApplicationDocument(applicationId, document)));
+  for (const document of documents) {
+    await uploadApplicationDocument(applicationId, document);
+  }
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>

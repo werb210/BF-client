@@ -1,15 +1,28 @@
-import { describe, expect, it } from "vitest";
-import { runSubmissionFlow } from "../pages/apply/submissionFlow";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { runSubmissionFlow } from "../pages/submissionFlow";
+
+const calls: string[] = [];
+
+vi.mock("../api/applications", () => ({
+  createApplication: vi.fn(async () => {
+    calls.push("create");
+    return { applicationId: "app-1" };
+  }),
+  uploadDocuments: vi.fn(async () => {
+    calls.push("upload");
+  }),
+  submitApplication: vi.fn(async () => {
+    calls.push("submit");
+  }),
+}));
 
 describe("runSubmissionFlow", () => {
+  beforeEach(() => {
+    calls.length = 0;
+  });
+
   it("enforces submission order", async () => {
-    const calls: string[] = [];
-
-    const create = async () => calls.push("create");
-    const upload = async () => calls.push("upload");
-    const submit = async () => calls.push("submit");
-
-    await runSubmissionFlow(create, upload, submit);
+    await runSubmissionFlow();
 
     expect(calls).toEqual(["create", "upload", "submit"]);
   });

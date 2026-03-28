@@ -27,4 +27,14 @@ if [[ "$alert_count" != "0" ]]; then
   exit 1
 fi
 
+if rg "Promise\.all" "$TARGET_DIR"; then
+  echo "FAIL: parallel execution not allowed"
+  exit 1
+fi
+
+if rg "if \(" client-app/src/pages/submissionFlow.ts; then
+  echo "FAIL: conditional logic in submission flow"
+  exit 1
+fi
+
 echo "✅ Guardrail checks passed"

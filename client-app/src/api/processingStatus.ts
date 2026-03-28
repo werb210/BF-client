@@ -70,12 +70,13 @@ function extractCheckpointCandidates(source: ProcessingStatusPayload): RawProces
 export async function fetchProcessingStatus(
   applicationId: string
 ): Promise<ProcessingStatus> {
-  const response = await api.get(
+  const apiResponse = await api.get(
     `/applications/${applicationId}/processing/status`
   );
+  const { data: payload } = apiResponse;
   const raw = parseApiResponse(
     ProcessingStatusResponseSchema,
-    response.data,
+    payload,
     "GET /applications/{id}/processing/status"
   ) as unknown as ProcessingStatusPayload;
 

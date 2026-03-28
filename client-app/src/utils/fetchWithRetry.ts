@@ -36,7 +36,8 @@ export async function safeFetch(
       signal: controller.signal,
     });
 
-    return new Response(JSON.stringify(response.data), {
+    const { data } = response;
+    return new Response(JSON.stringify(data), {
       status: response.status,
       headers: new Headers(response.headers as HeadersInit),
     });

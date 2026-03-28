@@ -16,7 +16,8 @@ export interface CreditPrefill {
 export async function fetchPrefill(token: string): Promise<CreditPrefill | null> {
   try {
     const res = await apiClient.post<CreditPrefill>("/prefill/validate", { token });
-    return res.data || null;
+    const { data } = res;
+    return data || null;
   } catch {
     return null;
   }

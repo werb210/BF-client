@@ -64,7 +64,8 @@ export function StatusPage(): JSX.Element {
     if (!token) return;
     try {
       const res = await ClientAppAPI.status(token);
-      setStatus(res.data);
+      const { data } = res;
+      setStatus(data);
     } catch {
     }
   }, [token]);
@@ -104,7 +105,8 @@ export function StatusPage(): JSX.Element {
 
   const fetchStatus = useCallback(async () => {
     const res = await ClientAppAPI.status(token as string);
-    return res.data;
+    const { data } = res;
+    return data;
   }, [token]);
 
   const handleStatusUpdate = useCallback((next: Record<string, any> | null) => {
@@ -183,7 +185,8 @@ export function StatusPage(): JSX.Element {
 
   const fetchMessages = useCallback(async () => {
     const res = await ClientAppAPI.getMessages(token as string);
-    return res.data;
+    const { data } = res;
+    return data;
   }, [token]);
 
   const handleMessagesUpdate = useCallback(
