@@ -1,37 +1,35 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://server.boreal.financial";
+const BASE_URL = "https://server.boreal.financial";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: false,
+  baseURL: BASE_URL,
 });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("auth_token");
 
-  if (token) {
-    config.headers = {
-      ...config.headers,
-      Authorization: `Bearer ${token}`,
-    } as any;
+  if (!token) {
+    throw new Error("Missing auth token");
   }
+
+  config.headers = {
+    ...config.headers,
+    Authorization: `Bearer ${token}`,
+  } as any;
 
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("API ERROR:", error?.response || error.message);
-    return Promise.reject(error);
+  (res) => res,
+  (err) => {
+    console.error("API ERROR:", err?.response || err.message);
+    return Promise.reject(err);
   }
 );
 
-export default api;
-export { api };
-
-export const request = async (path: string, options: RequestInit & { data?: unknown } = {}) => {
+const request = async (path: string, options: RequestInit & { data?: unknown } = {}) => {
   const body = options.data ?? options.body;
   const { data } = await api.request({
     url: path,
@@ -42,7 +40,10 @@ export const request = async (path: string, options: RequestInit & { data?: unkn
   return data;
 };
 
-export const apiRequest = <T = unknown>(path: string, options: RequestInit & { data?: unknown } = {}) =>
+const apiRequest = <T = unknown>(path: string, options: RequestInit & { data?: unknown } = {}) =>
   request(path, options) as Promise<T>;
 
-export const buildUrl = (path: string): string => `${API_BASE_URL}${path}`;
+const buildUrl = (path: string): string => `${BASE_URL}${path}`;
+
+export default api;
+export { api, request, apiRequest, buildUrl };
