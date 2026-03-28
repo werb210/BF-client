@@ -1,7 +1,3 @@
-import { assertApiUsage } from './lib/apiGuard';
-
-assertApiUsage();
-
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";

@@ -1,25 +1,25 @@
-import { api } from "../lib/api";
-import { normalizePhone } from "../lib/phone";
-import { setToken } from "@/lib/auth";
+import api from "../lib/api";
 
-export async function sendOtp(phone: string) {
-  return api.post("/auth/otp/start", { phone: normalizePhone(phone) });
-}
+export const startOtp = async (phone: string) => {
+  if (typeof phone !== "string") {
+    throw new Error("Invalid phone");
+  }
+  const { data } = await api.post("/api/auth/otp/start", { phone });
+  return data;
+};
 
-export async function verifyOtp(phone: string, code: string) {
-  const res = await api.post<{ token?: string }>("/auth/otp/verify", {
-    phone: normalizePhone(phone),
-    code,
-  });
+export const verifyOtp = async (phone: string, code: string) => {
+  if (typeof phone !== "string" || typeof code !== "string") {
+    throw new Error("Invalid verification payload");
+  }
+  const { data } = await api.post("/api/auth/otp/verify", { phone, code });
 
-  const token = res.data?.token;
-  if (!token) throw new Error("Missing token");
+  if (data?.token) {
+    localStorage.setItem("auth_token", data.token);
+  }
 
-  setToken(token);
+  return data;
+};
 
-  return token;
-}
-
-export async function verifyOtpCode(phone: string, otpCode: string) {
-  return verifyOtp(phone, otpCode);
-}
+export const sendOtp = startOtp;
+export const verifyOtpCode = verifyOtp;

@@ -15,6 +15,8 @@ export async function requestOtp(phone: string) {
 }
 
 export async function loginWithOtp(phone: string, code: string): Promise<{ token: string; nextPath?: string }> {
-  const token = await verifyOtp(phone, code);
+  const data = await verifyOtp(phone, code);
+  const token = data?.token;
+  if (!token) throw new Error("Missing token");
   return { token, nextPath: "/portal" };
 }
