@@ -75,10 +75,8 @@ export function ApplicationPortalPage(): JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const [applicationRes, documentsRes] = await Promise.all([
-        fetchApplication(id),
-        fetchApplicationDocuments(id),
-      ]);
+      const applicationRes = await fetchApplication(id);
+      const documentsRes = await fetchApplicationDocuments(id);
       const nextApplication = applicationRes as Record<string, any>;
       setApplication(nextApplication);
       setDocuments(normalizeDocumentsResponse(documentsRes));

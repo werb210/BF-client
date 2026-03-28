@@ -29,27 +29,33 @@ const client = {
   interceptors: api.interceptors,
   async request<T = unknown>(config: any): Promise<{ data: T; status: number; headers: Headers }> {
     const res = await api.request<T>(config);
-    return { data: res.data, status: res.status, headers: new Headers(res.headers as HeadersInit) };
+    const { data, status, headers } = res;
+    return { data, status, headers: new Headers(headers as HeadersInit) };
   },
   async get<T = unknown>(url: string): Promise<{ data: T; status: number }> {
     const res = await api.get<T>(url);
-    return { data: res.data, status: res.status };
+    const { data, status } = res;
+    return { data, status };
   },
   async post<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.post<T>(url, data, config);
-    return { data: res.data, status: res.status };
+    const { data, status } = res;
+    return { data, status };
   },
   async patch<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.patch<T>(url, data, config);
-    return { data: res.data, status: res.status };
+    const { data, status } = res;
+    return { data, status };
   },
   async put<T = unknown>(url: string, data?: unknown, config?: any): Promise<{ data: T; status: number }> {
     const res = await api.put<T>(url, data, config);
-    return { data: res.data, status: res.status };
+    const { data, status } = res;
+    return { data, status };
   },
   async delete<T = unknown>(url: string): Promise<{ data: T; status: number }> {
     const res = await api.delete<T>(url);
-    return { data: res.data, status: res.status };
+    const { data, status } = res;
+    return { data, status };
   },
 };
 
