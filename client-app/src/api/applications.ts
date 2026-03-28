@@ -10,14 +10,14 @@ export const createApplication = async (payload: any) => {
   return assertApiResponse(data);
 };
 
-export const submitApplication = async (id: string) => {
+export const submitApplication = async (applicationId: string) => {
   requireAuth();
 
-  if (!id) {
-    throw new Error("applicationId is required before submission");
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.post(`/api/applications/${id}/submit`);
+  const { data } = await api.post(`/api/applications/${applicationId}/submit`);
   return assertApiResponse(data);
 };
 
@@ -26,32 +26,48 @@ export const createPublicApplication = async (payload: any) => {
   return assertApiResponse(data);
 };
 
-export const fetchApplication = async (id: string) => {
-  const { data } = await api.get(`/api/applications/${id}`);
+export const fetchApplication = async (applicationId: string) => {
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
+  }
+
+  const { data } = await api.get(`/api/applications/${applicationId}`);
   return assertApiResponse(data);
 };
 
-export const fetchApplicationDocuments = async (id: string) => {
-  const { data } = await api.get(`/api/applications/${id}/documents`);
+export const fetchApplicationDocuments = async (applicationId: string) => {
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
+  }
+
+  const { data } = await api.get(`/api/applications/${applicationId}/documents`);
   return assertApiResponse(data);
 };
 
-export const fetchApplicationOffers = async (id: string) => {
-  const { data } = await api.get(`/api/offers?applicationId=${encodeURIComponent(id)}`);
+export const fetchApplicationOffers = async (applicationId: string) => {
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
+  }
+
+  const { data } = await api.get(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`);
   return assertApiResponse(data);
 };
 
 export const uploadApplicationDocument = async (
-  id: string,
+  applicationId: string,
   payload: { documentCategory: string; file: File; onProgress?: (progress: number) => void }
 ) => {
   requireAuth();
+
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
+  }
 
   validateFile(payload.file);
 
   const formData = new FormData();
   formData.append("file", payload.file);
-  formData.append("applicationId", id);
+  formData.append("applicationId", applicationId);
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
@@ -66,14 +82,14 @@ export const uploadApplicationDocument = async (
 };
 
 export const uploadDocuments = async (
-  id: string,
+  applicationId: string,
   documents: Array<{ documentCategory: string; file: File; onProgress?: (progress: number) => void }>
 ) => {
-  if (!id) {
-    throw new Error("applicationId is required before uploading documents");
+  if (!applicationId) {
+    throw new Error("Missing applicationId");
   }
 
-  await Promise.all(documents.map((document) => uploadApplicationDocument(id, document)));
+  await Promise.all(documents.map((document) => uploadApplicationDocument(applicationId, document)));
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>
