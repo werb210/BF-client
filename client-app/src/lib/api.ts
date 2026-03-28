@@ -1,38 +1,56 @@
-import { API_BASE_URL } from '@/config/api';
+import axios, { type AxiosRequestConfig } from "axios";
+import { API_BASE_URL } from "@/config/api";
+import { getToken } from "@/lib/auth";
 
-export const request = async (path: string, options: RequestInit = {}) => {
-  if (path.startsWith('/api')) {
-    throw new Error('Remove /api prefix');
-  }
-
-  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
-
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: 'include',
-    ...options,
-    headers: {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(options.headers || {}),
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-
-  return res.json();
+type ApiRequestOptions = RequestInit & {
+  data?: unknown;
+  params?: Record<string, unknown>;
 };
 
-export const apiRequest = <T = unknown>(path: string, options: RequestInit = {}) => request(path, options) as Promise<T>;
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
 
-const api = {
-  get: <T = unknown>(path: string) => request(path) as Promise<T>,
-  post: <T = unknown>(path: string, body?: any) =>
-    request(path, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }) as Promise<T>,
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    const headers = (config.headers || {}) as Record<string, string>;
+    headers.Authorization = `Bearer ${token}`;
+    config.headers = headers as any;
+  }
+  return config;
+});
+
+function normalizeBody(body: BodyInit | null | undefined): unknown {
+  if (body == null) return undefined;
+  if (typeof FormData !== "undefined" && body instanceof FormData) return body;
+  if (typeof body === "string") {
+    try {
+      return JSON.parse(body);
+    } catch {
+      return body;
+    }
+  }
+  return body;
+}
+
+export const request = async (path: string, options: ApiRequestOptions = {}) => {
+  const config: AxiosRequestConfig = {
+    url: path,
+    method: options.method,
+    headers: options.headers as Record<string, string> | undefined,
+    params: options.params,
+    data: options.data ?? normalizeBody(options.body),
+    withCredentials: options.credentials === "omit" ? false : true,
+  };
+
+  const response = await api.request(config);
+  return response.data;
 };
+
+export const apiRequest = <T = unknown>(path: string, options: ApiRequestOptions = {}) =>
+  request(path, options) as Promise<T>;
 
 export const buildUrl = (path: string): string => `${API_BASE_URL}${path}`;
 

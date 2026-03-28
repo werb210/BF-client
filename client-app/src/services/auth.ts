@@ -5,14 +5,16 @@ export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
 
 export async function startOtp(phone: string) {
-  return sendOtp(phone);
+  await sendOtp(phone);
+  return { ok: true };
 }
 
 export async function requestOtp(phone: string) {
-  return sendOtp(phone);
+  await sendOtp(phone);
+  return { ok: true };
 }
 
-export async function loginWithOtp(phone: string, code: string) {
+export async function loginWithOtp(phone: string, code: string): Promise<{ token: string; nextPath?: string }> {
   const token = await verifyOtp(phone, code);
-  return { token };
+  return { token, nextPath: "/portal" };
 }

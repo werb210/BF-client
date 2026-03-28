@@ -1,28 +1,19 @@
-import { API_BASE_URL } from "@/config/api";
+import { api } from "@/lib/api";
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  if (path.startsWith("/api")) {
-    throw new Error("INVALID_API_PATH: /api prefix is forbidden");
-  }
-
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    credentials: "omit",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
+  const isForm = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const response = await api.request<T>({
+    url: path,
+    method: options.method,
+    headers: options.headers as Record<string, string> | undefined,
+    data: isForm
+      ? options.body
+      : typeof options.body === "string"
+        ? JSON.parse(options.body)
+        : options.body,
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`API_ERROR ${response.status}: ${text}`);
-  }
-
-  return response.json() as Promise<T>;
+  return response.data;
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
@@ -30,5 +21,5 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
 }
 
 export function buildUrl(path: string): string {
-  return `${API_BASE_URL}${path}`;
+  return `${api.defaults.baseURL || ""}${path}`;
 }

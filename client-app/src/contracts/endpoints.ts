@@ -5,7 +5,7 @@ export const API_ENDPOINTS_CONTRACT = {
     OTP_VERIFY: "/auth/otp/verify"
   },
   DOCUMENTS: {
-    UPLOAD: "/documents/upload"
+    UPLOAD: "/api/documents/upload"
   },
   OFFERS: {
     ROOT: "/offers"
