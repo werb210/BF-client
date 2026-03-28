@@ -6,8 +6,10 @@ export default function ApplicationStep1() {
   const [companyName, setCompanyName] = useState("");
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const submit = async () => {
+    setErrorMessage("");
     const response = await createApplication({
       companyName,
       contactName,
@@ -21,7 +23,7 @@ export default function ApplicationStep1() {
       return;
     }
 
-    alert("Application started");
+    setErrorMessage("Application started but did not return an application ID.");
   };
 
   return (
@@ -45,6 +47,8 @@ export default function ApplicationStep1() {
         value={email}
         onChange={(event) => setEmail(event.target.value)}
       />
+
+      {errorMessage && <p role="alert">{errorMessage}</p>}
 
       <button onClick={() => void submit()} type="button">
         Start Application

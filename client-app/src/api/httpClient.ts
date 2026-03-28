@@ -1,4 +1,5 @@
-import axios, { type AxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios";
+import type { AxiosError, AxiosInstance } from "axios";
+import api from "../lib/api";
 
 export class ApiError extends Error {
   status?: number;
@@ -12,12 +13,8 @@ export class ApiError extends Error {
   }
 }
 
-export function createHttpClient(config: AxiosRequestConfig): AxiosInstance {
-  const client = axios.create({
-    ...config,
-  });
-
-  client.interceptors.response.use(
+export function createHttpClient(): AxiosInstance {
+  api.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
       if (error.response) {
@@ -30,5 +27,5 @@ export function createHttpClient(config: AxiosRequestConfig): AxiosInstance {
     }
   );
 
-  return client;
+  return api;
 }

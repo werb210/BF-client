@@ -270,12 +270,12 @@ export function Step6_Review(): JSX.Element {
     }
 
     if (!app.typedSignature?.trim()) {
-      alert("Please type your full name to sign.");
+      blockSubmit("Please type your full name to sign.");
       return;
     }
 
     if (hasPartner && !app.coApplicantSignature?.trim()) {
-      alert("Please enter a signature for each applicant.");
+      blockSubmit("Please enter a signature for each applicant.");
       return;
     }
 
@@ -285,7 +285,7 @@ export function Step6_Review(): JSX.Element {
     }
 
     if (!app.termsAccepted) {
-      alert("Please complete all confirmations before submitting.");
+      blockSubmit("Please complete all confirmations before submitting.");
       return;
     }
 

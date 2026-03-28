@@ -10,19 +10,22 @@ export default function CapitalScorePreview() {
     email: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string>("");
 
   async function handleSubmit() {
     if (submitting) return;
 
     trackEvent("capital_score_requested");
     setSubmitting(true);
+    setMessage("");
 
     try {
       await submitCreditReadiness(formState);
-      alert("A Boreal Intake Specialist will contact you shortly.");
+      setMessage("A Boreal Intake Specialist will contact you shortly.");
       window.location.href = "/";
-    } catch {
-      alert("Submission failed. Please try again.");
+    } catch (error) {
+      setMessage("Submission failed. Please try again.");
+      throw error;
     } finally {
       setSubmitting(false);
     }
@@ -33,6 +36,7 @@ export default function CapitalScorePreview() {
       <button onClick={() => void handleSubmit()} disabled={submitting}>
         {submitting ? "Submitting..." : "Preview Your Capital Readiness"}
       </button>
+      {message && <p role="status">{message}</p>}
     </div>
   );
 }

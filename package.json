@@ -9,7 +9,8 @@
     "test:e2e": "echo 'run locally only'",
     "client:build": "npm --prefix client-app run build",
     "client:test": "npm --prefix client-app run test",
-    "client:typecheck": "npm --prefix client-app run typecheck"
+    "client:typecheck": "npm --prefix client-app run typecheck",
+    "check:guardrails": "bash scripts/client-guardrails.sh"
   },
   "devDependencies": {
     "@testing-library/react": "^16.0.0",

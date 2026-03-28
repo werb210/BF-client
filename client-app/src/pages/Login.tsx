@@ -1,11 +1,13 @@
 import { useState } from "react";
 import type React from "react";
 import { startOtp, verifyOtp } from "../api/auth";
+import { getToken } from "../lib/auth";
 
 export default function Login() {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleSend = async () => {
     await startOtp(phone);
@@ -17,13 +19,13 @@ export default function Login() {
 
     await new Promise((r) => setTimeout(r, 200));
 
-    const token = localStorage.getItem("auth_token");
+    const token = getToken();
 
     if (!token) {
       throw new Error("Auth failed");
     }
 
-    alert("SUCCESS");
+    setMessage("SUCCESS");
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -45,6 +47,7 @@ export default function Login() {
           <button type="submit">Verify</button>
         </>
       )}
+      {message && <p role="status">{message}</p>}
     </form>
   );
 }

@@ -1,4 +1,4 @@
-import { createApplication, submitApplication } from "../../api/applications";
+import { createApplication, submitApplication, uploadDocuments } from "../../api/applications";
 import type { ApplicationState } from "../../state/application";
 import React, { useState } from "react";
 
@@ -23,12 +23,14 @@ export default function ReviewSubmit({ state }: { state: ApplicationState }) {
         product_id: state.selectedProduct.id,
       });
 
-      const applicationId = created?.id ?? created?.applicationId ?? created?.token;
+      const createdPayload = (created ?? {}) as { id?: string; applicationId?: string; token?: string };
+      const applicationId = createdPayload.id ?? createdPayload.applicationId ?? createdPayload.token;
 
       if (!applicationId) {
         throw new Error("Missing application ID");
       }
 
+      await uploadDocuments(applicationId, []);
       await submitApplication(applicationId);
     } finally {
       setSubmitting(false);
