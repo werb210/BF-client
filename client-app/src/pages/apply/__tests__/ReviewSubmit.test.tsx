@@ -76,7 +76,7 @@ describe("ReviewSubmit", () => {
       act(async () => {
         button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       })
-    ).rejects.toThrow("Missing application ID");
+    ).rejects.toThrow("Missing applicationId");
 
     expect(uploadDocuments).not.toHaveBeenCalled();
     expect(submitApplication).not.toHaveBeenCalled();
