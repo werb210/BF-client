@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./api";
+import { API_BASE_URL } from "@/config/api";
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   if (path.startsWith("/api")) {

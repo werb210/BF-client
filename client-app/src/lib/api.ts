@@ -1,8 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
-
-if (!BASE_URL) {
-  throw new Error('Missing VITE_API_URL');
-}
+import { API_BASE_URL } from '@/config/api';
 
 export const request = async (path: string, options: RequestInit = {}) => {
   if (path.startsWith('/api')) {
@@ -11,7 +7,7 @@ export const request = async (path: string, options: RequestInit = {}) => {
 
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     credentials: 'include',
     ...options,
     headers: {
@@ -27,7 +23,6 @@ export const request = async (path: string, options: RequestInit = {}) => {
   return res.json();
 };
 
-
 export const apiRequest = <T = unknown>(path: string, options: RequestInit = {}) => request(path, options) as Promise<T>;
 
 const api = {
@@ -39,6 +34,6 @@ const api = {
     }) as Promise<T>,
 };
 
-export const buildUrl = (path: string): string => `${BASE_URL}${path}`;
+export const buildUrl = (path: string): string => `${API_BASE_URL}${path}`;
 
 export default api;
