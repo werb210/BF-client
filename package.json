@@ -10,10 +10,11 @@
   },
   "packageManager": "npm@10",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=20.10.0 <21.0.0"
   },
   "scripts": {
-    "build": "npm run build -w client-app || echo \"build skipped (env restriction)\"",
-    "test": "npm run test -w client-app || echo \"tests skipped (env restriction)\""
+    "build": "npm --prefix client-app run build",
+    "test": "npm --prefix client-app run test",
+    "dev": "npm --prefix client-app run dev"
   }
 }
