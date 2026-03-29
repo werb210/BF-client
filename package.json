@@ -12,7 +12,11 @@
   "engines": {
     "node": ">=20.10.0 <21.0.0"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
+    "preinstall": "npm config delete @eslint:registry || true",
     "build": "npm --prefix client-app run build",
     "test": "npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev"
