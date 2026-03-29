@@ -16,7 +16,5 @@
     "build": "npm --prefix client-app run build",
     "test": "npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  }
 }
