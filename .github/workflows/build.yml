@@ -1,4 +1,4 @@
-name: client-build
+name: build
 
 on:
   push:
@@ -16,6 +16,6 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm run build || true
-      - run: npm run test || true
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test

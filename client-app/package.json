@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build || echo \"build skipped (env restriction)\"",
+    "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --max-warnings 0",
-    "test": "vitest run || echo \"tests skipped (env restriction)\"",
+    "test": "vitest run",
     "test:ci": "vitest --run",
     "audit:enterprise": "node scripts/enterprise-audit.js",
     "prestart": "node scripts/verify-node.js",
