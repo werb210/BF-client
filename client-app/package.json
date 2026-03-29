@@ -20,7 +20,7 @@
     "cap:open:android": "cap open android"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.10 <23"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.56.20",
