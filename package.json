@@ -10,7 +10,7 @@
   },
   "packageManager": "npm@10",
   "engines": {
-    "node": ">=20.10.0 <21.0.0"
+    "node": ">=20.10 <23"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
