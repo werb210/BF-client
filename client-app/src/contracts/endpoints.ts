@@ -8,40 +8,40 @@ export const API_ENDPOINTS_CONTRACT = {
     UPLOAD: "/api/documents/upload"
   },
   OFFERS: {
-    ROOT: "/offers"
+    ROOT: "/api/offers"
   },
   TELEPHONY: {
-    TOKEN: "/telephony/token"
+    TOKEN: "/api/telephony/token"
   },
   APPLICATION: {
-    ROOT: "/applications",
-    UPDATE: "/applications",
-    CONTINUATION: "/applications/continuation"
+    ROOT: "/api/applications",
+    UPDATE: "/api/applications",
+    CONTINUATION: "/api/applications/continuation"
   },
   READINESS: {
-    ROOT: "/readiness",
-    CONTINUE: "/readiness/continue",
-    SESSION_PREFIX: "/readiness/"
+    ROOT: "/api/readiness",
+    CONTINUE: "/api/readiness/continue",
+    SESSION_PREFIX: "/api/readiness/"
   },
   DRAFTS: {
-    SAVE: "/drafts/save",
-    PREFIX: "/drafts/"
+    SAVE: "/api/drafts/save",
+    PREFIX: "/api/drafts/"
   },
   PREAPP: {
-    LOOKUP: "/preapp/lookup",
-    CONSUME: "/preapp/consume"
+    LOOKUP: "/api/preapp/lookup",
+    CONSUME: "/api/preapp/consume"
   },
   CRM: {
-    LEADS: "/crm/leads",
-    WEB_LEADS: "/crm/web-leads"
+    LEADS: "/api/crm/leads",
+    WEB_LEADS: "/api/crm/web-leads"
   },
   CLIENT_APPLICATIONS: {
-    ROOT: "/applications",
-    PREFIX: "/applications/"
+    ROOT: "/api/applications",
+    PREFIX: "/api/applications/"
   },
-  ANALYTICS: "/analytics",
+  ANALYTICS: "/api/analytics",
   PUBLIC: {
-    LENDER_COUNT: "/public/lender-count"
+    LENDER_COUNT: "/api/public/lender-count"
   }
 } as const;
 

@@ -22,7 +22,7 @@ export async function refreshSessionOnce() {
   if (!token && !hasToken() && !legacyToken) return true;
 
   setSessionRefreshing(true);
-  refreshPromise = (apiRequest("/session/refresh", {
+  refreshPromise = (apiRequest("/api/session/refresh", {
     method: "POST",
   }) as Promise<unknown>)
     .then(() => true)

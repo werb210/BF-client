@@ -57,7 +57,7 @@ export async function createLead(payload: LeadBootstrapPayload) {
     }
   }
 
-  const request = apiRequest<LeadBootstrapResponse>("/lead/bootstrap", {
+  const request = apiRequest<LeadBootstrapResponse>("/api/lead/bootstrap", {
     method: "POST",
     body: JSON.stringify(payload),
   })
@@ -83,7 +83,7 @@ export async function createLead(payload: LeadBootstrapPayload) {
 }
 
 export async function tagLead(leadId: string, tag: string) {
-  return apiRequest("/lead/tag", {
+  return apiRequest("/api/lead/tag", {
     method: "POST",
     body: JSON.stringify({ leadId, tag }),
   });

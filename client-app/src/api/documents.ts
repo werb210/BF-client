@@ -14,7 +14,7 @@ export const uploadDocument = async (
   formData.append("category", category);
 
   const { data } = await api.post("/api/documents/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {},
   });
 
   return data.data;

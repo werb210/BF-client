@@ -43,7 +43,7 @@ export function useClientSession(tokenOverride?: string | null): UseClientSessio
 
     const validateAndPersist = async () => {
       try {
-        const res = await apiRequest("/session", {
+        const res = await apiRequest("/api/session", {
           method: "POST",
           body: JSON.stringify({ token }),
         });

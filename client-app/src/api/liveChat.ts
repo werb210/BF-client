@@ -1,5 +1,5 @@
 import api from "@/api/client";
 
 export async function escalateToHuman() {
-  await api.post("/ai/escalate");
+  await api.post("/api/ai/escalate");
 }

@@ -72,9 +72,7 @@ export const uploadApplicationDocument = async (
 
   payload.onProgress?.(10);
   const { data } = await api.post("/api/documents/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
+    headers: {},
   });
   payload.onProgress?.(100);
 

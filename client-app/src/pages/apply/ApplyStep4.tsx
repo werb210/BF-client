@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { components, layout, tokens } from "@/styles";
 import { createLead } from "@/services/lead";
 import { apiRequest } from "@/api/client";
+import { getMe } from "@/lib/auth";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type Step4Values = {
@@ -54,7 +55,12 @@ export default function ApplyStep4() {
 
       localStorage.setItem("leadId", lead.leadId);
 
-      await apiRequest(API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.ROOT, {
+      const me = await getMe();
+      if (!me) {
+        throw new Error("Please sign in before submitting your application.");
+      }
+
+      await apiRequest("/api/application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,8 +72,9 @@ export default function ApplyStep4() {
       });
 
       navigate("/apply/success");
-    } catch {
-      setError("We couldn't submit your application. Please try again.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "We couldn't submit your application. Please try again.";
+      setError(message);
     } finally {
       setSubmitting(false);
     }

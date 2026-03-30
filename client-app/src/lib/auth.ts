@@ -1,3 +1,5 @@
+import { apiFetch } from "./api";
+
 const TOKEN_KEY = "auth_token";
 const LEGACY_TOKEN_KEY = "token";
 
@@ -17,4 +19,12 @@ export function hasToken() {
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+export async function getMe() {
+  try {
+    return await apiFetch("/api/auth/me");
+  } catch {
+    return null;
+  }
 }
