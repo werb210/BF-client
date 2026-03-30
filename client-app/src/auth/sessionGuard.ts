@@ -15,13 +15,6 @@ type StorageLike = {
 };
 
 export function getSessionToken() {
-  const cookieToken = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("bf_session="))
-    ?.split("=")[1];
-
-  if (cookieToken) return cookieToken;
-
   return localStorage.getItem("bf_token");
 }
 

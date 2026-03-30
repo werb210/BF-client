@@ -1,21 +1,31 @@
-import { apiFetch } from "../lib/api";
+import api from "../lib/api";
 import { setToken } from "../lib/auth";
 
+function assertPhone(phone: string) {
+  if (typeof phone !== "string") {
+    throw new Error("Phone is required");
+  }
+}
+
 export const startOtp = async (phone: string) => {
-  return apiFetch("/api/auth/otp/start", {
-    method: "POST",
-    body: JSON.stringify({ phone }),
-  });
+  assertPhone(phone);
+  const response = await api.post<{ ok?: boolean }>("/api/auth/otp/start", { phone });
+  return response.data;
 };
 
 export const verifyOtp = async (phone: string, code: string) => {
-  const data = await apiFetch("/api/auth/otp/verify", {
-    method: "POST",
-    body: JSON.stringify({ phone, code }),
-  });
+  assertPhone(phone);
 
-  if ((data as any)?.data?.token) {
-    setToken((data as any).data.token);
+  const response = await api.post<{ token?: string; user?: unknown; data?: { token?: string; user?: unknown } }>(
+    "/api/auth/otp/verify",
+    { phone, code }
+  );
+
+  const data = response.data;
+  const token = data?.token ?? data?.data?.token;
+
+  if (token) {
+    setToken(token);
   }
 
   return data;
