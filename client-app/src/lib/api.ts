@@ -1,10 +1,8 @@
 import axios, { AxiosRequestConfig } from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL
-
-if (!API_BASE) {
-  throw new Error('VITE_API_URL is not defined')
-}
+// FORCE correct base (NO /api prefix)
+const API_BASE = import.meta.env.VITE_API_URL || "https://server.boreal.financial";
+let redirected = false;
 
 /**
  * Single axios instance used everywhere
@@ -22,21 +20,34 @@ export async function apiRequest<T = any>(
   url: string,
   config: AxiosRequestConfig & { data?: any } = {}
 ): Promise<T> {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem("token");
 
-  const res = await axios({
-    url: `${API_BASE}${url}`,
-    method: config.method || 'GET',
-    data: config.data,
-    withCredentials: true,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...config.headers,
-    },
-  })
+  try {
+    const res = await axios({
+      url: `${API_BASE}${url}`,
+      method: config.method || "GET",
+      data: config.data,
+      withCredentials: true,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...config.headers,
+      },
+      ...config,
+    });
 
-  return res.data
+    return res.data;
+  } catch (error: any) {
+    if (error?.response?.status === 401) {
+      if (!redirected) {
+        redirected = true;
+        window.location.replace("/login");
+      }
+      throw new Error("AUTH_REQUIRED");
+    }
+
+    throw new Error("API_ERROR");
+  }
 }
 
 /**
