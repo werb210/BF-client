@@ -56,7 +56,7 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
 
     const load = async () => {
       try {
-        const response = await api.get(`/messages/${applicationId}`);
+        const response = await api.get(`/api/messages/${applicationId}`);
         const { data } = response;
         if (!active) return;
         const list = Array.isArray((data as any)?.messages)
@@ -104,12 +104,12 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
     setTyping(true);
 
     try {
-      await api.post("/messages", {
+      await api.post("/api/messages", {
         applicationId,
         message: nextMessage,
       });
 
-      const response = await api.get(`/messages/${applicationId}`);
+      const response = await api.get(`/api/messages/${applicationId}`);
         const { data } = response;
       const list = Array.isArray((data as any)?.messages)
         ? (data as any).messages

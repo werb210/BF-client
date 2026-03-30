@@ -1,15 +1,21 @@
-import api from "../lib/api";
+import { apiFetch } from "../lib/api";
+import { setToken } from "../lib/auth";
 
 export const startOtp = async (phone: string) => {
-  const { data } = await api.post("/api/auth/otp/start", { phone });
-  return data;
+  return apiFetch("/api/auth/otp/start", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
 };
 
 export const verifyOtp = async (phone: string, code: string) => {
-  const { data } = await api.post("/api/auth/otp/verify", { phone, code });
+  const data = await apiFetch("/api/auth/otp/verify", {
+    method: "POST",
+    body: JSON.stringify({ phone, code }),
+  });
 
-  if (data?.data?.token) {
-    localStorage.setItem("auth_token", data.data.token);
+  if ((data as any)?.data?.token) {
+    setToken((data as any).data.token);
   }
 
   return data;

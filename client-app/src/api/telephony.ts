@@ -1,7 +1,7 @@
 import { api } from "../lib/api";
 
 export async function getVoiceToken() {
-  const res = await api.get<{ token?: string }>("/telephony/token");
+  const res = await api.get<{ token?: string }>("/api/telephony/token");
   const { data } = res;
   const token = data?.token;
 

@@ -27,7 +27,7 @@ export const ProductSync = {
 
   async sync() {
     ProductSync.invalidateCache();
-    const res = await api.get("/lender-products");
+    const res = await api.get("/api/lender-products");
     const { data } = res;
     const products = Array.isArray(data) ? data : [];
     if (!products.length) {

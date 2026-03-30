@@ -1,15 +1,14 @@
-import type { AxiosRequestHeaders } from "axios";
 import { apiClient, buildApiUrl } from "./client";
 
-function toHeaders(headers?: HeadersInit): AxiosRequestHeaders {
-  if (!headers) return {} as AxiosRequestHeaders;
+function toHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) return {};
 
   const parsed = new Headers(headers);
   const result: Record<string, string> = {};
   parsed.forEach((value, key) => {
     result[key] = value;
   });
-  return result as AxiosRequestHeaders;
+  return result;
 }
 
 function toData(body?: BodyInit | null) {
@@ -29,18 +28,14 @@ export function apiUrl(path: string) {
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers = {
-    ...toHeaders(options.headers),
-  };
   const response = await apiClient.request<T>({
     url: path,
     method: options.method || "GET",
     data: toData(options.body),
-    headers,
+    headers: toHeaders(options.headers),
   });
 
-  const { data } = response;
-  return data;
+  return response.data;
 }
 
 export function getApiBaseUrl() {

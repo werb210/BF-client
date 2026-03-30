@@ -25,13 +25,13 @@ export type LenderProductRequirement = {
 };
 
 export async function getClientLenders(): Promise<ClientLender[]> {
-  const res = await api.get<ClientLender[]>("/lenders");
+  const res = await api.get<ClientLender[]>("/api/lenders");
   const { data } = res;
   return Array.isArray(data) ? data : [];
 }
 
 export async function getClientLenderProducts(): Promise<ClientLenderProduct[]> {
-  const res = await api.get<ClientLenderProduct[]>("/lender-products");
+  const res = await api.get<ClientLenderProduct[]>("/api/lender-products");
 
   const { data } = res;
   return Array.isArray(data) ? data : [];

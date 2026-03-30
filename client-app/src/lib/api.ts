@@ -1,58 +1,92 @@
-import axios, { AxiosRequestConfig } from "axios";
-
-// FORCE correct base (NO /api prefix)
 const API_BASE = import.meta.env.VITE_API_URL || "https://server.boreal.financial";
-let redirected = false;
 
-/**
- * Single axios instance used everywhere
- * MUST use VITE_API_URL for SWA
- */
-const api = axios.create({
-  baseURL: API_BASE,
-  withCredentials: true,
-});
+type ApiOptions = RequestInit & { raw?: boolean };
 
-/**
- * Central request wrapper (required by contract guards)
- */
-export async function apiRequest<T = any>(
-  url: string,
-  config: AxiosRequestConfig & { data?: any } = {}
-): Promise<T> {
-  const token = localStorage.getItem("token");
+type ApiResponse<T> = {
+  data: T;
+  status: number;
+  headers: Headers;
+};
 
-  try {
-    const res = await axios({
-      url: `${API_BASE}${url}`,
-      method: config.method || "GET",
-      data: config.data,
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...config.headers,
-      },
-      ...config,
-    });
-
-    return res.data;
-  } catch (error: any) {
-    if (error?.response?.status === 401) {
-      if (!redirected) {
-        redirected = true;
-        window.location.replace("/login");
-      }
-      throw new Error("AUTH_REQUIRED");
-    }
-
-    throw new Error("API_ERROR");
+function toUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
   }
+  return `${API_BASE}${path}`;
 }
 
-/**
- * Required by App.tsx
- */
+function withJsonHeaders(options: ApiOptions): RequestInit {
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const headers = new Headers(options.headers || undefined);
+
+  if (!isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return {
+    ...options,
+    headers,
+  };
+}
+
+export async function apiFetch(path: string, options: ApiOptions = {}) {
+  const res = await fetch(toUrl(path), {
+    credentials: "include",
+    ...withJsonHeaders(options),
+  });
+
+  if (options.raw) return res;
+
+  const ct = res.headers.get("content-type") || "";
+  const isJson = ct.includes("application/json");
+
+  if (!res.ok) {
+    const body = isJson ? await res.json().catch(() => null) : await res.text();
+    throw new Error(`API ${res.status}: ${typeof body === "string" ? body : JSON.stringify(body)}`);
+  }
+
+  return isJson ? res.json() : res.text();
+}
+
+async function requestInternal<T = unknown>(
+  path: string,
+  method: string,
+  data?: unknown,
+  headers?: HeadersInit
+): Promise<ApiResponse<T>> {
+  const body =
+    data === undefined
+      ? undefined
+      : data instanceof FormData
+        ? data
+        : typeof data === "string"
+          ? data
+          : JSON.stringify(data);
+
+  const response = await apiFetch(path, {
+    method,
+    body,
+    headers,
+    raw: true,
+  });
+
+  const ct = response.headers.get("content-type") || "";
+  const parsed = ct.includes("application/json")
+    ? await response.json().catch(() => null)
+    : await response.text();
+
+  return {
+    data: parsed as T,
+    status: response.status,
+    headers: response.headers,
+  };
+}
+
+export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await requestInternal<T>(path, options.method || "GET", options.body, options.headers);
+  return response.data;
+}
+
 export function requireAuth(): string {
   const token = localStorage.getItem("token");
 
@@ -64,16 +98,38 @@ export function requireAuth(): string {
   return token;
 }
 
-export function request<T = unknown>(
-  path: string,
-  options: AxiosRequestConfig = {}
-): Promise<T> {
-  return apiRequest<T>(path, options as AxiosRequestConfig & { data?: any });
+export function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+  return apiRequest<T>(path, options);
 }
 
 export function buildUrl(path: string): string {
-  return `${API_BASE}${path}`;
+  return toUrl(path);
 }
+
+const api = {
+  interceptors: {
+    request: { use: () => 0, eject: () => {} },
+    response: { use: () => 0, eject: () => {} },
+  },
+  request<T = unknown>(config: { url: string; method?: string; data?: unknown; headers?: HeadersInit }) {
+    return requestInternal<T>(config.url, config.method || "GET", config.data, config.headers);
+  },
+  get<T = unknown>(url: string) {
+    return requestInternal<T>(url, "GET");
+  },
+  post<T = unknown>(url: string, data?: unknown, config?: { headers?: HeadersInit }) {
+    return requestInternal<T>(url, "POST", data, config?.headers);
+  },
+  patch<T = unknown>(url: string, data?: unknown, config?: { headers?: HeadersInit }) {
+    return requestInternal<T>(url, "PATCH", data, config?.headers);
+  },
+  put<T = unknown>(url: string, data?: unknown, config?: { headers?: HeadersInit }) {
+    return requestInternal<T>(url, "PUT", data, config?.headers);
+  },
+  delete<T = unknown>(url: string) {
+    return requestInternal<T>(url, "DELETE");
+  },
+};
 
 export { api };
 export default api;
