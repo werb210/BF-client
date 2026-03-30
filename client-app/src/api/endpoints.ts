@@ -1,8 +1,8 @@
 import { API_ENDPOINTS_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
 
 export const API_ENDPOINTS = {
-  OTP_START: "/auth/otp/start",
-  OTP_VERIFY: "/auth/otp/verify",
+  OTP_START: "/api/auth/otp/start",
+  OTP_VERIFY: "/api/auth/otp/verify",
   APPLICATIONS: API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.ROOT,
   DOCUMENT_UPLOAD: DOCUMENT_CONTRACT.UPLOAD,
   TELEPHONY_TOKEN: "/telephony/token"
