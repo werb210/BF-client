@@ -4,9 +4,11 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./app/App";
 import "@/api/init";
 import { bootstrapSession } from "./app/bootstrap";
+import { initAuth } from "@/lib/auth";
 import "./index.css";
 
 async function start() {
+  await initAuth();
   const session = await bootstrapSession();
 
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

@@ -1,23 +1,26 @@
-import { apiFetch, clearToken as clearApiToken, setToken as setApiToken } from "./api";
-
-const TOKEN_KEY = "auth_token";
-const LEGACY_TOKEN_KEY = "token";
+import { apiFetch, setToken, clearToken, loadToken } from "./api";
 
 let currentUser: any = null;
 
-export function setToken(token: string) {
-  setApiToken(token);
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(LEGACY_TOKEN_KEY, token);
-  localStorage.setItem("bf_token", token);
-}
+export { setToken, clearToken };
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY);
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem("auth_token");
 }
 
-export function hasToken() {
-  return Boolean(getToken());
+export async function initAuth() {
+  loadToken();
+
+  try {
+    currentUser = await apiFetch("/api/auth/me");
+  } catch {
+    clearToken();
+    currentUser = null;
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  }
 }
 
 export async function startOtp(phone: string) {
@@ -28,37 +31,41 @@ export async function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res: any = await apiFetch("/api/auth/otp/verify", {
+  const res = await apiFetch("/api/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify({ phone, code }),
   });
 
-  const token = res?.token || res?.data?.token;
-  if (token) {
-    setToken(token);
+  if ((res as any)?.token) {
+    setToken((res as any).token);
   }
 
-  currentUser = res?.user || res?.data?.user || null;
+  currentUser = (res as any)?.user || null;
   return res;
 }
 
+export function getUser() {
+  return currentUser;
+}
+
 export async function getMe() {
-  if (!currentUser) {
-    try {
-      currentUser = await apiFetch("/api/auth/me");
-    } catch {
-      currentUser = null;
-    }
+  if (currentUser) {
+    return currentUser;
+  }
+
+  try {
+    currentUser = await apiFetch("/api/auth/me");
+  } catch {
+    clearToken();
+    currentUser = null;
   }
 
   return currentUser;
 }
 
-export function clearToken() {
-  clearApiToken();
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
-  localStorage.removeItem("bf_token");
+export function hasToken() {
+  if (typeof localStorage === "undefined") return false;
+  return Boolean(localStorage.getItem("auth_token"));
 }
 
 export function logout() {
