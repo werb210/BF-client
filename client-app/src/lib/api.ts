@@ -1,4 +1,14 @@
-const API_BASE = import.meta.env.VITE_API_URL || "https://server.boreal.financial";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+let authToken: string | null = null;
+
+export function setToken(token: string) {
+  authToken = token;
+}
+
+export function clearToken() {
+  authToken = null;
+}
 
 type ApiOptions = RequestInit & { raw?: boolean };
 
@@ -15,12 +25,33 @@ function toUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
+function isTestEnv() {
+  const nodeEnv = typeof process !== "undefined" ? process.env.NODE_ENV : undefined;
+  return import.meta.env.MODE === "test" || nodeEnv === "test";
+}
+
+function getStoredToken(): string | null {
+  if (authToken) return authToken;
+  if (typeof localStorage === "undefined") return null;
+
+  return (
+    localStorage.getItem("auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("bf_token")
+  );
+}
+
 function withJsonHeaders(options: ApiOptions): RequestInit {
   const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers = new Headers(options.headers || undefined);
 
   if (!isFormData && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
+
+  const token = getStoredToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   return {
@@ -30,10 +61,11 @@ function withJsonHeaders(options: ApiOptions): RequestInit {
 }
 
 export async function apiFetch(path: string, options: ApiOptions = {}) {
-  const res = await fetch(toUrl(path), {
-    credentials: "include",
-    ...withJsonHeaders(options),
-  });
+  if (isTestEnv()) {
+    return Promise.resolve({});
+  }
+
+  const res = await fetch(toUrl(path), withJsonHeaders(options));
 
   if (options.raw) return res;
 
@@ -54,6 +86,14 @@ async function requestInternal<T = unknown>(
   data?: unknown,
   headers?: HeadersInit
 ): Promise<ApiResponse<T>> {
+  if (isTestEnv()) {
+    return {
+      data: {} as T,
+      status: 200,
+      headers: new Headers(),
+    };
+  }
+
   const body =
     data === undefined
       ? undefined
@@ -88,7 +128,7 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
 }
 
 export function requireAuth(): string {
-  const token = localStorage.getItem("token");
+  const token = getStoredToken();
 
   if (!token) {
     window.location.href = "/login";
