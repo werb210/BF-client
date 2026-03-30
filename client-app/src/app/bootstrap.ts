@@ -15,7 +15,7 @@ function readTokenFromClientSession(stored: string): string | null {
 
 export async function bootstrapSession(): Promise<InitialSession | null> {
   try {
-    await apiRequest("/auth/me");
+    await apiRequest("/api/auth/me");
   } catch {
     // Auth gating/redirect handled centrally in apiRequest.
     return null;
