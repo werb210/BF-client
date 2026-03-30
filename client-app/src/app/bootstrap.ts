@@ -25,7 +25,7 @@ export async function bootstrapSession(): Promise<InitialSession | null> {
     return null;
   }
 
-  const stored = localStorage.getItem("client_session");
+  const stored = localStorage.getItem("auth_token");
 
   if (!stored) {
     return null;

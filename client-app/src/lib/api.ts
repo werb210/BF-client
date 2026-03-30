@@ -1,13 +1,22 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-let authToken: string | null = null;
+let token: string | null = null;
 
-export function setToken(token: string) {
-  authToken = token;
+export function setToken(t: string) {
+  token = t;
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem("auth_token", t);
+}
+
+export function loadToken() {
+  if (typeof localStorage === "undefined") return;
+  token = localStorage.getItem("auth_token");
 }
 
 export function clearToken() {
-  authToken = null;
+  token = null;
+  if (typeof localStorage === "undefined") return;
+  localStorage.removeItem("auth_token");
 }
 
 type ApiOptions = RequestInit & { raw?: boolean };
@@ -25,20 +34,14 @@ function toUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
-function isTestEnv() {
-  const nodeEnv = typeof process !== "undefined" ? process.env.NODE_ENV : undefined;
-  return import.meta.env.MODE === "test" || nodeEnv === "test";
+function isTest() {
+  return import.meta.env.MODE === "test";
 }
 
 function getStoredToken(): string | null {
-  if (authToken) return authToken;
+  if (token) return token;
   if (typeof localStorage === "undefined") return null;
-
-  return (
-    localStorage.getItem("auth_token") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("bf_token")
-  );
+  return localStorage.getItem("auth_token");
 }
 
 function withJsonHeaders(options: ApiOptions): RequestInit {
@@ -61,7 +64,7 @@ function withJsonHeaders(options: ApiOptions): RequestInit {
 }
 
 export async function apiFetch(path: string, options: ApiOptions = {}) {
-  if (isTestEnv()) {
+  if (isTest()) {
     return Promise.resolve({});
   }
 
@@ -86,7 +89,7 @@ async function requestInternal<T = unknown>(
   data?: unknown,
   headers?: HeadersInit
 ): Promise<ApiResponse<T>> {
-  if (isTestEnv()) {
+  if (isTest()) {
     return {
       data: {} as T,
       status: 200,

@@ -759,21 +759,7 @@ export default function PublicApplyPage() {
   }, [navigate]);
 
   useEffect(() => {
-    let isMounted = true;
-    (apiRequest("https://api.ipify.org?format=json") as Promise<{ ip?: string }>)
-      .then((data: { ip?: string }) => {
-        if (isMounted && data?.ip) {
-          setClientIp(data.ip);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setClientIp("");
-        }
-      });
-    return () => {
-      isMounted = false;
-    };
+    setClientIp("");
   }, []);
 
   const canSubmit = useMemo(
