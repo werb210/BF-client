@@ -27,12 +27,13 @@ export function apiUrl(path: string) {
   return buildApiUrl(path);
 }
 
-export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T = unknown>(path: string, options: any = {}): Promise<T> {
   const response = await apiClient.request<T>({
     url: path,
     method: options.method || "GET",
     data: toData(options.body),
     headers: toHeaders(options.headers),
+    ...options,
   });
 
   return response.data;

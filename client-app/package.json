@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run enforce:api && vite build",
     "preview": "vite preview --port 5173",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --max-warnings 0",
@@ -14,10 +14,11 @@
     "audit:enterprise": "node scripts/enterprise-audit.js",
     "prestart": "node scripts/verify-node.js",
     "smoke": "npm run build",
-    "check": "tsc --noEmit",
+    "check": "npm run enforce:api && tsc --noEmit",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
-    "cap:open:android": "cap open android"
+    "cap:open:android": "cap open android",
+    "enforce:api": "node scripts/enforce-api-pipeline.js"
   },
   "engines": {
     "node": ">=20.10 <23"

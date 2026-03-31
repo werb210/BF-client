@@ -1,139 +1,143 @@
-import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse, type Method } from "axios"
 import { getTokenOrFail } from "@/services/token"
 
-const TOKEN_KEY = "token"
-
-export const api = axios.create({
-  baseURL: "/api",
-  timeout: 20000,
-})
-
-function assertRelativeApiUrl(url: string | undefined): string {
-  if (!url || !url.startsWith("/")) {
-    throw new Error(`[API BLOCK] INVALID URL: ${url}`)
-  }
-
-  if (/^https?:\/\//i.test(url)) {
-    throw new Error(`[API BLOCK] ABSOLUTE URL FORBIDDEN: ${url}`)
-  }
-
-  return url
+type ApiRequestConfig = {
+  url?: string
+  method?: string
+  headers?: HeadersInit | Record<string, string>
+  data?: any
+  signal?: AbortSignal
+  onUploadProgress?: (event: unknown) => void
+  [key: string]: unknown
 }
 
-function normalizeApiPath(url: string): string {
-  if (url === "/api") return "/"
-  if (url.startsWith("/api/")) {
-    return url.replace(/^\/api/, "")
-  }
-  return url
+type ApiResponse<T = any> = {
+  data: T
+  status: number
+  headers: Headers
 }
 
-function canBypassToken(url: string): boolean {
-  return url === "/auth/otp/start" || url === "/auth/otp/verify"
+function assertApiPath(path: string): string {
+  if (!path.startsWith("/api/")) {
+    throw new Error("[INVALID API FORMAT]")
+  }
+
+  return path
 }
 
-api.interceptors.request.use((config) => {
-  const requestUrl = normalizeApiPath(assertRelativeApiUrl(config.url))
-  config.url = requestUrl
+function stringifyData(data: ApiRequestConfig["data"]): BodyInit | undefined {
+  if (data == null) return undefined
+  if (typeof data === "string" || data instanceof FormData || data instanceof Blob || data instanceof URLSearchParams) {
+    return data
+  }
+  return JSON.stringify(data)
+}
 
-  const headers = AxiosHeaders.from(config.headers)
-  headers.delete("Authorization")
+export async function apiRequest<T = any>(path: string, options: any = {}): Promise<T> {
+  const normalizedPath = assertApiPath(path)
+  const token = getTokenOrFail()
 
-  if (!canBypassToken(requestUrl)) {
-    const token = getTokenOrFail()
-    headers.set("Authorization", `Bearer ${token}`)
+  const headers = {
+    ...(options.headers || {}),
+  } as Record<string, string>
+
+  delete headers.Authorization
+  delete headers.authorization
+
+  headers.Authorization = `Bearer ${token}`
+  headers["Content-Type"] = "application/json"
+
+  const res = await fetch(normalizedPath, {
+    ...options,
+    headers,
+  })
+
+  if (res.status === 401) {
+    localStorage.removeItem("token")
+    window.location.href = "/login"
+    throw new Error("[AUTH FAIL]")
   }
 
-  config.headers = headers
-
-  // eslint-disable-next-line no-console
-  console.log("[REQ]", config.method?.toUpperCase(), config.url)
-
-  return config
-})
-
-api.interceptors.response.use(
-  (res) => {
-    // eslint-disable-next-line no-console
-    console.log("[STATUS]", res.status)
-    return res
-  },
-  (err) => {
-    if (err.response?.status === 401) {
-      // eslint-disable-next-line no-console
-      console.error("[AUTH FAIL] TOKEN INVALID")
-      localStorage.removeItem(TOKEN_KEY)
-      window.location.href = "/login"
-    }
-
-    throw err
+  if (!res.ok) {
+    throw new Error(`[API ERROR] ${res.status}`)
   }
-)
+
+  const text = await res.text()
+
+  if (!text) {
+    throw new Error("[EMPTY RESPONSE]")
+  }
+
+  return JSON.parse(text) as T
+}
+
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+  return apiRequest<T>(path.startsWith("/api/") ? path : `/api${path}`, options)
+}
 
 export function setToken(nextToken: string) {
-  if (typeof localStorage === "undefined") return
-  localStorage.setItem(TOKEN_KEY, nextToken)
+  localStorage.setItem("token", nextToken)
 }
 
 export function loadToken() {
-  return
+  return localStorage.getItem("token")
 }
 
 export function clearToken() {
-  if (typeof localStorage === "undefined") return
-  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem("token")
 }
 
-function parseRequestBody(body: RequestInit["body"]): unknown {
-  if (body == null) return undefined
-
-  if (typeof body === "string") {
-    try {
-      return JSON.parse(body)
-    } catch {
-      return body
-    }
-  }
-
-  return body
-}
-
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  const method = (options.method || "GET") as Method
-  const config: AxiosRequestConfig = {
-    url: path,
+async function send<T = any>(method: string, path: string, data?: ApiRequestConfig["data"], init?: any) {
+  const body = stringifyData(data)
+  const payload = await apiRequest<T>(path.startsWith("/api/") ? path : `/api${path}`, {
+    ...init,
     method,
-    headers: options.headers as AxiosRequestConfig["headers"],
-    data: parseRequestBody(options.body),
-  }
-
-  const response = await api.request(config)
-  return response.data
-}
-
-export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const method = (options.method || "GET") as Method
-  const response = await api.request<T>({
-    url: path,
-    method,
-    headers: options.headers as AxiosRequestConfig["headers"],
-    data: parseRequestBody(options.body),
+    body,
   })
 
-  return response.data
+  return {
+    data: payload,
+    status: 200,
+    headers: new Headers(),
+  } as ApiResponse<T>
+}
+
+export const api = {
+  request: async <T = any>(config: ApiRequestConfig): Promise<ApiResponse<T>> => {
+    if (!config.url) {
+      throw new Error("[INVALID API PATH]")
+    }
+
+    const { url, method, data, ...rest } = config
+    return send<T>(method || "GET", url, data, {
+      headers: config.headers,
+      ...rest,
+    })
+  },
+  get: async <T = any>(url: string, init?: any) => send<T>("GET", url, undefined, init),
+  post: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
+    send<T>("POST", url, data, init),
+  put: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
+    send<T>("PUT", url, data, init),
+  patch: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
+    send<T>("PATCH", url, data, init),
+  delete: async <T = any>(url: string, init?: any) => send<T>("DELETE", url, undefined, init),
 }
 
 export function requireAuth(): string {
   return getTokenOrFail()
 }
 
-export function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+export function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   return apiRequest<T>(path, options)
 }
 
 export function buildUrl(path: string): string {
-  return normalizeApiPath(assertRelativeApiUrl(path))
+  if (!path.startsWith("/")) {
+    throw new Error("[INVALID API PATH]")
+  }
+
+  return path.startsWith("/api/") ? path : `/api${path}`
 }
 
 export default api
-export type ApiResponse<T = unknown> = AxiosResponse<T>
+export type { ApiResponse }

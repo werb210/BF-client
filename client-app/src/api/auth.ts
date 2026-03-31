@@ -1,5 +1,5 @@
-import api from "../lib/api"
-import { setToken } from "../lib/auth"
+import { apiRequest } from "../lib/api"
+import { saveToken } from "@/services/token"
 
 function assertPhone(phone: string) {
   if (typeof phone !== "string") {
@@ -9,40 +9,39 @@ function assertPhone(phone: string) {
 
 export const startOtp = async (phone: string) => {
   assertPhone(phone)
-  const response = await api.post<{ ok?: boolean }>("/auth/otp/start", { phone })
-  if (!response.data) {
+  const data = await apiRequest<{ ok?: boolean }>("/api/auth/otp/start", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  })
+
+  if (!data) {
     throw new Error("[API ERROR] EMPTY RESPONSE")
   }
-  return response.data
+
+  return data
 }
 
 export const verifyOtp = async (phone: string, code: string) => {
   assertPhone(phone)
 
-  const res = await api.post<{ token?: string; user?: unknown; data?: { token?: string; user?: unknown } }>(
-    "/auth/otp/verify",
-    { phone, code }
+  const payload = { phone, code }
+  const res = await apiRequest<{ token?: string; user?: unknown; data?: { token?: string; user?: unknown } }>(
+    "/api/auth/verify",
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
   )
 
-  if (!res.data) {
-    throw new Error("[API ERROR] EMPTY RESPONSE")
-  }
-
-  const token = res.data.token ?? res.data.data?.token
+  const token = res.token ?? res.data?.token
 
   if (!token || token.trim() === "") {
-    throw new Error("[OTP VERIFY FAILED] NO TOKEN RETURNED")
+    throw new Error("[AUTH FAILED]")
   }
 
-  setToken(token)
-  localStorage.setItem("token", token)
+  saveToken(token)
 
-  const verify = localStorage.getItem("token")
-  if (!verify) {
-    throw new Error("[TOKEN SAVE FAILED]")
-  }
-
-  return res.data
+  return res
 }
 
 export const sendOtp = startOtp

@@ -1,5 +1,6 @@
 import { sendOtp, verifyOtp } from "@/api/auth";
 import { normalizePhone } from "@/lib/phone";
+import { saveToken } from "@/services/token";
 
 export { normalizePhone };
 export const normalizeOtpPhone = normalizePhone;
@@ -19,13 +20,13 @@ export async function loginWithOtp(phone: string, code: string): Promise<{ token
 
   await new Promise((r) => setTimeout(r, 200));
 
-  const token = localStorage.getItem("token") ?? data?.data?.token ?? data?.token;
+  const token = data?.data?.token ?? data?.token;
 
-  if (!token) {
-    throw new Error("TOKEN MISSING — LOGIN FAILED");
+  if (!token || token.trim() === "") {
+    throw new Error("[AUTH FAILED]");
   }
 
-  localStorage.setItem("token", token);
+  saveToken(token);
 
   return { token, nextPath: "/portal" };
 }

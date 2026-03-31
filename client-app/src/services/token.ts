@@ -5,23 +5,27 @@ export function getAccessToken(): string | null {
 }
 
 export function getTokenOrFail(): string {
-  if (typeof localStorage === "undefined") {
-    throw new Error("[AUTH BLOCK] INVALID TOKEN STATE")
-  }
-
   const token = localStorage.getItem("token")
 
-  if (
-    token === null ||
-    token === undefined ||
-    token.trim() === "" ||
-    token === "undefined" ||
-    token === "null"
-  ) {
-    throw new Error("[AUTH BLOCK] INVALID TOKEN STATE")
+  if (!token || token === "undefined" || token === "null" || token.trim() === "") {
+    throw new Error("[AUTH BLOCK] INVALID TOKEN")
   }
 
   return token
+}
+
+export function saveToken(token: string) {
+  if (!token || token.trim() === "") {
+    throw new Error("[TOKEN SAVE FAILED]")
+  }
+
+  localStorage.setItem("token", token)
+
+  const verify = localStorage.getItem("token")
+
+  if (!verify) {
+    throw new Error("[TOKEN WRITE FAILURE]")
+  }
 }
 
 export function clearStoredAuth() {

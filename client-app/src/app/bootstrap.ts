@@ -14,23 +14,24 @@ function readTokenFromClientSession(stored: string): string | null {
   }
 }
 
-export function enforceAuthBootstrap() {
+export function enforceAuthStartup() {
   try {
     getTokenOrFail()
   } catch {
-    throw new Error("[BOOT BLOCKED] TOKEN NOT PRESENT")
+    window.location.href = "/login"
+    throw new Error("[BOOT BLOCKED]")
   }
 }
 
 export async function bootstrapSession(): Promise<InitialSession | null> {
-  enforceAuthBootstrap()
+  enforceAuthStartup()
 
   const stored = localStorage.getItem("token")
   if (!stored) {
     return null
   }
 
-  await apiRequest("/auth/me")
+  await apiRequest("/api/auth/me")
 
   const token = readTokenFromClientSession(stored)
   if (!token) {
