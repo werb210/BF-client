@@ -33,15 +33,15 @@ export function clearToken() {
 }
 
 const DEFAULT_TIMEOUT = 10000
-const PUBLIC_PREFIXES = [
-  "/api/public/",
-  "/api/auth/start-otp",
-  "/api/auth/verify-otp",
-  "/api/auth/refresh",
-]
+const PUBLIC_PREFIXES = ["/api/auth", "/api/public", "/health"]
 
-function isPublicPath(path: string): boolean {
-  return PUBLIC_PREFIXES.some((p) => path.startsWith(p))
+function isPublicPath(url: string) {
+  try {
+    const u = new URL(url, window.location.origin)
+    return PUBLIC_PREFIXES.some((p) => u.pathname.startsWith(p))
+  } catch {
+    return PUBLIC_PREFIXES.some((p) => url.startsWith(p))
+  }
 }
 
 function validatePath(path: string) {
