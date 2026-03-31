@@ -111,7 +111,7 @@ export function useSessionGuard(): void {
     if (!guard.hasAuth) return;
 
     const minIntervalMs = 30_000;
-    const revalidate = () => {
+    const revalidate = async () => {
       if (typeof document !== "undefined") {
         if (document.visibilityState && document.visibilityState !== "visible") {
           return;
@@ -120,7 +120,11 @@ export function useSessionGuard(): void {
       const now = Date.now();
       if (now - lastRefreshAt.current < minIntervalMs) return;
       lastRefreshAt.current = now;
-      void refreshSession();
+      const ok = await refreshSession();
+      if (ok !== true) {
+        localStorage.removeItem("token");
+        return;
+      }
     };
 
     window.addEventListener("focus", revalidate);

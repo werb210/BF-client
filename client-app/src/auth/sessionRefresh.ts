@@ -1,20 +1,30 @@
-let refreshing = false
-
 export async function refreshSession(): Promise<boolean> {
-  if (refreshing) return false
-  refreshing = true
+  const token = localStorage.getItem("token")
+
+  if (!token) {
+    localStorage.removeItem("token")
+    return false
+  }
 
   try {
-    const res = await fetch("/api/auth/refresh", { method: "POST" })
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
     if (!res.ok) {
       localStorage.removeItem("token")
       return false
     }
 
-    const data = await res.json().catch(() => null)
+    let data: any = null
+    try {
+      data = await res.json()
+    } catch {}
 
-    if (!data || !data.token) {
+    if (!data?.token) {
       localStorage.removeItem("token")
       return false
     }
@@ -24,7 +34,5 @@ export async function refreshSession(): Promise<boolean> {
   } catch {
     localStorage.removeItem("token")
     return false
-  } finally {
-    refreshing = false
   }
 }
