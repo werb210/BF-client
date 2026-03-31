@@ -37,7 +37,7 @@ const SystemStatus = lazy(() => import("../pages/SystemStatus"));
 const PublicApplyPage = lazy(() => import("../pages/apply/PublicApplyPage"));
 const PublicApplySuccessPage = lazy(() => import("../pages/apply/PublicApplySuccessPage"));
 const ApplyPage = lazy(() => import("../pages/ApplyPage").then((module) => ({ default: module.ApplyPage })));
-const PortalEntry = lazy(() => import("../pages/PortalEntry").then((module) => ({ default: module.PortalEntry })));
+const EntryPage = lazy(() => import("../pages/EntryPage").then((module) => ({ default: module.EntryPage })));
 const ContinueApplication = lazy(() => import("../pages/ContinueApplication"));
 const ProductDetail = lazy(() => import("../pages/ProductDetail"));
 const ComingSoonPage = lazy(() => import("../pages/ComingSoon").then((module) => ({ default: module.ComingSoon })));
@@ -203,8 +203,8 @@ export default function AppRouter(): JSX.Element {
       <Suspense fallback={<div className="py-20 text-center">Loading...</div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/apply" replace />} />
-          <Route path="/portal" element={<PortalEntry />} />
-          <Route path="/otp" element={<PortalEntry />} />
+          <Route path="/portal" element={<EntryPage />} />
+          <Route path="/otp" element={<EntryPage />} />
           <Route path="/expired" element={<SessionExpiredPage />} />
           <Route path="/revoked" element={<SessionRevokedPage />} />
           <Route path="/system-status" element={<SystemStatus />} />
