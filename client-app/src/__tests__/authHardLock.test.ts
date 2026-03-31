@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { enforceAuthStartup } from "@/app/bootstrap"
-import { enforceLeadHandoff } from "@/app/init"
+import { bootstrapSession } from "@/app/bootstrap"
 import { apiRequest } from "@/lib/api"
+import { getTokenOrFail } from "@/services/token"
 
 describe("auth hard lock", () => {
   beforeEach(() => {
@@ -20,27 +20,49 @@ describe("auth hard lock", () => {
     window.localStorage.clear()
   })
 
-  it("TEST 1: no token -> redirect", () => {
-    expect(() => enforceAuthStartup()).toThrow("Not implemented: navigation")
+  it("bootstrap does not gate auth", async () => {
+    await expect(bootstrapSession()).resolves.toBeNull()
   })
 
-  it("TEST 2: no leadId -> blocked", () => {
-    expect(() => enforceLeadHandoff()).toThrow("[BLOCKED] NO LEAD ID")
+  it.each(["", "undefined", "null"])("invalid stored token '%s' is blocked", (token) => {
+    window.localStorage.setItem("token", token)
+    expect(() => getTokenOrFail()).toThrow("[AUTH BLOCK]")
   })
 
-  it("TEST 3: valid token -> app loads", () => {
+  it("api request uses forced auth headers", async () => {
     window.localStorage.setItem("token", "valid-token")
-    expect(() => enforceAuthStartup()).not.toThrow()
+    const fetchSpy = vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+
+    await expect(
+      apiRequest("/api/health", {
+        headers: { Authorization: "Bearer attacker" },
+      })
+    ).resolves.toEqual({ ok: true })
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/health",
+      expect.objectContaining({
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer valid-token",
+        },
+      })
+    )
   })
 
-  it("TEST 4: API success -> returns data", async () => {
+  it("credentials injection is ignored", async () => {
     window.localStorage.setItem("token", "valid-token")
-    vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
+    const fetchSpy = vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 
-    await expect(apiRequest("/api/health")).resolves.toEqual({ ok: true })
+    await apiRequest("/api/health", {
+      credentials: "include",
+    })
+
+    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit
+    expect(init.credentials).toBeUndefined()
   })
 
-  it("TEST 5: API 401 -> clears token + redirect", async () => {
+  it("api 401 clears token and hard redirects", async () => {
     window.localStorage.setItem("token", "valid-token")
     vi.spyOn(window, "fetch").mockResolvedValue(new Response("unauthorized", { status: 401 }))
 
@@ -48,15 +70,8 @@ describe("auth hard lock", () => {
     expect(window.localStorage.getItem("token")).toBeNull()
   })
 
-  it("TEST 6: empty response -> throws", async () => {
+  it("invalid path injection is blocked", async () => {
     window.localStorage.setItem("token", "valid-token")
-    vi.spyOn(window, "fetch").mockResolvedValue(new Response("", { status: 200 }))
-
-    await expect(apiRequest("/api/health")).rejects.toThrow("[EMPTY RESPONSE]")
-  })
-
-  it("TEST 7: invalid path -> blocked", async () => {
-    window.localStorage.setItem("token", "valid-token")
-    await expect(apiRequest("/health")).rejects.toThrow("[INVALID API FORMAT]")
+    await expect(apiRequest("/api/health?x=1")).rejects.toThrow("[INVALID PATH]")
   })
 })

@@ -2,9 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./app/App";
-import "@/api/init";
-import { bootstrapSession, enforceAuthStartup } from "./app/bootstrap";
-import { enforceLeadHandoff } from "./app/init";
+import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/lib/auth";
 import "./index.css";
 
@@ -17,8 +15,6 @@ window.addEventListener("error", (e) => {
 });
 
 async function start() {
-  enforceLeadHandoff();
-  enforceAuthStartup();
   await initAuth();
   const session = await bootstrapSession();
 

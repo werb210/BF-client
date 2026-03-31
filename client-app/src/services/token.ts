@@ -7,8 +7,13 @@ export function getAccessToken(): string | null {
 export function getTokenOrFail(): string {
   const token = localStorage.getItem("token")
 
-  if (!token || token === "undefined" || token === "null" || token.trim() === "") {
-    throw new Error("[AUTH BLOCK] INVALID TOKEN")
+  if (
+    !token ||
+    token.trim() === "" ||
+    token === "undefined" ||
+    token === "null"
+  ) {
+    throw new Error("[AUTH BLOCK]")
   }
 
   return token
