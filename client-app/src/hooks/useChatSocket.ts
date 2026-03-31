@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasToken } from "@/lib/auth";
-import { getToken } from "@/lib/api";
+import { getToken } from "@/auth/token";
 
 type ChatSocketStatus =
   | "idle"
@@ -199,32 +199,20 @@ export function useChatSocket({
   }, [clearHeartbeatTimer, clearRetryTimer, readinessToken, sessionId, setSafeStatus, userMetadata]);
 
   useEffect(() => {
-    if (!enabled || !sessionId) {
-      disconnect();
-      return;
+    if (enabled && sessionId) {
+      connect();
     }
-
-    connect();
-
-    return () => {
-      disconnect();
-    };
+    return disconnect;
   }, [connect, disconnect, enabled, sessionId]);
 
-  const send = useCallback((message: string) => {
-    const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN || !sessionId) return false;
-    socket.send(
-      JSON.stringify({
-        type: "message",
-        sessionId,
-        readinessToken: readinessToken || undefined,
-        userMetadata: userMetadata || undefined,
-        message,
-      })
-    );
-    return true;
-  }, [readinessToken, sessionId, userMetadata]);
-
-  return useMemo(() => ({ status, send, disconnect }), [disconnect, send, status]);
+  return useMemo(
+    () => ({
+      status,
+      connected: status === "connected",
+      reconnecting: status === "reconnecting",
+      failed: status === "failed",
+      disconnect,
+    }),
+    [disconnect, status]
+  );
 }

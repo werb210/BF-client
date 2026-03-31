@@ -1,4 +1,4 @@
-import api from "../lib/api";
+import api from "./client";
 import { assertAuthenticated } from "../auth/sessionGuard";
 
 export const uploadDocument = async (
@@ -13,15 +13,11 @@ export const uploadDocument = async (
   formData.append("applicationId", applicationId);
   formData.append("category", category);
 
-  const { data } = await api.post("/documents/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const { data } = await api.post("/documents/upload", formData);
 
-  if (!data?.data) {
+  if (!(data as any)?.data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");
   }
 
-  return data.data;
+  return (data as any).data;
 };

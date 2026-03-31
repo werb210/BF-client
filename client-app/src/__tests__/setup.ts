@@ -1,37 +1,36 @@
 import { afterEach, beforeEach, vi } from "vitest";
 import { TextDecoder, TextEncoder } from "util";
 
-const localStorageMock = (() => {
-  let store: Record<string, string> = {}
-  return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key]
-    }),
-    clear: vi.fn(() => {
-      store = {}
-    }),
-  }
-})()
+const store: Record<string, string> = {}
 
-beforeEach(() => {
-  vi.spyOn(console, "error").mockImplementation((msg: unknown) => {
-    throw new Error(String(msg));
-  });
-  localStorageMock.clear();
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+const localStorageMock = {
+  getItem: (k: string) => store[k] ?? null,
+  setItem: (k: string, v: string) => (store[k] = v),
+  removeItem: (k: string) => delete store[k],
+  clear: () => Object.keys(store).forEach(k => delete store[k]),
+}
 
 Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
   writable: true,
   configurable: true,
+})
+
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+})
+
+beforeEach(() => {
+  vi.spyOn(console, "error").mockImplementation((msg: unknown) => {
+    throw new Error(String(msg));
+  });
+  window.localStorage?.clear?.();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 if (!window.matchMedia) {

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const apiRequestMock = vi.fn();
 let storage = new Map<string, string>();
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/lib/apiClient", () => ({
   apiRequest: apiRequestMock,
 }));
 

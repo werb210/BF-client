@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as apiModule from '@/lib/api';
+import * as apiModule from '@/lib/apiClient';
 import { sendOtp, verifyOtpCode } from '@/api/auth';
 
 describe('Auth contract enforcement', () => {

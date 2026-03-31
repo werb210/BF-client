@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "@/lib/apiClient";
 
 export async function sendMessageToMaya(message: string) {
   const res = await apiRequest("/api/maya/client-chat", {
