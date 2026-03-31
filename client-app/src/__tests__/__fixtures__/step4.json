@@ -1,0 +1,29 @@
+{
+  "primary": {
+    "firstName": "Alex",
+    "lastName": "Rivera",
+    "email": "alex.rivera@example.com",
+    "phone": "555-555-5555",
+    "street": "123 Main St",
+    "city": "Toronto",
+    "state": "ON",
+    "postalCode": "M5V1A1",
+    "dateOfBirth": "1990-01-01",
+    "ssn": "123-45-6789",
+    "ownershipPercentage": 100
+  },
+  "multipleOwners": false,
+  "partner": {
+    "firstName": null,
+    "lastName": null,
+    "email": null,
+    "phone": null,
+    "address": null,
+    "city": null,
+    "state": null,
+    "postalCode": null,
+    "dateOfBirth": null,
+    "ssn": null,
+    "ownershipPercentage": null
+  }
+}
