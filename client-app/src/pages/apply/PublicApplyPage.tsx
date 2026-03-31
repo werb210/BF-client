@@ -15,7 +15,7 @@ import { apiRequest } from "@/api/client";
 import type { ApiError } from "@/types/api";
 import { fundingAmountSchema, emailSchema, phoneSchema } from "@/utils/validationSchema";
 import { executeCaptcha } from "@/security/useCaptcha";
-import { logClientError } from "@/lib/logger";
+import { logClientError, logError } from "@/lib/logger";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type FieldType =
@@ -783,23 +783,28 @@ export default function PublicApplyPage() {
     setErrors({});
     try {
       const captchaToken = await executeCaptcha();
-      await handlePublicApplicationSubmit({
-        values,
-        clientIp,
-        termsAcceptedAt,
-        communicationsAcceptedAt,
-        submitApplication: createPublicApplication,
-        onSuccess: () => {
-          clearStoredReadinessSession();
-          navigate("/apply/success");
-        },
-        onError: (nextErrors) => setErrors(nextErrors),
-        storage: getSessionStorage(),
-        localStorage: getLocalStorage(),
-        readinessToken,
-        sessionId: readinessSessionId,
-        captchaToken,
-      });
+      try {
+        await handlePublicApplicationSubmit({
+          values,
+          clientIp,
+          termsAcceptedAt,
+          communicationsAcceptedAt,
+          submitApplication: createPublicApplication,
+          onSuccess: () => {
+            clearStoredReadinessSession();
+            navigate("/apply/success");
+          },
+          onError: (nextErrors) => setErrors(nextErrors),
+          storage: getSessionStorage(),
+          localStorage: getLocalStorage(),
+          readinessToken,
+          sessionId: readinessSessionId,
+          captchaToken,
+        });
+      } catch (err) {
+        logError(err);
+        setErrors({ form: "Submission failed" });
+      }
     } finally {
       setIsSubmitting(false);
     }

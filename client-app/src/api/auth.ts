@@ -7,11 +7,12 @@ function assertPhone(phone: string) {
   }
 }
 
-export const startOtp = async (phone: string) => {
-  assertPhone(phone)
-  const data = await apiRequest<{ ok?: boolean }>("/api/auth/otp/start", {
+export const startOtp = async (payloadOrPhone: { phone: string } | string) => {
+  const payload = typeof payloadOrPhone === "string" ? { phone: payloadOrPhone } : payloadOrPhone
+  assertPhone(payload.phone)
+  const data = await apiRequest<{ ok?: boolean }>("/api/auth/start-otp", {
     method: "POST",
-    body: JSON.stringify({ phone }),
+    body: JSON.stringify(payload),
   })
 
   if (!data) {
@@ -21,12 +22,18 @@ export const startOtp = async (phone: string) => {
   return data
 }
 
-export const verifyOtp = async (phone: string, code: string) => {
-  assertPhone(phone)
+export const verifyOtp = async (
+  payloadOrPhone: { phone: string; code: string } | string,
+  maybeCode?: string,
+) => {
+  const payload =
+    typeof payloadOrPhone === "string"
+      ? { phone: payloadOrPhone, code: maybeCode ?? "" }
+      : payloadOrPhone
 
-  const payload = { phone, code }
+  assertPhone(payload.phone)
   const res = await apiRequest<{ token?: string; user?: unknown; data?: { token?: string; user?: unknown } }>(
-    "/api/auth/verify",
+    "/api/auth/verify-otp",
     {
       method: "POST",
       body: JSON.stringify(payload),

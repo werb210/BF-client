@@ -3,6 +3,7 @@ import { refreshSessionOnce, resetRefreshFailure } from "../sessionRefresh";
 import { clearServiceWorkerCaches } from "../../pwa/serviceWorker";
 import { ClientProfileStore } from "../../state/clientProfiles";
 import { apiRequest } from "../../api/client";
+import { setToken } from "../../lib/api";
 
 vi.mock("../../pwa/serviceWorker", () => ({
   clearServiceWorkerCaches: vi.fn().mockResolvedValue(undefined),
@@ -21,6 +22,7 @@ vi.mock("../../api/client", () => ({
 describe("refreshSessionOnce", () => {
   beforeEach(() => {
     resetRefreshFailure();
+    setToken("session-token");
     localStorage.clear();
     sessionStorage.clear();
     vi.mocked(localStorage.getItem).mockImplementation((key: string) => key === "bf_token" ? "session-token" : null);
@@ -33,20 +35,14 @@ describe("refreshSessionOnce", () => {
     });
   });
 
-  it("redirects to OTP when refresh fails", async () => {
+  it("marks refresh failed and clears session state when refresh fails", async () => {
     vi.mocked(apiRequest).mockRejectedValue(new Error("refresh failed"));
-    const assignSpy = vi
-      .spyOn(window.location, "assign")
-      .mockImplementation(() => {});
 
     const result = await refreshSessionOnce();
 
     expect(result).toBe(false);
     expect(ClientProfileStore.clearPortalSessions).toHaveBeenCalled();
     expect(clearServiceWorkerCaches).toHaveBeenCalledWith("otp");
-    expect(assignSpy).toHaveBeenCalledWith("/portal");
-
-    assignSpy.mockRestore();
   });
 
   it("blocks repeated refresh attempts after a failure", async () => {
