@@ -30,7 +30,7 @@ import { initializeVoice } from "@/telephony/voiceClient";
 import CallUsButton from "@/telephony/components/CallUsButton";
 import { getCallStatus } from "@/services/telephonyService";
 import { safeFetch } from "@/utils/safeFetch";
-import { hasToken, setToken } from "@/lib/auth";
+import { hasToken, setToken } from "@/api/auth";
 import { useAuth } from "@/auth/useAuth";
 import ErrorBoundary from "../components/ErrorBoundary";
 import FatalErrorScreen from "./FatalErrorScreen";

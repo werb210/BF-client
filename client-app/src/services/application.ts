@@ -1,5 +1,5 @@
 import { apiRequest } from "../api/client";
-import { hasToken } from "@/lib/auth";
+import { hasToken } from "@/api/auth";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export async function updateApplication(payload: any) {

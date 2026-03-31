@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMe } from "@/lib/auth";
+import { getMe } from "@/api/auth";
 
 type AuthUser = Record<string, unknown> | null;
 

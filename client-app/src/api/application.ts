@@ -1,6 +1,6 @@
 import { apiRequest } from "./client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
-import { hasToken } from "@/lib/auth";
+import { hasToken } from "@/api/auth";
 
 export function createApplication(data: any) {
   return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {

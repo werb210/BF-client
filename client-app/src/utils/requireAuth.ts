@@ -1,4 +1,4 @@
-import { getToken } from "../lib/auth";
+import { getToken } from "../api/auth";
 
 export const requireAuth = () => {
   const token = getToken();

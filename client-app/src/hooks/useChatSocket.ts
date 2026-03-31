@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { hasToken } from "@/lib/auth";
+import { hasToken } from "@/api/auth";
 import { getToken } from "@/auth/token";
 
 type ChatSocketStatus =
