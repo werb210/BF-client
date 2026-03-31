@@ -1,6 +1,10 @@
 export function getToken(): string | null {
   const t = localStorage.getItem("token")
-  if (!t || t === "null" || t === "undefined") return null
+
+  if (!t || t === "null" || t === "undefined" || t === "") {
+    return null
+  }
+
   return t
 }
 

@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/api"
+import { getToken } from "@/auth/token"
 
 export type InitialSession = {
   token: string

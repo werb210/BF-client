@@ -1,4 +1,4 @@
-import api, { apiRequest } from "../lib/api";
+import api, { apiRequest } from "./client";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
@@ -99,11 +99,7 @@ export const uploadApplicationDocument = async (
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const { data } = await api.post("/documents/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const { data } = await api.post("/documents/upload", formData);
   payload.onProgress?.(100);
 
   if (!data) {

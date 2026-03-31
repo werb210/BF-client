@@ -1,23 +1,17 @@
-import { apiClient } from "@/lib/apiClient";
+import { apiRequest } from "@/lib/apiClient";
 
 export type ApiResult<T extends Record<string, any>> = Promise<T>;
 
 export const api = {
   async get<T extends Record<string, any>>(url: string) {
-    const res = await apiClient.get<T>(url);
-    const { data } = res;
-    return data;
+    return (await apiRequest(url)) as T;
   },
 
   async post<T extends Record<string, any>>(url: string, body?: unknown) {
-    const res = await apiClient.post<T>(url, body);
-    const { data } = res;
-    return data;
+    return (await apiRequest(url, { method: "POST", body: JSON.stringify(body ?? {}) })) as T;
   },
 
   async patch<T extends Record<string, any>>(url: string, body?: unknown) {
-    const res = await apiClient.patch<T>(url, body);
-    const { data } = res;
-    return data;
+    return (await apiRequest(url, { method: "PATCH", body: JSON.stringify(body ?? {}) })) as T;
   }
 };

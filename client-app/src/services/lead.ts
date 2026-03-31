@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api";
+import { apiRequest } from "@/lib/apiClient";
 
 export interface LeadBootstrapPayload {
   companyName: string;
