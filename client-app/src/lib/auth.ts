@@ -1,8 +1,13 @@
-import { apiFetch, setToken, clearToken, loadToken } from "./api";
+import { apiFetch, clearToken } from "./api";
+import { saveToken } from "@/services/token";
 
 let currentUser: any = null;
 
-export { setToken, clearToken };
+export { clearToken };
+
+export function setToken(token: string) {
+  saveToken(token);
+}
 
 export function getToken() {
   if (typeof localStorage === "undefined") return null;
@@ -10,10 +15,8 @@ export function getToken() {
 }
 
 export async function initAuth() {
-  loadToken();
-
   try {
-    currentUser = await apiFetch("/auth/me");
+    currentUser = await apiFetch("/api/auth/me");
   } catch {
     clearToken();
     currentUser = null;
@@ -24,23 +27,26 @@ export async function initAuth() {
 }
 
 export async function startOtp(phone: string) {
-  return apiFetch("/auth/otp/start", {
+  return apiFetch("/api/auth/otp/start", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await apiFetch("/auth/otp/verify", {
+  const payload = { phone, code };
+  const res = await apiFetch<{ token?: string; user?: unknown }>("/api/auth/verify", {
     method: "POST",
-    body: JSON.stringify({ phone, code }),
+    body: JSON.stringify(payload),
   });
 
-  if ((res as any)?.token) {
-    setToken((res as any).token);
+  if (!res.token || res.token.trim() === "") {
+    throw new Error("[AUTH FAILED]");
   }
 
-  currentUser = (res as any)?.user || null;
+  saveToken(res.token);
+
+  currentUser = res.user || null;
   return res;
 }
 
@@ -54,7 +60,7 @@ export async function getMe() {
   }
 
   try {
-    currentUser = await apiFetch("/auth/me");
+    currentUser = await apiFetch("/api/auth/me");
   } catch {
     clearToken();
     currentUser = null;
