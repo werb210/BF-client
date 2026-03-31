@@ -81,6 +81,15 @@ type PublicSubmissionState = {
   submittedAt: string;
 };
 
+type PendingSubmissionState = {
+  payload: PublicApplicationPayload;
+  idempotencyKey: string;
+  readinessToken?: string | null;
+  sessionId?: string | null;
+  attempts: number;
+  lastAttemptAt: string;
+};
+
 export type MinimalStorage = {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
@@ -90,6 +99,7 @@ export type MinimalStorage = {
 
 const PUBLIC_SUBMISSION_KEY = "boreal_public_application_submission";
 const PUBLIC_IDEMPOTENCY_KEY = "boreal_idempotency";
+const PENDING_SUBMISSION_KEY = "boreal_public_pending_submission";
 const DRAFT_KEY = "boreal_application_draft";
 const SUBMIT_LOCK_KEY = "boreal_submit_lock";
 
@@ -348,6 +358,42 @@ function savePublicSubmissionState(
   }
 }
 
+export function loadPendingSubmissionState(
+  storage: MinimalStorage | null
+): PendingSubmissionState | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(PENDING_SUBMISSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PendingSubmissionState;
+    if (!parsed?.payload || !parsed?.idempotencyKey) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function savePendingSubmissionState(
+  storage: MinimalStorage | null,
+  state: PendingSubmissionState
+) {
+  if (!storage) return;
+  try {
+    storage.setItem(PENDING_SUBMISSION_KEY, JSON.stringify(state));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+export function clearPendingSubmissionState(storage: MinimalStorage | null) {
+  if (!storage) return;
+  try {
+    storage.removeItem(PENDING_SUBMISSION_KEY);
+  } catch {
+    // ignore storage failures
+  }
+}
+
 export function loadIdempotencyKey(storage: MinimalStorage | null) {
   if (!storage) return null;
   try {
@@ -568,6 +614,14 @@ export async function handlePublicApplicationSubmit({
   const idempotencyKey = getOrCreateIdempotencyKey(storage ?? null);
   payload.idempotencyToken = idempotencyKey;
   payload.captchaToken = captchaToken ?? null;
+  savePendingSubmissionState(storage ?? null, {
+    payload,
+    idempotencyKey,
+    readinessToken: resolvedReadinessToken,
+    sessionId: resolvedSessionId,
+    attempts: 0,
+    lastAttemptAt: new Date().toISOString(),
+  });
 
   if (getRevenueTier(values.requested_amount) === "high") {
     trackEvent("high_value_submission_attempt", {
@@ -585,6 +639,7 @@ export async function handlePublicApplicationSubmit({
       idempotencyKey,
       submittedAt: new Date().toISOString(),
     });
+    clearPendingSubmissionState(storage ?? null);
     clearDraft();
     onSuccess();
   } catch (error: unknown) {
@@ -611,9 +666,43 @@ export async function handlePublicApplicationSubmit({
       onError({ form: serverErrors });
     } else {
       onError({
-        form: "We couldn't submit your application. Please try again.",
+        form: "We couldn't submit your application. Your data is saved locally and we'll retry when you're back online.",
       });
     }
+  }
+}
+
+export async function retryPendingPublicSubmission({
+  storage,
+  submitApplication,
+}: {
+  storage: MinimalStorage | null;
+  submitApplication: (
+    payload: PublicApplicationPayload,
+    options: { idempotencyKey: string; readinessToken?: string | null; sessionId?: string | null }
+  ) => Promise<any>;
+}) {
+  const pending = loadPendingSubmissionState(storage);
+  if (!pending) return false;
+  try {
+    await submitApplication(pending.payload, {
+      idempotencyKey: pending.idempotencyKey,
+      readinessToken: pending.readinessToken,
+      sessionId: pending.sessionId,
+    });
+    savePublicSubmissionState(storage, {
+      idempotencyKey: pending.idempotencyKey,
+      submittedAt: new Date().toISOString(),
+    });
+    clearPendingSubmissionState(storage);
+    return true;
+  } catch {
+    savePendingSubmissionState(storage, {
+      ...pending,
+      attempts: pending.attempts + 1,
+      lastAttemptAt: new Date().toISOString(),
+    });
+    return false;
   }
 }
 
@@ -629,6 +718,7 @@ export default function PublicApplyPage() {
   const [submissionState, setSubmissionState] = useState<PublicSubmissionState | null>(
     () => loadPublicSubmissionState(getSessionStorage())
   );
+  const [retryNotice, setRetryNotice] = useState<string>("");
   const navigate = useNavigate();
   const readinessToken = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -832,6 +922,32 @@ export default function PublicApplyPage() {
     setSubmissionState(loadPublicSubmissionState(getSessionStorage()));
   }, [isSubmitting]);
 
+  useEffect(() => {
+    const sessionStorage = getSessionStorage();
+    const pending = loadPendingSubmissionState(sessionStorage);
+    if (!pending) return;
+    setRetryNotice("We saved your previous submission and are retrying automatically.");
+
+    const attemptRetry = async () => {
+      const submitted = await retryPendingPublicSubmission({
+        storage: sessionStorage,
+        submitApplication: createPublicApplication,
+      });
+      if (submitted) {
+        setRetryNotice("");
+        setSubmissionState(loadPublicSubmissionState(sessionStorage));
+        navigate("/apply/success");
+      }
+    };
+
+    void attemptRetry();
+    const onOnline = () => {
+      void attemptRetry();
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [navigate]);
+
   return (
     <main style={{ padding: "32px", maxWidth: 880, margin: "0 auto" }}>
       <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 8 }}>
@@ -842,6 +958,9 @@ export default function PublicApplyPage() {
       </p>
 
       {isHydratingContinuation ? <p style={{ marginBottom: 16, color: "rgb(75 85 99)" }}>Loading your application context...</p> : null}
+      {retryNotice ? (
+        <p style={{ marginBottom: 16, color: "rgb(180 83 9)", fontWeight: 600 }}>{retryNotice}</p>
+      ) : null}
 
       {submissionState ? (
         <section
