@@ -17,8 +17,8 @@ type ApiResponse<T = any> = {
 }
 
 function assertApiPath(path: string): string {
-  if (!path.startsWith("/api/")) {
-    throw new Error("[INVALID API FORMAT]")
+  if (!/^\/api\/[a-zA-Z0-9/_-]+$/.test(path)) {
+    throw new Error("[INVALID PATH]")
   }
 
   return path
@@ -36,19 +36,16 @@ export async function apiRequest<T = any>(path: string, options: any = {}): Prom
   const normalizedPath = assertApiPath(path)
   const token = getTokenOrFail()
 
-  const headers = {
-    ...(options.headers || {}),
-  } as Record<string, string>
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
 
-  delete headers.Authorization
-  delete headers.authorization
-
-  headers.Authorization = `Bearer ${token}`
-  headers["Content-Type"] = "application/json"
-
-  const res = await fetch(normalizedPath, {
-    ...options,
+  const res = await fetch(/* apiRequest */ normalizedPath, {
+    method: options.method ?? "GET",
     headers,
+    body: options.body,
+    signal: options.signal,
   })
 
   if (res.status === 401) {
