@@ -20,7 +20,9 @@ Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
   writable: true,
   configurable: true,
-})
+});
+
+(globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation((msg: unknown) => {

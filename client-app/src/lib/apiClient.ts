@@ -24,7 +24,7 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
     headers.Authorization = `Bearer ${token}`
   }
 
-  const res = await fetch(url, { ...options, headers })
+  const res = await fetch(url, { ...options, headers }) // apiRequest
 
   if (res.status === 401) {
     clearToken()
