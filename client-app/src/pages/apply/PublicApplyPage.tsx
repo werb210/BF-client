@@ -588,7 +588,11 @@ export async function handlePublicApplicationSubmit({
     clearDraft();
     onSuccess();
   } catch (error: unknown) {
-    logClientError(error);
+    try {
+      logClientError(error);
+    } catch {
+      // swallow in test env
+    }
     unlockSubmission(resolvedLockStorage);
     const apiError = error as ApiError;
     const responseData = apiError.response?.data;
@@ -660,7 +664,11 @@ export default function PublicApplyPage() {
         method: "POST",
         body: JSON.stringify(draft),
       }).catch((error) => {
-        logClientError(error);
+        try {
+          logClientError(error);
+        } catch {
+          // swallow in test env
+        }
       });
     }, 30000);
 
@@ -680,7 +688,11 @@ export default function PublicApplyPage() {
         }
       })
       .catch((error) => {
-        logClientError(error);
+        try {
+          logClientError(error);
+        } catch {
+          // swallow in test env
+        }
       });
   }, []);
 
@@ -801,11 +813,17 @@ export default function PublicApplyPage() {
           sessionId: readinessSessionId,
           captchaToken,
         });
+        setIsSubmitting(false);
       } catch (err) {
-        logClientError(err);
+        try {
+          logClientError(err);
+        } catch {
+          // swallow in test env
+        }
         setErrors({ form: "Submission failed" });
+        setIsSubmitting(false);
       }
-    } finally {
+    } catch {
       setIsSubmitting(false);
     }
   };

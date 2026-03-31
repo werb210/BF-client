@@ -1,35 +1,29 @@
-export async function refreshSession(): Promise<boolean> {
-  const token = localStorage.getItem("token")
+import { apiRequest } from "@/lib/apiClient"
+import { clearToken, getToken, setToken } from "@/auth/token"
+import { ClientProfileStore } from "@/state/clientProfiles"
+import { clearServiceWorkerCaches } from "@/pwa/serviceWorker"
 
-  if (!token) {
-    localStorage.removeItem("token")
-    return false
+let failed = false
+
+export async function refreshSessionOnce(): Promise<boolean> {
+  if (getToken()) {
+    failed = false
   }
+  if (failed) return false
 
   try {
-    const res = await fetch(/* apiRequest */ "/api/auth/refresh", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!res.ok) {
-      localStorage.removeItem("token")
-      return false
+    const data = await apiRequest<{ token?: string }>("/api/auth/refresh", { method: "POST" })
+    if (data?.token) {
+      setToken(data.token)
     }
-
-    const data = await res.json().catch(() => null)
-
-    if (!data?.token) {
-      localStorage.removeItem("token")
-      return false
-    }
-
-    localStorage.setItem("token", data.token)
     return true
   } catch {
-    localStorage.removeItem("token")
+    failed = true
+    clearToken()
+    ClientProfileStore.clearPortalSessions()
+    clearServiceWorkerCaches("otp")
     return false
   }
 }
+
+export const refreshSession = refreshSessionOnce
