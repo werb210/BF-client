@@ -1,4 +1,4 @@
-import { buildApiUrl } from "@/api/client";
+import { apiRequest, buildApiUrl } from "@/api/client";
 import type { ReadinessContext } from "../state/readinessStore";
 
 export function getLeadIdFromSearch(search: string) {
@@ -6,22 +6,15 @@ export function getLeadIdFromSearch(search: string) {
   return params.get("lead") || params.get("creditReadinessId");
 }
 
-async function fetchReadinessWithRetry(
-  url: string,
-  fetchImpl: typeof fetch,
-  maxAttempts = 2
-) {
+async function fetchReadinessWithRetry(url: string, maxAttempts = 2) {
   let attempt = 0;
   while (attempt < maxAttempts) {
     attempt += 1;
     try {
-      const response = await fetchImpl(url);
-      if (response.ok || response.status < 500 || attempt >= maxAttempts) {
-        return response;
-      }
-    } catch (error: unknown) {
+      return await apiRequest(url);
+    } catch {
       if (attempt >= maxAttempts) {
-        throw error;
+        throw new Error("Unable to fetch readiness context.");
       }
     }
   }
@@ -29,21 +22,9 @@ async function fetchReadinessWithRetry(
   throw new Error("Unable to fetch readiness context.");
 }
 
-export async function fetchReadinessContext(
-  leadId: string,
-  fetchImpl: typeof fetch = fetch
-): Promise<ReadinessContext | null> {
+export async function fetchReadinessContext(leadId: string): Promise<ReadinessContext | null> {
   try {
-    const response = await fetchReadinessWithRetry(
-      buildApiUrl(`/public/readiness/${leadId}`),
-      fetchImpl,
-      2
-    );
-    if (!response.ok) {
-      return null;
-    }
-
-    const payload = await response.json();
+    const payload = await fetchReadinessWithRetry(buildApiUrl(`/public/readiness/${leadId}`), 2);
     const readiness = payload?.readiness ?? payload;
     if (!readiness || typeof readiness !== "object") {
       return null;
