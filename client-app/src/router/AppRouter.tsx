@@ -24,7 +24,7 @@ import {
   clearStoredReadinessSession,
   resolveReadinessSessionId,
 } from "@/api/website";
-import { hasToken } from "@/lib/auth";
+import { hasToken } from "@/api/auth";
 
 const StatusPage = lazy(() => import("../pages/StatusPage").then((module) => ({ default: module.StatusPage })));
 const ApplicationPortalPage = lazy(() => import("../pages/ApplicationPortalPage").then((module) => ({ default: module.ApplicationPortalPage })));

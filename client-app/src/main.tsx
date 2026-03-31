@@ -4,7 +4,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./app/App";
 import { bootstrapSession } from "./app/bootstrap";
-import { initAuth } from "@/lib/auth";
+import { initAuth } from "@/api/auth";
 import "./index.css";
 
 window.addEventListener("unhandledrejection", (e) => {

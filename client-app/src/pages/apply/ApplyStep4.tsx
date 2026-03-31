@@ -7,7 +7,7 @@ import { Button } from "../../components/ui/Button";
 import { components, layout, tokens } from "@/styles";
 import { createLead } from "@/services/lead";
 import { apiRequest } from "@/api/client";
-import { getMe } from "@/lib/auth";
+import { getMe } from "@/api/auth";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type Step4Values = {

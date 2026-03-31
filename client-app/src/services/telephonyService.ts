@@ -1,5 +1,5 @@
 import { getVoiceToken } from "@/api/telephony";
-import { hasToken } from "@/lib/auth";
+import { hasToken } from "@/api/auth";
 import { logClientError } from "@/lib/logger";
 
 type CallStatus = {
