@@ -13,14 +13,14 @@ export const uploadDocument = async (
   formData.append("applicationId", applicationId);
   formData.append("category", category);
 
-  const { data } = await api.post("/api/documents/upload", formData, {
+  const { data } = await api.post("/documents/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   });
 
   if (!data?.data) {
-    throw new Error("EMPTY RESPONSE");
+    throw new Error("[API ERROR] EMPTY RESPONSE");
   }
 
   return data.data;
