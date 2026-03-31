@@ -116,14 +116,12 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     delete headers["Content-Type"]
   }
 
-  const isPublic = isPublicPath(path)
 
-  if (!isPublic && !token) {
-    throw new Error("AUTH_REQUIRED")
-  }
-
-  if (!isPublic) {
-    headers.Authorization = `Bearer ${token}`
+  if (!isPublicPath(path)) {
+    if (!token) {
+      throw new Error("AUTH_REQUIRED")
+    }
+    headers["Authorization"] = `Bearer ${token}`
   }
 
   const res = await retry(() =>
@@ -151,17 +149,19 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     return null as T
   }
 
+  let data: any = {}
+  try {
+    data = await res.json()
+  } catch {}
+
   if (!res.ok) {
-    throw new Error(`API_ERROR_${res.status}`)
+    if (data?.error) {
+      throw new Error(data.error)
+    }
+    throw new Error("REQUEST_FAILED")
   }
 
-  const data = (await res.json()) as T
-
-  if (typeof data === "undefined" || data === null) {
-    throw new Error("INVALID_RESPONSE")
-  }
-
-  return data
+  return data as T
 }
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
