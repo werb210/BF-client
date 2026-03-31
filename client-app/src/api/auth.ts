@@ -1,31 +1,30 @@
-import { apiRequest } from "@/lib/apiClient"
-import { setToken } from "@/auth/token"
-
-export function startOtp(phone: string) {
-  return apiRequest("/api/auth/start-otp", {
+export async function sendOtp(phone: string) {
+  const res = await fetch("/auth/send-otp", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone }),
   })
+
+  if (!res.ok) {
+    throw new Error("Failed to send OTP")
+  }
+
+  return res.json()
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  try {
-    const res = await apiRequest("/api/auth/verify-otp", {
-      method: "POST",
-      body: JSON.stringify({ phone, code }),
-    })
+  const res = await fetch("/auth/verify-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, code }),
+  })
 
-    if (!res?.token) {
-      throw new Error("INVALID_LOGIN")
-    }
-
-    setToken(res.token)
-    return res
-  } catch (e) {
-    localStorage.removeItem("token")
-    throw e
+  if (!res.ok) {
+    throw new Error("Invalid OTP")
   }
+
+  return res.json()
 }
 
-export const sendOtp = startOtp
+export const startOtp = sendOtp
 export const verifyOtpCode = verifyOtp
