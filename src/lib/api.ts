@@ -2,7 +2,22 @@ export type ApiResult<T> =
   | { success: true; data: T }
   | { success: false; message: string };
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const RAW_API_BASE_URL = import.meta.env.VITE_API_URL;
+
+if (!RAW_API_BASE_URL) {
+  throw new Error("VITE_API_URL is required");
+}
+
+let validatedBaseUrl: URL;
+
+try {
+  validatedBaseUrl = new URL(RAW_API_BASE_URL);
+} catch {
+  throw new Error("VITE_API_URL must be a valid absolute URL");
+}
+
+const API_BASE_URL = validatedBaseUrl.toString().replace(/\/$/, "");
+const REQUEST_TIMEOUT_MS = 10_000;
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -28,16 +43,38 @@ export async function apiRequest<T = unknown>(
     requestOptions.body = JSON.stringify(requestOptions.body);
   }
 
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timeoutController.abort("timeout");
+  }, REQUEST_TIMEOUT_MS);
+
+  const upstreamAbortListener = () => {
+    timeoutController.abort("upstream_abort");
+  };
+
+  if (options.signal) {
+    if (options.signal.aborted) {
+      upstreamAbortListener();
+    } else {
+      options.signal.addEventListener("abort", upstreamAbortListener, { once: true });
+    }
+  }
+
+  requestOptions.signal = timeoutController.signal;
+
   let response: Response;
 
   try {
     response = await fetch(url, requestOptions);
   } catch (error) {
-    throw new Error(
-      error instanceof Error
-        ? `Network request failed: ${error.message}`
-        : "Network request failed"
-    );
+    const message = timeoutController.signal.reason === "timeout" ? "timeout" : "network_error";
+    console.error({ path, error });
+    return { success: false, message };
+  } finally {
+    clearTimeout(timeoutId);
+    if (options.signal) {
+      options.signal.removeEventListener("abort", upstreamAbortListener);
+    }
   }
 
   let payload: unknown = null;
@@ -49,12 +86,13 @@ export async function apiRequest<T = unknown>(
   }
 
   if (!response.ok) {
-    const message =
+    const error =
       (payload as { message?: string } | null)?.message ||
       response.statusText ||
       "Request failed";
 
-    return { success: false, message };
+    console.error({ path, error });
+    return { success: false, message: error };
   }
 
   return { success: true, data: payload as T };
