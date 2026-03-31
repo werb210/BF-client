@@ -1,30 +1,38 @@
-export async function sendOtp(phone: string) {
-  const res = await fetch("/auth/send-otp", {
+const API_BASE = "";
+
+async function request(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone }),
-  })
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
   if (!res.ok) {
-    throw new Error("Failed to send OTP")
+    const text = await res.text();
+    throw new Error(`Auth API failure: ${res.status} ${text}`);
   }
 
-  return res.json()
+  return res.json();
 }
 
-export async function verifyOtp(phone: string, code: string) {
-  const res = await fetch("/auth/verify-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, code }),
-  })
+// Twilio Verify ONLY
+export async function sendOtp(phone) {
+  if (!phone) throw new Error("phone required");
+  return request("/auth/send-otp", { phone });
+}
 
-  if (!res.ok) {
-    throw new Error("Invalid OTP")
+export async function verifyOtp(phone, code) {
+  if (!phone || !code) {
+    throw new Error("phone + code required");
   }
 
-  return res.json()
-}
+  const result = await request("/auth/verify-otp", { phone, code });
 
-export const startOtp = sendOtp
-export const verifyOtpCode = verifyOtp
+  if (!result.success) {
+    throw new Error("OTP rejected by Twilio");
+  }
+
+  return result;
+}
