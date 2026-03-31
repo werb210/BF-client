@@ -8,7 +8,7 @@ describe("network guard", () => {
 
     await import("@/lib/networkGuard")
 
-    expect(() => window.fetch("https://evil.com")).toThrow("DIRECT_FETCH_BLOCKED")
+    expect(() => window["fetch"]("https://evil.com")).toThrow("DIRECT_FETCH_BLOCKED_USE_APIREQUEST")
 
     window.fetch = originalFetch
   })

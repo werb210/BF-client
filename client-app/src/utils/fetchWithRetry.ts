@@ -1,4 +1,3 @@
-import axios from "axios";
 import api from "@/api/client";
 
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -50,20 +49,14 @@ export async function safeFetch(
       throw new FetchRequestError("Request timed out.", undefined, true);
     }
 
-    if (axios.isAxiosError(error)) {
-      if (error.code === "ERR_CANCELED") {
-        throw new FetchRequestError("Request timed out.", undefined, true);
-      }
-
-      const status = error.response?.status;
+    if (error instanceof Error && /^API_ERROR_(\d+)$/.test(error.message)) {
+      const status = Number(error.message.replace("API_ERROR_", ""));
 
       if (status === 401 && typeof window !== "undefined") {
         window.location.assign("/apply/step-1");
       }
 
-      if (typeof status === "number") {
-        throw new FetchRequestError(`Request failed with status ${status}.`, status);
-      }
+      throw new FetchRequestError(`Request failed with status ${status}.`, status);
     }
 
     throw error;

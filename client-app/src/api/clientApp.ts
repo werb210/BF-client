@@ -1,4 +1,3 @@
-import type { AxiosProgressEvent } from "axios";
 import { z } from "zod";
 import api from "@/api/client";
 
@@ -85,7 +84,7 @@ export const ClientAppAPI = {
       if (payload.applicationToken) formData.append("application_token", payload.applicationToken);
       const res = await api.post<GenericObjectResponse>(DOCUMENT_CONTRACT.UPLOAD, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event: AxiosProgressEvent) => {
+        onUploadProgress: (event: { loaded: number; total?: number }) => {
           if (!event.total) return;
           const percent = Math.round((event.loaded / event.total) * 100);
           payload.onProgress?.(percent);
