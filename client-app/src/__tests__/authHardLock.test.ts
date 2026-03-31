@@ -24,21 +24,22 @@ describe("auth hard lock", () => {
     await expect(
       apiRequest("/api/health", {
         headers: { Authorization: "Bearer attacker" },
-      })
+      }),
     ).resolves.toEqual({ ok: true })
 
     expect(fetchSpy).toHaveBeenCalledWith(
       "/api/health",
       expect.objectContaining({
-        headers: {
+        headers: expect.objectContaining({
           "Content-Type": "application/json",
           Authorization: "Bearer valid-token",
-        },
-      })
+          "X-Request-Id": expect.any(String),
+        }),
+      }),
     )
   })
 
-  it("credentials injection is ignored", async () => {
+  it("credentials injection is preserved", async () => {
     setToken("valid-token")
     const fetchSpy = vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 
@@ -64,5 +65,26 @@ describe("auth hard lock", () => {
 
   it("rejects private endpoint without token", async () => {
     await expect(apiRequest("/api/private/test")).rejects.toThrow("AUTH_REQUIRED")
+  })
+
+  it("times out slow requests", async () => {
+    setToken("valid-token")
+    vi.spyOn(globalThis, "setTimeout").mockImplementation(((handler: TimerHandler) => {
+      if (typeof handler === "function") {
+        handler()
+      }
+      return 0 as unknown as ReturnType<typeof setTimeout>
+    }) as typeof setTimeout)
+    vi.spyOn(window, "fetch").mockImplementation((_input, init) => {
+      return new Promise((_resolve, reject) => {
+        if (init?.signal?.aborted) {
+          reject(new Error("aborted"))
+          return
+        }
+        init?.signal?.addEventListener("abort", () => reject(new Error("aborted")), { once: true })
+      }) as Promise<Response>
+    })
+
+    await expect(apiRequest("/api/slow")).rejects.toThrow()
   })
 })

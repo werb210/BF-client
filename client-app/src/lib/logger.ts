@@ -1,19 +1,20 @@
-function toError(message: string, detail?: unknown): Error {
-  if (detail instanceof Error) return detail;
-  const suffix = typeof detail === "string" ? `: ${detail}` : "";
-  return new Error(`${message}${suffix}`);
+export function logError(err: unknown, context?: any) {
+  console.error("[CLIENT_ERROR]", {
+    err,
+    context,
+    timestamp: new Date().toISOString(),
+  })
 }
 
 export function logClientError(messageOrError: string | unknown, detail?: unknown) {
-  const message = typeof messageOrError === "string" ? messageOrError : "Client error";
-  const resolvedDetail = typeof messageOrError === "string" ? detail : messageOrError;
-  if (typeof globalThis.reportError === "function") {
-    globalThis.reportError(toError(message, resolvedDetail));
+  if (typeof messageOrError === "string") {
+    logError(new Error(messageOrError), detail)
+    return
   }
+
+  logError(messageOrError, detail)
 }
 
 export function logClientWarning(message: string, detail?: unknown) {
-  if (typeof globalThis.reportError === "function") {
-    globalThis.reportError(toError(`Warning: ${message}`, detail));
-  }
+  logError(new Error(`Warning: ${message}`), detail)
 }
