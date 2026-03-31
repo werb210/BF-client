@@ -64,7 +64,7 @@ export function saveSubmissionStatusCache(
 }
 
 export async function fetchSubmissionStatus(applicationId: string) {
-  const res = await apiRequest(`/portal/applications/${applicationId}`);
+  const res = await apiRequest(`/api/portal/applications/${applicationId}`);
   const parsed = parseApiResponse(
     PortalSubmissionStatusResponseSchema,
     res,

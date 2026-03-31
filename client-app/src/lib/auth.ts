@@ -1,4 +1,4 @@
-import { apiFetch, clearToken } from "./api";
+import { apiFetch, clearToken, getToken as getApiToken, setToken as setApiToken } from "./api";
 import { saveToken } from "@/services/token";
 
 let currentUser: any = null;
@@ -7,11 +7,11 @@ export { clearToken };
 
 export function setToken(token: string) {
   saveToken(token);
+  setApiToken(token);
 }
 
 export function getToken() {
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem("token");
+  return getApiToken();
 }
 
 export async function initAuth() {
@@ -70,8 +70,7 @@ export async function getMe() {
 }
 
 export function hasToken() {
-  if (typeof localStorage === "undefined") return false;
-  return Boolean(localStorage.getItem("token"));
+  return Boolean(getApiToken());
 }
 
 export function logout() {

@@ -126,4 +126,4 @@ export const uploadDocuments = async (
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>
-  apiRequest(`/offers/${offerId}/accept`, { method: "POST" });
+  apiRequest(`/api/offers/${offerId}/accept`, { method: "POST" });

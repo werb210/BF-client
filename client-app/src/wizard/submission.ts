@@ -60,9 +60,7 @@ export function shouldBlockForMissingDocuments(app: ApplicationData) {
 }
 
 export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload {
-  if (!app.selectedProductId) {
-    throw new Error("Missing lender product selection.");
-  }
+  assertSubmissionReadiness(app);
   const documents = Object.entries(app.documents || {}).map(
     ([document_type, document]) => ({
       document_type,
@@ -101,6 +99,20 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
     },
     lender_product_id: app.selectedProductId,
   };
+}
+
+export function assertSubmissionReadiness(app: ApplicationData) {
+  if (!app) {
+    throw new Error("APPLICATION_INCOMPLETE");
+  }
+
+  if (!app.selectedProductId || !app.selectedProduct) {
+    throw new Error("PRODUCT_REQUIRED");
+  }
+
+  if (!app.documentsDeferred && Object.keys(app.documents || {}).length === 0) {
+    throw new Error("DOCUMENTS_REQUIRED");
+  }
 }
 
 export function getPostSubmitRedirect({

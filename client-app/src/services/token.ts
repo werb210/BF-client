@@ -1,11 +1,11 @@
-import { clearToken } from "@/auth/tokenStorage"
+import { clearToken, getToken, setToken } from "@/lib/api"
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem("token")
+  return getToken()
 }
 
 export function getTokenOrFail(): string {
-  const token = localStorage.getItem("token")
+  const token = getToken()
 
   if (
     !token ||
@@ -24,9 +24,9 @@ export function saveToken(token: string) {
     throw new Error("[TOKEN SAVE FAILED]")
   }
 
-  localStorage.setItem("token", token)
+  setToken(token)
 
-  const verify = localStorage.getItem("token")
+  const verify = getToken()
 
   if (!verify) {
     throw new Error("[TOKEN WRITE FAILURE]")

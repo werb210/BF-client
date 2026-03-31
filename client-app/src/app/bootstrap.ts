@@ -1,3 +1,5 @@
+import { getToken } from "@/lib/api"
+
 export type InitialSession = {
   token: string
 }
@@ -12,7 +14,7 @@ function readTokenFromClientSession(stored: string): string | null {
 }
 
 export async function bootstrapSession(): Promise<InitialSession | null> {
-  const stored = localStorage.getItem("token")
+  const stored = getToken()
   if (!stored) {
     return null
   }
