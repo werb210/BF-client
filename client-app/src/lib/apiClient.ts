@@ -33,7 +33,7 @@ export function clearToken() {
 }
 
 const DEFAULT_TIMEOUT = 10000
-const PUBLIC_PATHS = [
+const PUBLIC_PREFIXES = [
   "/api/public/",
   "/api/auth/start-otp",
   "/api/auth/verify-otp",
@@ -41,7 +41,7 @@ const PUBLIC_PATHS = [
 ]
 
 function isPublicPath(path: string): boolean {
-  return PUBLIC_PATHS.some((p) => path.startsWith(p))
+  return PUBLIC_PREFIXES.some((p) => path.startsWith(p))
 }
 
 function validatePath(path: string) {
@@ -118,11 +118,11 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
 
   const isPublic = isPublicPath(path)
 
-  if (!isPublic) {
-    if (!token) {
-      throw new Error("AUTH_REQUIRED")
-    }
+  if (!isPublic && !token) {
+    throw new Error("AUTH_REQUIRED")
+  }
 
+  if (!isPublic) {
     headers.Authorization = `Bearer ${token}`
   }
 

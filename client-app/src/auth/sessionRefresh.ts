@@ -1,42 +1,25 @@
-import { hasToken } from "@/lib/auth";
-import { getToken } from "@/lib/api";
 import { apiRequest } from "../api/client";
 import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
-import { getActiveClientSessionToken } from "../state/clientSession";
 import { ClientProfileStore } from "../state/clientProfiles";
-import { setSessionRefreshing } from "../state/sessionRefresh";
 
-let refreshPromise: Promise<boolean> | null = null;
-let refreshFailed = false;
+let refreshLocked = false
 
 export async function refreshSessionOnce(): Promise<boolean> {
-  if (refreshFailed) return false;
-  if (refreshPromise) return refreshPromise;
+  if (refreshLocked) return false
 
-  const token = getActiveClientSessionToken();
-  const legacyToken = getToken();
-  if (!token && !hasToken() && !legacyToken) return true;
+  try {
+    await apiRequest("/api/auth/refresh", { method: "POST" })
+    return true
+  } catch {
+    refreshLocked = true
 
-  setSessionRefreshing(true);
-  refreshPromise = (apiRequest("/api/auth/refresh", {
-    method: "POST",
-  }) as Promise<unknown>)
-    .then(() => true)
-    .catch(() => false)
-    .finally(() => {
-      setSessionRefreshing(false);
-      refreshPromise = null;
-    });
+    ClientProfileStore.clearPortalSessions()
+    clearServiceWorkerCaches("otp")
 
-  const success = await refreshPromise;
-  if (!success) {
-    refreshFailed = true;
-    ClientProfileStore.clearPortalSessions();
-    clearServiceWorkerCaches("otp");
+    return false
   }
-  return success;
 }
 
 export function resetRefreshFailure() {
-  refreshFailed = false;
+  refreshLocked = false
 }
