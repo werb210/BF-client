@@ -10,6 +10,9 @@ function assertPhone(phone: string) {
 export const startOtp = async (phone: string) => {
   assertPhone(phone);
   const response = await api.post<{ ok?: boolean }>("/api/auth/otp/start", { phone });
+  if (!response.data) {
+    throw new Error("EMPTY RESPONSE");
+  }
   return response.data;
 };
 
@@ -25,11 +28,18 @@ export const verifyOtp = async (phone: string, code: string) => {
   const token = data?.token ?? data?.data?.token;
 
   if (!token) {
-    throw new Error("TOKEN MISSING — LOGIN FAILED");
+    throw new Error("LOGIN FAILED — TOKEN MISSING");
   }
 
   setToken(token);
   localStorage.setItem("token", token);
+  if (!localStorage.getItem("token")) {
+    throw new Error("TOKEN SAVE FAILED");
+  }
+
+  if (!data) {
+    throw new Error("EMPTY RESPONSE");
+  }
 
   return data;
 };
