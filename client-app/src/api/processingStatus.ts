@@ -71,7 +71,7 @@ export async function fetchProcessingStatus(
   applicationId: string
 ): Promise<ProcessingStatus> {
   const apiResponse = await api.get(
-    `/applications/${applicationId}/processing/status`
+    `/api/applications/${applicationId}/processing/status`
   );
   const { data: payload } = apiResponse;
   const raw = parseApiResponse(

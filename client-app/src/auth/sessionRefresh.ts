@@ -18,7 +18,7 @@ export async function refreshSessionOnce() {
   if (refreshPromise) return refreshPromise;
 
   const token = getActiveClientSessionToken();
-  const legacyToken = typeof localStorage !== "undefined" ? localStorage.getItem("bf_token") : null;
+  const legacyToken = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
   if (!token && !hasToken() && !legacyToken) return true;
 
   setSessionRefreshing(true);

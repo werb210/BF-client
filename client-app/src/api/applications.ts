@@ -3,11 +3,16 @@ import { assertApiResponse } from "../lib/assertApiResponse";
 import { requireAuth } from "../utils/requireAuth";
 import { validateFile } from "../utils/fileValidation";
 
-export const createApplication = async (payload: any) => {
+export const createApplication = async (payload: any = {}) => {
   requireAuth();
 
-  const { data } = await api.post("/api/applications", payload);
-  return assertApiResponse(data);
+  try {
+    const { data } = await api.post("/api/applications", payload);
+    return assertApiResponse(data);
+  } catch (err) {
+    console.error("[SUBMIT ERROR]", err);
+    throw err;
+  }
 };
 
 export const submitApplication = async (applicationId: string) => {
@@ -22,8 +27,13 @@ export const submitApplication = async (applicationId: string) => {
 };
 
 export const createPublicApplication = async (payload: any) => {
-  const { data } = await api.post("/api/applications", payload);
-  return assertApiResponse(data);
+  try {
+    const { data } = await api.post("/api/applications", payload);
+    return assertApiResponse(data);
+  } catch (err) {
+    console.error("[SUBMIT ERROR]", err);
+    throw err;
+  }
 };
 
 export const fetchApplication = async (applicationId: string) => {
@@ -72,7 +82,9 @@ export const uploadApplicationDocument = async (
 
   payload.onProgress?.(10);
   const { data } = await api.post("/api/documents/upload", formData, {
-    headers: {},
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
   });
   payload.onProgress?.(100);
 

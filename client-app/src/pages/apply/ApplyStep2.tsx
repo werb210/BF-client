@@ -31,7 +31,7 @@ export default function ApplyStep2() {
     setIsSubmitting(true);
 
     try {
-      await apiRequest(`/applications/${applicationToken}`, {
+      await apiRequest(`/api/applications/${applicationToken}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",

@@ -19,13 +19,13 @@ export async function loginWithOtp(phone: string, code: string): Promise<{ token
 
   await new Promise((r) => setTimeout(r, 200));
 
-  const token = localStorage.getItem("auth_token") ?? data?.data?.token ?? data?.token;
+  const token = localStorage.getItem("token") ?? data?.data?.token ?? data?.token;
 
   if (!token) {
-    throw new Error("Auth failed");
+    throw new Error("TOKEN MISSING — LOGIN FAILED");
   }
 
-  localStorage.setItem("auth_token", token);
+  localStorage.setItem("token", token);
 
   return { token, nextPath: "/portal" };
 }

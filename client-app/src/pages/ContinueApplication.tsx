@@ -21,7 +21,7 @@ export default function ContinueApplication() {
 
     async function load() {
       try {
-        const res = await api.get(`/applications/${token}`);
+        const res = await api.get(`/api/applications/${token}`);
         if (!active) return;
         const { data } = res;
         loadFromServer(data);
