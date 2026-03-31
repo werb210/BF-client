@@ -332,6 +332,8 @@ describe("PublicApplyPage form schema", () => {
   it("persists a pending submission when submit fails", async () => {
     const submitApplication = vi.fn().mockRejectedValue(new Error("offline"));
     const storage = createStorage();
+    vi.stubGlobal("localStorage", storage as unknown as Storage);
+    vi.stubGlobal("sessionStorage", createStorage() as unknown as Storage);
 
     await handlePublicApplicationSubmit({
       values: baseValues,
@@ -345,14 +347,16 @@ describe("PublicApplyPage form schema", () => {
       localStorage: storage as unknown as Storage,
     });
 
-    const pending = loadPendingSubmissionState(storage as unknown as Storage);
+    const pending = loadPendingSubmissionState();
     expect(pending).toBeTruthy();
-    expect(pending?.attempts).toBe(0);
+    expect(pending?.retryCount).toBe(0);
     expect(pending?.payload.business_legal_name).toBe("Boreal LLC");
   });
 
   it("retries pending submission and marks session submitted when successful", async () => {
     const storage = createStorage();
+    vi.stubGlobal("localStorage", storage as unknown as Storage);
+    vi.stubGlobal("sessionStorage", createStorage() as unknown as Storage);
     await handlePublicApplicationSubmit({
       values: baseValues,
       clientIp: "203.0.113.10",
@@ -371,7 +375,7 @@ describe("PublicApplyPage form schema", () => {
     });
 
     expect(retried).toBe(true);
-    expect(loadPendingSubmissionState(storage as unknown as Storage)).toBeNull();
+    expect(loadPendingSubmissionState()).toBeNull();
     expect(loadPublicSubmissionState(storage as unknown as Storage)).toBeTruthy();
   });
 });
