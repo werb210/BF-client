@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasToken } from "@/lib/auth";
+import { getToken } from "@/lib/api";
 
 type ChatSocketStatus =
   | "idle"
@@ -26,7 +27,7 @@ const RETRY_JITTER_RATIO = 0.2;
 
 function getSocketUrl() {
   if (typeof window === "undefined") return "";
-  const token = localStorage.getItem("token");
+  const token = getToken();
   if (!token) return "";
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   return `${protocol}://${window.location.host}/ws/chat?token=${encodeURIComponent(token)}`;

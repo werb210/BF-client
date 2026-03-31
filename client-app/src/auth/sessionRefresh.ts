@@ -1,4 +1,5 @@
 import { hasToken } from "@/lib/auth";
+import { getToken } from "@/lib/api";
 import { apiRequest } from "../api/client";
 import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
 import { getActiveClientSessionToken } from "../state/clientSession";
@@ -18,7 +19,7 @@ export async function refreshSessionOnce() {
   if (refreshPromise) return refreshPromise;
 
   const token = getActiveClientSessionToken();
-  const legacyToken = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
+  const legacyToken = getToken();
   if (!token && !hasToken() && !legacyToken) return true;
 
   setSessionRefreshing(true);

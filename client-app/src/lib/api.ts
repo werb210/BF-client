@@ -1,5 +1,3 @@
-import { getTokenOrFail } from "@/services/token"
-
 type ApiRequestConfig = {
   url?: string
   method?: string
@@ -16,12 +14,32 @@ type ApiResponse<T = any> = {
   headers: Headers
 }
 
-function assertApiPath(path: string): string {
-  if (!/^\/api\/[a-zA-Z0-9/_-]+$/.test(path)) {
-    throw new Error("[INVALID PATH]")
+let token: string | null = null
+
+export function setToken(nextToken: string | null) {
+  token = nextToken
+}
+
+export function getToken() {
+  return token
+}
+
+export function loadToken() {
+  return getToken()
+}
+
+export function clearToken() {
+  setToken(null)
+}
+
+function validatePath(path: string) {
+  if (!path.startsWith("/api/")) {
+    throw new Error("INVALID_API_PATH")
   }
 
-  return path
+  if (path.includes("..") || path.includes("//")) {
+    throw new Error("MALFORMED_PATH")
+  }
 }
 
 function stringifyData(data: ApiRequestConfig["data"]): BodyInit | undefined {
@@ -32,55 +50,51 @@ function stringifyData(data: ApiRequestConfig["data"]): BodyInit | undefined {
   return JSON.stringify(data)
 }
 
-export async function apiRequest<T = any>(path: string, options: any = {}): Promise<T> {
-  const normalizedPath = assertApiPath(path)
-  const token = getTokenOrFail()
+export async function apiRequest<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+  validatePath(path)
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
+  const outgoingHeaders = new Headers(options.headers ?? {})
+  outgoingHeaders.delete("Authorization")
+  outgoingHeaders.delete("authorization")
+  const headers: Record<string, string> = {}
+
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = outgoingHeaders.get("Content-Type") ?? "application/json"
   }
 
-  const res = await fetch(/* apiRequest */ normalizedPath, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body,
-    signal: options.signal,
+  if (!path.startsWith("/api/public/")) {
+    if (!token) {
+      throw new Error("AUTH_REQUIRED")
+    }
+    headers.Authorization = `Bearer ${token}`
+  }
+
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      ...Object.fromEntries(outgoingHeaders.entries()),
+      ...headers,
+    },
   })
 
   if (res.status === 401) {
-    localStorage.removeItem("token")
-    window.location.href = "/login"
-    throw new Error("[AUTH FAIL]")
+    token = null
+    throw new Error("UNAUTHORIZED")
+  }
+
+  if (res.status === 204) {
+    return null as T
   }
 
   if (!res.ok) {
-    throw new Error(`[API ERROR] ${res.status}`)
+    throw new Error("API_ERROR")
   }
 
-  const text = await res.text()
-
-  if (!text) {
-    throw new Error("[EMPTY RESPONSE]")
-  }
-
-  return JSON.parse(text) as T
+  return (await res.json()) as T
 }
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   return apiRequest<T>(path.startsWith("/api/") ? path : `/api${path}`, options)
-}
-
-export function setToken(nextToken: string) {
-  localStorage.setItem("token", nextToken)
-}
-
-export function loadToken() {
-  return localStorage.getItem("token")
-}
-
-export function clearToken() {
-  localStorage.removeItem("token")
 }
 
 async function send<T = any>(method: string, path: string, data?: ApiRequestConfig["data"], init?: any) {
@@ -121,7 +135,10 @@ export const api = {
 }
 
 export function requireAuth(): string {
-  return getTokenOrFail()
+  if (!token) {
+    throw new Error("AUTH_REQUIRED")
+  }
+  return token
 }
 
 export function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
@@ -130,7 +147,7 @@ export function request<T = any>(path: string, options: RequestInit = {}): Promi
 
 export function buildUrl(path: string): string {
   if (!path.startsWith("/")) {
-    throw new Error("[INVALID API PATH]")
+    throw new Error("INVALID_API_PATH")
   }
 
   return path.startsWith("/api/") ? path : `/api${path}`

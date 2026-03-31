@@ -25,7 +25,7 @@ export function useReadinessBridge(
     if (!token) return;
 
     async function fetchBridge(): Promise<void> {
-      const data = await (apiRequest(`/readiness/continue?token=${encodeURIComponent(token)}`) as Promise<ReadinessData>).catch((): null => null);
+      const data = await (apiRequest(`/api/readiness/continue?token=${encodeURIComponent(token)}`) as Promise<ReadinessData>).catch((): null => null);
       if (!data) return;
 
       setStep1(data.step1);

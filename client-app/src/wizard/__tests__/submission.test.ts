@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ClientProfileStore } from "../../state/clientProfiles";
 import {
+  assertSubmissionReadiness,
   buildSubmissionPayload,
   canSubmitApplication,
   getPostSubmitRedirect,
@@ -153,5 +154,22 @@ describe("submission payload", () => {
         documentsDeferred: false,
       })
     ).toBe(false);
+  });
+
+  it("blocks submission if required data missing", () => {
+    expect(() =>
+      assertSubmissionReadiness({
+        ...baseApp,
+        selectedProductId: undefined,
+      } as ApplicationData)
+    ).toThrow("PRODUCT_REQUIRED");
+
+    expect(() =>
+      assertSubmissionReadiness({
+        ...baseApp,
+        documents: {},
+        documentsDeferred: false,
+      } as ApplicationData)
+    ).toThrow("DOCUMENTS_REQUIRED");
   });
 });
