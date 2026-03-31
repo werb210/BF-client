@@ -14,20 +14,19 @@ function readTokenFromClientSession(stored: string): string | null {
 }
 
 export async function bootstrapSession(): Promise<InitialSession | null> {
-  try {
-    await apiRequest("/api/auth/me");
-  } catch {
-    // Auth gating/redirect handled centrally in apiRequest.
-    return null;
-  }
-
   if (typeof localStorage === "undefined") {
     return null;
   }
 
   const stored = localStorage.getItem("token");
-
   if (!stored) {
+    return null;
+  }
+
+  try {
+    await apiRequest("/api/auth/me");
+  } catch {
+    // Auth gating/redirect handled centrally in apiRequest.
     return null;
   }
 

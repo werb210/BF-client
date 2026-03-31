@@ -1,12 +1,12 @@
 import api from "../lib/api";
-import { requireAuth } from "../utils/requireAuth";
+import { assertAuthenticated } from "../auth/sessionGuard";
 
 export const uploadDocument = async (
   file: File,
   applicationId: string,
   category: string
 ) => {
-  requireAuth();
+  assertAuthenticated();
 
   const formData = new FormData();
   formData.append("file", file);
@@ -18,6 +18,10 @@ export const uploadDocument = async (
       "Content-Type": "multipart/form-data",
     },
   });
+
+  if (!data?.data) {
+    throw new Error("EMPTY RESPONSE");
+  }
 
   return data.data;
 };

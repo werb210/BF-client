@@ -1,5 +1,6 @@
 import axios, { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse, type Method } from "axios";
 import { API_BASE_URL } from "@/config/api";
+import { getTokenOrFail } from "@/services/token";
 
 const TOKEN_KEY = "token";
 let token: string | null = null;
@@ -16,20 +17,18 @@ function getStoredToken(): string | null {
 }
 
 api.interceptors.request.use((config) => {
-  const currentToken = getStoredToken();
   const requestUrl = config.url || "";
   const isOtpAuthRequest = requestUrl.includes("/api/auth/otp/start") || requestUrl.includes("/api/auth/otp/verify");
 
-  if (!currentToken && !isOtpAuthRequest) {
-    throw new Error("TOKEN NOT READY");
-  }
-
-  if (currentToken) {
+  if (!isOtpAuthRequest) {
+    const currentToken = getTokenOrFail();
     const headers = AxiosHeaders.from(config.headers);
     headers.set("Authorization", `Bearer ${currentToken}`);
     config.headers = headers;
   }
 
+  // eslint-disable-next-line no-console
+  console.log("[REQ]", config.method?.toUpperCase(), config.url);
   return config;
 });
 
@@ -38,6 +37,12 @@ api.interceptors.response.use(
   (err) => {
     // eslint-disable-next-line no-console
     console.error("[API ERROR]", err.response?.status, err.response?.data);
+    if (err.response?.status === 401) {
+      // eslint-disable-next-line no-console
+      console.error("[AUTH FAILURE] TOKEN REJECTED");
+      localStorage.removeItem(TOKEN_KEY);
+      token = null;
+    }
     return Promise.reject(err);
   }
 );
@@ -99,13 +104,7 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
 }
 
 export function requireAuth(): string {
-  const currentToken = getStoredToken();
-
-  if (!currentToken) {
-    throw new Error("TOKEN NOT READY");
-  }
-
-  return currentToken;
+  return getTokenOrFail();
 }
 
 export function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {

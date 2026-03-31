@@ -1,10 +1,10 @@
 import api, { apiRequest } from "../lib/api";
 import { assertApiResponse } from "../lib/assertApiResponse";
-import { requireAuth } from "../utils/requireAuth";
+import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
 
 export const createApplication = async (payload: any = {}) => {
-  requireAuth();
+  assertAuthenticated();
 
   try {
     const { data } = await api.post("/api/applications", payload);
@@ -16,7 +16,7 @@ export const createApplication = async (payload: any = {}) => {
 };
 
 export const submitApplication = async (applicationId: string) => {
-  requireAuth();
+  assertAuthenticated();
 
   if (!applicationId) {
     throw new Error("Missing applicationId");
@@ -67,7 +67,7 @@ export const uploadApplicationDocument = async (
   applicationId: string,
   payload: { documentCategory: string; file: File; onProgress?: (progress: number) => void }
 ) => {
-  requireAuth();
+  assertAuthenticated();
 
   if (!applicationId) {
     throw new Error("Missing applicationId");

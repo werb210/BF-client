@@ -18,6 +18,14 @@ export function getSessionToken() {
   return localStorage.getItem("token");
 }
 
+export function assertAuthenticated() {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("AUTH BLOCKED — NO TOKEN");
+  }
+}
+
 export function resolveSessionGuardAction(options: {
   isOffline: boolean;
   hasAuth: boolean;
