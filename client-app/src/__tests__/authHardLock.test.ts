@@ -43,7 +43,7 @@ describe("auth hard lock", () => {
     setToken("valid-token")
     vi.spyOn(window, "fetch").mockResolvedValue(new Response("unauthorized", { status: 401 }))
 
-    await expect(apiRequest("/api/health")).rejects.toThrow("UNAUTHORIZED")
+    await expect(apiRequest("/api/health")).rejects.toThrow("INVALID_TOKEN")
   })
 
   it("invalid path injection is blocked", async () => {

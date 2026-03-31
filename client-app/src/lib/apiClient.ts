@@ -1,3 +1,5 @@
+import { clearToken as clearStoredToken, getToken as getStoredToken, setToken as setStoredToken } from "@/auth/token"
+
 type ApiRequestConfig = {
   url?: string
   method?: string
@@ -14,22 +16,24 @@ type ApiResponse<T = unknown> = {
   headers: Headers
 }
 
-let token: string | null = null
-
 export function setToken(nextToken: string | null) {
-  token = nextToken
+  if (!nextToken) {
+    clearStoredToken()
+    return
+  }
+  setStoredToken(nextToken)
 }
 
 export function getToken() {
-  return token
+  return getStoredToken()
 }
 
 export function loadToken() {
-  return getToken()
+  return getStoredToken()
 }
 
 export function clearToken() {
-  setToken(null)
+  clearStoredToken()
 }
 
 const DEFAULT_TIMEOUT = 10000
@@ -116,12 +120,12 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     delete headers["Content-Type"]
   }
 
-
   if (!isPublicPath(path)) {
+    const token = getStoredToken()
     if (!token) {
       throw new Error("AUTH_REQUIRED")
     }
-    headers["Authorization"] = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
   }
 
   const res = await retry(() =>
@@ -136,13 +140,8 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
   )
 
   if (res.status === 401) {
-    token = null
-    try {
-      window.location.href = "/login"
-    } catch {
-      // no-op in non-browser tests
-    }
-    throw new Error("UNAUTHORIZED")
+    clearStoredToken()
+    throw new Error("INVALID_TOKEN")
   }
 
   if (res.status === 204) {
@@ -155,10 +154,7 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
   } catch {}
 
   if (!res.ok) {
-    if (data?.error) {
-      throw new Error(data.error)
-    }
-    throw new Error("REQUEST_FAILED")
+    throw new Error(data?.error || "REQUEST_FAILED")
   }
 
   return data as T
@@ -203,6 +199,7 @@ export const api = {
 }
 
 export function requireAuth(): string {
+  const token = getStoredToken()
   if (!token) {
     throw new Error("AUTH_REQUIRED")
   }

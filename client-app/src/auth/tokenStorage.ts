@@ -1,1 +1,1 @@
-export { clearToken, getToken, setToken } from "@/lib/auth";
+export { clearToken, getToken, setToken } from "@/auth/token"

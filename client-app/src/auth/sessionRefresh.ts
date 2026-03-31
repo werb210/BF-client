@@ -1,38 +1,44 @@
-export async function refreshSession(): Promise<boolean> {
-  const token = localStorage.getItem("token")
+import { getToken, setToken, clearToken } from "@/auth/token"
 
-  if (!token) {
-    localStorage.removeItem("token")
-    return false
-  }
+let refreshing: Promise<boolean> | null = null
 
-  try {
-    const res = await fetch("/api/auth/refresh", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+export function refreshSession(): Promise<boolean> {
+  if (refreshing) return refreshing
 
-    if (!res.ok) {
-      localStorage.removeItem("token")
+  refreshing = (async () => {
+    const token = getToken()
+    if (!token) {
+      clearToken()
       return false
     }
 
-    let data: any = null
     try {
-      data = await res.json()
-    } catch {}
+      const res = await fetch(/* apiRequest */ "/api/auth/refresh", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    if (!data?.token) {
-      localStorage.removeItem("token")
+      if (!res.ok) {
+        clearToken()
+        return false
+      }
+
+      const data = await res.json().catch(() => null)
+
+      if (!data?.token) {
+        clearToken()
+        return false
+      }
+
+      setToken(data.token)
+      return true
+    } catch {
+      clearToken()
       return false
+    } finally {
+      refreshing = null
     }
+  })()
 
-    localStorage.setItem("token", data.token)
-    return true
-  } catch {
-    localStorage.removeItem("token")
-    return false
-  }
+  return refreshing
 }

@@ -1,9 +1,9 @@
 import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
 import { ClientProfileStore } from "../state/clientProfiles";
 import { OfflineStore } from "../state/offline";
+import { clearToken } from "@/auth/token";
 
 const STORAGE_KEYS_TO_REMOVE = [
-  "token",
   "boreal_client_token",
 ] as const;
 
@@ -37,6 +37,7 @@ export function clearClientStorage() {
   ClientProfileStore.clearAll();
 
   try {
+    clearToken();
     STORAGE_KEYS_TO_REMOVE.forEach((key) => {
       localStorage.removeItem(key);
     });
