@@ -39,6 +39,7 @@ const PublicApplySuccessPage = lazy(() => import("../pages/apply/PublicApplySucc
 const ApplyPage = lazy(() => import("../pages/ApplyPage").then((module) => ({ default: module.ApplyPage })));
 const EntryPage = lazy(() => import("../pages/EntryPage").then((module) => ({ default: module.EntryPage })));
 const ContinueApplication = lazy(() => import("../pages/ContinueApplication"));
+const MayaPage = lazy(() => import("../pages/MayaPage").then((module) => ({ default: module.MayaPage })));
 const ProductDetail = lazy(() => import("../pages/ProductDetail"));
 const ComingSoonPage = lazy(() => import("../pages/ComingSoon").then((module) => ({ default: module.ComingSoon })));
 const FAQPage = lazy(() => import("../pages/FAQPage"));
@@ -230,6 +231,14 @@ export default function AppRouter(): JSX.Element {
           <Route path="/continue/:token" element={<ContinueApplication />} />
           <Route path="/products/:slug" element={<ProductDetail />} />
           <Route path="/coming-soon" element={<ComingSoonPage />} />
+          <Route
+            path="/maya"
+            element={
+              <RequireOTP>
+                <MayaPage />
+              </RequireOTP>
+            }
+          />
           <Route path="/apply/success" element={<PublicApplySuccessPage />} />
           <Route path="/apply/confirmation" element={<ConfirmationPage />} />
           <Route path="/apply/start" element={<ApplicationStep1 />} />

@@ -26,7 +26,6 @@
   "dependencies": {
     "@tanstack/react-query": "^5.56.20",
     "@twilio/voice-sdk": "^2.13.0",
-    "axios": "^1.13.6",
     "classnames": "^2.5.1",
     "clsx": "^2.1.0",
     "jwt-decode": "^4.0.0",
