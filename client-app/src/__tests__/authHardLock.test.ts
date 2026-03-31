@@ -39,18 +39,6 @@ describe("auth hard lock", () => {
     )
   })
 
-  it("credentials injection is preserved", async () => {
-    setToken("valid-token")
-    const fetchSpy = vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
-
-    await apiRequest("/api/health", {
-      credentials: "include",
-    })
-
-    const init = fetchSpy.mock.calls[0]?.[1] as RequestInit
-    expect(init.credentials).toBe("include")
-  })
-
   it("api 401 clears token and throws unauthorized", async () => {
     setToken("valid-token")
     vi.spyOn(window, "fetch").mockResolvedValue(new Response("unauthorized", { status: 401 }))

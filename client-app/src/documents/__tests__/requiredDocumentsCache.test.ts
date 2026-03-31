@@ -1,11 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { syncRequiredDocumentsFromStatus } from "../requiredDocumentsCache";
+
+const localStorageMock = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value
+    },
+    removeItem: (key: string) => {
+      delete store[key]
+    },
+    clear: () => {
+      store = {}
+    },
+  }
+})()
+
+Object.defineProperty(window, "localStorage", {
+  value: localStorageMock,
+})
 
 describe("syncRequiredDocumentsFromStatus", () => {
   beforeEach(() => {
-    vi.spyOn(localStorage, "getItem").mockReturnValue(null);
-    vi.spyOn(localStorage, "setItem").mockImplementation(() => undefined);
-    vi.spyOn(localStorage, "removeItem").mockImplementation(() => undefined);
+    localStorage.clear()
   });
 
   it("merges required documents from status and ensures bank statements", () => {

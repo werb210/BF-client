@@ -1,8 +1,8 @@
 export const API_ENDPOINTS_CONTRACT = {
   BASE: "",
   AUTH: {
-    OTP_START: "/api/auth/otp/start",
-    OTP_VERIFY: "/api/auth/otp/verify"
+    OTP_START: "/api/auth/start-otp",
+    OTP_VERIFY: "/api/auth/verify-otp"
   },
   DOCUMENTS: {
     UPLOAD: "/api/documents/upload"
@@ -46,6 +46,6 @@ export const API_ENDPOINTS_CONTRACT = {
 } as const;
 
 export const AUTH_ENDPOINTS = {
-  OTP_START: "/api/auth/otp/start",
-  OTP_VERIFY: "/api/auth/otp/verify"
+  OTP_START: "/api/auth/start-otp",
+  OTP_VERIFY: "/api/auth/verify-otp"
 } as const;

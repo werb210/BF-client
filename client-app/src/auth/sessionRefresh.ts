@@ -1,25 +1,30 @@
-import { apiRequest } from "../api/client";
-import { clearServiceWorkerCaches } from "../pwa/serviceWorker";
-import { ClientProfileStore } from "../state/clientProfiles";
+let refreshing = false
 
-let refreshLocked = false
-
-export async function refreshSessionOnce(): Promise<boolean> {
-  if (refreshLocked) return false
+export async function refreshSession(): Promise<boolean> {
+  if (refreshing) return false
+  refreshing = true
 
   try {
-    await apiRequest("/api/auth/refresh", { method: "POST" })
+    const res = await fetch("/api/auth/refresh", { method: "POST" })
+
+    if (!res.ok) {
+      localStorage.removeItem("token")
+      return false
+    }
+
+    const data = await res.json().catch(() => null)
+
+    if (!data || !data.token) {
+      localStorage.removeItem("token")
+      return false
+    }
+
+    localStorage.setItem("token", data.token)
     return true
   } catch {
-    refreshLocked = true
-
-    ClientProfileStore.clearPortalSessions()
-    clearServiceWorkerCaches("otp")
-
+    localStorage.removeItem("token")
     return false
+  } finally {
+    refreshing = false
   }
-}
-
-export function resetRefreshFailure() {
-  refreshLocked = false
 }

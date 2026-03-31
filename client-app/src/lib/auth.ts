@@ -27,7 +27,7 @@ export async function initAuth() {
 }
 
 export async function startOtp(phone: string) {
-  return apiFetch("/api/auth/otp/start", {
+  return apiFetch("/api/auth/start-otp", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
@@ -35,7 +35,7 @@ export async function startOtp(phone: string) {
 
 export async function verifyOtp(phone: string, code: string) {
   const payload = { phone, code };
-  const res = await apiFetch<{ token?: string; user?: unknown }>("/api/auth/verify", {
+  const res = await apiFetch<{ token?: string; user?: unknown }>("/api/auth/verify-otp", {
     method: "POST",
     body: JSON.stringify(payload),
   });

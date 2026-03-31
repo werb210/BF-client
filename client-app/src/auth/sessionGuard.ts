@@ -4,7 +4,7 @@ import { ClientProfileStore } from "../state/clientProfiles";
 import { OfflineStore } from "../state/offline";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { clearClientStorage } from "./logout";
-import { refreshSessionOnce } from "./sessionRefresh";
+import { refreshSession } from "./sessionRefresh";
 import { getTokenOrFail } from "@/services/token";
 
 export type SessionGuardAction = "noop" | "redirect";
@@ -120,7 +120,7 @@ export function useSessionGuard(): void {
       const now = Date.now();
       if (now - lastRefreshAt.current < minIntervalMs) return;
       lastRefreshAt.current = now;
-      void refreshSessionOnce();
+      void refreshSession();
     };
 
     window.addEventListener("focus", revalidate);
