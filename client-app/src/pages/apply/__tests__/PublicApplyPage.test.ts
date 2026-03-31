@@ -8,8 +8,10 @@ import {
   initialValues,
   isSubmissionLocked,
   isSubmissionReady,
+  loadPendingSubmissionState,
   loadDraft,
   loadPublicSubmissionState,
+  retryPendingPublicSubmission,
   lockSubmission,
   saveDraft,
   unlockSubmission,
@@ -325,5 +327,51 @@ describe("PublicApplyPage form schema", () => {
     expect(loadPublicSubmissionState(storage as unknown as Storage)).toBeNull();
     expect(getOrCreateIdempotencyKey(storage as unknown as Storage)).toBe(key);
     expect(createIdempotencyKey()).toBeTruthy();
+  });
+
+  it("persists a pending submission when submit fails", async () => {
+    const submitApplication = vi.fn().mockRejectedValue(new Error("offline"));
+    const storage = createStorage();
+
+    await handlePublicApplicationSubmit({
+      values: baseValues,
+      clientIp: "203.0.113.10",
+      termsAcceptedAt: "2024-01-01T00:00:00.000Z",
+      communicationsAcceptedAt: "2024-01-01T00:00:00.000Z",
+      submitApplication,
+      onSuccess: vi.fn(),
+      onError: vi.fn(),
+      storage,
+      localStorage: storage as unknown as Storage,
+    });
+
+    const pending = loadPendingSubmissionState(storage as unknown as Storage);
+    expect(pending).toBeTruthy();
+    expect(pending?.attempts).toBe(0);
+    expect(pending?.payload.business_legal_name).toBe("Boreal LLC");
+  });
+
+  it("retries pending submission and marks session submitted when successful", async () => {
+    const storage = createStorage();
+    await handlePublicApplicationSubmit({
+      values: baseValues,
+      clientIp: "203.0.113.10",
+      termsAcceptedAt: "2024-01-01T00:00:00.000Z",
+      communicationsAcceptedAt: "2024-01-01T00:00:00.000Z",
+      submitApplication: vi.fn().mockRejectedValue(new Error("offline")),
+      onSuccess: vi.fn(),
+      onError: vi.fn(),
+      storage,
+      localStorage: storage as unknown as Storage,
+    });
+
+    const retried = await retryPendingPublicSubmission({
+      storage: storage as unknown as Storage,
+      submitApplication: vi.fn().mockResolvedValue({}),
+    });
+
+    expect(retried).toBe(true);
+    expect(loadPendingSubmissionState(storage as unknown as Storage)).toBeNull();
+    expect(loadPublicSubmissionState(storage as unknown as Storage)).toBeTruthy();
   });
 });
