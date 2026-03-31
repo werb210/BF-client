@@ -33,6 +33,16 @@ export function clearToken() {
 }
 
 const DEFAULT_TIMEOUT = 10000
+const PUBLIC_PATHS = [
+  "/api/public/",
+  "/api/auth/start-otp",
+  "/api/auth/verify-otp",
+  "/api/auth/refresh",
+]
+
+function isPublicPath(path: string): boolean {
+  return PUBLIC_PATHS.some((p) => path.startsWith(p))
+}
 
 function validatePath(path: string) {
   if (!path.startsWith("/api/")) {
@@ -106,7 +116,7 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     delete headers["Content-Type"]
   }
 
-  const isPublic = path.startsWith("/api/public/")
+  const isPublic = isPublicPath(path)
 
   if (!isPublic) {
     if (!token) {

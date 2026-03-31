@@ -9,12 +9,7 @@ import { setSessionRefreshing } from "../state/sessionRefresh";
 let refreshPromise: Promise<boolean> | null = null;
 let refreshFailed = false;
 
-function redirectToOtp() {
-  if (typeof window === "undefined") return;
-  window.location.assign("/portal");
-}
-
-export async function refreshSessionOnce() {
+export async function refreshSessionOnce(): Promise<boolean> {
   if (refreshFailed) return false;
   if (refreshPromise) return refreshPromise;
 
@@ -23,7 +18,7 @@ export async function refreshSessionOnce() {
   if (!token && !hasToken() && !legacyToken) return true;
 
   setSessionRefreshing(true);
-  refreshPromise = (apiRequest("/api/session/refresh", {
+  refreshPromise = (apiRequest("/api/auth/refresh", {
     method: "POST",
   }) as Promise<unknown>)
     .then(() => true)
@@ -37,8 +32,7 @@ export async function refreshSessionOnce() {
   if (!success) {
     refreshFailed = true;
     ClientProfileStore.clearPortalSessions();
-    await clearServiceWorkerCaches("otp");
-    redirectToOtp();
+    clearServiceWorkerCaches("otp");
   }
   return success;
 }
