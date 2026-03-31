@@ -15,7 +15,7 @@ import { apiRequest } from "@/api/client";
 import type { ApiError } from "@/types/api";
 import { fundingAmountSchema, emailSchema, phoneSchema } from "@/utils/validationSchema";
 import { executeCaptcha } from "@/security/useCaptcha";
-import { logClientError, logError } from "@/lib/logger";
+import { logClientError } from "@/lib/logger";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type FieldType =
@@ -802,7 +802,7 @@ export default function PublicApplyPage() {
           captchaToken,
         });
       } catch (err) {
-        logError(err);
+        logClientError(err);
         setErrors({ form: "Submission failed" });
       }
     } finally {
