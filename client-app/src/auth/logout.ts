@@ -3,7 +3,7 @@ import { ClientProfileStore } from "../state/clientProfiles";
 import { OfflineStore } from "../state/offline";
 
 const STORAGE_KEYS_TO_REMOVE = [
-  "bf_token",
+  "token",
   "boreal_client_token",
 ] as const;
 

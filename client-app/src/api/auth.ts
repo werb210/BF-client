@@ -24,9 +24,12 @@ export const verifyOtp = async (phone: string, code: string) => {
   const data = response.data;
   const token = data?.token ?? data?.data?.token;
 
-  if (token) {
-    setToken(token);
+  if (!token) {
+    throw new Error("TOKEN MISSING — LOGIN FAILED");
   }
+
+  setToken(token);
+  localStorage.setItem("token", token);
 
   return data;
 };

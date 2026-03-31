@@ -26,7 +26,7 @@ const RETRY_JITTER_RATIO = 0.2;
 
 function getSocketUrl() {
   if (typeof window === "undefined") return "";
-  const token = localStorage.getItem("bf_token");
+  const token = localStorage.getItem("token");
   if (!token) return "";
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   return `${protocol}://${window.location.host}/ws/chat?token=${encodeURIComponent(token)}`;

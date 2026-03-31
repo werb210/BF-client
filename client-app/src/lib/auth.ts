@@ -6,7 +6,7 @@ export { setToken, clearToken };
 
 export function getToken() {
   if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem("auth_token");
+  return localStorage.getItem("token");
 }
 
 export async function initAuth() {
@@ -65,7 +65,7 @@ export async function getMe() {
 
 export function hasToken() {
   if (typeof localStorage === "undefined") return false;
-  return Boolean(localStorage.getItem("auth_token"));
+  return Boolean(localStorage.getItem("token"));
 }
 
 export function logout() {
