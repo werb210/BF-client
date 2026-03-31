@@ -2,13 +2,13 @@ type ApiRequestConfig = {
   url?: string
   method?: string
   headers?: HeadersInit | Record<string, string>
-  data?: any
+  data?: unknown
   signal?: AbortSignal
   onUploadProgress?: (event: unknown) => void
   [key: string]: unknown
 }
 
-type ApiResponse<T = any> = {
+type ApiResponse<T = unknown> = {
   data: T
   status: number
   headers: Headers
@@ -32,6 +32,8 @@ export function clearToken() {
   setToken(null)
 }
 
+const DEFAULT_TIMEOUT = 10000
+
 function validatePath(path: string) {
   if (!path.startsWith("/api/")) {
     throw new Error("INVALID_API_PATH")
@@ -42,6 +44,10 @@ function validatePath(path: string) {
   }
 }
 
+function createRequestId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 function stringifyData(data: ApiRequestConfig["data"]): BodyInit | undefined {
   if (data == null) return undefined
   if (typeof data === "string" || data instanceof FormData || data instanceof Blob || data instanceof URLSearchParams) {
@@ -50,35 +56,84 @@ function stringifyData(data: ApiRequestConfig["data"]): BodyInit | undefined {
   return JSON.stringify(data)
 }
 
-export async function apiRequest<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
+  const controller = new AbortController()
+  const timerId = setTimeout(() => controller.abort(), timeout)
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timerId)
+  }
+}
+
+async function retry(fn: () => Promise<Response>, retries = 2) {
+  let attempt = 0
+
+  while (attempt <= retries) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (attempt === retries) {
+        throw error
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 300 * (attempt + 1)))
+      attempt += 1
+    }
+  }
+
+  throw new Error("UNREACHABLE")
+}
+
+export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   validatePath(path)
 
   const outgoingHeaders = new Headers(options.headers ?? {})
   outgoingHeaders.delete("Authorization")
   outgoingHeaders.delete("authorization")
-  const headers: Record<string, string> = {}
 
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = outgoingHeaders.get("Content-Type") ?? "application/json"
+  const headers: Record<string, string> = {
+    ...Object.fromEntries(outgoingHeaders.entries()),
+    "Content-Type": outgoingHeaders.get("Content-Type") ?? "application/json",
+    "X-Request-Id": createRequestId(),
   }
 
-  if (!path.startsWith("/api/public/")) {
+  if (options.body instanceof FormData) {
+    delete headers["Content-Type"]
+  }
+
+  const isPublic = path.startsWith("/api/public/")
+
+  if (!isPublic) {
     if (!token) {
       throw new Error("AUTH_REQUIRED")
     }
+
     headers.Authorization = `Bearer ${token}`
   }
 
-  const res = await fetch(path, {
-    ...options,
-    headers: {
-      ...Object.fromEntries(outgoingHeaders.entries()),
-      ...headers,
-    },
-  })
+  const res = await retry(() =>
+    fetchWithTimeout(
+      path,
+      {
+        ...options,
+        headers,
+      },
+      DEFAULT_TIMEOUT,
+    ),
+  )
 
   if (res.status === 401) {
     token = null
+    try {
+      window.location.href = "/login"
+    } catch {
+      // no-op in non-browser tests
+    }
     throw new Error("UNAUTHORIZED")
   }
 
@@ -87,17 +142,23 @@ export async function apiRequest<T = any>(path: string, options: RequestInit = {
   }
 
   if (!res.ok) {
-    throw new Error("API_ERROR")
+    throw new Error(`API_ERROR_${res.status}`)
   }
 
-  return (await res.json()) as T
+  const data = (await res.json()) as T
+
+  if (typeof data === "undefined" || data === null) {
+    throw new Error("INVALID_RESPONSE")
+  }
+
+  return data
 }
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   return apiRequest<T>(path.startsWith("/api/") ? path : `/api${path}`, options)
 }
 
-async function send<T = any>(method: string, path: string, data?: ApiRequestConfig["data"], init?: any) {
+async function send<T = unknown>(method: string, path: string, data?: ApiRequestConfig["data"], init?: RequestInit) {
   const body = stringifyData(data)
   const payload = await apiRequest<T>(path.startsWith("/api/") ? path : `/api${path}`, {
     ...init,
@@ -113,7 +174,7 @@ async function send<T = any>(method: string, path: string, data?: ApiRequestConf
 }
 
 export const api = {
-  request: async <T = any>(config: ApiRequestConfig): Promise<ApiResponse<T>> => {
+  request: async <T = unknown>(config: ApiRequestConfig): Promise<ApiResponse<T>> => {
     if (!config.url) {
       throw new Error("[INVALID API PATH]")
     }
@@ -124,14 +185,11 @@ export const api = {
       ...rest,
     })
   },
-  get: async <T = any>(url: string, init?: any) => send<T>("GET", url, undefined, init),
-  post: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
-    send<T>("POST", url, data, init),
-  put: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
-    send<T>("PUT", url, data, init),
-  patch: async <T = any>(url: string, data?: ApiRequestConfig["data"], init?: any) =>
-    send<T>("PATCH", url, data, init),
-  delete: async <T = any>(url: string, init?: any) => send<T>("DELETE", url, undefined, init),
+  get: async <T = unknown>(url: string, init?: RequestInit) => send<T>("GET", url, undefined, init),
+  post: async <T = unknown>(url: string, data?: ApiRequestConfig["data"], init?: RequestInit) => send<T>("POST", url, data, init),
+  put: async <T = unknown>(url: string, data?: ApiRequestConfig["data"], init?: RequestInit) => send<T>("PUT", url, data, init),
+  patch: async <T = unknown>(url: string, data?: ApiRequestConfig["data"], init?: RequestInit) => send<T>("PATCH", url, data, init),
+  delete: async <T = unknown>(url: string, init?: RequestInit) => send<T>("DELETE", url, undefined, init),
 }
 
 export function requireAuth(): string {
@@ -141,7 +199,7 @@ export function requireAuth(): string {
   return token
 }
 
-export function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
+export function request<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   return apiRequest<T>(path, options)
 }
 

@@ -1,4 +1,4 @@
-const originalFetch = window.fetch.bind(window)
+const originalFetch = window.fetch
 
 window.fetch = function (...args) {
   const url = args[0]
@@ -7,5 +7,5 @@ window.fetch = function (...args) {
     throw new Error("DIRECT_FETCH_BLOCKED")
   }
 
-  return originalFetch(...args)
+  return originalFetch.apply(this, args as Parameters<typeof fetch>)
 }

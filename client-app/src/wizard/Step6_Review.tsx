@@ -11,6 +11,7 @@ import { Input } from "../components/ui/Input";
 import { WizardLayout } from "../components/WizardLayout";
 import { submitApplication } from "../api/applications";
 import {
+  assertSubmissionReady,
   buildSubmissionPayload,
   canSubmitApplication,
   getMissingRequiredDocs,
@@ -44,6 +45,7 @@ import {
 import { apiRequest } from "../api/client";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
+import { logError } from "@/lib/logger";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
@@ -306,6 +308,7 @@ export function Step6_Review(): JSX.Element {
         signatureDate: app.signatureDate || today,
         currentStep: app.currentStep,
       });
+      assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const attribution = getClientAttribution();
       trackEvent("client_submission_started");
@@ -436,16 +439,8 @@ export function Step6_Review(): JSX.Element {
         }, 1200);
         return;
       }
-      const message =
-        data?.message ||
-        data?.error ||
-        data?.errors ||
-        "We couldn't submit your application. Please try again or contact support.";
-      setSubmitError(
-        typeof message === "string"
-          ? message
-          : "We couldn't submit your application. Please try again or contact support."
-      );
+      logError(error, { stage: "submission" });
+      setSubmitError("Submission failed. Please retry.");
     } finally {
       setSubmitting(false);
     }
