@@ -31,23 +31,18 @@ describe("refreshSession", () => {
     expect(getToken()).toBe("new-token")
   })
 
-  it("returns the same in-flight refresh promise", async () => {
+  it("does not reuse an in-flight refresh promise", async () => {
     setToken("old-token")
-    let resolveFetch: ((value: Response) => void) | null = null
-    vi.spyOn(window, "fetch").mockImplementation(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveFetch = resolve
-        }),
+    const fetchSpy = vi.spyOn(window, "fetch").mockImplementation(() =>
+      Promise.resolve(new Response(JSON.stringify({ token: "new-token" }), { status: 200 })),
     )
 
     const first = refreshSession()
     const second = refreshSession()
 
-    expect(second).toBe(first)
-
-    resolveFetch?.(new Response(JSON.stringify({ token: "new-token" }), { status: 200 }))
+    expect(second).not.toBe(first)
     await expect(first).resolves.toBe(true)
     await expect(second).resolves.toBe(true)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 })

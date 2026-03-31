@@ -6,7 +6,6 @@ import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { clearClientStorage } from "./logout";
 import { refreshSession } from "./sessionRefresh";
 import { getTokenOrFail } from "@/services/token";
-import { clearToken } from "@/auth/token";
 
 export type SessionGuardAction = "noop" | "redirect";
 
@@ -123,7 +122,7 @@ export function useSessionGuard(): void {
       lastRefreshAt.current = now;
       const ok = await refreshSession();
       if (ok !== true) {
-        clearToken();
+        localStorage.removeItem("token");
         return;
       }
     };

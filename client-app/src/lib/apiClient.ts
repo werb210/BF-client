@@ -37,14 +37,14 @@ export function clearToken() {
 }
 
 const DEFAULT_TIMEOUT = 10000
-const PUBLIC_PREFIXES = ["/api/auth", "/api/public", "/health"]
-
 function isPublicPath(url: string) {
   try {
     const u = new URL(url, window.location.origin)
-    return PUBLIC_PREFIXES.some((p) => u.pathname.startsWith(p))
+    return ["/api/auth", "/api/public", "/health"]
+      .some(p => u.pathname.startsWith(p))
   } catch {
-    return PUBLIC_PREFIXES.some((p) => url.startsWith(p))
+    return ["/api/auth", "/api/public", "/health"]
+      .some(p => url.startsWith(p))
   }
 }
 
@@ -106,15 +106,18 @@ async function retry(fn: () => Promise<Response>, retries = 2) {
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   validatePath(path)
 
-  const outgoingHeaders = new Headers(options.headers ?? {})
-  outgoingHeaders.delete("Authorization")
-  outgoingHeaders.delete("authorization")
-
   const headers: Record<string, string> = {
-    ...Object.fromEntries(outgoingHeaders.entries()),
-    "Content-Type": outgoingHeaders.get("Content-Type") ?? "application/json",
-    "X-Request-Id": createRequestId(),
+    "Content-Type": "application/json",
   }
+
+  if (options.headers) {
+    Object.assign(headers, options.headers)
+  }
+
+  delete headers.Authorization
+  delete headers.authorization
+
+  headers["X-Request-Id"] = createRequestId()
 
   if (options.body instanceof FormData) {
     delete headers["Content-Type"]
@@ -144,20 +147,19 @@ export async function apiRequest<T = unknown>(path: string, options: RequestInit
     throw new Error("INVALID_TOKEN")
   }
 
-  if (res.status === 204) {
-    return null as T
-  }
-
   let data: any = {}
   try {
     data = await res.json()
   } catch {}
 
   if (!res.ok) {
-    throw new Error(data?.error || "REQUEST_FAILED")
+    if (data?.error) {
+      throw new Error(data.error)
+    }
+    throw new Error("REQUEST_FAILED")
   }
 
-  return data as T
+  return data
 }
 
 export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
