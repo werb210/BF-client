@@ -9,6 +9,11 @@ export function getToken(): string | null {
 }
 
 export function setToken(t: string) {
+  if (!t || t === "null" || t === "undefined") {
+    localStorage.removeItem("token")
+    return
+  }
+
   localStorage.setItem("token", t)
 }
 

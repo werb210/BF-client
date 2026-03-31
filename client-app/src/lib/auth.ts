@@ -1,4 +1,4 @@
-import { apiFetch } from "./api"
+import { apiRequest } from "./apiClient"
 import { saveToken } from "@/services/token"
 import { clearToken as clearStoredToken, getToken as getStoredToken, setToken as setStoredToken } from "@/auth/token"
 
@@ -17,7 +17,7 @@ export function getToken() {
 
 export async function initAuth() {
   try {
-    currentUser = await apiFetch("/api/auth/me")
+    currentUser = await apiRequest("/api/auth/me")
   } catch {
     clearToken()
     currentUser = null
@@ -28,7 +28,7 @@ export async function initAuth() {
 }
 
 export async function startOtp(phone: string) {
-  return apiFetch("/api/auth/start-otp", {
+  return apiRequest("/api/auth/start-otp", {
     method: "POST",
     body: JSON.stringify({ phone }),
   })
@@ -36,7 +36,7 @@ export async function startOtp(phone: string) {
 
 export async function verifyOtp(phone: string, code: string) {
   const payload = { phone, code }
-  const res = await apiFetch<{ token?: string; user?: unknown }>("/api/auth/verify-otp", {
+  const res = await apiRequest("/api/auth/verify-otp", {
     method: "POST",
     body: JSON.stringify(payload),
   })
@@ -61,7 +61,7 @@ export async function getMe() {
   }
 
   try {
-    currentUser = await apiFetch("/api/auth/me")
+    currentUser = await apiRequest("/api/auth/me")
   } catch {
     clearToken()
     currentUser = null

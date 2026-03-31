@@ -1,15 +1,7 @@
 import { apiRequest } from "@/lib/apiClient"
-import { getToken, setToken, clearToken } from "@/auth/token"
+import { setToken, clearToken } from "@/auth/token"
 
-let failed = false
-
-export async function refreshSessionOnce(): Promise<boolean> {
-  if (getToken()) {
-    failed = false
-  }
-
-  if (failed) return false
-
+export async function refreshSession(): Promise<boolean> {
   try {
     const res = await apiRequest("/api/auth/refresh", {
       method: "POST",
@@ -22,10 +14,7 @@ export async function refreshSessionOnce(): Promise<boolean> {
 
     throw new Error("INVALID_REFRESH")
   } catch {
-    failed = true
     clearToken()
     return false
   }
 }
-
-export const refreshSession = refreshSessionOnce

@@ -9,17 +9,22 @@ export function startOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await apiRequest("/api/auth/verify-otp", {
-    method: "POST",
-    body: JSON.stringify({ phone, code }),
-  })
+  try {
+    const res = await apiRequest("/api/auth/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({ phone, code }),
+    })
 
-  if (!res?.token) {
-    throw new Error("INVALID_LOGIN")
+    if (!res?.token) {
+      throw new Error("INVALID_LOGIN")
+    }
+
+    setToken(res.token)
+    return res
+  } catch (e) {
+    localStorage.removeItem("token")
+    throw e
   }
-
-  setToken(res.token)
-  return res
 }
 
 export const sendOtp = startOtp
