@@ -1,4 +1,4 @@
-import { clearToken, getToken, setToken } from "@/lib/api"
+import { clearToken, getToken, setToken } from "@/auth/token"
 
 export function getAccessToken(): string | null {
   return getToken()

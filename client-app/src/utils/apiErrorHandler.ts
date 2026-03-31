@@ -1,12 +1,12 @@
-import { clearToken } from "@/lib/auth";
-import { logClientError } from "@/lib/logger";
+import { handleAuthError } from "@/auth/authError"
+import { logClientError } from "@/lib/logger"
 
 export function handleApiError(err: any) {
-  if (err?.response?.status === 401) {
-    clearToken();
-    sessionStorage.removeItem("boreal_client_token");
-    window.location.reload();
+  try {
+    handleAuthError(err)
+  } catch {
+    // auth errors are handled centrally
   }
 
-  logClientError("API error", err);
+  logClientError("API error", err)
 }
