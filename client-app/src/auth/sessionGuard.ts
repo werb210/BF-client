@@ -5,6 +5,7 @@ import { OfflineStore } from "../state/offline";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { clearClientStorage } from "./logout";
 import { refreshSessionOnce } from "./sessionRefresh";
+import { getTokenOrFail } from "@/services/token";
 
 export type SessionGuardAction = "noop" | "redirect";
 
@@ -15,14 +16,23 @@ type StorageLike = {
 };
 
 export function getSessionToken() {
-  return localStorage.getItem("token");
+  try {
+    return getTokenOrFail();
+  } catch {
+    return null;
+  }
 }
 
 export function assertAuthenticated() {
-  const token = localStorage.getItem("token");
+  getTokenOrFail();
+}
 
-  if (!token) {
-    throw new Error("AUTH BLOCKED — NO TOKEN");
+export function enforceSession() {
+  try {
+    getTokenOrFail();
+  } catch {
+    window.location.href = "/login";
+    throw new Error("[SESSION BLOCKED]");
   }
 }
 

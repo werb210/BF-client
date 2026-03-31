@@ -13,7 +13,7 @@ export async function initAuth() {
   loadToken();
 
   try {
-    currentUser = await apiFetch("/api/auth/me");
+    currentUser = await apiFetch("/auth/me");
   } catch {
     clearToken();
     currentUser = null;
@@ -24,14 +24,14 @@ export async function initAuth() {
 }
 
 export async function startOtp(phone: string) {
-  return apiFetch("/api/auth/otp/start", {
+  return apiFetch("/auth/otp/start", {
     method: "POST",
     body: JSON.stringify({ phone }),
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const res = await apiFetch("/api/auth/otp/verify", {
+  const res = await apiFetch("/auth/otp/verify", {
     method: "POST",
     body: JSON.stringify({ phone, code }),
   });
@@ -54,7 +54,7 @@ export async function getMe() {
   }
 
   try {
-    currentUser = await apiFetch("/api/auth/me");
+    currentUser = await apiFetch("/auth/me");
   } catch {
     clearToken();
     currentUser = null;

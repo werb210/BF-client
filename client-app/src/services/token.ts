@@ -6,13 +6,19 @@ export function getAccessToken(): string | null {
 
 export function getTokenOrFail(): string {
   if (typeof localStorage === "undefined") {
-    throw new Error("FATAL: TOKEN INVALID OR MISSING")
+    throw new Error("[AUTH BLOCK] INVALID TOKEN STATE")
   }
 
   const token = localStorage.getItem("token")
 
-  if (!token || token === "undefined" || token === "null") {
-    throw new Error("FATAL: TOKEN INVALID OR MISSING")
+  if (
+    token === null ||
+    token === undefined ||
+    token.trim() === "" ||
+    token === "undefined" ||
+    token === "null"
+  ) {
+    throw new Error("[AUTH BLOCK] INVALID TOKEN STATE")
   }
 
   return token

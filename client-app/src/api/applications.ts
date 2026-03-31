@@ -7,7 +7,10 @@ export const createApplication = async (payload: any = {}) => {
   assertAuthenticated();
 
   try {
-    const { data } = await api.post("/api/applications", payload);
+    const { data } = await api.post("/applications", payload);
+    if (!data) {
+      throw new Error("[API ERROR] EMPTY RESPONSE");
+    }
     return assertApiResponse(data);
   } catch (err) {
     console.error("[SUBMIT ERROR]", err);
@@ -22,13 +25,19 @@ export const submitApplication = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.post(`/api/applications/${applicationId}/submit`);
+  const { data } = await api.post(`/applications/${applicationId}/submit`);
+  if (!data) {
+    throw new Error("[API ERROR] EMPTY RESPONSE");
+  }
   return assertApiResponse(data);
 };
 
 export const createPublicApplication = async (payload: any) => {
   try {
-    const { data } = await api.post("/api/applications", payload);
+    const { data } = await api.post("/applications", payload);
+    if (!data) {
+      throw new Error("[API ERROR] EMPTY RESPONSE");
+    }
     return assertApiResponse(data);
   } catch (err) {
     console.error("[SUBMIT ERROR]", err);
@@ -41,7 +50,10 @@ export const fetchApplication = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.get(`/api/applications/${applicationId}`);
+  const { data } = await api.get(`/applications/${applicationId}`);
+  if (!data) {
+    throw new Error("[API ERROR] EMPTY RESPONSE");
+  }
   return assertApiResponse(data);
 };
 
@@ -50,7 +62,10 @@ export const fetchApplicationDocuments = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.get(`/api/applications/${applicationId}/documents`);
+  const { data } = await api.get(`/applications/${applicationId}/documents`);
+  if (!data) {
+    throw new Error("[API ERROR] EMPTY RESPONSE");
+  }
   return assertApiResponse(data);
 };
 
@@ -59,7 +74,10 @@ export const fetchApplicationOffers = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.get(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`);
+  const { data } = await api.get(`/offers?applicationId=${encodeURIComponent(applicationId)}`);
+  if (!data) {
+    throw new Error("[API ERROR] EMPTY RESPONSE");
+  }
   return assertApiResponse(data);
 };
 
@@ -81,13 +99,16 @@ export const uploadApplicationDocument = async (
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const { data } = await api.post("/api/documents/upload", formData, {
+  const { data } = await api.post("/documents/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
   });
   payload.onProgress?.(100);
 
+  if (!data) {
+    throw new Error("[API ERROR] EMPTY RESPONSE");
+  }
   return assertApiResponse(data);
 };
 
@@ -105,4 +126,4 @@ export const uploadDocuments = async (
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>
-  apiRequest(`/api/offers/${offerId}/accept`, { method: "POST" });
+  apiRequest(`/offers/${offerId}/accept`, { method: "POST" });
