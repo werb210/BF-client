@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { DOCUMENT_CATEGORIES } from "@/constants/documentCategories";
 import type { NormalizedLenderProduct } from "../lender/eligibility";
 import type { LenderProductRequirement } from "../wizard/requirements";
 import { filterRequirementsByAmount, normalizeRequirementList } from "../wizard/requirements";
@@ -61,7 +62,7 @@ export function ensureAlwaysRequiredDocuments(
   const docMap = new Map(
     requirements.map((entry) => [entry.document_type, entry])
   );
-  const alwaysRequired = ["bank_statements"];
+  const alwaysRequired = [DOCUMENT_CATEGORIES.BANK_STATEMENTS];
   alwaysRequired.forEach((docType) => {
     const existing = docMap.get(docType);
     docMap.set(docType, {

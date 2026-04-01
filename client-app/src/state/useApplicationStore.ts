@@ -8,7 +8,7 @@ import { clearSubmissionIdempotencyKey } from "../client/submissionIdempotency";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { getSessionId, trackEvent } from "../utils/analytics";
 import { loadLocalBackup, useLocalBackup } from "../system/useLocalBackup";
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { emptyApplicationDraft } from "../constants/applicationDraft";
 import { hasToken } from "@/api/auth";
@@ -210,7 +210,7 @@ export function useApplicationStore() {
       debounce(async (state: ApplicationData) => {
         if (!state.applicationToken || !hasActiveAuthSession()) return;
 
-        await apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
+        await apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
           method: "POST",
           body: JSON.stringify(state),
         });

@@ -22,7 +22,8 @@ async function parseApiResponse<T>(res: Response): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(buildUrl(path), { // apiRequest
+  console.log("API CALL:", path, body)
+  const res = await fetch(buildUrl(path), {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -34,7 +35,8 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
 }
 
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
-  const res = await fetch(buildUrl(path), { // apiRequest
+  console.log("API CALL:", path, formData)
+  const res = await fetch(buildUrl(path), {
     method: "POST",
     body: formData
   })
@@ -44,7 +46,7 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown }
 
-export async function apiRequest<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const method = (options.method || "GET").toUpperCase()
 
   if (method === "POST") {
@@ -59,7 +61,8 @@ export async function apiRequest<T = unknown>(path: string, options: ApiRequestO
     return apiPost<T>(path, options.body)
   }
 
-  const res = await fetch(buildUrl(path), { // apiRequest
+  console.log("API CALL:", path, options.body)
+  const res = await fetch(buildUrl(path), {
     ...options,
     method,
     headers: {

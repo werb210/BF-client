@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const apiRequestMock = vi.fn();
+const apiCallMock = vi.fn();
 let storage = new Map<string, string>();
 
 vi.mock("@/lib/apiClient", () => ({
-  apiRequest: apiRequestMock,
+  apiCall: apiCallMock,
 }));
 
 describe("createLead dedupe", () => {
@@ -22,14 +22,14 @@ describe("createLead dedupe", () => {
         storage.clear();
       }),
     });
-    apiRequestMock.mockReset();
+    apiCallMock.mockReset();
     localStorage.clear();
   });
 
   it("reuses existing lead by email/phone", async () => {
     const { createLead } = await import("../lead");
 
-    apiRequestMock.mockResolvedValue({ leadId: "lead-1", pendingApplicationId: "app-1" });
+    apiCallMock.mockResolvedValue({ leadId: "lead-1", pendingApplicationId: "app-1" });
 
     const payload = {
       companyName: "ACME",
@@ -43,7 +43,7 @@ describe("createLead dedupe", () => {
 
     expect(first.leadId).toBe("lead-1");
     expect(second.leadId).toBe("lead-1");
-    expect(apiRequestMock).toHaveBeenCalledTimes(1);
+    expect(apiCallMock).toHaveBeenCalledTimes(1);
   });
 
   afterEach(() => {

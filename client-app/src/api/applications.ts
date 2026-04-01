@@ -1,4 +1,4 @@
-import api, { apiRequest } from "./client";
+import api, { apiCall } from "./client";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
@@ -122,4 +122,4 @@ export const uploadDocuments = async (
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>
-  apiRequest(`/api/offers/${offerId}/accept`, { method: "POST" });
+  apiCall(`/api/offers/${offerId}/accept`, { method: "POST" });

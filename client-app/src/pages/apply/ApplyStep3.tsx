@@ -5,7 +5,7 @@ import { Input } from "../../components/ui/Input";
 import { PhoneInput } from "../../components/ui/PhoneInput";
 import { Button } from "../../components/ui/Button";
 import { components, layout, scrollToFirstError, tokens } from "@/styles";
-import { apiRequest } from "../../api/client";
+import { apiCall } from "../../api/client";
 
 export default function ApplyStep3() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export default function ApplyStep3() {
     setIsSubmitting(true);
 
     try {
-      await apiRequest(`/api/applications/${applicationToken}`, {
+      await apiCall(`/api/applications/${applicationToken}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",

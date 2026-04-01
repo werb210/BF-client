@@ -1,1 +1,1 @@
-export { apiRequest, apiPost, apiUpload, type ApiResponse } from "@/lib/apiClient";
+export { apiCall, apiPost, apiUpload, type ApiResponse } from "@/lib/apiClient";

@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/apiClient";
+import { apiCall } from "@/lib/apiClient";
 
 type ApiResponse<T = unknown> = {
   data: T;
@@ -20,7 +20,7 @@ function normalizePath(path: string) {
 }
 
 async function send<T = unknown>(method: string, path: string, data?: unknown, init?: any): Promise<ApiResponse<T>> {
-  const payload = await apiRequest<T>(normalizePath(path), { ...init, method, body: data });
+  const payload = await apiCall<T>(normalizePath(path), { ...init, method, body: data });
   return { data: payload, status: 200, headers: new Headers() };
 }
 
@@ -42,7 +42,7 @@ export const apiClient = {
   delete: <T = unknown>(url: string, init?: any) => send<T>("DELETE", url, undefined, init),
 };
 
-export { apiRequest };
+export { apiCall };
 
 export function buildApiUrl(path: string): string {
   return normalizePath(path);

@@ -1,5 +1,5 @@
 import { DOCUMENT_CONTRACT } from '@/contracts';
-import { apiRequest } from '@/api/client';
+import { apiCall } from '@/api/client';
 
 export async function uploadDocument(file, applicationId, category) {
   if (!file) {
@@ -12,7 +12,7 @@ export async function uploadDocument(file, applicationId, category) {
   formData.append(DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID, applicationId);
   formData.append(DOCUMENT_CONTRACT.FIELDS.CATEGORY, category);
 
-  return apiRequest(DOCUMENT_CONTRACT.UPLOAD, {
+  return apiCall(DOCUMENT_CONTRACT.UPLOAD, {
     method: 'POST',
     body: formData,
   });

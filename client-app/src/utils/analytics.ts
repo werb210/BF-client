@@ -1,5 +1,5 @@
 import { getPersistedAttribution } from "./attribution";
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export function track(event: string) {
@@ -92,7 +92,7 @@ export const trackEvent = (
     window.clarity("set", eventName, payload);
   }
 
-  void apiRequest(API_ENDPOINTS_CONTRACT.ANALYTICS, {
+  void apiCall(API_ENDPOINTS_CONTRACT.ANALYTICS, {
     method: "POST",
     body: JSON.stringify({
       event_name: eventName,
