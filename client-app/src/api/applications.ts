@@ -1,5 +1,5 @@
 import api, { apiCall } from "./client";
-import { apiRequest, API_BASE } from "@/lib/apiClient";
+import { apiRequest, apiUpload } from "@/lib/apiClient";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
@@ -112,23 +112,8 @@ export const uploadApplicationDocument = async (
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const res = await fetch(`${API_BASE}${ENDPOINTS.uploadDocument}`, {
-    method: "POST",
-    body: formData,
-  });
+  const data = await apiUpload(ENDPOINTS.uploadDocument, formData);
   payload.onProgress?.(100);
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("API_ERROR", {
-      path: ENDPOINTS.uploadDocument,
-      status: res.status,
-      body: text,
-    });
-    throw new Error(`API request failed: ${res.status}`);
-  }
-
-  const data = await res.json();
 
   if (!data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");
