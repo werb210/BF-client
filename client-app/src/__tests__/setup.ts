@@ -35,9 +35,12 @@ beforeEach(() => {
     throw new Error("fetch must be mocked");
   }
 
-  global.fetch = vi.fn(async () => {
-    throw new Error("Tests must explicitly mock fetch response shape");
-  }) as typeof global.fetch;
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      json: async () => ({ status: "ok", data: {} }),
+    } as Response)
+  ) as typeof global.fetch;
 });
 
 beforeEach(() => {

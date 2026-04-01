@@ -1,23 +1,37 @@
-const API_BASE = import.meta.env.VITE_API_URL;
+const base = import.meta.env.VITE_API_URL;
 
-if (import.meta.env.MODE !== "test" && !API_BASE) {
+if (import.meta.env.MODE !== "test" && !base) {
   throw new Error("VITE_API_URL is required at runtime");
 }
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
+type ApiEnvelope<T> = {
+  status: "ok" | "error";
+  data?: T;
+  error?: string;
+};
+
+export async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${base}${path}`, opts);
+  const json = (await res.json()) as ApiEnvelope<T>;
+
+  if (!res.ok) {
+    throw new Error(json.error ?? `API error ${res.status}`);
+  }
+
+  if (json.status === "error") {
+    throw new Error(json.error ?? "Unknown API error");
+  }
+
+  return (json.data ?? ({} as T)) as T;
+}
+
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  return api<T>(path, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || `API error ${res.status}`);
-  }
-
-  return (await res.json()) as T;
 }
 
 export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
@@ -29,8 +43,11 @@ export async function apiCall<T = unknown>(path: string, options: ApiRequestOpti
         ? JSON.stringify(options.body)
         : undefined;
 
-  return apiRequest<T>(path, {
+  const headers = isFormData ? options.headers : { "Content-Type": "application/json", ...options.headers };
+
+  return api<T>(path, {
     ...options,
+    headers,
     body,
   });
 }
@@ -46,7 +63,6 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   return apiCall<T>(path, {
     method: "POST",
     body: formData,
-    headers: {},
   });
 }
 

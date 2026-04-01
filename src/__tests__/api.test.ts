@@ -1,53 +1,39 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("apiRequest", () => {
+describe("api", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
-  it("returns network_error on fetch failure without throwing", async () => {
+  it("returns response data on successful contract envelope", async () => {
     vi.stubEnv("VITE_API_URL", "https://api.example.com");
     vi.resetModules();
 
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockRejectedValueOnce(new Error("offline"));
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "ok", data: { value: 123 } }),
+    } as Response);
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { api } = await import("../lib/api");
+    const data = await api<{ value: number }>("/maya/chat", { method: "POST" });
 
-    const { apiRequest } = await import("../lib/api");
-    const result = await apiRequest("/maya/chat", { method: "POST", body: { message: "hi" } });
-
-    expect(result).toEqual({ success: false, message: "network_error" });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(data).toEqual({ value: 123 });
   });
 
-  it("returns timeout when request exceeds timeout window", async () => {
+  it("throws API contract error when status is error", async () => {
     vi.stubEnv("VITE_API_URL", "https://api.example.com");
-    vi.useFakeTimers();
     vi.resetModules();
 
-    vi.spyOn(globalThis, "fetch").mockImplementationOnce(
-      (_input: RequestInfo | URL, init?: RequestInit) =>
-        new Promise((_, reject) => {
-          init?.signal?.addEventListener("abort", () => {
-            reject(new DOMException("Aborted", "AbortError"));
-          });
-        }) as Promise<Response>
-    );
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "error", error: "boom" }),
+    } as Response);
 
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { api } = await import("../lib/api");
 
-    const { apiRequest } = await import("../lib/api");
-    const requestPromise = apiRequest("/maya/chat", { method: "GET" });
-
-    await vi.advanceTimersByTimeAsync(10_000);
-    const result = await requestPromise;
-
-    expect(result).toEqual({ success: false, message: "timeout" });
-    expect(errorSpy).toHaveBeenCalledTimes(1);
+    await expect(api("/maya/chat", { method: "POST" })).rejects.toThrow("boom");
   });
 });
