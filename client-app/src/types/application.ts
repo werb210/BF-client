@@ -52,11 +52,6 @@ export interface ApplicationData {
   selectedProductId?: string;
   selectedProductType?: string;
 
-  /**
-   * Indicates whether the applicant requires additional funding to cover
-   * closing costs or a deposit for an equipment purchase.
-   * Captured in Step 2 when Equipment Financing is selected.
-   */
   requires_closing_cost_funding?: boolean;
 
   termsAccepted: boolean;
@@ -75,4 +70,17 @@ export interface ApplicationData {
   readinessLeadId?: string;
   ocrComplete?: boolean;
   creditSummaryComplete?: boolean;
+}
+
+export interface ApplicationPayload {
+  businessType: string
+  yearsInBusiness: number
+  revenue: number
+  productType: string
+  fundingAmount: number
+  businessName: string
+  industry: string
+  applicantName: string
+  email: string
+  phone: string
 }

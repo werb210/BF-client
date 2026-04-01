@@ -13,7 +13,7 @@ export const uploadDocument = async (
   formData.append("applicationId", applicationId);
   formData.append("category", category);
 
-  const { data } = await api.post("/documents/upload", formData);
+  const { data } = await api.post("/api/documents/upload", formData);
 
   if (!(data as any)?.data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");
