@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./app/App";
+import ErrorBoundary from "./app/ErrorBoundary";
 import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
@@ -32,9 +33,11 @@ async function start() {
 
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      <BrowserRouter>
-        <App initialSession={session} />
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <App initialSession={session} />
+        </BrowserRouter>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 }
