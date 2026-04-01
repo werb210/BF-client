@@ -66,3 +66,15 @@ window.scrollTo = vi.fn();
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = vi.fn();
 }
+
+
+if (!global.fetch) {
+  global.fetch = vi.fn(() =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "ok" }),
+      text: async () => "ok",
+    })
+  ) as any;
+}
