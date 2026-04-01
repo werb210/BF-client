@@ -3,7 +3,7 @@ import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
 
-export const createApplication = async (payload: any = {}) => {
+export const createApplication = async (payload: Record<string, unknown> = {}) => {
   assertAuthenticated();
 
   try {
@@ -32,7 +32,7 @@ export const submitApplication = async (applicationId: string) => {
   return assertApiResponse(data);
 };
 
-export const createPublicApplication = async (payload: any) => {
+export const createPublicApplication = async (payload: Record<string, unknown>) => {
   try {
     const { data } = await api.post("/applications", payload);
     if (!data) {

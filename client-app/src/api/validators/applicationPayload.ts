@@ -1,17 +1,22 @@
-export function validateApplicationPayload(payload: any) {
-  if (!payload) {
+export function validateApplicationPayload(payload: unknown) {
+  const parsed = payload as {
+    applicant?: unknown;
+    business?: unknown;
+    fundingRequest?: unknown;
+  } | null;
+  if (!parsed) {
     throw new Error("Missing application payload");
   }
 
-  if (!payload.applicant) {
+  if (!parsed.applicant) {
     throw new Error("Missing applicant data");
   }
 
-  if (!payload.business) {
+  if (!parsed.business) {
     throw new Error("Missing business data");
   }
 
-  if (!payload.fundingRequest) {
+  if (!parsed.fundingRequest) {
     throw new Error("Missing funding request");
   }
 
