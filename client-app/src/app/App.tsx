@@ -48,6 +48,7 @@ export default function App({ initialSession = null }: AppProps) {
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
   const [continuationError, setContinuationError] = useState<string | null>(null);
+  const [isBackendDegraded, setIsBackendDegraded] = useState(false);
   const hasInitializedClientVoice = useRef(false);
   const pathname = typeof window !== "undefined" ? window.location.pathname : "";
   const isOtpScreen = pathname === "/otp" || pathname === "/portal";
@@ -206,6 +207,11 @@ export default function App({ initialSession = null }: AppProps) {
 
     void safeFetch(buildApiUrl(`/credit-readiness/session/${session}`))
       .then((data) => {
+        if (data && typeof data === "object" && "degraded" in data && data.degraded === true) {
+          setIsBackendDegraded(true);
+          return;
+        }
+
         localStorage.setItem("creditPrefill", JSON.stringify(data));
       })
       .catch(() => {
@@ -227,6 +233,11 @@ export default function App({ initialSession = null }: AppProps) {
     <div className="min-h-screen bg-brand-bg text-white flex flex-col">
       <Header />
       <OfflineBanner />
+      {isBackendDegraded && (
+        <div className="mx-auto mt-4 w-full max-w-[var(--portal-max-width)] rounded border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          System temporarily unavailable
+        </div>
+      )}
       {continuationError && (
         <div className="mx-auto mt-4 w-full max-w-[var(--portal-max-width)] rounded border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           {continuationError}
