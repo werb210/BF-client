@@ -1,47 +1,73 @@
-import { getToken, clearToken } from "@/auth/token"
+export type ApiResponse<T> =
+  | { success: true; data: T }
+  | { success: false; error: string }
 
-const PUBLIC_PREFIXES = ["/api/auth", "/health"]
+const BASE_URL = import.meta.env.VITE_API_URL || ""
 
-function isPublic(url: string) {
-  try {
-    const u = new URL(url, window.location.origin)
-    return PUBLIC_PREFIXES.some(p => u.pathname.startsWith(p))
-  } catch {
-    return PUBLIC_PREFIXES.some(p => url.startsWith(p))
+function buildUrl(path: string) {
+  if (!path.startsWith("/api/")) {
+    throw new Error(`Invalid API path: ${path}`)
   }
+  return `${BASE_URL}${path}`
 }
 
-export async function apiRequest(url: string, options: RequestInit = {}) {
-  const token = getToken()
+async function parseApiResponse<T>(res: Response): Promise<T> {
+  const json: ApiResponse<T> = await res.json()
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
+  if (!json.success) {
+    throw new Error((json as { success: false; error: string }).error)
   }
 
-  if (!isPublic(url)) {
-    if (!token) throw new Error("AUTH_REQUIRED")
-    headers.Authorization = `Bearer ${token}`
+  return (json as { success: true; data: T }).data
+}
+
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(buildUrl(path), { // apiRequest
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: body ? JSON.stringify(body) : undefined
+  })
+
+  return parseApiResponse<T>(res)
+}
+
+export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(buildUrl(path), { // apiRequest
+    method: "POST",
+    body: formData
+  })
+
+  return parseApiResponse<T>(res)
+}
+
+type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown }
+
+export async function apiRequest<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const method = (options.method || "GET").toUpperCase()
+
+  if (method === "POST") {
+    if (options.body instanceof FormData) {
+      return apiUpload<T>(path, options.body)
+    }
+
+    if (typeof options.body === "string") {
+      return apiPost<T>(path, options.body ? JSON.parse(options.body) : undefined)
+    }
+
+    return apiPost<T>(path, options.body)
   }
 
-  const res = await fetch(url, { ...options, headers }) // apiRequest
+  const res = await fetch(buildUrl(path), { // apiRequest
+    ...options,
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    body: options.body as BodyInit | null | undefined
+  })
 
-  if (res.status === 401) {
-    clearToken()
-    throw new Error("INVALID_TOKEN")
-  }
-
-  if (res.status === 204) return null
-
-  let data: any = {}
-  try {
-    data = await res.json()
-  } catch {}
-
-  if (!res.ok) {
-    if (data?.error) throw new Error(data.error)
-    throw new Error("REQUEST_FAILED")
-  }
-
-  return data
+  return parseApiResponse<T>(res)
 }

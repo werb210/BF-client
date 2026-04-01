@@ -25,7 +25,7 @@ export const submitApplication = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.post(`/applications/${applicationId}/submit`);
+  const { data } = await api.post(`/api/application/submit`);
   if (!data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");
   }
@@ -99,7 +99,7 @@ export const uploadApplicationDocument = async (
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const { data } = await api.post("/documents/upload", formData);
+  const { data } = await api.post("/api/documents/upload", formData);
   payload.onProgress?.(100);
 
   if (!data) {

@@ -1,7 +1,7 @@
 import { apiRequest } from "@/lib/apiClient";
 
 export async function sendMessageToMaya(message: string) {
-  const res = await apiRequest("/api/maya/client-chat", {
+  const res = await apiRequest("/api/maya/message", {
     method: "POST",
     body: JSON.stringify({ message }),
   });
