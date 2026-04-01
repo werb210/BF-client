@@ -21,6 +21,7 @@
     "test": "npm run verify:no-raw-fetch && npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
-    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src client-app/src | rg -v \"src/lib/api\\.ts|client-app/src/lib/api\\.ts\" && exit 1 || exit 0"
+    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src client-app/src | rg -v \"src/lib/api\\.ts|client-app/src/lib/api\\.ts\" && exit 1 || exit 0",
+    "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0"
   }
 }

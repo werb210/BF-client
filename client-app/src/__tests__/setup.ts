@@ -31,16 +31,10 @@ if (!global.fetch) {
 beforeEach(() => {
   vi.clearAllMocks();
 
-  if (!global.fetch) {
-    throw new Error("fetch must be mocked");
-  }
-
-  global.fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: true,
-      json: async () => ({ status: "ok", data: {} }),
-    } as Response)
-  ) as typeof global.fetch;
+  global.fetch = (async () => ({
+    ok: true,
+    json: async () => ({ status: "ok", data: {} }),
+  })) as typeof global.fetch;
 });
 
 beforeEach(() => {
