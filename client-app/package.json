@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest",
-    "test:ci": "vitest --run",
+    "test:ci": "CI=1 vitest run --passWithNoTests=false",
     "audit:enterprise": "node scripts/enterprise-audit.js",
     "prestart": "node scripts/verify-node.js",
     "smoke": "npm run build",
@@ -22,8 +22,10 @@
     "preview:ci": "npm run build && sh -c 'vite preview --host 127.0.0.1 --port 4173 & PREVIEW_PID=$!; sleep 3; curl -f http://127.0.0.1:4173/index.html; curl -fs http://127.0.0.1:4173/index.html | grep -q \"<div id=\\\"root\\\">\"; kill $PREVIEW_PID'",
     "dev:full": "vite",
     "guard:no-hardcoded-api": "node scripts/guard-no-hardcoded-api.js",
-    "pretest": "npm run guard:no-hardcoded-api",
-    "prebuild": "npm run guard:no-hardcoded-api"
+    "pretest": "npm run verify:no-hardcoded-api && npm run verify:no-raw-fetch",
+    "prebuild": "npm run verify:no-hardcoded-api && npm run verify:no-raw-fetch",
+    "verify:no-hardcoded-api": "rg -n \"localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|window\\.location\\.origin|process\\.env\\..*API\" src && exit 1 || exit 0",
+    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src | rg -v \"api\\.ts\" && exit 1 || exit 0"
   },
   "engines": {
     "node": ">=20.10 <23"

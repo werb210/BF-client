@@ -7,7 +7,7 @@ describe("auth hard lock", () => {
   beforeEach(() => {
     clearToken()
     Object.defineProperty(window, "location", {
-      value: { href: "http://localhost/" },
+      value: { href: "https://client.example/" },
       writable: true,
       configurable: true,
     })
@@ -22,7 +22,7 @@ describe("auth hard lock", () => {
     setToken("valid-token")
 
     expect(() => enforceSession()).not.toThrow()
-    expect(window.location.href).toBe("http://localhost/")
+    expect(window.location.href).toBe("https://client.example/")
   })
 
   it("clears expired session state and then routes to login", async () => {

@@ -1,7 +1,7 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? "";
+const API_BASE = import.meta.env.VITE_API_URL;
 
 if (import.meta.env.MODE !== "test" && !API_BASE) {
-  throw new Error("VITE_API_URL is required");
+  throw new Error("VITE_API_URL is required at runtime");
 }
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };

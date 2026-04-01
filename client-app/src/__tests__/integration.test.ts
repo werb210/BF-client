@@ -1,9 +1,14 @@
-import { expect, test } from "vitest";
+import { expect, test, vi } from "vitest";
+import { apiRequest } from "@/lib/api";
 
-const hasApiUrl = Boolean(process.env.VITE_API_URL);
-const integrationTest = hasApiUrl ? test : test.skip;
+test("backend reachable", async () => {
+  global.fetch = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ status: "ok" }),
+    text: async () => "ok",
+  })) as typeof fetch;
 
-integrationTest("backend reachable", async () => {
-  const res = await fetch(`${process.env.VITE_API_URL}/health`);
-  expect(res.status).toBe(200);
+  const res = await apiRequest<{ status: string }>("/health");
+  expect(res.status).toBe("ok");
 });
