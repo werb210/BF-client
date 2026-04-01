@@ -22,7 +22,7 @@ describe("refreshSession", () => {
   it("stores refreshed token and returns true", async () => {
     setToken("old-token")
     vi.spyOn(window, "fetch").mockResolvedValue(
-      new Response(JSON.stringify({ token: "new-token" }), { status: 200 }),
+      new Response(JSON.stringify({ status: "ok", data: { token: "new-token" } }), { status: 200 }),
     )
 
     const ok = await refreshSession()
@@ -34,7 +34,7 @@ describe("refreshSession", () => {
   it("does not reuse an in-flight refresh promise", async () => {
     setToken("old-token")
     const fetchSpy = vi.spyOn(window, "fetch").mockImplementation(() =>
-      Promise.resolve(new Response(JSON.stringify({ token: "new-token" }), { status: 200 })),
+      Promise.resolve(new Response(JSON.stringify({ status: "ok", data: { token: "new-token" } }), { status: 200 })),
     )
 
     const first = refreshSession()

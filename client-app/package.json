@@ -25,7 +25,8 @@
     "pretest": "npm run verify:no-hardcoded-api && npm run verify:no-raw-fetch",
     "prebuild": "npm run verify:no-hardcoded-api && npm run verify:no-raw-fetch",
     "verify:no-hardcoded-api": "rg -n \"localhost|127\\.0\\.0\\.1|0\\.0\\.0\\.0|window\\.location\\.origin|process\\.env\\..*API\" src && exit 1 || exit 0",
-    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src | rg -v \"api\\.ts\" && exit 1 || exit 0"
+    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src | rg -v \"api\\.ts\" && exit 1 || exit 0",
+    "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0"
   },
   "engines": {
     "node": ">=20.10 <23"

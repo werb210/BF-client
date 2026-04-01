@@ -1,3 +1,4 @@
+import "@/lib/fetchGuard";
 import "@/lib/networkGuard";
 import React from "react";
 import ReactDOM from "react-dom/client";
