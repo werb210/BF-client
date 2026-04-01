@@ -24,17 +24,20 @@ Object.defineProperty(globalThis, "localStorage", {
 
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
-if (typeof global.fetch === "undefined") {
-  global.fetch = vi.fn(async () => ({
-    ok: true,
-    status: 200,
-    json: async () => ({ status: "ok" }),
-    text: async () => "ok",
-  })) as typeof global.fetch;
+if (!global.fetch) {
+  throw new Error("fetch must be mocked");
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+
+  if (!global.fetch) {
+    throw new Error("fetch must be mocked");
+  }
+
+  global.fetch = vi.fn(async () => {
+    throw new Error("Tests must explicitly mock fetch response shape");
+  }) as typeof global.fetch;
 });
 
 beforeEach(() => {

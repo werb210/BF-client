@@ -6,6 +6,7 @@ import App from "./app/App";
 import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
+import { apiRequest } from "@/lib/api";
 
 window.addEventListener("unhandledrejection", (e) => {
   console.error("[UNHANDLED PROMISE]", e.reason);
@@ -20,11 +21,7 @@ async function assertBackend() {
   if (import.meta.env.MODE === "production") return;
   if (import.meta.env.MODE !== "development") return;
 
-  const res = await fetch(`${import.meta.env.VITE_API_URL}/health`);
-
-  if (!res.ok) {
-    throw new Error("Backend not reachable");
-  }
+  await apiRequest<{ status?: string }>("/health");
 }
 
 async function start() {
