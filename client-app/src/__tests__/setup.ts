@@ -24,21 +24,24 @@ Object.defineProperty(globalThis, "localStorage", {
 
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
+if (typeof global.fetch === "undefined") {
+  global.fetch = vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ status: "ok" }),
+    text: async () => "ok",
+  })) as typeof global.fetch;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation((msg: unknown) => {
     throw new Error(String(msg));
   });
   window.localStorage?.clear?.();
-
-  if (!vi.isMockFunction(global.fetch)) {
-    vi.spyOn(global, "fetch").mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ status: "ok" }),
-      text: async () => "ok",
-    } as Response);
-  }
 });
 
 afterEach(() => {

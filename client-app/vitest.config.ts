@@ -9,12 +9,15 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
     setupFiles: ["./src/__tests__/setup.ts"],
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
+    env: {
+      VITE_API_URL: "",
+    },
     environmentOptions: {
       jsdom: {
         url: "http://localhost",
