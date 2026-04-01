@@ -31,7 +31,7 @@ describe("refreshSession", () => {
     expect(getToken()).toBe("new-token")
   })
 
-  it("does not reuse an in-flight refresh promise", async () => {
+  it("blocks nested refresh calls during an active API request", async () => {
     setToken("old-token")
     const fetchSpy = vi.spyOn(window, "fetch").mockImplementation(() =>
       Promise.resolve(new Response(JSON.stringify({ status: "ok", data: { token: "new-token" } }), { status: 200 })),
@@ -42,7 +42,7 @@ describe("refreshSession", () => {
 
     expect(second).not.toBe(first)
     await expect(first).resolves.toBe(true)
-    await expect(second).resolves.toBe(true)
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
+    await expect(second).resolves.toBe(false)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 })

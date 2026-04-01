@@ -30,7 +30,8 @@
     "verify:single-api": "rg -n \"export async function api\\(\" src | wc -l | grep -q '^1$' || exit 1",
     "verify:no-silent-catch": "rg -n \"catch \\(.*\\) \\{\\s*(return|console)\" src && exit 1 || exit 0",
     "verify:no-fetch-outside-api": "rg -n \"fetch\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0",
-    "verify:no-empty-catch": "rg -n \"catch \\(.*\\) \\{\\s*\\}\" src && exit 1 || exit 0"
+    "verify:no-empty-catch": "rg -n \"catch \\(.*\\) \\{\\s*\\}\" src && exit 1 || exit 0",
+    "verify:no-dynamic-api-import": "rg -n \"import\\(.*api\" src && exit 1 || exit 0"
   },
   "engines": {
     "node": ">=20.10 <23"

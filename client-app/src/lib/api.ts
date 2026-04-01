@@ -1,6 +1,7 @@
 import { getToken } from "@/auth/token";
 
 const base = "/api";
+const API_ENTRY_FLAG = "__BF_API_ACTIVE__";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -8,13 +9,14 @@ type ApiEnvelope<T> = {
   status?: "ok" | "error" | string;
   data?: T;
   error?: {
+    code?: string;
     message?: string;
   };
 };
 
 function normalize(path: string): string {
   if (!path.startsWith("/")) {
-    path = `/${path}`;
+    throw new Error("INVALID_API_PATH");
   }
 
   return `${base}${path}`;
@@ -23,7 +25,12 @@ function normalize(path: string): string {
 function deepFreeze<T>(obj: T): T {
   if (obj && typeof obj === "object") {
     Object.freeze(obj);
-    Object.values(obj as Record<string, unknown>).forEach((value) => deepFreeze(value));
+
+    if (Array.isArray(obj)) {
+      obj.forEach((value) => deepFreeze(value));
+    } else {
+      Object.values(obj as Record<string, unknown>).forEach((value) => deepFreeze(value));
+    }
   }
 
   return obj;
@@ -42,8 +49,14 @@ function validateEnvelope(json: ApiEnvelope<unknown>): ApiEnvelope<unknown> {
     throw new Error("MISSING_DATA_FIELD");
   }
 
-  if (json.status === "error" && !json.error) {
-    throw new Error("MISSING_ERROR_FIELD");
+  if (json.status === "error") {
+    if (!json.error) {
+      throw new Error("MISSING_ERROR_FIELD");
+    }
+
+    if (typeof json.error.code !== "string") {
+      throw new Error("INVALID_ERROR_SHAPE");
+    }
   }
 
   return json;
@@ -54,6 +67,12 @@ function requiresAuth(path: string): boolean {
 }
 
 export async function api(path: string, options: RequestInit = {}): Promise<unknown> {
+  if ((globalThis as Record<string, unknown>)[API_ENTRY_FLAG]) {
+    throw new Error("NESTED_API_CALL_BLOCKED");
+  }
+
+  (globalThis as Record<string, unknown>)[API_ENTRY_FLAG] = true;
+
   try {
     const requestOptions: RequestInit = {
       ...options,
@@ -75,21 +94,30 @@ export async function api(path: string, options: RequestInit = {}): Promise<unkn
 
     const res = await fetch(normalize(path), requestOptions);
 
+    if (res.bodyUsed) {
+      throw new Error("REUSED_RESPONSE_BLOCKED");
+    }
+
     if (!res.ok) {
       throw new Error(`HTTP_${res.status}`);
     }
 
-    const json = (await res.json()) as ApiEnvelope<unknown>;
+    let json: ApiEnvelope<unknown>;
+    try {
+      json = (await res.json()) as ApiEnvelope<unknown>;
+    } catch {
+      throw new Error("INVALID_JSON_RESPONSE");
+    }
+
     const validated = validateEnvelope(json);
 
     if (validated.status === "error") {
-      throw new Error(validated.error?.message || "API_ERROR_RESPONSE");
+      throw new Error(validated.error?.code || "API_ERROR_RESPONSE");
     }
 
     return deepFreeze(validated);
-  } catch (e) {
-    console.error(e);
-    throw new Error("API_CALL_FAILED");
+  } finally {
+    delete (globalThis as Record<string, unknown>)[API_ENTRY_FLAG];
   }
 }
 

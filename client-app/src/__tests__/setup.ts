@@ -24,11 +24,20 @@ Object.defineProperty(globalThis, "localStorage", {
 
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
+const mockFetch = vi.fn();
+
+Object.defineProperty(global, "fetch", {
+  writable: true,
+  value: mockFetch,
+});
+
 beforeEach(() => {
-  global.fetch = vi.fn(async () => ({
+  mockFetch.mockImplementation(async () => ({
     ok: true,
+    bodyUsed: false,
+    status: 200,
     json: async () => ({ status: "ok", data: {} }),
-  })) as typeof global.fetch;
+  }));
 });
 
 beforeEach(() => {
@@ -39,6 +48,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  mockFetch.mockReset();
   vi.restoreAllMocks();
 });
 
