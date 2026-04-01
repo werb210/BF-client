@@ -24,17 +24,15 @@ Object.defineProperty(globalThis, "localStorage", {
 
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
-if (!global.fetch) {
-  throw new Error("fetch must be mocked");
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 
-  global.fetch = (async () => ({
+  global.fetch = vi.fn(async () => ({
     ok: true,
     json: async () => ({ status: "ok", data: {} }),
   })) as typeof global.fetch;
+
+  Object.freeze(global.fetch);
 });
 
 beforeEach(() => {

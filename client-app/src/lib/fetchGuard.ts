@@ -1,11 +1,13 @@
-const originalFetch = window.fetch.bind(window);
+const originalFetch = window.fetch;
 
 window.fetch = (...args) => {
-  const stack = new Error().stack || "";
+  const err = new Error();
 
-  if (!stack.includes("api.ts")) {
+  if (!err.stack?.includes("api.ts")) {
     throw new Error("RAW_FETCH_BLOCKED");
   }
 
   return originalFetch(...args);
 };
+
+Object.freeze(window.fetch);
