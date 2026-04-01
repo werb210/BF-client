@@ -19,6 +19,7 @@
     "preinstall": "npm config delete @eslint:registry || true",
     "build": "npm --prefix client-app run build",
     "test": "npm --prefix client-app run test",
-    "dev": "npm --prefix client-app run dev"
+    "dev": "npm --prefix client-app run dev",
+    "preview:ci": "npm --prefix client-app run preview:ci"
   }
 }

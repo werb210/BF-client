@@ -9,7 +9,7 @@
     "preview": "vite preview --port 5173",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "eslint . --max-warnings 0",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest",
     "test:ci": "vitest --run",
     "audit:enterprise": "node scripts/enterprise-audit.js",
     "prestart": "node scripts/verify-node.js",
@@ -20,7 +20,10 @@
     "cap:open:android": "cap open android",
     "enforce:api": "node scripts/enforce-api-pipeline.js",
     "preview:ci": "npm run build && sh -c 'vite preview --host 127.0.0.1 --port 4173 & PREVIEW_PID=$!; sleep 3; curl -f http://127.0.0.1:4173/index.html; curl -fs http://127.0.0.1:4173/index.html | grep -q \"<div id=\\\"root\\\">\"; kill $PREVIEW_PID'",
-    "dev:full": "vite"
+    "dev:full": "vite",
+    "guard:no-hardcoded-api": "node scripts/guard-no-hardcoded-api.js",
+    "pretest": "npm run guard:no-hardcoded-api",
+    "prebuild": "npm run guard:no-hardcoded-api"
   },
   "engines": {
     "node": ">=20.10 <23"

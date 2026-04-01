@@ -17,9 +17,10 @@ window.addEventListener("error", (e) => {
 
 async function assertBackend() {
   if (import.meta.env.MODE === "test") return;
+  if (import.meta.env.MODE === "production") return;
+  if (import.meta.env.MODE !== "development") return;
 
-  const base = import.meta.env.VITE_API_URL;
-  const res = await fetch(`${base}/health`);
+  const res = await fetch(`${import.meta.env.VITE_API_URL}/health`);
 
   if (!res.ok) {
     throw new Error("Backend not reachable");
