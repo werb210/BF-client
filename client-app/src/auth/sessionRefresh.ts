@@ -12,7 +12,8 @@ export async function refreshSession(): Promise<boolean> {
       return true
     }
 
-    throw new Error("INVALID_REFRESH")
+    clearToken()
+    return false
   } catch {
     clearToken()
     return false
