@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/apiClient";
+import { apiCall } from "@/lib/api";
 
 type ApiResponse<T = unknown> = {
   data: T;

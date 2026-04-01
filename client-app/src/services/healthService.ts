@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/apiClient";
+import { apiCall } from "@/lib/api";
 
 export async function checkServerHealth() {
   const res = await apiCall("/api/health");

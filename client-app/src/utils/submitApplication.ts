@@ -1,4 +1,4 @@
-import { apiPost } from "@/lib/apiClient"
+import { apiPost } from "@/lib/api"
 import type { ApplicationPayload } from "@/types/application"
 
 export async function submitApplication(payload: ApplicationPayload) {

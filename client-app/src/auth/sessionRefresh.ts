@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/apiClient"
+import { apiCall } from "@/lib/api"
 import { setToken, clearToken } from "@/auth/token"
 
 export async function refreshSession(): Promise<boolean> {
