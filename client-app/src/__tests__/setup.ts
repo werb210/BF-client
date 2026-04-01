@@ -1,20 +1,20 @@
 import { afterEach, beforeEach, vi } from "vitest";
 import { TextDecoder, TextEncoder } from "util";
 
-const store: Record<string, string> = {}
+const store: Record<string, string> = {};
 
 const localStorageMock = {
   getItem: (k: string) => store[k] ?? null,
   setItem: (k: string, v: string) => (store[k] = v),
   removeItem: (k: string) => delete store[k],
-  clear: () => Object.keys(store).forEach(k => delete store[k]),
-}
+  clear: () => Object.keys(store).forEach((k) => delete store[k]),
+};
 
 Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
   writable: true,
   configurable: true,
-})
+});
 
 Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
@@ -25,10 +25,20 @@ Object.defineProperty(globalThis, "localStorage", {
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.spyOn(console, "error").mockImplementation((msg: unknown) => {
     throw new Error(String(msg));
   });
   window.localStorage?.clear?.();
+
+  if (!vi.isMockFunction(global.fetch)) {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "ok" }),
+      text: async () => "ok",
+    } as Response);
+  }
 });
 
 afterEach(() => {
@@ -65,16 +75,4 @@ window.scrollTo = vi.fn();
 
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = vi.fn();
-}
-
-
-if (!global.fetch) {
-  global.fetch = vi.fn(() =>
-    Promise.resolve({
-      ok: true,
-      status: 200,
-      json: async () => ({ status: "ok" }),
-      text: async () => "ok",
-    })
-  ) as any;
 }

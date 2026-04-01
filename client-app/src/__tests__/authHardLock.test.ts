@@ -1,52 +1,39 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { bootstrapSession } from "@/app/bootstrap"
-import { apiCall } from "@/lib/api"
-import { clearToken, setToken } from "@/auth/token"
-import { getTokenOrFail } from "@/services/token"
+import { enforceSession } from "@/auth/sessionGuard"
+import { refreshSession } from "@/auth/sessionRefresh"
+import { clearToken, getToken, setToken } from "@/auth/token"
 
 describe("auth hard lock", () => {
   beforeEach(() => {
     clearToken()
+    Object.defineProperty(window, "location", {
+      value: { href: "http://localhost/" },
+      writable: true,
+      configurable: true,
+    })
   })
 
-  it("bootstrap does not gate auth", async () => {
-    await expect(bootstrapSession()).resolves.toBeNull()
+  it("blocks unauthenticated users by routing to login", () => {
+    expect(() => enforceSession()).toThrow("[SESSION BLOCKED]")
+    expect(window.location.href).toContain("/login")
   })
 
-  it.each(["", "undefined", "null"])('invalid stored token "%s" is blocked', (token) => {
-    setToken(token)
-    expect(() => getTokenOrFail()).toThrow("[AUTH BLOCK]")
-  })
-
-  it("api request sets bearer header from token", async () => {
+  it("allows authenticated users through", () => {
     setToken("valid-token")
-    const fetchSpy = vi.spyOn(window, "fetch").mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }))
 
-    await expect(
-      apiCall("/api/health", {
-        headers: { Authorization: "Bearer attacker" },
-      }),
-    ).resolves.toEqual({ ok: true })
-
-    expect(fetchSpy).toHaveBeenCalledWith(
-      "/api/health",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "Content-Type": "application/json",
-          Authorization: "Bearer valid-token",
-        }),
-      }),
-    )
+    expect(() => enforceSession()).not.toThrow()
+    expect(window.location.href).toBe("http://localhost/")
   })
 
-  it("api 401 clears token and throws unauthorized", async () => {
-    setToken("valid-token")
+  it("clears expired session state and then routes to login", async () => {
+    setToken("expired-token")
     vi.spyOn(window, "fetch").mockResolvedValue(new Response("unauthorized", { status: 401 }))
 
-    await expect(apiCall("/api/health")).rejects.toThrow("INVALID_TOKEN")
-  })
+    const refreshed = await refreshSession()
 
-  it("rejects private endpoint without token", async () => {
-    await expect(apiCall("/api/private/test")).rejects.toThrow("AUTH_REQUIRED")
+    expect(refreshed).toBe(false)
+    expect(getToken()).toBeNull()
+    expect(() => enforceSession()).toThrow("[SESSION BLOCKED]")
+    expect(window.location.href).toContain("/login")
   })
 })
