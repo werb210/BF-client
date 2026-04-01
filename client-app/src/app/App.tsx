@@ -200,6 +200,18 @@ export default function App({ initialSession = null }: AppProps) {
   }, [isOtpScreen]);
 
   useEffect(() => {
+    const onApiDegraded = () => {
+      setIsBackendDegraded(true);
+    };
+
+    window.addEventListener("api:degraded", onApiDegraded);
+
+    return () => {
+      window.removeEventListener("api:degraded", onApiDegraded);
+    };
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const session = params.get("session");
 

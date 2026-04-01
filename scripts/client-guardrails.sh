@@ -3,7 +3,7 @@ set -euo pipefail
 
 TARGET_DIR="client-app/src"
 
-fetch_matches=$(rg "fetch\(" "$TARGET_DIR" -n || true)
+fetch_matches=$(rg "fetch\(" "$TARGET_DIR" -n --glob "!**/lib/apiClient.ts" || true)
 fetch_count=$(echo "$fetch_matches" | sed '/^$/d' | wc -l | tr -d ' ')
 if [[ "$fetch_count" != "0" ]]; then
   echo "❌ fetch() usage detected in $TARGET_DIR"
