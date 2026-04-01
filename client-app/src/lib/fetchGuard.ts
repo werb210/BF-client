@@ -1,9 +1,9 @@
 const originalFetch = window.fetch;
 
-window.fetch = (...args) => {
-  const err = new Error();
+window.fetch = async (...args) => {
+  const stack = new Error().stack || "";
 
-  if (!err.stack?.includes("api.ts")) {
+  if (!stack.includes("api.ts")) {
     throw new Error("RAW_FETCH_BLOCKED");
   }
 
@@ -11,3 +11,11 @@ window.fetch = (...args) => {
 };
 
 Object.freeze(window.fetch);
+
+const forbidden = ["axios", "superagent"];
+
+forbidden.forEach((name) => {
+  if ((window as Record<string, unknown>)[name]) {
+    throw new Error(`FORBIDDEN_HTTP_CLIENT:${name}`);
+  }
+});

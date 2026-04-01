@@ -1,10 +1,6 @@
 import { getToken } from "@/auth/token";
 
-if (import.meta.env.MODE !== "test" && !import.meta.env.VITE_API_URL) {
-  throw new Error("VITE_API_URL_NOT_DEFINED");
-}
-
-const base = import.meta.env.VITE_API_URL;
+const base = "/api";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -16,79 +12,94 @@ type ApiEnvelope<T> = {
   };
 };
 
-const normalize = (baseUrl: string, path: string) => `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+function normalize(path: string): string {
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
+  }
+
+  return `${base}${path}`;
+}
+
+function deepFreeze<T>(obj: T): T {
+  if (obj && typeof obj === "object") {
+    Object.freeze(obj);
+    Object.values(obj as Record<string, unknown>).forEach((value) => deepFreeze(value));
+  }
+
+  return obj;
+}
+
+function validateEnvelope(json: ApiEnvelope<unknown>): ApiEnvelope<unknown> {
+  if (!json || typeof json !== "object") {
+    throw new Error("INVALID_API_RESPONSE");
+  }
+
+  if (!json.status) {
+    throw new Error("MISSING_STATUS_FIELD");
+  }
+
+  if (json.status === "ok" && json.data === undefined) {
+    throw new Error("MISSING_DATA_FIELD");
+  }
+
+  if (json.status === "error" && !json.error) {
+    throw new Error("MISSING_ERROR_FIELD");
+  }
+
+  return json;
+}
 
 function requiresAuth(path: string): boolean {
   return !path.startsWith("/auth") && !path.startsWith("auth") && !path.startsWith("/health") && !path.startsWith("health");
 }
 
 export async function api(path: string, options: RequestInit = {}): Promise<unknown> {
-  const requestOptions: RequestInit = {
-    ...options,
-    headers: { ...(options.headers ?? {}) },
-  };
-
-  if (requiresAuth(path)) {
-    const token = getToken();
-
-    if (!token) {
-      throw new Error("MISSING_AUTH_TOKEN");
-    }
-
-    requestOptions.headers = {
-      ...requestOptions.headers,
-      Authorization: `Bearer ${token}`,
-    };
-  }
-
-  const res = await fetch(normalize(base, path), requestOptions);
-
-  if (!res.ok) {
-    throw new Error(`HTTP_${res.status}`);
-  }
-
-  let json: ApiEnvelope<unknown>;
-
   try {
-    json = (await res.json()) as ApiEnvelope<unknown>;
-  } catch {
-    throw new Error("INVALID_JSON_RESPONSE");
-  }
+    const requestOptions: RequestInit = {
+      ...options,
+      headers: { ...(options.headers ?? {}) },
+    };
 
-  if (!json || typeof json !== "object") {
-    throw new Error("INVALID_API_SHAPE");
-  }
+    if (requiresAuth(path)) {
+      const token = getToken();
 
-  if (!Object.prototype.hasOwnProperty.call(json, "status")) {
-    throw new Error("MISSING_STATUS_FIELD");
-  }
+      if (!token) {
+        throw new Error("MISSING_AUTH_TOKEN");
+      }
 
-  if (json.status === "error") {
-    if (!json.error || !json.error.message) {
-      throw new Error("MALFORMED_ERROR_RESPONSE");
+      requestOptions.headers = {
+        ...requestOptions.headers,
+        Authorization: `Bearer ${token}`,
+      };
     }
 
-    throw new Error(json.error.message);
-  }
+    const res = await fetch(normalize(path), requestOptions);
 
-  if (json.status !== "ok") {
-    throw new Error("UNKNOWN_STATUS");
-  }
+    if (!res.ok) {
+      throw new Error(`HTTP_${res.status}`);
+    }
 
-  if (!Object.prototype.hasOwnProperty.call(json, "data")) {
-    throw new Error("MISSING_DATA_FIELD");
-  }
+    const json = (await res.json()) as ApiEnvelope<unknown>;
+    const validated = validateEnvelope(json);
 
-  return json.data;
+    if (validated.status === "error") {
+      throw new Error(validated.error?.message || "API_ERROR_RESPONSE");
+    }
+
+    return deepFreeze(validated);
+  } catch (e) {
+    console.error(e);
+    throw new Error("API_CALL_FAILED");
+  }
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
-  const data = await api(path, {
+  const envelope = (await api(path, {
     headers: { "Content-Type": "application/json" },
     ...options,
-  });
+  })) as ApiEnvelope<T>;
 
-  return data as T;
+  return envelope.data as T;
 }
 
 export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
@@ -102,13 +113,13 @@ export async function apiCall<T = unknown>(path: string, options: ApiRequestOpti
 
   const headers = isFormData ? options.headers : { "Content-Type": "application/json", ...options.headers };
 
-  const data = await api(path, {
+  const envelope = (await api(path, {
     ...options,
     headers,
     body,
-  });
+  })) as ApiEnvelope<T>;
 
-  return data as T;
+  return envelope.data as T;
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {

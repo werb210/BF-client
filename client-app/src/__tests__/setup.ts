@@ -25,14 +25,10 @@ Object.defineProperty(globalThis, "localStorage", {
 (globalThis as typeof globalThis & { localStorage: Storage }).localStorage = window.localStorage;
 
 beforeEach(() => {
-  vi.clearAllMocks();
-
   global.fetch = vi.fn(async () => ({
     ok: true,
     json: async () => ({ status: "ok", data: {} }),
   })) as typeof global.fetch;
-
-  Object.freeze(global.fetch);
 });
 
 beforeEach(() => {
