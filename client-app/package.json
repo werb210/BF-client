@@ -19,7 +19,8 @@
     "cap:open:ios": "cap open ios",
     "cap:open:android": "cap open android",
     "enforce:api": "node scripts/enforce-api-pipeline.js",
-    "preview:ci": "vite preview --port 4173 & sleep 3 && curl -f http://localhost:4173"
+    "preview:ci": "vite preview --port 4173 & sleep 3 && curl -f http://localhost:4173 || exit 1",
+    "dev:full": "vite"
   },
   "engines": {
     "node": ">=20.10 <23"
