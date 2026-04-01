@@ -5,14 +5,14 @@ import { hasToken } from "@/api/auth";
 export interface SaveApplicationStepPayload {
   applicationId: string;
   step: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 export interface ContinuationSessionResponse {
   exists: boolean;
   applicationId?: string;
   step?: number;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
 }
 
 export async function bootstrapContinuation() {
@@ -34,14 +34,14 @@ export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
   });
 }
 
-export async function saveApplicationProgress(data: any) {
+export async function saveApplicationProgress(data: unknown) {
   return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
-export async function updateApplication(data: any) {
+export async function updateApplication(data: unknown) {
   if (!hasToken()) return;
 
   return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
@@ -50,14 +50,14 @@ export async function updateApplication(data: any) {
   });
 }
 
-export async function continueApplication(data: any) {
+export async function continueApplication(data: unknown) {
   return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
-export async function submitApplication(data: any) {
+export async function submitApplication(data: unknown) {
   return apiCall(API_ENDPOINTS_CONTRACT.READINESS.ROOT, {
     method: "POST",
     body: JSON.stringify(data)

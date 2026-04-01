@@ -12,6 +12,23 @@ type ChatMessage = {
   optimistic?: boolean;
 };
 
+type MayaMessage = {
+  id?: string | number;
+  role?: string;
+  content?: string;
+  message?: string;
+  createdAt?: string | number;
+  created_at?: string | number;
+};
+
+function toMayaMessageList(data: unknown): MayaMessage[] {
+  if (typeof data === "object" && data !== null && "messages" in data) {
+    const maybeMessages = (data as { messages?: unknown }).messages;
+    return Array.isArray(maybeMessages) ? (maybeMessages as MayaMessage[]) : [];
+  }
+  return Array.isArray(data) ? (data as MayaMessage[]) : [];
+}
+
 export default function MayaClientChat({ applicationId }: { applicationId?: string | null }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -59,13 +76,9 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
         const response = await api.get(`/api/messages/${applicationId}`);
         const { data } = response;
         if (!active) return;
-        const list = Array.isArray((data as any)?.messages)
-          ? (data as any).messages
-          : Array.isArray(data)
-            ? (data as any)
-            : [];
+        const list = toMayaMessageList(data);
         setMessages(
-          list.map((entry: any, index: number) => ({
+          list.map((entry: MayaMessage, index: number) => ({
             id: String(entry.id || `${index}`),
             role: entry.role === "assistant" ? "assistant" : "user",
             content: String(entry.content || entry.message || ""),
@@ -111,13 +124,9 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
 
       const response = await api.get(`/api/messages/${applicationId}`);
         const { data } = response;
-      const list = Array.isArray((data as any)?.messages)
-        ? (data as any).messages
-        : Array.isArray(data)
-          ? (data as any)
-          : [];
+      const list = toMayaMessageList(data);
       setMessages(
-        list.map((entry: any, index: number) => ({
+        list.map((entry: MayaMessage, index: number) => ({
           id: String(entry.id || `${index}`),
           role: entry.role === "assistant" ? "assistant" : "user",
           content: String(entry.content || entry.message || ""),

@@ -3,7 +3,7 @@ const MAX_AGE = 1000 * 60 * 60 * 24; // 24h
 
 export type PendingSubmission = {
   idempotencyKey: string;
-  payload: any;
+  payload: unknown;
   createdAt: number;
   retryCount: number;
 };

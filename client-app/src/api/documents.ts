@@ -15,9 +15,10 @@ export const uploadDocument = async (
 
   const { data } = await api.post("/api/documents/upload", formData);
 
-  if (!(data as any)?.data) {
+  const response = data as { data?: unknown } | null;
+  if (!response?.data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");
   }
 
-  return (data as any).data;
+  return response.data;
 };

@@ -661,7 +661,7 @@ export async function retryPendingPublicSubmission({
   const pendingSubmission = getPendingSubmission();
   if (!pendingSubmission) return false;
   try {
-    await submitApplication(pendingSubmission.payload, {
+    await submitApplication(pendingSubmission.payload as PublicApplicationPayload, {
       idempotencyKey: pendingSubmission.idempotencyKey,
     });
     savePublicSubmissionState(storage, {
@@ -674,6 +674,7 @@ export async function retryPendingPublicSubmission({
     pendingSubmission.retryCount += 1;
     savePendingSubmissionState({
       ...pendingSubmission,
+      payload: pendingSubmission.payload as PublicApplicationPayload,
     });
     return false;
   }

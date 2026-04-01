@@ -14,17 +14,26 @@ type RequestConfig = {
   signal?: AbortSignal;
 };
 
+type RequestInitLike = Omit<RequestInit, "body"> & { body?: unknown };
+type UploadProgressHandler = (event: { loaded: number; total?: number }) => void;
+type RequestInitWithExtras = RequestInitLike & { onUploadProgress?: UploadProgressHandler };
+
 function normalizePath(path: string) {
   if (path.startsWith("/api/")) return path;
   return `/api${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-async function send<T = unknown>(method: string, path: string, data?: unknown, init?: any): Promise<ApiResponse<T>> {
+async function send<T = unknown>(
+  method: string,
+  path: string,
+  data?: unknown,
+  init?: RequestInitWithExtras
+): Promise<ApiResponse<T>> {
   const payload = await apiCall<T>(normalizePath(path), { ...init, method, body: data });
   return { data: payload, status: 200, headers: new Headers() };
 }
 
-async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: any): Promise<ApiResponse<T>> {
+async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: RequestInitWithExtras): Promise<ApiResponse<T>> {
   if (typeof urlOrConfig === "string") {
     return send<T>(init?.method || "GET", urlOrConfig, init?.body, init);
   }
@@ -35,11 +44,11 @@ async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: 
 
 export const apiClient = {
   request,
-  get: <T = unknown>(url: string, init?: any) => send<T>("GET", url, undefined, init),
-  post: <T = unknown>(url: string, data?: unknown, init?: any) => send<T>("POST", url, data, init),
-  patch: <T = unknown>(url: string, data?: unknown, init?: any) => send<T>("PATCH", url, data, init),
-  put: <T = unknown>(url: string, data?: unknown, init?: any) => send<T>("PUT", url, data, init),
-  delete: <T = unknown>(url: string, init?: any) => send<T>("DELETE", url, undefined, init),
+  get: <T = unknown>(url: string, init?: RequestInitWithExtras) => send<T>("GET", url, undefined, init),
+  post: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("POST", url, data, init),
+  patch: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("PATCH", url, data, init),
+  put: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("PUT", url, data, init),
+  delete: <T = unknown>(url: string, init?: RequestInitWithExtras) => send<T>("DELETE", url, undefined, init),
 };
 
 export { apiCall };
