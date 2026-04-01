@@ -1,4 +1,6 @@
 import api, { apiCall } from "./client";
+import { apiRequest, API_BASE } from "@/lib/apiClient";
+import { ENDPOINTS } from "@/lib/endpoints";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
@@ -25,11 +27,22 @@ export const submitApplication = async (applicationId: string) => {
     throw new Error("Missing applicationId");
   }
 
-  const { data } = await api.post(`/api/application/submit`);
-  if (!data) {
-    throw new Error("[API ERROR] EMPTY RESPONSE");
+  try {
+    const data = await apiRequest(ENDPOINTS.submitApplication, {
+      method: "POST",
+      body: JSON.stringify({ applicationId }),
+    });
+
+    if (!data) {
+      throw new Error("[API ERROR] EMPTY RESPONSE");
+    }
+
+    return assertApiResponse(data);
+  } catch (err) {
+    console.error("SUBMISSION_FAILED", err);
+    alert("Submission failed. Please retry.");
+    throw err;
   }
-  return assertApiResponse(data);
 };
 
 export const createPublicApplication = async (payload: Record<string, unknown>) => {
@@ -99,8 +112,23 @@ export const uploadApplicationDocument = async (
   formData.append("category", payload.documentCategory);
 
   payload.onProgress?.(10);
-  const { data } = await api.post("/api/documents/upload", formData);
+  const res = await fetch(`${API_BASE}${ENDPOINTS.uploadDocument}`, {
+    method: "POST",
+    body: formData,
+  });
   payload.onProgress?.(100);
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("API_ERROR", {
+      path: ENDPOINTS.uploadDocument,
+      status: res.status,
+      body: text,
+    });
+    throw new Error(`API request failed: ${res.status}`);
+  }
+
+  const data = await res.json();
 
   if (!data) {
     throw new Error("[API ERROR] EMPTY RESPONSE");

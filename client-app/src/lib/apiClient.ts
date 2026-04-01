@@ -1,43 +1,65 @@
 import { clearToken, getToken } from "@/auth/token"
 
-export type ApiResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string }
+export const API_BASE = import.meta.env.VITE_API_URL
 
-const BASE_URL = import.meta.env.VITE_API_URL || ""
+if (!API_BASE) {
+  throw new Error("Missing VITE_API_URL")
+}
 
 function buildUrl(path: string) {
-  if (!path.startsWith("/api/")) {
-    throw new Error(`Invalid API path: ${path}`)
-  }
   if (import.meta.env.MODE === "test") {
     return path
   }
 
-  return `${BASE_URL}${path}`
+  return `${API_BASE}${path}`
 }
 
-async function parseApiResponse(res: Response) {
-  let data: any = null
+export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
+  const token = getToken()
 
-  try {
-    data = await res.json()
-  } catch {
-    data = null
+  if (path.startsWith("/api/private") && !token) {
+    throw new Error("AUTH_REQUIRED")
   }
 
-  return data
+  const isFormData = options.body instanceof FormData
+
+  const res = await fetch(buildUrl(path), {
+    ...options,
+    headers: {
+      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  })
+
+  if (!res.ok) {
+    if (res.status === 401) {
+      clearToken()
+      throw new Error("INVALID_TOKEN")
+    }
+
+    const text = await res.text()
+    console.error("API_ERROR", {
+      path,
+      status: res.status,
+      body: text,
+    })
+
+    throw new Error(`API request failed: ${res.status}`)
+  }
+
+  return (await res.json()) as T
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
-  return apiCall<T>(path, {
+  return apiRequest<T>(path, {
     method: "POST",
-    body,
+    body: typeof body === "string" || body instanceof FormData ? body : JSON.stringify(body),
   })
 }
 
 export async function apiUpload<T>(path: string, formData: FormData): Promise<T> {
-  return apiCall<T>(path, {
+  return apiRequest<T>(path, {
     method: "POST",
     body: formData,
   })
@@ -46,52 +68,16 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown }
 
 export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const method = (options.method || "GET").toUpperCase()
-  const token = getToken()
-
-  if (path.startsWith("/api/private") && !token) {
-    throw new Error("AUTH_REQUIRED")
-  }
-
   const isFormData = options.body instanceof FormData
-  const hasStringBody = typeof options.body === "string"
-
-  const res = await fetch(buildUrl(path), {
-    ...options,
-    method,
-    headers: {
-      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: isFormData
+  const body =
+    isFormData || typeof options.body === "string"
       ? options.body
-      : hasStringBody
-        ? (options.body as string)
-        : options.body
-          ? JSON.stringify(options.body)
-          : undefined,
+      : options.body
+        ? JSON.stringify(options.body)
+        : undefined
+
+  return apiRequest<T>(path, {
+    ...options,
+    body,
   })
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      clearToken()
-
-      throw new Error("INVALID_TOKEN")
-    }
-
-    throw new Error("HTTP_ERROR")
-  }
-
-  const json = await parseApiResponse(res)
-
-  if (json && json.success === false) {
-    throw new Error(json.error || "API_ERROR")
-  }
-
-  if (json && json.success === true && Object.prototype.hasOwnProperty.call(json, "data")) {
-    return json.data as T
-  }
-
-  return (json ?? { ok: true }) as T
 }
