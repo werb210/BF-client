@@ -6,7 +6,7 @@ import { PhoneInput } from "../../components/ui/PhoneInput";
 import { Button } from "../../components/ui/Button";
 import { components, layout, tokens } from "@/styles";
 import { createLead } from "@/services/lead";
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 import { getMe } from "@/api/auth";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
@@ -60,7 +60,7 @@ export default function ApplyStep4() {
         throw new Error("Please sign in before submitting your application.");
       }
 
-      await apiRequest("/api/application", {
+      await apiCall("/api/application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

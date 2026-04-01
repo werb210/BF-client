@@ -1,11 +1,11 @@
-import { apiRequest } from "../api/client";
+import { apiCall } from "../api/client";
 import { hasToken } from "@/api/auth";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 export async function updateApplication(payload: any) {
   if (!hasToken()) return;
 
-  const data = await apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
+  const data = await apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

@@ -1,4 +1,4 @@
-import { apiRequest, buildApiUrl } from "@/api/client";
+import { apiCall, buildApiUrl } from "@/api/client";
 import type { ReadinessContext } from "../state/readinessStore";
 
 export function getLeadIdFromSearch(search: string) {
@@ -11,7 +11,7 @@ async function fetchReadinessWithRetry(url: string, maxAttempts = 2) {
   while (attempt < maxAttempts) {
     attempt += 1;
     try {
-      return await apiRequest(url);
+      return await apiCall<Record<string, unknown>>(url);
     } catch {
       if (attempt >= maxAttempts) {
         throw new Error("Unable to fetch readiness context.");
@@ -25,18 +25,18 @@ async function fetchReadinessWithRetry(url: string, maxAttempts = 2) {
 export async function fetchReadinessContext(leadId: string): Promise<ReadinessContext | null> {
   try {
     const payload = await fetchReadinessWithRetry(buildApiUrl(`/public/readiness/${leadId}`), 2);
-    const readiness = payload?.readiness ?? payload;
+    const readiness = (payload?.readiness ?? payload) as Record<string, unknown>;
     if (!readiness || typeof readiness !== "object") {
       return null;
     }
 
     return {
       leadId,
-      companyName: readiness.companyName,
-      fullName: readiness.fullName,
-      phone: readiness.phone,
-      email: readiness.email,
-      industry: readiness.industry,
+      companyName: typeof readiness.companyName === "string" ? readiness.companyName : "",
+      fullName: typeof readiness.fullName === "string" ? readiness.fullName : "",
+      phone: typeof readiness.phone === "string" ? readiness.phone : "",
+      email: typeof readiness.email === "string" ? readiness.email : "",
+      industry: typeof readiness.industry === "string" ? readiness.industry : "",
       yearsInBusiness:
         typeof readiness.yearsInBusiness === "number"
           ? readiness.yearsInBusiness

@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/apiClient";
+import { apiCall } from "@/lib/apiClient";
 
 export interface ContinuationResponse {
   pendingApplicationId?: string;
@@ -9,7 +9,7 @@ type ContinuationPayload = {
 };
 
 export async function checkContinuation(email: string): Promise<ContinuationResponse> {
-  const payload = await apiRequest<ContinuationPayload>(
+  const payload = await apiCall<ContinuationPayload>(
     `/applications/continuation?email=${encodeURIComponent(email)}`
   );
   return payload;

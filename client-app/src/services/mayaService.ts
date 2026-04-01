@@ -1,7 +1,7 @@
-import { apiRequest } from "@/lib/apiClient";
+import { apiCall } from "@/lib/apiClient";
 
 export async function sendMessageToMaya(message: string) {
-  const res = await apiRequest("/api/maya/message", {
+  const res = await apiCall("/api/maya/message", {
     method: "POST",
     body: JSON.stringify({ message }),
   });
@@ -9,12 +9,12 @@ export async function sendMessageToMaya(message: string) {
 }
 
 export async function escalateMayaChat() {
-  const res = await apiRequest("/api/maya/escalate", { method: "POST" });
+  const res = await apiCall("/api/maya/escalate", { method: "POST" });
   return res;
 }
 
 export async function joinStartupWaitlist(data: { name: string; email: string; phone: string }) {
-  const res = await apiRequest("/api/crm/startup-waitlist", {
+  const res = await apiCall("/api/crm/startup-waitlist", {
     method: "POST",
     body: JSON.stringify(data),
   });

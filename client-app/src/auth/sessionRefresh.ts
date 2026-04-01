@@ -1,9 +1,9 @@
-import { apiRequest } from "@/lib/apiClient"
+import { apiCall } from "@/lib/apiClient"
 import { setToken, clearToken } from "@/auth/token"
 
 export async function refreshSession(): Promise<boolean> {
   try {
-    const res = await apiRequest("/api/auth/refresh", {
+    const res = await apiCall<{ token?: string }>("/api/auth/refresh", {
       method: "POST",
     })
 

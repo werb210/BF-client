@@ -1,9 +1,9 @@
-import { apiRequest } from "./client";
+import { apiCall } from "./client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { hasToken } from "@/api/auth";
 
 export function createApplication(data: any) {
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -12,12 +12,12 @@ export function createApplication(data: any) {
 export function updateApplication(data: any) {
   if (!hasToken()) return;
 
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function getContinuation() {
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION);
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION);
 }

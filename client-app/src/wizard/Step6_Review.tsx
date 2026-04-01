@@ -42,7 +42,7 @@ import {
   trackConversion,
   trackEvent,
 } from "../utils/analytics";
-import { apiRequest } from "../api/client";
+import { apiCall } from "../api/client";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
@@ -149,7 +149,7 @@ export function Step6_Review(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    apiRequest<{ count?: number }>(API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT)
+    apiCall<{ count?: number }>(API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT)
       .then((data) => {
         const count = Number(data?.count || 0);
         if (count > 0) setLenderCount(count);

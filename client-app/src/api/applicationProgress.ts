@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiCall } from "./client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { hasToken } from "@/api/auth";
 
@@ -24,18 +24,18 @@ export async function bootstrapContinuation() {
 }
 
 export async function fetchApplicationContinuation() {
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION) as Promise<ContinuationSessionResponse>;
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION) as Promise<ContinuationSessionResponse>;
 }
 
 export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
-  await apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
+  await apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 }
 
 export async function saveApplicationProgress(data: any) {
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
     method: "POST",
     body: JSON.stringify(data)
   });
@@ -44,21 +44,21 @@ export async function saveApplicationProgress(data: any) {
 export async function updateApplication(data: any) {
   if (!hasToken()) return;
 
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.UPDATE, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
 export async function continueApplication(data: any) {
-  return apiRequest(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION, {
+  return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION, {
     method: "POST",
     body: JSON.stringify(data)
   });
 }
 
 export async function submitApplication(data: any) {
-  return apiRequest(API_ENDPOINTS_CONTRACT.READINESS.ROOT, {
+  return apiCall(API_ENDPOINTS_CONTRACT.READINESS.ROOT, {
     method: "POST",
     body: JSON.stringify(data)
   });

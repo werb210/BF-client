@@ -1,4 +1,7 @@
+import { verifyOtp } from "@/api/auth"
+
 export { sendOtp, verifyOtp } from '@/api/auth'
+export const loginWithOtp = verifyOtp
 
 // Minimal compatibility layer for tests
 

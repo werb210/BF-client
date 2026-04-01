@@ -11,7 +11,7 @@ import {
 import { getContinuationSession, fetchContinuation, fetchReadinessSession } from "@/api/continuation";
 import { checkContinuation } from "../../services/continuation";
 import { getSessionId, trackEvent } from "../../utils/analytics";
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 import type { ApiError } from "@/types/api";
 import { fundingAmountSchema, emailSchema, phoneSchema } from "@/utils/validationSchema";
 import { executeCaptcha } from "@/security/useCaptcha";
@@ -723,7 +723,7 @@ export default function PublicApplyPage() {
       const draft = loadDraft();
       if (!draft) return;
 
-      await apiRequest(API_ENDPOINTS_CONTRACT.DRAFTS.SAVE, {
+      await apiCall(API_ENDPOINTS_CONTRACT.DRAFTS.SAVE, {
         method: "POST",
         body: JSON.stringify(draft),
       }).catch((error) => {
@@ -744,7 +744,7 @@ export default function PublicApplyPage() {
 
     if (!resumeToken) return;
 
-    void (apiRequest(`${API_ENDPOINTS_CONTRACT.DRAFTS.PREFIX}${resumeToken}`) as Promise<DraftPayload | null>)
+    void (apiCall(`${API_ENDPOINTS_CONTRACT.DRAFTS.PREFIX}${resumeToken}`) as Promise<DraftPayload | null>)
       .then((data: DraftPayload | null) => {
         if (data) {
           setValues((prev) => ({ ...prev, ...data }));

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { apiRequest } from "../api/client";
+import { apiCall } from "../api/client";
 import {
   clearActiveClientSessionToken,
   ensureClientSession,
@@ -43,7 +43,7 @@ export function useClientSession(tokenOverride?: string | null): UseClientSessio
 
     const validateAndPersist = async () => {
       try {
-        const res = await apiRequest("/api/session", {
+        const res = await apiCall("/api/session", {
           method: "POST",
           body: JSON.stringify({ token }),
         });

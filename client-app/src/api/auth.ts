@@ -1,20 +1,14 @@
-import { apiRequest } from "@/lib/api";
+import { apiCall, apiPost } from "@/lib/api";
 import { clearToken, getToken, setToken } from "@/auth/token";
 
 type AuthUser = Record<string, unknown> | null;
 
 export function sendOtp(phone: string) {
-  return apiRequest("/auth/send-otp", {
-    method: "POST",
-    body: { phone },
-  });
+  return apiPost("/api/auth/send-otp", { phone });
 }
 
 export function verifyOtp(phone: string, code: string) {
-  return apiRequest("/auth/verify-otp", {
-    method: "POST",
-    body: { phone, code },
-  });
+  return apiPost("/api/auth/verify-otp", { phone, code });
 }
 
 export function hasToken() {
@@ -29,7 +23,7 @@ export async function getMe(): Promise<AuthUser> {
   }
 
   try {
-    return await apiRequest("/auth/me");
+    return await apiCall("/api/auth/me");
   } catch {
     return null;
   }

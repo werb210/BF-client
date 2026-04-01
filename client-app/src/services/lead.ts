@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/apiClient";
+import { apiCall } from "@/lib/apiClient";
 
 export interface LeadBootstrapPayload {
   companyName: string;
@@ -57,7 +57,7 @@ export async function createLead(payload: LeadBootstrapPayload) {
     }
   }
 
-  const request = apiRequest<LeadBootstrapResponse>("/api/lead/bootstrap", {
+  const request = apiCall<LeadBootstrapResponse>("/api/lead/bootstrap", {
     method: "POST",
     body: JSON.stringify(payload),
   })
@@ -83,7 +83,7 @@ export async function createLead(payload: LeadBootstrapPayload) {
 }
 
 export async function tagLead(leadId: string, tag: string) {
-  return apiRequest("/api/lead/tag", {
+  return apiCall("/api/lead/tag", {
     method: "POST",
     body: JSON.stringify({ leadId, tag }),
   });

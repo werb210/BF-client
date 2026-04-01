@@ -1,5 +1,5 @@
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 
 export async function fetchCreditPrefill(id: string) {
-  return apiRequest(`/api/credit-readiness/${id}`);
+  return apiCall(`/api/credit-readiness/${id}`);
 }

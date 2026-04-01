@@ -1,4 +1,4 @@
-import { apiRequest } from "@/api/client";
+import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 
 type PreApplicationLookupResponse = {
@@ -15,13 +15,13 @@ type PreApplicationLookupResponse = {
 export async function lookupPreApplication(
   email: string
 ): Promise<PreApplicationLookupResponse | null> {
-  return (apiRequest(
+  return (apiCall(
     `${API_ENDPOINTS_CONTRACT.PREAPP.LOOKUP}?email=${encodeURIComponent(email)}`
   ) as Promise<PreApplicationLookupResponse>).catch((): null => null);
 }
 
 export async function consumePreApplication(token: string): Promise<any> {
-  return apiRequest(API_ENDPOINTS_CONTRACT.PREAPP.CONSUME, {
+  return apiCall(API_ENDPOINTS_CONTRACT.PREAPP.CONSUME, {
     method: "POST",
     body: JSON.stringify({ token }),
   });

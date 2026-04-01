@@ -10,8 +10,8 @@ function hasMatches(query) {
   }
 }
 
-if (hasMatches('grep -R "fetch(" src | grep -v "apiRequest"')) {
-  console.error("[API PIPELINE BLOCK] Direct fetch usage outside apiRequest detected.");
+if (hasMatches('grep -R "fetch(" src | grep -v "src/lib/apiClient.ts"')) {
+  console.error("[API PIPELINE BLOCK] Direct fetch usage outside apiClient detected.");
   process.exit(1);
 }
 
