@@ -1,35 +1,13 @@
-// @ts-nocheck
 import { create } from "zustand";
 
-const APPLICATION_DATA_KEY = "application_data";
-
-type ApplicationStore = {
-  data: Record<string, unknown>;
-  setData: (updates: Record<string, unknown>) => void;
-  clearData: () => void;
+type State = {
+  data: Record<string, any>;
+  setData: (d: Record<string, any>) => void;
+  reset: () => void;
 };
 
-function loadInitialData(): Record<string, unknown> {
-  try {
-    const raw = localStorage.getItem(APPLICATION_DATA_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
-export const useApplicationStore = create<ApplicationStore>((set) => ({
-  data: loadInitialData(),
-  setData: (updates) =>
-    set((state) => {
-      const data = { ...state.data, ...updates };
-      localStorage.setItem(APPLICATION_DATA_KEY, JSON.stringify(data));
-      return { data };
-    }),
-  clearData: () =>
-    set(() => {
-      localStorage.removeItem(APPLICATION_DATA_KEY);
-      return { data: {} };
-    }),
+export const useApplicationStore = create<State>((set) => ({
+  data: {},
+  setData: (d) => set((s) => ({ data: { ...s.data, ...d } })),
+  reset: () => set({ data: {} }),
 }));

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { bootstrapSession } from "@/app/bootstrap"
-import { apiCall } from "@/lib/apiClient"
+import { apiCall } from "@/lib/api"
 import { clearToken, setToken } from "@/auth/token"
 import { getTokenOrFail } from "@/services/token"
 

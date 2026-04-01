@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/apiClient";
+import { apiCall } from "@/lib/api";
 
 export async function sendMessageToMaya(message: string) {
   const res = await apiCall("/api/maya/message", {

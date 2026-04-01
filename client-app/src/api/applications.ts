@@ -1,5 +1,5 @@
 import api, { apiCall } from "./client";
-import { apiRequest, apiUpload } from "@/lib/apiClient";
+import { apiRequest, apiUpload } from "@/lib/api";
 import { ENDPOINTS } from "@/lib/endpoints";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";

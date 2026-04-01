@@ -15,7 +15,16 @@ window.addEventListener("error", (e) => {
   console.error("[RUNTIME ERROR]", e.error);
 });
 
+async function assertBackend() {
+  const base = import.meta.env.VITE_API_URL;
+  const res = await fetch(`${base}/health`);
+  if (!res.ok) {
+    throw new Error("Backend not reachable");
+  }
+}
+
 async function start() {
+  await assertBackend();
   await initAuth();
   const session = await bootstrapSession();
 

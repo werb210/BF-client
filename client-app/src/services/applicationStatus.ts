@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { apiCall } from "@/lib/apiClient";
+import { apiCall } from "@/lib/api";
 import {
   PortalSubmissionStatusResponseSchema,
   parseApiResponse,

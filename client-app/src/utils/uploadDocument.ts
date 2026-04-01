@@ -1,4 +1,4 @@
-import { apiUpload } from "@/lib/apiClient"
+import { apiUpload } from "@/lib/api"
 import { ENDPOINTS } from "@/lib/endpoints"
 
 export async function uploadDocument(file: File, category: string, applicationId: string) {
