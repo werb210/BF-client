@@ -1,17 +1,15 @@
-export type Env = {
+type Env = {
   API_URL: string;
   JWT_STORAGE_KEY: string;
 };
 
-function getEnv(): Env {
-  if (!import.meta.env.VITE_API_URL) {
-    throw new Error("Missing VITE_API_URL");
-  }
+const API_URL = import.meta.env.VITE_API_URL;
 
-  return {
-    API_URL: import.meta.env.VITE_API_URL,
-    JWT_STORAGE_KEY: "bf_jwt_token",
-  };
+if (!API_URL) {
+  throw new Error("Missing VITE_API_URL");
 }
 
-export const env = getEnv();
+export const env: Env = {
+  API_URL,
+  JWT_STORAGE_KEY: "bf_jwt_token", // must match portal
+};
