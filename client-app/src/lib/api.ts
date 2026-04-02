@@ -1,5 +1,5 @@
 import { getEnv } from "@/config/env";
-import type { ApiResponse } from "@/types/api";
+import { ApiResponseSchema } from "@boreal/shared-contract";
 
 const DEFAULT_TIMEOUT = 10000;
 const MAX_RETRIES = 2;
@@ -67,17 +67,18 @@ export async function api<T>(path: string, options: RequestInit = {}, attempt = 
       throw new Error("Unauthorized");
     }
 
-    const json = (await safeJson(res)) as ApiResponse<T> | null;
+    const json = await safeJson(res);
 
-    if (!json || typeof json !== "object" || !("status" in json)) {
-      throw new Error("Invalid API response (non-JSON or malformed)");
+    const parsed = ApiResponseSchema.safeParse(json);
+    if (!parsed.success) {
+      throw new Error("API contract violation");
     }
 
-    if (json.status !== "ok") {
-      throw new Error(json.error || "API returned error");
+    if (parsed.data.status !== "ok") {
+      throw new Error(parsed.data.error || "API returned error");
     }
 
-    return json.data;
+    return parsed.data.data as T;
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "";
     const isRetryable =
