@@ -1,15 +1,9 @@
-import { apiRequest } from "@/lib/api";
+import { api } from '@/lib/api';
 
 export function sendOtp(phone: string) {
-  return apiRequest("/auth/send-otp", {
-    method: "POST",
-    body: { phone },
-  });
+  return api.post('/auth/send-otp', { phone });
 }
 
 export function verifyOtp(phone: string, code: string) {
-  return apiRequest("/auth/verify-otp", {
-    method: "POST",
-    body: { phone, code },
-  });
+  return api.post('/auth/verify-otp', { phone, code });
 }
