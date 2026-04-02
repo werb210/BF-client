@@ -1,17 +1,12 @@
 import { getToken } from "@/auth/token";
 import { api } from "@/lib/apiClient";
-
-const base = "/api";
+import { ensureLockedApiBase } from "@/config/runtimeConfig";
 const API_ENTRY_FLAG = "__BF_API_ACTIVE__";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 function normalize(path: string): string {
-  if (!path.startsWith("/")) {
-    throw new Error("INVALID_API_PATH");
-  }
-
-  return `${base}${path}`;
+  return ensureLockedApiBase(path);
 }
 
 function requiresAuth(path: string): boolean {

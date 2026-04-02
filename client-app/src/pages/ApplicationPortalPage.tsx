@@ -21,7 +21,7 @@ import {
 import { buildClientHistoryEvents } from "@/portal/clientHistory";
 import { components, layout, tokens } from "@/styles";
 import CallUsButton from "@/telephony/components/CallUsButton";
-import { retry } from "@/utils/retry";
+import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
 
 export function ApplicationPortalPage(): JSX.Element {
   const { id } = useParams();
@@ -77,8 +77,8 @@ export function ApplicationPortalPage(): JSX.Element {
     setError(null);
     try {
       const [applicationRes, documentsRes] = await Promise.all([
-        retry(() => fetchApplication(id)),
-        retry(() => fetchApplicationDocuments(id)),
+        fetchApplication(id),
+        fetchApplicationDocuments(id),
       ]);
       const nextApplication = applicationRes as Record<string, any>;
       setApplication(nextApplication);
@@ -114,7 +114,7 @@ export function ApplicationPortalPage(): JSX.Element {
       } else if (typeof navigator !== "undefined" && navigator.onLine === false) {
         setError("Network connection lost. Reconnect and try again.");
       } else {
-        setError("We couldn't load your application details.");
+        setError(DEFAULT_API_ERROR_MESSAGE);
       }
     } finally {
       setLoading(false);

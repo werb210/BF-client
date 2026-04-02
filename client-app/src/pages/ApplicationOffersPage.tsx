@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { acceptApplicationOffer, fetchApplicationOffers } from "@/api/applications";
 import { OffersView } from "@/offers/OffersView";
 import { components, layout } from "@/styles";
-import { retry } from "@/utils/retry";
+import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
 import type { OfferTermSheet } from "@/offers/OffersView";
 
 export function ApplicationOffersPage(): JSX.Element {
@@ -19,10 +19,10 @@ export function ApplicationOffersPage(): JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const response = await retry(() => fetchApplicationOffers(id));
+      const response = await fetchApplicationOffers(id);
       setOffers((response as { offers?: OfferTermSheet[] })?.offers ?? []);
     } catch {
-      setError("We couldn't load your offers yet. Please try again.");
+      setError(DEFAULT_API_ERROR_MESSAGE);
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ export function ApplicationOffersPage(): JSX.Element {
       await acceptApplicationOffer(offerId);
       await loadOffers();
     } catch {
-      setActionError("Unable to accept this offer right now. Please try again.");
+      setActionError(DEFAULT_API_ERROR_MESSAGE);
     }
   }, [loadOffers]);
 

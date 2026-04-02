@@ -24,7 +24,7 @@ describe("useAuth", () => {
     vi.useRealTimers();
   });
 
-  it("ends loading even if auth retries fail", async () => {
+  it("ends loading when auth request fails", async () => {
     getMeMock.mockRejectedValue(new Error("offline"));
     const onUpdate = vi.fn();
     const container = document.createElement("div");
@@ -43,7 +43,7 @@ describe("useAuth", () => {
 
     const final = onUpdate.mock.calls.at(-1)?.[0];
     expect(final).toEqual({ user: null, loading: false });
-    expect(getMeMock).toHaveBeenCalledTimes(3);
+    expect(getMeMock).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       root.unmount();

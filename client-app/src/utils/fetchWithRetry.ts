@@ -1,6 +1,4 @@
 import api from "@/api/client";
-
-const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
 const DEFAULT_TIMEOUT_MS = 15000;
 
 export class FetchRequestError extends Error {
@@ -70,26 +68,6 @@ export async function fetchWithRetry(
   init?: RequestInit,
   options?: { maxAttempts?: number; timeoutMs?: number }
 ) {
-  const maxAttempts = Math.max(1, options?.maxAttempts ?? 2);
-  let attempt = 0;
-
-  while (attempt < maxAttempts) {
-    attempt += 1;
-    try {
-      const response = await safeFetch(input, init, { timeoutMs: options?.timeoutMs });
-      if (response.ok || !RETRYABLE_STATUS.has(response.status) || attempt >= maxAttempts) {
-        return response;
-      }
-    } catch (error) {
-      const shouldRetry =
-        error instanceof FetchRequestError &&
-        (error.timedOut || (typeof error.status === "number" && RETRYABLE_STATUS.has(error.status)));
-
-      if (!shouldRetry || attempt >= maxAttempts) {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error("Request failed after retries.");
+  void options?.maxAttempts;
+  return safeFetch(input, init, { timeoutMs: options?.timeoutMs });
 }

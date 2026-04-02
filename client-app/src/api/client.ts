@@ -1,4 +1,5 @@
 import { apiCall } from "@/lib/api";
+import { ensureLockedApiBase } from "@/config/runtimeConfig";
 
 type ApiResponse<T = unknown> = {
   data: T;
@@ -19,8 +20,7 @@ type UploadProgressHandler = (event: { loaded: number; total?: number }) => void
 type RequestInitWithExtras = RequestInitLike & { onUploadProgress?: UploadProgressHandler };
 
 function normalizePath(path: string) {
-  if (path.startsWith("/api/")) return path;
-  return `/api${path.startsWith("/") ? path : `/${path}`}`;
+  return ensureLockedApiBase(path.startsWith("/") ? path : `/${path}`);
 }
 
 async function send<T = unknown>(
