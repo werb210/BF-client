@@ -17,19 +17,8 @@ export default function MayaChat() {
     try {
       const result = await chatMaya(message);
 
-      if (!result.success) {
-        setMessages((current) => [
-          ...current,
-          {
-            role: "maya",
-            text: result.message || "I hit an issue processing your request.",
-          },
-        ]);
-        return;
-      }
-
       const reply =
-        result.data?.reply || "I received your message, but I have no reply yet.";
+        result.reply || "I received your message, but I have no reply yet.";
       setMessages((current) => [...current, { role: "maya", text: reply }]);
     } catch {
       setMessages((current) => [
