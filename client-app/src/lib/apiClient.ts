@@ -1,4 +1,6 @@
-import { API_BASE } from "@/config/api";
+import { getApiBase } from "@/config/api";
+
+const API_BASE = getApiBase();
 
 type ApiEnvelope<T> = {
   status?: string;
