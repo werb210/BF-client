@@ -58,4 +58,37 @@ describe("api", () => {
 
     await expect(api("/maya/chat", { method: "POST" })).rejects.toThrow("INVALID_JSON_RESPONSE");
   });
+
+  it("blocks direct /api-prefixed paths to prevent contract drift", async () => {
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.resetModules();
+    const { apiRequest } = await import("../lib/api");
+
+    await expect(apiRequest("/api/leads")).rejects.toThrow("DIRECT_API_PATH_FORBIDDEN");
+  });
+
+  it("locks contract calls onto env API base", async () => {
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.resetModules();
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "ok", data: { id: "lead_1" } }),
+    } as Response);
+
+    const { createLead } = await import("../api/leads");
+
+    await createLead({
+      fullName: "Ada Lovelace",
+      email: "ada@example.com",
+      phone: "555-555-0100",
+      source: "test",
+    });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://api.example.com/api/v1/leads",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
 });
