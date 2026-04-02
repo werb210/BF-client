@@ -9,13 +9,12 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
-    environment: "jsdom",
+    environment: "node",
     globals: true,
-    setupFiles: ["./src/__tests__/setupEnv.ts"],
+    setupFiles: [],
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
-    environmentOptions: {
-    },
+    environmentOptions: {},
   },
 });
