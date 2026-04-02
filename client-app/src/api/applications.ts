@@ -4,6 +4,7 @@ import { ENDPOINTS } from "@/lib/endpoints";
 import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
+import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
 
 export const createApplication = async (payload: Record<string, unknown> = {}) => {
   assertAuthenticated();
@@ -40,8 +41,7 @@ export const submitApplication = async (applicationId: string) => {
     return assertApiResponse(data);
   } catch (err) {
     console.error("SUBMISSION_FAILED", err);
-    alert("Submission failed. Please retry.");
-    throw err;
+    throw new Error(DEFAULT_API_ERROR_MESSAGE);
   }
 };
 
@@ -135,4 +135,4 @@ export const uploadDocuments = async (
 };
 
 export const acceptApplicationOffer = async (offerId: string) =>
-  apiCall(`/api/offers/${offerId}/accept`, { method: "POST" });
+  apiCall(`/offers/${offerId}/accept`, { method: "POST" });
