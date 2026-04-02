@@ -1,59 +1,21 @@
-type ApiEnvelope<T> = {
-  status?: "ok" | "error" | string;
-  data?: T;
-  error?: {
-    message?: string;
-    code?: string;
-  } | string;
-};
+import { API_BASE } from '../config/api';
 
-export type DegradedApiResult = {
-  degraded: true;
-};
+export async function apiClient<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    ...options,
+  });
 
-function resolveErrorMessage(error: ApiEnvelope<unknown>["error"]): string {
-  if (typeof error === "string" && error.trim().length > 0) {
-    return error;
+  if (!res.ok) {
+    throw new Error('API request failed');
   }
 
-  if (error && typeof error === "object") {
-    if (typeof error.code === "string" && error.code.trim().length > 0) {
-      return error.code;
-    }
-
-    if (typeof error.message === "string" && error.message.trim().length > 0) {
-      return error.message;
-    }
-  }
-
-  return "API_ERROR";
+  return res.json();
 }
 
-export async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T | DegradedApiResult> {
-  const res = await fetch(path, opts);
-
-  let json: ApiEnvelope<T>;
-  try {
-    json = (await res.json()) as ApiEnvelope<T>;
-  } catch {
-    throw new Error("INVALID_JSON_RESPONSE");
-  }
-
-  if (!json || typeof json !== "object") {
-    throw new Error("INVALID_API_SHAPE");
-  }
-
-  if (json.status === "error") {
-    const message = resolveErrorMessage(json.error);
-    if (message === "DB_NOT_READY") {
-      return { degraded: true };
-    }
-    throw new Error(message);
-  }
-
-  if (json.status !== "ok") {
-    throw new Error("UNKNOWN_STATUS");
-  }
-
-  return json.data as T;
-}
+export const api = apiClient;

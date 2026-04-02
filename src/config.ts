@@ -1,5 +1,3 @@
-export const API_URL = process.env.REACT_APP_API_URL;
+import { API_BASE } from './config/api';
 
-if (!API_URL) {
-  throw new Error("MISSING_API_URL");
-}
+export const API_URL = API_BASE;
