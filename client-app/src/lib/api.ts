@@ -1,81 +1,111 @@
-import { getToken } from "@/auth/token";
 import { getEnv } from "@/config/env";
+import type { ApiResponse } from "@/types/api";
 
-type ApiEnvelope<T = unknown> = {
-  status: "ok" | "error" | "not_ready";
-  data?: T;
-  error?: string;
-};
+const DEFAULT_TIMEOUT = 10000;
+const MAX_RETRIES = 2;
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-function requiresAuth(path: string): boolean {
-  return !path.includes("/auth/") && !path.includes("/health");
+function getAuthToken(): string | null {
+  return localStorage.getItem("token") ?? localStorage.getItem("bf_access_token");
 }
 
-function toRequestBody(body: unknown): BodyInit | null | undefined {
+async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+async function safeJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function toRequestBody(body: unknown): BodyInit | undefined {
   if (body == null) return undefined;
   if (body instanceof FormData) return body;
   if (typeof body === "string") return body;
   return JSON.stringify(body);
 }
 
-export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
   const { VITE_API_URL } = getEnv();
+
+  const token = getAuthToken();
   const isFormData = options.body instanceof FormData;
 
-  const res = await fetch(`${VITE_API_URL}${path}`, {
-    credentials: "include",
-    ...options,
-    headers: {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...(options.headers || {}),
-    },
-  });
+  try {
+    const res = await fetchWithTimeout(
+      `${VITE_API_URL}${path}`,
+      {
+        credentials: "include",
+        ...options,
+        headers: {
+          ...(isFormData ? {} : { "Content-Type": "application/json" }),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers || {}),
+        },
+      },
+      DEFAULT_TIMEOUT
+    );
 
-  if (res.status === 401) {
-    localStorage.removeItem("bf_access_token");
-    window.location.href = "/login";
-    throw new Error("Unauthorized");
+    if (res.status === 401) {
+      localStorage.removeItem("bf_access_token");
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+
+    const json = (await safeJson(res)) as ApiResponse<T> | null;
+
+    if (!json || typeof json !== "object" || !("status" in json)) {
+      throw new Error("Invalid API response (non-JSON or malformed)");
+    }
+
+    if (json.status !== "ok") {
+      throw new Error(json.error || "API returned error");
+    }
+
+    return json.data;
+  } catch (err: any) {
+    const message = typeof err?.message === "string" ? err.message : "";
+    const isRetryable =
+      err?.name === "AbortError" || message.includes("Network") || message.includes("Failed to fetch");
+
+    if (isRetryable && attempt < MAX_RETRIES) {
+      return api<T>(path, options, attempt + 1);
+    }
+
+    console.error("API FAILURE:", {
+      path,
+      attempt,
+      error: err,
+    });
+
+    throw err;
   }
-
-  const json = (await res.json()) as ApiEnvelope<T>;
-
-  if (!json || typeof json !== "object" || !("status" in json)) {
-    throw new Error("Invalid API response");
-  }
-
-  if (json.status !== "ok") {
-    throw new Error(json.error || "API error");
-  }
-
-  return json.data as T;
 }
 
 export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  const requestOptions: RequestInit = {
+  return api<T>(path, {
     ...options,
     body: toRequestBody(options.body),
-    headers: {
-      ...(options.headers ?? {}),
-    },
-  };
-
-  if (requiresAuth(path)) {
-    const token = getToken();
-    if (token) {
-      requestOptions.headers = {
-        ...requestOptions.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
-  }
-
-  return api<T>(path, requestOptions);
+  });
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
-  return apiCall<T>(path, options);
+  return api<T>(path, options);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
@@ -92,7 +122,11 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   });
 }
 
-export async function apiAuth<T = unknown>(path: string, token: string | null | undefined, options: ApiRequestOptions = {}) {
+export async function apiAuth<T = unknown>(
+  path: string,
+  token: string | null | undefined,
+  options: ApiRequestOptions = {}
+) {
   if (!token) {
     throw new Error("MISSING_AUTH_TOKEN");
   }
@@ -105,5 +139,3 @@ export async function apiAuth<T = unknown>(path: string, token: string | null | 
     },
   });
 }
-
-export type ApiResponse<T> = T;

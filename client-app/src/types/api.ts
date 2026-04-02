@@ -1,6 +1,18 @@
-export type ApiResponse<T> = {
+export type ApiSuccess<T> = {
+  status: "ok";
   data: T;
 };
+
+export type ApiError = {
+  status?: "error";
+  error?: string;
+  response?: {
+    data?: unknown;
+    status?: number;
+  };
+};
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
 export interface DocumentCounts {
   required_count: number;
@@ -20,9 +32,3 @@ export interface PipelineResponse {
   steps: unknown[];
 }
 
-export type ApiError = {
-  response?: {
-    data?: unknown;
-    status?: number;
-  };
-};

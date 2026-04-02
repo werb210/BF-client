@@ -35,7 +35,6 @@ import { persistApplicationStep } from "./saveStepProgress";
 import { extractRequiredDocumentsFromStatus } from "../documents/requiredDocumentsFromStatus";
 import { syncRequiredDocumentsFromStatus } from "../documents/requiredDocumentsCache";
 import { resolveDocumentCategory } from "@/config/documentCategories";
-import { handleApi } from "@/lib/handleApi";
 import {
   getRejectionMessage,
   resolveDocumentStatus,
@@ -236,7 +235,7 @@ export function Step5_Documents() {
         }
         let cachedFromStatus = null;
         try {
-          const status = await handleApi(() => ClientAppAPI.status(app.applicationToken!));
+          const status = await ClientAppAPI.status(app.applicationToken!);
           cachedFromStatus = extractRequiredDocumentsFromStatus(status?.data ?? null);
         } catch {
         }
@@ -279,7 +278,7 @@ export function Step5_Documents() {
 
   const refreshDocumentStatus = useCallback(() => {
     if (!app.applicationToken!) return;
-    void handleApi(() => ClientAppAPI.status(app.applicationToken!))
+    void ClientAppAPI.status(app.applicationToken!)
       .then((res) => {
         const refreshed = extractApplicationFromStatus(
           res?.data ?? {},
@@ -347,7 +346,7 @@ export function Step5_Documents() {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        await handleApi(() => ClientAppAPI.uploadDocument({
+        await ClientAppAPI.uploadDocument({
           applicationToken: app.applicationToken!,
           applicationId: app.applicationId,
           documentType: docType,
@@ -355,9 +354,9 @@ export function Step5_Documents() {
           onProgress: (progress) => {
             setUploadProgress((prev) => ({ ...prev, [docType]: progress }));
           },
-        }));
+        });
 
-        const refreshed = await handleApi(() => ClientAppAPI.status(app.applicationToken!));
+        const refreshed = await ClientAppAPI.status(app.applicationToken!);
         const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
 
         update({
@@ -411,7 +410,7 @@ export function Step5_Documents() {
       return;
     }
     try {
-      await handleApi(() => ClientAppAPI.deferDocuments(app.applicationToken!));
+      await ClientAppAPI.deferDocuments(app.applicationToken!);
       update({ documentsDeferred: true });
       await persistApplicationStep(app, 5, {
         documents: app.documents,
