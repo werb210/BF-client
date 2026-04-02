@@ -1,11 +1,6 @@
+import { ApiResponseSchema } from "@boreal/shared-contract";
 import { getEnv } from "../config/env";
 import { getToken } from "./authToken";
-
-type ApiResponse<T> = {
-  status: "ok" | "error" | "not_ready";
-  data?: T;
-  error?: string;
-};
 
 export async function api<T = unknown>(
   path: string,
@@ -36,20 +31,21 @@ export async function api<T = unknown>(
     throw new Error("Unauthorized");
   }
 
-  const json: ApiResponse<T> = await res.json();
+  const json = await res.json();
+  const parsed = ApiResponseSchema.safeParse(json);
 
-  if (!json || typeof json !== "object" || !("status" in json)) {
+  if (!parsed.success) {
     console.error("INVALID API SHAPE:", json);
-    throw new Error("Invalid API response shape");
+    throw new Error("API contract violation");
   }
 
-  if (json.status !== "ok") {
+  if (parsed.data.status !== "ok") {
     console.error("API FAILURE:", {
       path,
-      response: json,
+      response: parsed.data,
     });
-    throw new Error(json.error || "API error");
+    throw new Error(parsed.data.error || "API error");
   }
 
-  return json.data as T;
+  return parsed.data.data as T;
 }

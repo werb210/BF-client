@@ -1,6 +1,6 @@
 import { apiCall } from "@/lib/api";
 
-type ApiResponse<T = unknown> = {
+type HttpResponse<T = unknown> = {
   data: T;
   status: number;
   headers: Headers;
@@ -31,12 +31,12 @@ async function send<T = unknown>(
   path: string,
   data?: unknown,
   init?: RequestInitWithExtras
-): Promise<ApiResponse<T>> {
+): Promise<HttpResponse<T>> {
   const payload = await apiCall<T>(normalizePath(path), { ...init, method, body: data });
   return { data: payload, status: 200, headers: new Headers() };
 }
 
-async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: RequestInitWithExtras): Promise<ApiResponse<T>> {
+async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: RequestInitWithExtras): Promise<HttpResponse<T>> {
   if (typeof urlOrConfig === "string") {
     return send<T>(init?.method || "GET", urlOrConfig, init?.body, init);
   }

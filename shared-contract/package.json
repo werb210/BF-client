@@ -1,0 +1,21 @@
+{
+  "name": "@boreal/shared-contract",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/api.ts",
+  "types": "src/api.ts",
+  "exports": {
+    ".": {
+      "types": "./src/api.ts",
+      "default": "./src/api.ts"
+    },
+    "./api": {
+      "types": "./src/api.ts",
+      "default": "./src/api.ts"
+    }
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}
