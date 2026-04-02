@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('api', () => {
   afterEach(() => {
+    vi.clearAllMocks();
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
