@@ -1,25 +1,25 @@
-import { z } from "zod";
+export type Env = {
+  API_URL: string;
+  JWT_STORAGE_KEY: string;
+  MODE: string;
+};
 
-const schema = z.object({
-  VITE_API_URL: z.string().url(),
-});
-
-let cached: z.infer<typeof schema> | null = null;
-
-export function getEnv() {
-  if (!cached) {
-    cached = schema.parse({
-      VITE_API_URL:
-        import.meta.env.VITE_API_URL ||
-        (import.meta.env.MODE === "test" ? "http://localhost:3000" : undefined),
-    });
+function getEnv(): Env {
+  if (!import.meta.env.VITE_API_URL) {
+    throw new Error("Missing VITE_API_URL");
   }
 
-  return cached;
+  return {
+    API_URL: import.meta.env.VITE_API_URL,
+    JWT_STORAGE_KEY: "bf_jwt_token",
+    MODE: import.meta.env.MODE,
+  };
 }
 
+export const env = getEnv();
+
 export function getMode() {
-  return import.meta.env.MODE;
+  return env.MODE;
 }
 
 export function isDevMode() {
@@ -31,5 +31,5 @@ export function isTestMode() {
 }
 
 export function validateEnv() {
-  getEnv();
+  return env;
 }

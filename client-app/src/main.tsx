@@ -9,9 +9,9 @@ import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
 import { apiRequest } from "@/lib/api";
-import { getEnv, getMode } from "@/config/env";
+import { getMode } from "@/config/env";
+import { waitForReady } from "@/lib/ready";
 
-getEnv();
 
 window.addEventListener("unhandledrejection", (e) => {
   console.error("[UNHANDLED PROMISE]", e.reason);
@@ -31,6 +31,7 @@ async function assertBackend() {
 }
 
 async function start() {
+  await waitForReady();
   await assertBackend();
   await initAuth();
   const session = await bootstrapSession();

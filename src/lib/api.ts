@@ -1,6 +1,36 @@
-import { ApiResponseSchema } from "@boreal/shared-contract";
-import { getEnv } from "../config/env";
-import { getToken } from "./authToken";
+import { env } from "../config/env";
+
+function getToken(): string | null {
+  return localStorage.getItem(env.JWT_STORAGE_KEY);
+}
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const token = getToken();
+
+  const res = await fetch(`${env.API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+  });
+
+  if (res.status === 503) {
+    throw new Error("SERVICE_NOT_READY");
+  }
+
+  if (res.status === 401) {
+    localStorage.removeItem(env.JWT_STORAGE_KEY);
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (res.status === 410) {
+    throw new Error("ENDPOINT_DEPRECATED");
+  }
+
+  return res;
+}
 
 export async function api<T = unknown>(
   path: string,
@@ -9,43 +39,21 @@ export async function api<T = unknown>(
     body?: any;
   }
 ): Promise<T> {
-  const { VITE_API_URL } = getEnv();
-  const token = getToken();
-
-  const res = await fetch(`${VITE_API_URL}${path}`, {
+  const res = await apiFetch(path, {
     method: options?.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
     body: options?.body ? JSON.stringify(options.body) : undefined,
   });
 
-  if (res.status === 401) {
-    console.error("AUTH FAILURE: 401");
-
-    localStorage.removeItem("bf_access_token");
-
-    window.location.href = "/login";
-
-    throw new Error("Unauthorized");
-  }
-
   const json = await res.json();
-  const parsed = ApiResponseSchema.safeParse(json);
-
-  if (!parsed.success) {
-    console.error("INVALID API SHAPE:", json);
+  if (!json || typeof json !== "object" || !("status" in json)) {
     throw new Error("API contract violation");
   }
 
-  if (parsed.data.status !== "ok") {
-    console.error("API FAILURE:", {
-      path,
-      response: parsed.data,
-    });
-    throw new Error(parsed.data.error || "API error");
+  const payload = json as { status: string; data?: T; error?: string };
+
+  if (payload.status !== "ok") {
+    throw new Error(payload.error || "API error");
   }
 
-  return parsed.data.data as T;
+  return payload.data as T;
 }
