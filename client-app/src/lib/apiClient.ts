@@ -1,66 +1,33 @@
-export type DegradedApiResult = {
-  degraded: true;
-};
+import { API_BASE } from "@/config/api";
 
 type ApiEnvelope<T> = {
-  status?: "ok" | "error" | string;
+  status?: string;
   data?: T;
-  error?:
-    | {
-        code?: string;
-        message?: string;
-      }
-    | string;
 };
 
-function resolveErrorCode(error: ApiEnvelope<unknown>["error"]): string {
-  if (typeof error === "string" && error.trim().length > 0) {
-    return error;
+export async function apiFetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
+  const rootBase = API_BASE.replace(/\/api\/v1$/, "");
+  const url = path.startsWith("/api/") ? `${rootBase}${path}` : `${API_BASE}${path}`;
+
+  const res = await fetch(url, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    ...options,
+  });
+
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status}`);
   }
 
-  if (error && typeof error === "object") {
-    if (typeof error.code === "string" && error.code.trim().length > 0) {
-      return error.code;
-    }
+  const json = (await res.json()) as ApiEnvelope<T> | T;
 
-    if (typeof error.message === "string" && error.message.trim().length > 0) {
-      return error.message;
-    }
+  if (json && typeof json === "object" && "status" in json && (json as ApiEnvelope<T>).status === "ok") {
+    return ((json as ApiEnvelope<T>).data ?? {}) as T;
   }
 
-  return "API_ERROR";
+  return json as T;
 }
 
-export async function api<T = unknown>(path: string, opts: RequestInit = {}): Promise<T | DegradedApiResult> {
-  const res = await fetch(path, opts);
-
-  let json: ApiEnvelope<T>;
-  try {
-    json = (await res.json()) as ApiEnvelope<T>;
-  } catch {
-    throw new Error("INVALID_JSON_RESPONSE");
-  }
-
-  if (!json || typeof json !== "object") {
-    throw new Error("INVALID_API_RESPONSE");
-  }
-
-  if (json.status === "error") {
-    const errorCode = resolveErrorCode(json.error);
-
-    if (errorCode === "DB_NOT_READY") {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("api:degraded"));
-      }
-      return { degraded: true };
-    }
-
-    throw new Error(errorCode);
-  }
-
-  if (json.status !== "ok") {
-    throw new Error("INVALID_STATUS");
-  }
-
-  return json.data as T;
-}
+export const api = apiFetch;

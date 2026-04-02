@@ -16,7 +16,7 @@ Object.freeze(window.fetch);
 const forbidden = ["axios", "superagent"];
 
 forbidden.forEach((name) => {
-  if ((window as Record<string, unknown>)[name]) {
+  if ((window as unknown as Record<string, unknown>)[name]) {
     throw new Error(`FORBIDDEN_HTTP_CLIENT:${name}`);
   }
 });

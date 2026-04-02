@@ -1,16 +1,12 @@
 import { getToken } from "@/auth/token";
-import { api } from "@/lib/apiClient";
-import { ensureLockedApiBase } from "@/config/runtimeConfig";
+import { apiFetch } from "@/lib/apiClient";
+
 const API_ENTRY_FLAG = "__BF_API_ACTIVE__";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-function normalize(path: string): string {
-  return ensureLockedApiBase(path);
-}
-
 function requiresAuth(path: string): boolean {
-  return !path.startsWith("/auth") && !path.startsWith("auth") && !path.startsWith("/health") && !path.startsWith("health");
+  return !path.includes("/auth/") && !path.includes("/health");
 }
 
 export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
@@ -46,18 +42,15 @@ export async function apiCall<T = unknown>(path: string, options: ApiRequestOpti
 
     if (requiresAuth(path)) {
       const token = getToken();
-
-      if (!token) {
-        throw new Error("MISSING_AUTH_TOKEN");
+      if (token) {
+        requestOptions.headers = {
+          ...requestOptions.headers,
+          Authorization: `Bearer ${token}`,
+        };
       }
-
-      requestOptions.headers = {
-        ...requestOptions.headers,
-        Authorization: `Bearer ${token}`,
-      };
     }
 
-    return (await api<T>(normalize(path), requestOptions)) as T;
+    return (await apiFetch(path, requestOptions)) as T;
   } finally {
     delete (globalThis as Record<string, unknown>)[API_ENTRY_FLAG];
   }
@@ -93,4 +86,4 @@ export async function apiAuth<T = unknown>(path: string, token: string | null | 
 
 export type ApiResponse<T> = T;
 
-export { api };
+export { apiFetch as api };
