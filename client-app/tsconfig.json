@@ -1,38 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Node",
     "jsx": "react-jsx",
-
-    /* ==== STABILIZED MODE ==== */
-    "strict": true,
-    "noImplicitAny": false,
-    "types": ["vitest/globals", "vite/client", "react", "react-dom"],
-
-    /* Relaxed strict flags */
-    "strictNullChecks": false,
-    "strictFunctionTypes": false,
-    "strictBindCallApply": false,
-    "strictPropertyInitialization": false,
-    "noImplicitThis": false,
-    "alwaysStrict": false,
-
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": false,
-    "noEmitOnError": false,
-
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "isolatedModules": false,
-
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@twilio/voice-sdk": ["src/shims/twilio-voice-sdk.ts"]
-    }
+      "@/*": ["src/*"]
+    },
+    "types": ["vitest/globals"],
+    "skipLibCheck": true,
+    "strict": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
