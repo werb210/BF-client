@@ -34,56 +34,13 @@ import { validateFile } from "@/utils/fileValidation";
 import { persistApplicationStep } from "./saveStepProgress";
 import { extractRequiredDocumentsFromStatus } from "../documents/requiredDocumentsFromStatus";
 import { syncRequiredDocumentsFromStatus } from "../documents/requiredDocumentsCache";
+import { resolveDocumentCategory } from "@/config/documentCategories";
+import { handleApi } from "@/lib/handleApi";
 import {
   getRejectionMessage,
   resolveDocumentStatus,
   type DocumentStatus,
 } from "../documents/documentStatus";
-
-const DOCUMENT_CATEGORIES = [
-  { label: "Bank Statements", match: (doc: string) => doc.includes("bank") },
-  {
-    label: "Tax & Financials",
-    match: (doc: string) =>
-      doc.includes("tax") ||
-      doc.includes("financial") ||
-      doc.includes("balance") ||
-      doc.includes("profit") ||
-      doc.includes("loss") ||
-      doc.includes("cash_flow"),
-  },
-  {
-    label: "Business Documents",
-    match: (doc: string) =>
-      doc.includes("license") ||
-      doc.includes("incorporation") ||
-      doc.includes("ownership") ||
-      doc.includes("business"),
-  },
-  {
-    label: "Transaction Documents",
-    match: (doc: string) =>
-      doc.includes("invoice") ||
-      doc.includes("purchase_order") ||
-      doc.includes("contract") ||
-      doc.includes("equipment") ||
-      doc.includes("lease"),
-  },
-  {
-    label: "Applicant Identification",
-    match: (doc: string) =>
-      doc.includes("id") ||
-      doc.includes("license") ||
-      doc.includes("passport"),
-  },
-];
-
-function resolveDocumentCategory(docType: string) {
-  const normalized = docType.toLowerCase();
-  const match = DOCUMENT_CATEGORIES.find((entry) => entry.match(normalized));
-  return match?.label || "Additional Requirements";
-}
-
 
 function getDynamicRequirementRules() {
   return [
@@ -279,8 +236,8 @@ export function Step5_Documents() {
         }
         let cachedFromStatus = null;
         try {
-          const status = await ClientAppAPI.status(app.applicationToken!);
-          cachedFromStatus = extractRequiredDocumentsFromStatus(status.data);
+          const status = await handleApi(() => ClientAppAPI.status(app.applicationToken!));
+          cachedFromStatus = extractRequiredDocumentsFromStatus(status?.data ?? null);
         } catch {
         }
         const merged = cachedFromStatus
@@ -322,10 +279,10 @@ export function Step5_Documents() {
 
   const refreshDocumentStatus = useCallback(() => {
     if (!app.applicationToken!) return;
-    ClientAppAPI.status(app.applicationToken!)
+    void handleApi(() => ClientAppAPI.status(app.applicationToken!))
       .then((res) => {
         const refreshed = extractApplicationFromStatus(
-          res?.data || {},
+          res?.data ?? {},
           app.applicationToken!
         );
         const cachedRequirements = syncRequiredDocumentsFromStatus(res?.data);
@@ -390,7 +347,7 @@ export function Step5_Documents() {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        await ClientAppAPI.uploadDocument({
+        await handleApi(() => ClientAppAPI.uploadDocument({
           applicationToken: app.applicationToken!,
           applicationId: app.applicationId,
           documentType: docType,
@@ -398,9 +355,9 @@ export function Step5_Documents() {
           onProgress: (progress) => {
             setUploadProgress((prev) => ({ ...prev, [docType]: progress }));
           },
-        });
+        }));
 
-        const refreshed = await ClientAppAPI.status(app.applicationToken!);
+        const refreshed = await handleApi(() => ClientAppAPI.status(app.applicationToken!));
         const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
 
         update({
@@ -454,7 +411,7 @@ export function Step5_Documents() {
       return;
     }
     try {
-      await ClientAppAPI.deferDocuments(app.applicationToken!);
+      await handleApi(() => ClientAppAPI.deferDocuments(app.applicationToken!));
       update({ documentsDeferred: true });
       await persistApplicationStep(app, 5, {
         documents: app.documents,

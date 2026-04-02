@@ -34,6 +34,7 @@ import { hasToken, setToken } from "@/api/auth";
 import { useAuth } from "@/auth/useAuth";
 import ErrorBoundary from "../components/ErrorBoundary";
 import FatalErrorScreen from "./FatalErrorScreen";
+import { isDevMode } from "@/config/env";
 
 type AppProps = {
   initialSession?: InitialSession | null;
@@ -101,7 +102,7 @@ export default function App({ initialSession = null }: AppProps) {
 
   const debugUpdateAvailable =
     typeof window !== "undefined" &&
-    import.meta.env.DEV &&
+    isDevMode() &&
     new URLSearchParams(window.location.search).has("debugUpdateBanner");
 
   useEffect(() => {

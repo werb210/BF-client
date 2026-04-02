@@ -1,6 +1,4 @@
-function isTestMode() {
-  return import.meta.env.MODE === "test";
-}
+import { isTestMode } from "@/config/env";
 
 export function logError(msg: unknown, ...meta: unknown[]) {
   if (isTestMode()) return;

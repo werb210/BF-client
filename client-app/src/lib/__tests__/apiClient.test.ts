@@ -1,27 +1,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiFetch } from "@/lib/apiClient";
+import { api } from "@/lib/api";
 
-describe("lib/apiClient", () => {
+describe("lib/api", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("returns parsed response for ok responses", async () => {
+  it("returns data for status=ok responses", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ id: "ok" }),
+      status: 200,
+      json: async () => ({ status: "ok", data: { id: "ok" } }),
     } as Response);
 
-    await expect(apiFetch("/applications")).resolves.toEqual({ id: "ok" });
+    await expect(api("/applications")).resolves.toEqual({ id: "ok" });
   });
 
-  it("throws for non-ok responses", async () => {
+  it("throws for status=error responses", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      ok: false,
       status: 500,
-      json: async () => ({}),
+      json: async () => ({ status: "error", error: "boom" }),
     } as Response);
 
-    await expect(apiFetch("/applications")).rejects.toThrow("API error: 500");
+    await expect(api("/applications")).rejects.toThrow("boom");
   });
 });

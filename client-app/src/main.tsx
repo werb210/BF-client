@@ -9,9 +9,14 @@ import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
 import { apiRequest } from "@/lib/api";
-import { validateEnv } from "./system/env";
+import { getEnv, getMode } from "@/config/env";
 
-validateEnv();
+try {
+  getEnv();
+} catch (e) {
+  console.error("ENV ERROR:", e);
+  throw e;
+}
 
 window.addEventListener("unhandledrejection", (e) => {
   console.error("[UNHANDLED PROMISE]", e.reason);
@@ -22,9 +27,10 @@ window.addEventListener("error", (e) => {
 });
 
 async function assertBackend() {
-  if (import.meta.env.MODE === "test") return;
-  if (import.meta.env.MODE === "production") return;
-  if (import.meta.env.MODE !== "development") return;
+  const mode = getMode();
+  if (mode === "test") return;
+  if (mode === "production") return;
+  if (mode !== "development") return;
 
   await apiRequest<{ status?: string }>("/health");
 }
