@@ -1,29 +1,30 @@
 import React from "react";
-import { logClientError } from "@/lib/logger";
 
-type Props = { children: React.ReactNode; fallback?: React.ReactNode };
-type State = { hasError: boolean };
+type Props = {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+};
 
-class ErrorBoundary extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+type State = {
+  hasError: boolean;
+};
+
+export class ErrorBoundary extends React.Component<Props, State> {
+  state: State = { hasError: false };
 
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    logClientError("Application crash", { error, info });
+  componentDidCatch(error: any) {
+    console.error("UI CRASH:", error);
   }
 
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div style={{ padding: 40 }}>
-          <h2>Application Error</h2>
-          <p>Please refresh the page.</p>
+        <div style={{ padding: 20 }}>
+          <h2>Something went wrong.</h2>
         </div>
       );
     }
