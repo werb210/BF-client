@@ -1,3 +1,4 @@
+import { apiFetch as baseApiFetch } from "@/api/client";
 import { env } from "../config/env";
 
 function getToken(): string | null {
@@ -7,7 +8,7 @@ function getToken(): string | null {
 export async function apiFetch(path: string, options: RequestInit = {}) {
   const token = getToken();
 
-  const res = await fetch(`${env.API_URL}${path}`, {
+  const res = await baseApiFetch(`${env.API_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

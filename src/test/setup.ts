@@ -1,4 +1,5 @@
 import { afterEach, vi } from "vitest";
+import { enforceApiUsage } from "@/api/guard";
 
 process.env.VITE_API_URL = process.env.VITE_API_URL || "http://localhost:3000";
 
@@ -10,6 +11,8 @@ global.fetch = vi.fn(() =>
 );
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+enforceApiUsage();
 
 process.setMaxListeners(20);
 
