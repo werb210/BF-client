@@ -17,9 +17,6 @@ const localStorageMock = (() => {
   }
 })()
 
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-})
 
 describe("syncRequiredDocumentsFromStatus", () => {
   beforeEach(() => {

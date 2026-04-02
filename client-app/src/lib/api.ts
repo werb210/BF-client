@@ -7,6 +7,7 @@ const MAX_RETRIES = 2;
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 function getAuthToken(): string | null {
+  if (typeof localStorage === "undefined") return null;
   return localStorage.getItem("token") ?? localStorage.getItem("bf_access_token");
 }
 

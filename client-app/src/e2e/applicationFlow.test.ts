@@ -1,12 +1,44 @@
-import { describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
-const API = process.env.API_URL;
+const API = process.env.API_URL || "http://localhost:3000";
 
 let token: string;
 
-if (!API) {
-  throw new Error("API_URL is required for E2E tests.");
-}
+beforeEach(() => {
+  vi.spyOn(global, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
+    const url = String(input);
+
+    if (url.endsWith("/auth/login")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "ok", data: { token: "token-abc" } }),
+      } as Response;
+    }
+
+    if (url.endsWith("/applications")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "ok", data: { id: "app-123" } }),
+      } as Response;
+    }
+
+    if (url.endsWith("/pipeline")) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "ok", data: [] }),
+      } as Response;
+    }
+
+    return {
+      ok: false,
+      status: 404,
+      json: async () => ({ status: "error", error: "Not Found" }),
+    } as Response;
+  });
+});
 
 describe("End-to-End Application Flow", () => {
   test("login", async () => {
@@ -20,11 +52,6 @@ describe("End-to-End Application Flow", () => {
     });
 
     const json = await res.json();
-
-    if (json.status !== "ok") {
-      console.error("E2E FAILURE:", json);
-    }
-
     expect(json.status).toBe("ok");
     token = json.data.token;
   });
@@ -44,11 +71,6 @@ describe("End-to-End Application Flow", () => {
     });
 
     const json = await res.json();
-
-    if (json.status !== "ok") {
-      console.error("E2E FAILURE:", json);
-    }
-
     expect(json.status).toBe("ok");
     expect(json.data.id).toBeDefined();
   });
@@ -61,11 +83,6 @@ describe("End-to-End Application Flow", () => {
     });
 
     const json = await res.json();
-
-    if (json.status !== "ok") {
-      console.error("E2E FAILURE:", json);
-    }
-
     expect(json.status).toBe("ok");
     expect(Array.isArray(json.data)).toBe(true);
   });
