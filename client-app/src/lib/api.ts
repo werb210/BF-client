@@ -1,14 +1,13 @@
-import { getEnv } from "@/config/env";
-import { ApiResponseSchema } from "@boreal/shared-contract";
+import { env } from "@/config/env";
 
 const DEFAULT_TIMEOUT = 10000;
 const MAX_RETRIES = 2;
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-function getAuthToken(): string | null {
+function getToken(): string | null {
   if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem("token") ?? localStorage.getItem("bf_access_token");
+  return localStorage.getItem(env.JWT_STORAGE_KEY);
 }
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
@@ -16,11 +15,10 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeout: numb
   const id = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const res = await fetch(url, {
+    return await fetch(url, {
       ...options,
       signal: controller.signal,
     });
-    return res;
   } finally {
     clearTimeout(id);
   }
@@ -41,45 +39,60 @@ function toRequestBody(body: unknown): BodyInit | undefined {
   return JSON.stringify(body);
 }
 
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const token = getToken();
+  const headers = new Headers(options.headers ?? {});
+
+  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetchWithTimeout(
+    `${env.API_URL}${path}`,
+    {
+      credentials: "include",
+      ...options,
+      headers,
+    },
+    DEFAULT_TIMEOUT
+  );
+
+  if (res.status === 503) {
+    throw new Error("SERVICE_NOT_READY");
+  }
+
+  if (res.status === 401) {
+    localStorage.removeItem(env.JWT_STORAGE_KEY);
+    throw new Error("UNAUTHORIZED");
+  }
+
+  if (res.status === 410) {
+    throw new Error("ENDPOINT_DEPRECATED");
+  }
+
+  return res;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
-  const { VITE_API_URL } = getEnv();
-
-  const token = getAuthToken();
-  const isFormData = options.body instanceof FormData;
-
   try {
-    const res = await fetchWithTimeout(
-      `${VITE_API_URL}${path}`,
-      {
-        credentials: "include",
-        ...options,
-        headers: {
-          ...(isFormData ? {} : { "Content-Type": "application/json" }),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(options.headers || {}),
-        },
-      },
-      DEFAULT_TIMEOUT
-    );
-
-    if (res.status === 401) {
-      localStorage.removeItem("bf_access_token");
-      window.location.href = "/login";
-      throw new Error("Unauthorized");
-    }
-
+    const res = await apiFetch(path, options);
     const json = await safeJson(res);
 
-    const parsed = ApiResponseSchema.safeParse(json);
-    if (!parsed.success) {
-      throw new Error("API contract violation");
+    if (!json || typeof json !== "object" || !("status" in json)) {
+      throw new Error("API_CONTRACT_VIOLATION");
     }
 
-    if (parsed.data.status !== "ok") {
-      throw new Error(parsed.data.error || "API returned error");
+    const payload = json as { status: string; data?: T; error?: string };
+
+    if (payload.status !== "ok") {
+      throw new Error(payload.error || "API_ERROR");
     }
 
-    return parsed.data.data as T;
+    return payload.data as T;
   } catch (err: any) {
     const message = typeof err?.message === "string" ? err.message : "";
     const isRetryable =
@@ -88,12 +101,6 @@ export async function api<T>(path: string, options: RequestInit = {}, attempt = 
     if (isRetryable && attempt < MAX_RETRIES) {
       return api<T>(path, options, attempt + 1);
     }
-
-    console.error("API FAILURE:", {
-      path,
-      attempt,
-      error: err,
-    });
 
     throw err;
   }

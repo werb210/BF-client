@@ -1,10 +1,10 @@
 import { expect, test, vi } from "vitest";
 import { apiRequest } from "@/lib/api";
-import { getEnv } from "@/config/env";
+import { env } from "@/config/env";
 
 const hasApiUrl = (() => {
   try {
-    getEnv();
+    void env;
     return true;
   } catch {
     return false;
