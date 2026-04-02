@@ -1,7 +1,11 @@
-const KEY = "bf_token";
+const KEY = "bf_access_token";
 
 export function getToken(): string | null {
-  return localStorage.getItem(KEY);
+  try {
+    return localStorage.getItem(KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setToken(token: string) {
