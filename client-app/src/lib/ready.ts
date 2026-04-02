@@ -1,15 +1,15 @@
 import { env } from "@/config/env";
 
-export async function waitForReady(retries = 10, delay = 500) {
-  for (let i = 0; i < retries; i++) {
+export async function waitForReady(retries = 20, delayMs = 500): Promise<void> {
+  for (let i = 0; i < retries; i += 1) {
     try {
       const res = await fetch(`${env.API_URL}/ready`);
-      if (res.status === 200) return true;
+      if (res.status === 200) return;
     } catch {
-      // ignore transient readiness errors
+      // ignore and retry
     }
 
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
   throw new Error("API_NOT_READY");

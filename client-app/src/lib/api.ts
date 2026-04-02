@@ -1,32 +1,14 @@
 import { env } from "@/config/env";
+import { clearToken, getToken } from "@/auth/token";
 
-const DEFAULT_TIMEOUT = 10000;
-const MAX_RETRIES = 2;
-
+type ApiOk<T> = { status: "ok"; data?: T };
+type ApiErr = { status: "error"; error?: string };
+type ApiResponse<T> = ApiOk<T> | ApiErr;
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
-function getToken(): string | null {
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem(env.JWT_STORAGE_KEY);
-}
-
-async function fetchWithTimeout(url: string, options: RequestInit, timeout: number) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
+async function parseJson<T>(res: Response): Promise<ApiResponse<T> | null> {
   try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-async function safeJson(res: Response) {
-  try {
-    return await res.json();
+    return (await res.json()) as ApiResponse<T>;
   } catch {
     return null;
   }
@@ -39,82 +21,50 @@ function toRequestBody(body: unknown): BodyInit | undefined {
   return JSON.stringify(body);
 }
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const token = getToken();
-  const headers = new Headers(options.headers ?? {});
 
-  if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
-    headers.set("Content-Type", "application/json");
-  }
-
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
-  const res = await fetchWithTimeout(
-    `${env.API_URL}${path}`,
-    {
-      credentials: "include",
-      ...options,
-      headers,
+  const res = await fetch(`${env.API_URL}${path}`, {
+    ...options,
+    headers: {
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers ?? {}),
     },
-    DEFAULT_TIMEOUT
-  );
+  });
 
-  if (res.status === 503) {
-    throw new Error("SERVICE_NOT_READY");
-  }
-
+  if (res.status === 503) throw new Error("SERVICE_NOT_READY");
   if (res.status === 401) {
-    localStorage.removeItem(env.JWT_STORAGE_KEY);
+    clearToken();
     throw new Error("UNAUTHORIZED");
   }
+  if (res.status === 410) throw new Error("ENDPOINT_DEPRECATED");
 
-  if (res.status === 410) {
-    throw new Error("ENDPOINT_DEPRECATED");
-  }
+  const body = await parseJson<T>(res);
+  if (!body) throw new Error("INVALID_RESPONSE");
+  if (body.status !== "ok") throw new Error(body.error || "REQUEST_FAILED");
 
-  return res;
+  return (body.data ?? null) as T;
 }
 
-export async function api<T>(path: string, options: RequestInit = {}, attempt = 0): Promise<T> {
-  try {
-    const res = await apiFetch(path, options);
-    const json = await safeJson(res);
-
-    if (!json || typeof json !== "object" || !("status" in json)) {
-      throw new Error("API_CONTRACT_VIOLATION");
-    }
-
-    const payload = json as { status: string; data?: T; error?: string };
-
-    if (payload.status !== "ok") {
-      throw new Error(payload.error || "API_ERROR");
-    }
-
-    return payload.data as T;
-  } catch (err: any) {
-    const message = typeof err?.message === "string" ? err.message : "";
-    const isRetryable =
-      err?.name === "AbortError" || message.includes("Network") || message.includes("Failed to fetch");
-
-    if (isRetryable && attempt < MAX_RETRIES) {
-      return api<T>(path, options, attempt + 1);
-    }
-
-    throw err;
-  }
+export async function apiRequest<T = unknown>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return apiFetch<T>(path, options);
 }
 
-export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  return api<T>(path, {
+export async function apiCall<T = unknown>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<T> {
+  return apiFetch<T>(path, {
     ...options,
     body: toRequestBody(options.body),
   });
-}
-
-export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
-  return api<T>(path, options);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
@@ -128,23 +78,5 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   return apiCall<T>(path, {
     method: "POST",
     body: formData,
-  });
-}
-
-export async function apiAuth<T = unknown>(
-  path: string,
-  token: string | null | undefined,
-  options: ApiRequestOptions = {}
-) {
-  if (!token) {
-    throw new Error("MISSING_AUTH_TOKEN");
-  }
-
-  return apiCall<T>(path, {
-    ...options,
-    headers: {
-      ...(options.headers ?? {}),
-      Authorization: `Bearer ${token}`,
-    },
   });
 }

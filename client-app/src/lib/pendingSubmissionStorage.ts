@@ -1,41 +1,30 @@
-const STORAGE_KEY = "bf_pending_submission_v1";
-const MAX_AGE = 1000 * 60 * 60 * 24; // 24h
+import { safeStorage } from "@/lib/storage";
 
-export type PendingSubmission = {
-  idempotencyKey: string;
-  payload: unknown;
-  createdAt: number;
-  retryCount: number;
-};
+const STORAGE_KEY = "bf_pending_submission";
 
-export function savePendingSubmission(data: PendingSubmission) {
+export function savePendingSubmission(data: unknown) {
+  const payload = JSON.stringify(data);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    safeStorage.setLocal(STORAGE_KEY, payload);
   } catch {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    safeStorage.setSession(STORAGE_KEY, payload);
+  }
+}
+
+export function getPendingSubmission<T = Record<string, unknown>>(): T | null {
+  const raw =
+    safeStorage.getLocal(STORAGE_KEY) ?? safeStorage.getSession(STORAGE_KEY);
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
   }
 }
 
 export function clearPendingSubmission() {
-  localStorage.removeItem(STORAGE_KEY);
-  sessionStorage.removeItem(STORAGE_KEY);
-}
-
-export function getPendingSubmission(): PendingSubmission | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as PendingSubmission;
-    if (!parsed?.idempotencyKey || !parsed?.payload) return null;
-
-    if (Date.now() - parsed.createdAt > MAX_AGE) {
-      clearPendingSubmission();
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    return null;
-  }
+  safeStorage.removeLocal(STORAGE_KEY);
+  safeStorage.removeSession(STORAGE_KEY);
 }

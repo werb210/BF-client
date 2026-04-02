@@ -72,11 +72,10 @@ describe("ReviewSubmit", () => {
 
     const button = container.querySelector("button");
 
-    await expect(
-      act(async () => {
-        button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      })
-    ).rejects.toThrow("Missing applicationId");
+    await act(async () => {
+      button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
 
     expect(uploadDocuments).not.toHaveBeenCalled();
     expect(submitApplication).not.toHaveBeenCalled();

@@ -658,7 +658,7 @@ export async function retryPendingPublicSubmission({
     options: { idempotencyKey: string; readinessToken?: string | null; sessionId?: string | null }
   ) => Promise<any>;
 }) {
-  const pendingSubmission = getPendingSubmission();
+  const pendingSubmission = loadPendingSubmissionState();
   if (!pendingSubmission) return false;
   try {
     await submitApplication(pendingSubmission.payload as PublicApplicationPayload, {

@@ -8,10 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
-import { apiRequest } from "@/lib/api";
-import { getMode } from "@/config/env";
 import { waitForReady } from "@/lib/ready";
-
 
 window.addEventListener("unhandledrejection", (e) => {
   console.error("[UNHANDLED PROMISE]", e.reason);
@@ -21,30 +18,20 @@ window.addEventListener("error", (e) => {
   console.error("[RUNTIME ERROR]", e.error);
 });
 
-async function assertBackend() {
-  const mode = getMode();
-  if (mode === "test") return;
-  if (mode === "production") return;
-  if (mode !== "development") return;
-
-  await apiRequest<{ status?: string }>("/health");
-}
-
-async function start() {
+async function bootstrap() {
   await waitForReady();
-  await assertBackend();
   await initAuth();
   const session = await bootstrapSession();
 
-  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <ErrorBoundary>
         <BrowserRouter>
           <App initialSession={session} />
         </BrowserRouter>
       </ErrorBoundary>
-    </React.StrictMode>
+    </React.StrictMode>,
   );
 }
 
-void start();
+void bootstrap();

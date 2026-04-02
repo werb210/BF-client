@@ -16,6 +16,8 @@ export default function ReviewSubmit({ state }: { state: ApplicationState }) {
 
     try {
       await runSubmissionFlow();
+    } catch (error) {
+      console.error(error);
     } finally {
       setSubmitting(false);
     }

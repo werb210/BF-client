@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-const API = process.env.API_URL || "http://localhost:3000";
+const API = process.env.API_URL;
+const runE2E = !!API;
 
 let token: string;
 
@@ -8,7 +9,7 @@ beforeEach(() => {
   vi.spyOn(global, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
     const url = String(input);
 
-    if (url.endsWith("/auth/login")) {
+    if (url.endsWith("/api/v1/voice/token")) {
       return {
         ok: true,
         status: 200,
@@ -16,7 +17,7 @@ beforeEach(() => {
       } as Response;
     }
 
-    if (url.endsWith("/applications")) {
+    if (url.endsWith("/api/v1/crm/lead")) {
       return {
         ok: true,
         status: 200,
@@ -24,7 +25,7 @@ beforeEach(() => {
       } as Response;
     }
 
-    if (url.endsWith("/pipeline")) {
+    if (url.endsWith("/api/v1/voice/status")) {
       return {
         ok: true,
         status: 200,
@@ -40,9 +41,9 @@ beforeEach(() => {
   });
 });
 
-describe("End-to-End Application Flow", () => {
-  test("login", async () => {
-    const res = await fetch(`${API}/auth/login`, {
+(runE2E ? describe : describe.skip)("End-to-End Application Flow", () => {
+  test("fetch voice token", async () => {
+    const res = await fetch(`${API}/api/v1/voice/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -56,8 +57,8 @@ describe("End-to-End Application Flow", () => {
     token = json.data.token;
   });
 
-  test("create application", async () => {
-    const res = await fetch(`${API}/applications`, {
+  test("create lead", async () => {
+    const res = await fetch(`${API}/api/v1/crm/lead`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -75,8 +76,8 @@ describe("End-to-End Application Flow", () => {
     expect(json.data.id).toBeDefined();
   });
 
-  test("fetch pipeline", async () => {
-    const res = await fetch(`${API}/pipeline`, {
+  test("fetch voice status", async () => {
+    const res = await fetch(`${API}/api/v1/voice/status`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
