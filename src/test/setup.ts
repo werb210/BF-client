@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 
 if (import.meta.env.MODE === 'test') {
   process.env.VITE_API_URL = 'http://localhost:3000';
@@ -7,13 +7,17 @@ if (import.meta.env.MODE === 'test') {
 global.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve({ success: true, data: {} }),
+    json: () => Promise.resolve({ status: 'ok', data: {} }),
   } as Response)
 );
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 process.setMaxListeners(20);
+
+afterEach(() => {
+  vi.clearAllMocks();
+});
 
 Object.defineProperty(global.navigator, 'serviceWorker', {
   value: {

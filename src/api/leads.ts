@@ -9,5 +9,8 @@ export type LeadPayload = {
 };
 
 export async function createLead(payload: LeadPayload) {
-  return api.post('/leads', payload);
+  return api('/leads', {
+    method: 'POST',
+    body: payload,
+  });
 }

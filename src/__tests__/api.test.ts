@@ -13,11 +13,11 @@ describe('api', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ success: true, data: { value: 123 } }),
+      json: async () => ({ status: 'ok', data: { value: 123 } }),
     } as Response);
 
     const { api } = await import('../lib/api');
-    const result = await api.get<{ value: number }>('/test');
+    const result = await api<{ value: number }>('/test');
 
     expect(result).toEqual({ value: 123 });
   });
@@ -29,12 +29,12 @@ describe('api', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: false,
       status: 500,
-      json: async () => ({ success: false, error: { message: 'boom' } }),
+      json: async () => ({ status: 'error', error: 'boom' }),
     } as Response);
 
     const { api } = await import('../lib/api');
 
-    await expect(api.get('/test')).rejects.toThrow('boom');
+    await expect(api('/test')).rejects.toThrow('boom');
   });
 
   it('locks contract calls onto env API base', async () => {
@@ -44,7 +44,7 @@ describe('api', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ success: true, data: { id: 'lead_1' } }),
+      json: async () => ({ status: 'ok', data: { id: 'lead_1' } }),
     } as Response);
 
     const { createLead } = await import('../api/leads');
