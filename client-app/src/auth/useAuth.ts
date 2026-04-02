@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMe } from "@/api/auth";
+import { retry } from "@/utils/retry";
 
 type AuthUser = Record<string, unknown> | null;
 
@@ -7,7 +8,10 @@ let meRequest: Promise<AuthUser> | null = null;
 
 function loadMeOnce() {
   if (!meRequest) {
-    meRequest = getMe() as Promise<AuthUser>;
+    meRequest = retry(() => getMe() as Promise<AuthUser>).catch((error) => {
+      meRequest = null;
+      throw error;
+    });
   }
   return meRequest;
 }
@@ -19,11 +23,19 @@ export function useAuth() {
   useEffect(() => {
     let active = true;
 
-    void loadMeOnce().then((me) => {
-      if (!active) return;
-      setUser(me);
-      setLoading(false);
-    });
+    void loadMeOnce()
+      .then((me) => {
+        if (!active) return;
+        setUser(me);
+      })
+      .catch(() => {
+        if (!active) return;
+        setUser(null);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
 
     return () => {
       active = false;

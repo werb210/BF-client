@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { acceptApplicationOffer, fetchApplicationOffers } from "@/api/applications";
 import { OffersView } from "@/offers/OffersView";
 import { components, layout } from "@/styles";
+import { retry } from "@/utils/retry";
 import type { OfferTermSheet } from "@/offers/OffersView";
 
 export function ApplicationOffersPage(): JSX.Element {
@@ -18,7 +19,7 @@ export function ApplicationOffersPage(): JSX.Element {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchApplicationOffers(id);
+      const response = await retry(() => fetchApplicationOffers(id));
       setOffers((response as { offers?: OfferTermSheet[] })?.offers ?? []);
     } catch {
       setError("We couldn't load your offers yet. Please try again.");
