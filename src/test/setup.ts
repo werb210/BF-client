@@ -1,13 +1,11 @@
-import { afterEach, vi } from 'vitest';
+import { afterEach, vi } from "vitest";
 
-if (import.meta.env.MODE === 'test') {
-  process.env.VITE_API_URL = 'http://localhost:3000';
-}
+process.env.VITE_API_URL = process.env.VITE_API_URL || "http://localhost:3000";
 
 global.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve({ status: 'ok', data: {} }),
+    json: () => Promise.resolve({ status: "ok", data: {} }),
   } as Response)
 );
 
@@ -19,7 +17,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-Object.defineProperty(global.navigator, 'serviceWorker', {
+Object.defineProperty(global.navigator, "serviceWorker", {
   value: {
     register: vi.fn(),
   },

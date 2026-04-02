@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { chatMaya } from "@/api/maya";
+import { api } from "@/lib/api";
 
-type ChatMessage = { role: "user" | "maya"; text: string };
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+type MayaChatResponse = {
+  reply: string;
+};
 
 export default function MayaChat() {
   const [input, setInput] = useState("");
@@ -12,20 +16,24 @@ export default function MayaChat() {
     if (!message) return;
 
     setInput("");
-    setMessages((current) => [...current, { role: "user", text: message }]);
+    setMessages((prev) => [...prev, { role: "user", content: message }]);
 
     try {
-      const result = await chatMaya(message);
+      const result = await api<MayaChatResponse>("/maya/chat", {
+        method: "POST",
+        body: { message },
+      });
 
-      const reply =
-        result.reply || "I received your message, but I have no reply yet.";
-      setMessages((current) => [...current, { role: "maya", text: reply }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: result.reply },
+      ]);
     } catch {
-      setMessages((current) => [
-        ...current,
+      setMessages((prev) => [
+        ...prev,
         {
-          role: "maya",
-          text: "Network error. Please try again in a moment.",
+          role: "assistant",
+          content: "Network error. Please try again in a moment.",
         },
       ]);
     }
@@ -36,7 +44,7 @@ export default function MayaChat() {
       <div style={{ height: 200, overflow: "auto" }}>
         {messages.map((message, index) => (
           <div key={`${message.role}-${index}`}>
-            <b>{message.role}:</b> {message.text}
+            <b>{message.role}:</b> {message.content}
           </div>
         ))}
       </div>
