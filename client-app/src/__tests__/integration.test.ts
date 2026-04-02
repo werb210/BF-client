@@ -1,7 +1,15 @@
 import { expect, test, vi } from "vitest";
 import { apiRequest } from "@/lib/api";
+import { getEnv } from "@/config/env";
 
-const hasApiUrl = Boolean(import.meta.env.VITE_API_URL);
+const hasApiUrl = (() => {
+  try {
+    getEnv();
+    return true;
+  } catch {
+    return false;
+  }
+})();
 
 test.skipIf(!hasApiUrl)("backend reachable", async () => {
   global.fetch = vi.fn(() =>

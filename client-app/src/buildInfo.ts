@@ -1,4 +1,6 @@
+import { getMode } from "@/config/env";
+
 export const buildInfo = {
-  mode: import.meta.env.MODE,
+  mode: getMode(),
   timestamp: new Date().toISOString(),
 };

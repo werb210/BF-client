@@ -1,5 +1,5 @@
-export function validateEnv() {
-  const url = import.meta.env.VITE_API_URL;
+import { getEnv } from "@/config/env";
 
-  if (!url) throw new Error("MISSING_API_URL");
+export function validateEnv() {
+  getEnv();
 }

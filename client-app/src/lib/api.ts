@@ -1,7 +1,11 @@
 import { getToken } from "@/auth/token";
-import { apiFetch } from "@/lib/apiClient";
+import { getEnv } from "@/config/env";
 
-const API_ENTRY_FLAG = "__BF_API_ACTIVE__";
+type ApiEnvelope<T = unknown> = {
+  status: "ok" | "error" | "not_ready";
+  data?: T;
+  error?: string;
+};
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -9,51 +13,69 @@ function requiresAuth(path: string): boolean {
   return !path.includes("/auth/") && !path.includes("/health");
 }
 
-export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  return apiCall<T>(path, {
-    headers: { "Content-Type": "application/json" },
+function toRequestBody(body: unknown): BodyInit | null | undefined {
+  if (body == null) return undefined;
+  if (body instanceof FormData) return body;
+  if (typeof body === "string") return body;
+  return JSON.stringify(body);
+}
+
+export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+  const { VITE_API_URL } = getEnv();
+  const isFormData = options.body instanceof FormData;
+
+  const res = await fetch(`${VITE_API_URL}${path}`, {
+    credentials: "include",
     ...options,
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    },
   });
+
+  if (res.status === 401) {
+    localStorage.removeItem("bf_access_token");
+    window.location.href = "/login";
+    throw new Error("Unauthorized");
+  }
+
+  const json = (await res.json()) as ApiEnvelope<T>;
+
+  if (!json || typeof json !== "object" || !("status" in json)) {
+    throw new Error("Invalid API response");
+  }
+
+  if (json.status !== "ok") {
+    throw new Error(json.error || "API error");
+  }
+
+  return json.data as T;
 }
 
 export async function apiCall<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
-  if ((globalThis as Record<string, unknown>)[API_ENTRY_FLAG]) {
-    throw new Error("NESTED_API_CALL_BLOCKED");
-  }
+  const requestOptions: RequestInit = {
+    ...options,
+    body: toRequestBody(options.body),
+    headers: {
+      ...(options.headers ?? {}),
+    },
+  };
 
-  (globalThis as Record<string, unknown>)[API_ENTRY_FLAG] = true;
-
-  try {
-    const isFormData = options.body instanceof FormData;
-    const body =
-      isFormData || typeof options.body === "string"
-        ? options.body
-        : options.body
-          ? JSON.stringify(options.body)
-          : undefined;
-
-    const headers = isFormData ? options.headers : { "Content-Type": "application/json", ...options.headers };
-
-    const requestOptions: RequestInit = {
-      ...options,
-      headers: { ...(headers ?? {}) },
-      body: body as BodyInit | null | undefined,
-    };
-
-    if (requiresAuth(path)) {
-      const token = getToken();
-      if (token) {
-        requestOptions.headers = {
-          ...requestOptions.headers,
-          Authorization: `Bearer ${token}`,
-        };
-      }
+  if (requiresAuth(path)) {
+    const token = getToken();
+    if (token) {
+      requestOptions.headers = {
+        ...requestOptions.headers,
+        Authorization: `Bearer ${token}`,
+      };
     }
-
-    return (await apiFetch(path, requestOptions)) as T;
-  } finally {
-    delete (globalThis as Record<string, unknown>)[API_ENTRY_FLAG];
   }
+
+  return api<T>(path, requestOptions);
+}
+
+export async function apiRequest<T = unknown>(path: string, options: RequestInit = {}) {
+  return apiCall<T>(path, options);
 }
 
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
@@ -85,5 +107,3 @@ export async function apiAuth<T = unknown>(path: string, token: string | null | 
 }
 
 export type ApiResponse<T> = T;
-
-export { apiFetch as api };

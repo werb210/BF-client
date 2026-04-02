@@ -1,9 +1,10 @@
 import { getPersistedAttribution } from "./attribution";
 import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
+import { isDevMode } from "@/config/env";
 
 export function track(event: string) {
-  if (import.meta.env.DEV) {
+  if (isDevMode()) {
     void event;
   }
 }
@@ -103,7 +104,7 @@ export const trackEvent = (
       },
     }),
   }).catch((err) => {
-    if (import.meta.env.DEV) {
+    if (isDevMode()) {
       void err;
     }
   });
