@@ -1,10 +1,8 @@
-export async function apiFetch(
-  url: string,
-  options: RequestInit = {}
-) {
+export async function apiFetch(url: string, options: RequestInit = {}) {
   url = url.replace(/([^:]\/)\/+/g, "$1");
 
-  const requestId = options.headers?.["x-request-id"] || crypto.randomUUID();
+  const requestId = (options.headers as Record<string, string> | undefined)?.["x-request-id"] ||
+    crypto.randomUUID();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -19,7 +17,9 @@ export async function apiFetch(
     }
   }
 
-  return fetch(url, {
+  const nativeFetch = globalThis.fetch.bind(globalThis);
+
+  return nativeFetch(url, {
     ...options,
     headers,
   });
