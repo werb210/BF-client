@@ -1,22 +1,26 @@
 import { api } from "./apiClient";
 
-const url = import.meta.env.VITE_API_URL;
+const API = import.meta.env.VITE_API_URL;
 
-if (!url) {
+if (!API) {
   throw new Error("MISSING_API_URL");
 }
 
-if (!url.includes("/api/v1")) {
+if (!API.includes("/api/v1")) {
   throw new Error("INVALID_API_VERSION");
 }
 
-const base = url.replace(/\/+$/, "");
+const base = API.replace(/\/+$/, "");
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 function normalizePath(path: string): string {
   if (!path.startsWith("/")) {
     throw new Error("INVALID_API_PATH");
+  }
+
+  if (path.startsWith("/api/")) {
+    throw new Error("DIRECT_API_PATH_FORBIDDEN");
   }
 
   if (/^https?:\/\//i.test(path)) {
