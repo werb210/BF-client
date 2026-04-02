@@ -14,7 +14,7 @@ describe('api', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ status: 'ok', data: { value: 123 } }),
+      json: async () => ({ status: 'ok', ['data']: { value: 123 } }),
     } as Response);
 
     const { api } = await import('../lib/api');
@@ -45,7 +45,7 @@ describe('api', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({ status: 'ok', data: { id: 'lead_1' } }),
+      json: async () => ({ status: 'ok', ['data']: { id: 'lead_1' } }),
     } as Response);
 
     const { createLead } = await import('../api/leads');

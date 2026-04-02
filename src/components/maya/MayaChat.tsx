@@ -24,6 +24,11 @@ export default function MayaChat() {
         body: { message },
       });
 
+      if (!result || typeof result.reply !== "string") {
+        console.error("INVALID MAYA RESPONSE:", result);
+        throw new Error("Invalid Maya response");
+      }
+
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: result.reply },

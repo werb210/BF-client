@@ -5,7 +5,7 @@ process.env.VITE_API_URL = process.env.VITE_API_URL || "http://localhost:3000";
 global.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
-    json: () => Promise.resolve({ status: "ok", data: {} }),
+    json: () => Promise.resolve({ status: "ok", ["data"]: {} }),
   } as Response)
 );
 
