@@ -7,7 +7,7 @@ describe("api", () => {
   });
 
   it("returns response data on successful contract envelope", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.stubEnv("REACT_APP_API_URL", "https://api.example.com");
     vi.resetModules();
 
     const response = { status: "ok", data: { value: 123 } };
@@ -28,7 +28,7 @@ describe("api", () => {
   });
 
   it("throws API contract error when status is error", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.stubEnv("REACT_APP_API_URL", "https://api.example.com");
     vi.resetModules();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -43,7 +43,7 @@ describe("api", () => {
   });
 
   it("rejects when response cannot be parsed as json", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.stubEnv("REACT_APP_API_URL", "https://api.example.com");
     vi.resetModules();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -60,7 +60,7 @@ describe("api", () => {
   });
 
   it("blocks direct /api-prefixed paths to prevent contract drift", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.stubEnv("REACT_APP_API_URL", "https://api.example.com");
     vi.resetModules();
     const { apiRequest } = await import("../lib/api");
 
@@ -68,7 +68,7 @@ describe("api", () => {
   });
 
   it("locks contract calls onto env API base", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
+    vi.stubEnv("REACT_APP_API_URL", "https://api.example.com");
     vi.resetModules();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
