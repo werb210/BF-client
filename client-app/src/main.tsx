@@ -9,6 +9,9 @@ import { bootstrapSession } from "./app/bootstrap";
 import { initAuth } from "@/api/auth";
 import "./index.css";
 import { apiRequest } from "@/lib/api";
+import { validateEnv } from "./system/env";
+
+validateEnv();
 
 window.addEventListener("unhandledrejection", (e) => {
   console.error("[UNHANDLED PROMISE]", e.reason);
