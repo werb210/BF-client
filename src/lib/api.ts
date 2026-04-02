@@ -1,16 +1,5 @@
 import { api } from "./apiClient";
-
-const API = import.meta.env.VITE_API_URL;
-
-if (!API) {
-  throw new Error("MISSING_API_URL");
-}
-
-if (!API.includes("/api/v1")) {
-  throw new Error("INVALID_API_VERSION");
-}
-
-const base = API.replace(/\/+$/, "");
+import { API_BASE } from "../api/base";
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
@@ -41,7 +30,7 @@ export async function apiRequest<T = unknown>(path: string, options: ApiRequestO
 
   const headers = isFormData ? options.headers : { "Content-Type": "application/json", ...options.headers };
 
-  return (await api<T>(`${base}${normalizePath(path)}`, {
+  return (await api<T>(`${API_BASE}${normalizePath(path)}`, {
     ...options,
     headers,
     body,
