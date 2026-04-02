@@ -1,24 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "@/lib/apiClient";
+import { apiFetch } from "@/lib/apiClient";
 
 describe("lib/apiClient", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("returns degraded marker when backend reports DB_NOT_READY", async () => {
+  it("returns parsed response for ok responses", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      json: async () => ({ status: "error", error: { code: "DB_NOT_READY" } }),
+      ok: true,
+      json: async () => ({ id: "ok" }),
     } as Response);
 
-    await expect(api("/api/test")).resolves.toEqual({ degraded: true });
+    await expect(apiFetch("/applications")).resolves.toEqual({ id: "ok" });
   });
 
-  it("throws for non-degraded API errors", async () => {
+  it("throws for non-ok responses", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      json: async () => ({ status: "error", error: { code: "SOME_OTHER_ERROR" } }),
+      ok: false,
+      status: 500,
+      json: async () => ({}),
     } as Response);
 
-    await expect(api("/api/test")).rejects.toThrow("SOME_OTHER_ERROR");
+    await expect(apiFetch("/applications")).rejects.toThrow("API error: 500");
   });
 });
