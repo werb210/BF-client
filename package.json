@@ -22,6 +22,7 @@
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
     "verify:no-raw-fetch": "rg -n \"fetch\\(\" src client-app/src | rg -v \"src/lib/api(Client)?\\.ts|client-app/src/lib/api(Client)?\\.ts\" && exit 1 || exit 0",
-    "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0"
+    "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0",
+    "typecheck": "npm --prefix client-app run typecheck"
   }
 }

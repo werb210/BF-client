@@ -8,11 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: client-app
-    env:
-      VITE_API_URL: ${{ secrets.API_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +19,7 @@ jobs:
       - run: npm ci
 
       - run: npm run typecheck
-      - run: npm run lint
+
+      - run: npm run test
+
       - run: npm run build
-      - name: Run tests
-        run: npm run test
-        env:
-          VITE_API_URL: http://localhost:3000

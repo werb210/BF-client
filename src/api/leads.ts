@@ -1,4 +1,4 @@
-import { apiRequest } from "../lib/api";
+import { api } from '@/lib/api';
 
 export type LeadPayload = {
   fullName: string;
@@ -9,8 +9,5 @@ export type LeadPayload = {
 };
 
 export async function createLead(payload: LeadPayload) {
-  return apiRequest("/leads", {
-    method: "POST",
-    body: payload,
-  });
+  return api.post('/leads', payload);
 }

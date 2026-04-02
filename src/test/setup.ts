@@ -1,6 +1,9 @@
 import { vi } from 'vitest';
 
-// Prevent real network calls
+if (import.meta.env.MODE === 'test') {
+  process.env.VITE_API_URL = 'http://localhost:3000';
+}
+
 global.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
@@ -8,7 +11,6 @@ global.fetch = vi.fn(() =>
   } as Response)
 );
 
-// Fix act() warnings (React 18)
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 process.setMaxListeners(20);

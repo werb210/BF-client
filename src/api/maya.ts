@@ -1,8 +1,5 @@
-import { apiRequest } from "@/lib/api";
+import { api } from '@/lib/api';
 
 export async function chatMaya(message: string) {
-  return apiRequest<{ reply?: string }>("/maya/chat", {
-    method: "POST",
-    body: { message },
-  });
+  return api.post<{ reply?: string }>('/maya/chat', { message });
 }
