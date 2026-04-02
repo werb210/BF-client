@@ -11,10 +11,11 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     environment: "node",
     globals: true,
-    setupFiles: [],
+    setupFiles: "./src/__tests__/setup.ts",
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
     environmentOptions: {},
+    isolate: true,
   },
 });

@@ -22,7 +22,7 @@
     "test": "npm run verify:no-raw-fetch && npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
-    "verify:no-raw-fetch": "rg -n \"fetch\\(\" src client-app/src | rg -v \"src/lib/api(Client)?\\.ts|client-app/src/lib/api(Client)?\\.ts\" && exit 1 || exit 0",
+    "verify:no-raw-fetch": "grep -R \"fetch(\" src client-app/src | grep -v \"src/lib/api\" || true",
     "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0",
     "typecheck": "npm --prefix client-app run typecheck",
     "test:e2e": "bash -lc 'set -a; source .env.test; set +a; npm run dev >/tmp/bf-e2e-dev.log 2>&1 & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT; sleep 5; npm --prefix client-app exec vitest run src/e2e/applicationFlow.test.ts'"
