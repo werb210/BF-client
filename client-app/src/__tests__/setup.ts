@@ -50,8 +50,18 @@ Object.defineProperty(globalThis, "localStorage", {
   writable: true,
   configurable: true,
 });
+Object.defineProperty(window, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+});
 
 Object.defineProperty(globalThis, "sessionStorage", {
+  value: sessionStorageMock,
+  writable: true,
+  configurable: true,
+});
+Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
   writable: true,
   configurable: true,
