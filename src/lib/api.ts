@@ -1,12 +1,30 @@
 import { api } from "./apiClient";
 
-if (import.meta.env.MODE !== "test" && !import.meta.env.VITE_API_URL) {
-  throw new Error("VITE_API_URL_NOT_DEFINED");
+const url = import.meta.env.VITE_API_URL;
+
+if (!url) {
+  throw new Error("MISSING_API_URL");
 }
 
-const base = import.meta.env.VITE_API_URL;
+if (!url.includes("/api/v1")) {
+  throw new Error("INVALID_API_VERSION");
+}
+
+const base = url.replace(/\/+$/, "");
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & { body?: unknown };
+
+function normalizePath(path: string): string {
+  if (!path.startsWith("/")) {
+    throw new Error("INVALID_API_PATH");
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    throw new Error("ABSOLUTE_API_PATH_FORBIDDEN");
+  }
+
+  return path;
+}
 
 export async function apiRequest<T = unknown>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const isFormData = options.body instanceof FormData;
@@ -19,7 +37,7 @@ export async function apiRequest<T = unknown>(path: string, options: ApiRequestO
 
   const headers = isFormData ? options.headers : { "Content-Type": "application/json", ...options.headers };
 
-  return (await api<T>(`${base}${path}`, {
+  return (await api<T>(`${base}${normalizePath(path)}`, {
     ...options,
     headers,
     body,

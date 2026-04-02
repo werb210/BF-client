@@ -7,7 +7,7 @@ describe("api", () => {
   });
 
   it("returns response data on successful contract envelope", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com");
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
     vi.resetModules();
 
     const response = { status: "ok", data: { value: 123 } };
@@ -28,7 +28,7 @@ describe("api", () => {
   });
 
   it("throws API contract error when status is error", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com");
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
     vi.resetModules();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -43,7 +43,7 @@ describe("api", () => {
   });
 
   it("rejects when response cannot be parsed as json", async () => {
-    vi.stubEnv("VITE_API_URL", "https://api.example.com");
+    vi.stubEnv("VITE_API_URL", "https://api.example.com/api/v1");
     vi.resetModules();
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
