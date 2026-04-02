@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 
 describe("lib/api", () => {
   afterEach(() => {
@@ -12,7 +12,7 @@ describe("lib/api", () => {
       json: async () => ({ status: "ok", data: { id: "ok" } }),
     } as Response);
 
-    await expect(api("/applications")).resolves.toEqual({ id: "ok" });
+    await expect(apiRequest("/api/v1/crm/lead")).resolves.toEqual({ id: "ok" });
   });
 
   it("throws for status=error responses", async () => {
@@ -21,6 +21,6 @@ describe("lib/api", () => {
       json: async () => ({ status: "error", error: "boom" }),
     } as Response);
 
-    await expect(api("/applications")).rejects.toThrow("boom");
+    await expect(apiRequest("/api/v1/crm/lead")).rejects.toThrow("boom");
   });
 });

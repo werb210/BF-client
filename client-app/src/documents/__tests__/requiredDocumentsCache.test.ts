@@ -1,26 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { syncRequiredDocumentsFromStatus } from "../requiredDocumentsCache";
 
-const localStorageMock = (() => {
-  let store: Record<string, string> = {}
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value
-    },
-    removeItem: (key: string) => {
-      delete store[key]
-    },
-    clear: () => {
-      store = {}
-    },
-  }
-})()
-
-
 describe("syncRequiredDocumentsFromStatus", () => {
   beforeEach(() => {
-    localStorage.clear()
+    localStorage.clear();
   });
 
   it("merges required documents from status and ensures bank statements", () => {

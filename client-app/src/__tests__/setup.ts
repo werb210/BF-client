@@ -1,103 +1,77 @@
-import { afterEach, beforeEach, vi } from "vitest";
-import { TextDecoder, TextEncoder } from "util";
+import { beforeEach, vi } from "vitest";
 
-const createStorageMock = () => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] ?? null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
+const localStore = new Map<string, string>();
+const sessionStore = new Map<string, string>();
+
+const localStorageMock = {
+  getItem: (key: string) => localStore.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    localStore.set(key, value);
+  },
+  removeItem: (key: string) => {
+    localStore.delete(key);
+  },
+  clear: () => {
+    localStore.clear();
+  },
 };
 
-const localStorageMock = createStorageMock();
-const sessionStorageMock = createStorageMock();
-
-const installBrowserLikeGlobals = () => {
-  if (typeof (global as any).window === "undefined") {
-    (global as any).window = global;
-  }
-
-  if (typeof (global as any).document === "undefined") {
-    (global as any).document = {
-      createElement: () => ({
-        style: {},
-        appendChild: () => {},
-        removeChild: () => {},
-        setAttribute: () => {},
-        removeAttribute: () => {},
-        cloneNode: () => null,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      }),
-    };
-  }
-
-  if (typeof (global as any).navigator === "undefined") {
-    (global as any).navigator = {
-      userAgent: "node",
-    };
-  }
-
-  (global as any).localStorage = localStorageMock;
-  (global as any).sessionStorage = sessionStorageMock;
-
-  (global as any).fetch = vi.fn(async () => ({
-    ok: true,
-    status: 200,
-    json: async () => ({
-      status: "ok",
-      data: {},
-    }),
-  }));
+const sessionStorageMock = {
+  getItem: (key: string) => sessionStore.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    sessionStore.set(key, value);
+  },
+  removeItem: (key: string) => {
+    sessionStore.delete(key);
+  },
+  clear: () => {
+    sessionStore.clear();
+  },
 };
 
-installBrowserLikeGlobals();
-
-beforeEach(() => {
-  installBrowserLikeGlobals();
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
-  if (typeof localStorage?.clear === "function") localStorage.clear();
-  if (typeof sessionStorage?.clear === "function") sessionStorage.clear();
-});
-
-afterEach(() => {
-  vi.clearAllMocks();
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
-});
-
-if (!window.matchMedia) {
-  Object.defineProperty(window, "matchMedia", {
+if (typeof globalThis.window === "undefined") {
+  Object.defineProperty(globalThis, "window", {
+    value: globalThis,
     writable: true,
-    value: (query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }),
+    configurable: true,
   });
 }
 
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+if (typeof globalThis.navigator === "undefined") {
+  Object.defineProperty(globalThis, "navigator", {
+    value: { userAgent: "node" },
+    writable: true,
+    configurable: true,
+  });
 }
 
-(globalThis as any).ResizeObserver = ResizeObserverMock;
-window.scrollTo = vi.fn();
-(globalThis as any).TextEncoder = TextEncoder;
-(globalThis as any).TextDecoder = TextDecoder;
-(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+Object.defineProperty(globalThis, "localStorage", {
+  value: localStorageMock,
+  writable: true,
+  configurable: true,
+});
+
+Object.defineProperty(globalThis, "sessionStorage", {
+  value: sessionStorageMock,
+  writable: true,
+  configurable: true,
+});
+
+if (typeof globalThis.fetch === "undefined") {
+  Object.defineProperty(globalThis, "fetch", {
+    value: vi.fn(async () => ({
+      status: 200,
+      ok: true,
+      json: async () => ({ status: "ok", data: {} }),
+    })),
+    writable: true,
+    configurable: true,
+  });
+}
+
+beforeEach(() => {
+  localStorageMock.clear();
+  sessionStorageMock.clear();
+  vi.restoreAllMocks();
+  vi.clearAllMocks();
+});
