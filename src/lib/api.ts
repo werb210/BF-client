@@ -1,12 +1,13 @@
 const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_API_URL ||
-  "https://server.boreal.financial";
+  "http://localhost:8080";
 
 export async function apiRequest<T = any>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res: any = await fetch(`${BASE_URL}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
@@ -18,22 +19,31 @@ export async function apiRequest<T = any>(
   let payload: any = null;
 
   try {
-    payload = await res.json();
+    payload = await res.json?.();
   } catch {
     payload = null;
   }
 
-  if (!res.ok) {
-    throw new Error(`API ERROR ${res.status}`);
+  const status = res?.status ?? 200;
+  const ok =
+    typeof res?.ok === "boolean"
+      ? res.ok
+      : status >= 200 && status < 300;
+
+  if (!ok) {
+    throw new Error(
+      payload?.error?.message ||
+        payload?.message ||
+        `API ERROR ${status}`
+    );
   }
 
   if (payload?.status && payload.status !== "ok") {
-    const message =
+    throw new Error(
       payload?.error?.message ||
-      payload?.message ||
-      JSON.stringify(payload);
-
-    throw new Error(`API ERROR: ${message}`);
+        payload?.message ||
+        "API ERROR"
+    );
   }
 
   if (payload?.status === "ok") {
