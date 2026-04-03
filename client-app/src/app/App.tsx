@@ -267,7 +267,7 @@ export default function App({ initialSession = null }: AppProps) {
         </div>
       )}
       <main className="max-w-7xl mx-auto px-6 py-14 md:py-20 w-full flex-1">
-        <ErrorBoundary fallback={<FatalErrorScreen />}><AppRoutes /></ErrorBoundary>
+        <ErrorBoundary><AppRoutes /></ErrorBoundary>
       </main>
       <footer className="bg-brand-bgAlt border-t border-subtle py-8 text-center text-sm text-gray-300">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row gap-4 justify-center">
