@@ -43,28 +43,45 @@ export async function apiCall<T = unknown>(
     delete headers["Content-Type"];
   }
 
-  const res = await fetch(toUrl(path), {
+  const res: any = await fetch(toUrl(path), {
     ...options,
     headers,
     body: normalizeBody(options.body as BodyInit | Record<string, unknown> | undefined),
     credentials: "include",
   });
 
-  let data: unknown;
+  let payload: any = null;
   try {
-    data = await res.json();
+    payload = await res.json?.();
   } catch {
-    data = null;
+    payload = null;
   }
 
-  if (!res.ok) {
-    throw data || {
-      status: "error",
-      error: { message: "request_failed" },
-    };
+  const status = res?.status ?? 200;
+  const ok =
+    typeof res?.ok === "boolean"
+      ? res.ok
+      : status >= 200 && status < 300;
+
+  const message =
+    payload?.error?.message ||
+    payload?.error ||
+    payload?.message ||
+    `API ERROR ${status}`;
+
+  if (!ok) {
+    throw new Error(message);
   }
 
-  return data as T;
+  if (payload?.status && payload.status !== "ok") {
+    throw new Error(message);
+  }
+
+  if (payload?.status === "ok") {
+    return payload.data as T;
+  }
+
+  return payload as T;
 }
 
 export async function apiRequest<T = unknown>(
