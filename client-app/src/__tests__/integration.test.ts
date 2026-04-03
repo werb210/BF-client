@@ -22,5 +22,5 @@ test.skipIf(!hasApiUrl)("backend reachable", async () => {
   ) as typeof fetch;
 
   const res = await apiRequest<Record<string, unknown>>("/health");
-  expect(res).toEqual({});
+  expect(res).toEqual({}); // AFTER UNWRAP THIS WILL PASS
 });

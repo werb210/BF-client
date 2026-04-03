@@ -5,15 +5,11 @@ export async function apiCall<T = unknown>(path: string, options: RequestInit = 
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(((options.headers as Record<string, string>) || {})),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  if (options.body instanceof FormData) {
-    delete headers["Content-Type"];
   }
 
   const res = await fetch(`${base}${path}`, {
@@ -22,13 +18,19 @@ export async function apiCall<T = unknown>(path: string, options: RequestInit = 
     credentials: "include",
   });
 
-  const data = await res.json().catch(() => ({}));
+  const json = await res.json().catch(() => ({}));
 
-  if (!res.ok) {
-    throw new Error((data as { error?: string })?.error || "API error");
+  const ok = typeof res.ok === "boolean" ? res.ok : res.status >= 200 && res.status < 300;
+
+  if (!ok) {
+    throw new Error((json as { error?: string })?.error || "API error");
   }
 
-  return data as T;
+  if (json && typeof json === "object" && "data" in json) {
+    return (json as { data: T }).data;
+  }
+
+  return json as T;
 }
 
 export const api = apiCall;

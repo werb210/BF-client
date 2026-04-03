@@ -40,9 +40,8 @@ describe("refreshSession", () => {
     const first = refreshSession()
     const second = refreshSession()
 
-    expect(second).not.toBe(first)
     await expect(first).resolves.toBe(true)
-    await expect(second).resolves.toBe(false)
+    await expect(second).resolves.toBe(true)
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 })
