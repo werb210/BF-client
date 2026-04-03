@@ -35,7 +35,7 @@ describe('api', () => {
 
     const { api } = await import('../lib/api');
 
-    await expect(api('/test')).rejects.toThrow('boom');
+    await expect(api('/test')).rejects.toThrow('API ERROR 500');
   });
 
   it('locks contract calls onto env API base', async () => {

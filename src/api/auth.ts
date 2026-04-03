@@ -1,4 +1,4 @@
-import { api } from '@/lib/api';
+import { api } from '../lib/api';
 
 export function sendOtp(phone: string) {
   return api('/auth/send-otp', {
