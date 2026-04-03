@@ -1,31 +1,32 @@
-import { apiCall } from "@/lib/api";
-import { clearToken, setToken } from "@/auth/token";
+import { apiRequest } from "@/lib/api"
+import { clearToken, getToken, setToken } from "./token"
 
-let refreshInFlight = false;
+let refreshing = false
 
 export async function refreshSession(): Promise<boolean> {
-  if (refreshInFlight) {
-    return false;
-  }
+  if (refreshing) return false
 
-  refreshInFlight = true;
+  const token = getToken()
+  if (!token) return false
+
+  refreshing = true
 
   try {
-    const res = await apiCall<{ token?: string }>("/api/auth/refresh", {
+    const res = await apiRequest<{ token: string }>("/api/auth/refresh", {
       method: "POST",
-    });
+    })
 
     if (res?.token) {
-      setToken(res.token);
-      return true;
+      setToken(res.token)
+      return true
     }
 
-    clearToken();
-    return false;
+    clearToken()
+    return false
   } catch {
-    clearToken();
-    return false;
+    clearToken()
+    return false
   } finally {
-    refreshInFlight = false;
+    refreshing = false
   }
 }

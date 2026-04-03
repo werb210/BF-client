@@ -1,14 +1,13 @@
-import { env } from "@/config/env";
-import { safeStorage } from "@/lib/storage";
+let token: string | null = null;
 
-export function getToken(): string | null {
-  return safeStorage.getLocal(env.JWT_STORAGE_KEY);
+export function getToken() {
+  return token;
 }
 
-export function setToken(token: string) {
-  safeStorage.setLocal(env.JWT_STORAGE_KEY, token);
+export function setToken(t: string) {
+  token = t;
 }
 
 export function clearToken() {
-  safeStorage.removeLocal(env.JWT_STORAGE_KEY);
+  token = null;
 }
