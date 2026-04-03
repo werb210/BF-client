@@ -1,9 +1,17 @@
 {
   "compilerOptions": {
-    "types": ["vitest/globals"],
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["client-app/src/*"]
+    },
     "jsx": "react-jsx",
-    "skipLibCheck": true
+    "types": ["vite/client"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "e2e", "playwright"]
+  "include": ["client-app/src"]
 }
