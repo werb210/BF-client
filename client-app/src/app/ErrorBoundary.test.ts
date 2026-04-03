@@ -28,7 +28,7 @@ describe("ErrorBoundary", () => {
       );
     });
 
-    expect(container.textContent).toContain("System error");
+    expect(container.textContent).toContain("Something went wrong");
 
     await act(async () => {
       root.unmount();
@@ -49,7 +49,7 @@ describe("ErrorBoundary", () => {
       })
     ).resolves.toBeUndefined();
 
-    expect(container.textContent).toContain("System error");
+    expect(container.textContent).toContain("Something went wrong");
 
     await act(async () => {
       root.unmount();
