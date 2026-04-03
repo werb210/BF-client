@@ -1,7 +1,7 @@
 import { DOCUMENT_CONTRACT } from '@/contracts';
 import { apiCall } from '@/api/client';
 
-export async function uploadDocument(file, applicationId, category) {
+export async function uploadDocument(file: any, applicationId: any, category: any) {
   if (!file) {
     throw new Error('File is required');
   }
