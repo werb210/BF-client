@@ -1,111 +1,55 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://server.boreal.financial";
-
-function toUrl(path: string): string {
-  if (/^https?:\/\//.test(path)) {
-    return path;
-  }
-
-  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+function withApiPrefix(path: string) {
+  return path.startsWith("/api") ? path : `/api${path}`;
 }
 
-function normalizeBody(body: BodyInit | Record<string, unknown> | null | undefined): BodyInit | undefined {
-  if (body == null) {
-    return undefined;
-  }
-
-  if (
-    typeof body === "string" ||
-    body instanceof FormData ||
-    body instanceof Blob ||
-    body instanceof URLSearchParams ||
-    body instanceof ArrayBuffer
-  ) {
-    return body;
-  }
-
-  return JSON.stringify(body);
-}
-
-/**
- * Core API call (FIXES missing export + standardises all calls)
- */
-export async function apiCall<T = unknown>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  if (normalizeBody(options.body as BodyInit | Record<string, unknown> | undefined) instanceof FormData) {
-    delete headers["Content-Type"];
-  }
-
-  const res: any = await fetch(toUrl(path), {
-    ...options,
-    headers,
-    body: normalizeBody(options.body as BodyInit | Record<string, unknown> | undefined),
+export async function api(path: string, options: RequestInit = {}) {
+  const isFormData = options.body instanceof FormData;
+  const res = await fetch(withApiPrefix(path), {
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    },
     credentials: "include",
+    ...options,
   });
 
-  let payload: any = null;
+  let data;
   try {
-    payload = await res.json?.();
+    data = await res.json();
   } catch {
-    payload = null;
+    data = null;
   }
 
-  const status = res?.status ?? 200;
-  const ok =
-    typeof res?.ok === "boolean"
-      ? res.ok
-      : status >= 200 && status < 300;
+  const status = typeof res.status === "number" ? res.status : 200;
+  const ok = typeof res.ok === "boolean" ? res.ok : status >= 200 && status < 300;
 
-  const message =
-    payload?.error?.message ||
-    payload?.error ||
-    payload?.message ||
-    `API ERROR ${status}`;
-
-  if (!ok) {
-    throw new Error(message);
+  if (!ok || (data?.status && data.status !== "ok")) {
+    throw new Error(data?.error?.message || data?.error || data?.message || "API_ERROR");
   }
 
-  if (payload?.status && payload.status !== "ok") {
-    throw new Error(message);
+  if (data?.status === "ok") {
+    return data.data;
   }
 
-  if (payload?.status === "ok") {
-    return payload.data as T;
-  }
-
-  return payload as T;
+  return data;
 }
 
-export async function apiRequest<T = unknown>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  return apiCall<T>(path, options);
-}
+export const apiCall = api;
+export const apiRequest = api;
 
 export async function apiPost<T = unknown>(path: string, body?: unknown): Promise<T> {
-  return apiCall<T>(path, {
+  return api(path, {
     method: "POST",
     body: body == null ? undefined : JSON.stringify(body),
-  });
+  }) as Promise<T>;
 }
 
 export async function apiUpload<T = unknown>(path: string, formData: FormData): Promise<T> {
-  return apiCall<T>(path, {
+  return api(path, {
     method: "POST",
+    headers: {},
     body: formData,
-  });
+  }) as Promise<T>;
 }
 
-/**
- * Keep compatibility for existing code
- */
-export const apiSubmit = apiCall;
+export const apiSubmit = api;

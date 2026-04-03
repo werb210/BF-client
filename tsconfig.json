@@ -5,13 +5,21 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["client-app/src/*"]
+      "@/*": [
+        "client-app/src/*"
+      ]
     },
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": false
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true
   },
-  "include": ["client-app/src"]
+  "include": [
+    "client-app/src"
+  ]
 }
