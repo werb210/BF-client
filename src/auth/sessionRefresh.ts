@@ -1,31 +1,27 @@
 import { apiRequest } from "../lib/api";
+import { setToken } from "../lib/authToken";
 
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
 export async function refreshSession(): Promise<boolean> {
-  if (refreshInFlight) {
-    return false; // block nested
-  }
+  if (refreshPromise) return false;
 
-  refreshInFlight = (async () => {
+  refreshPromise = (async () => {
     try {
-      const data = await apiRequest<{ token: string }>(
-        "/api/v1/auth/refresh",
-        { method: "POST" }
-      );
+      const res = await apiRequest<{ token: string }>("/api/v1/auth/refresh", {
+        method: "POST",
+      });
 
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-        return true;
-      }
+      if (!res?.token) return false;
 
-      return false;
+      setToken(res.token);
+      return true;
     } catch {
       return false;
     } finally {
-      refreshInFlight = null;
+      refreshPromise = null;
     }
   })();
 
-  return refreshInFlight;
+  return refreshPromise;
 }
