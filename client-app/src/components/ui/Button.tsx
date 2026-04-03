@@ -1,34 +1,21 @@
-import React from "react";
+import * as React from "react";
 
-type Variant = "primary" | "secondary" | "ghost";
-
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: "primary" | "secondary" | "ghost";
   loading?: boolean;
-  children?: React.ReactNode;
-}
+};
 
-export function Button({
-  variant = "primary",
-  loading = false,
+export const Button = ({
   children,
-  disabled,
-  ...rest
-}: ButtonProps) {
-  const className = `btn btn-${variant}`;
-
+  loading,
+  ...props
+}: ButtonProps) => {
   return (
-    <button
-      {...rest}
-      disabled={disabled || loading}
-      className={className}
-    >
+    <button {...props}>
       {loading ? "Loading..." : children}
     </button>
   );
-}
+};
 
 export const PrimaryButton = (props: ButtonProps) => <Button variant="primary" {...props} />;
 export const SecondaryButton = (props: ButtonProps) => <Button variant="secondary" {...props} />;
-
-export default Button;

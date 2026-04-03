@@ -1,8 +1,7 @@
-import React from "react";
+import * as React from "react";
 
 type Props = {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
 };
 
 type State = {
@@ -10,23 +9,18 @@ type State = {
 };
 
 export class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
   }
 
-  componentDidCatch(error: any) {
-    console.error("UI CRASH:", error);
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
   }
 
   render() {
     if (this.state.hasError) {
-      return this.props.fallback ?? (
-        <div style={{ padding: 20 }}>
-          <h2>Something went wrong.</h2>
-        </div>
-      );
+      return <div>Something went wrong</div>;
     }
 
     return this.props.children;

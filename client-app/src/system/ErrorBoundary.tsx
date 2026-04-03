@@ -1,35 +1,30 @@
-// @ts-nocheck
-import React from "react";
+import * as React from "react";
 
-interface State {
+type Props = {
+  children: React.ReactNode;
+};
+
+type State = {
   hasError: boolean;
-}
+};
 
-export default class ErrorBoundary extends React.Component<unknown, State> {
-  constructor(props: unknown) {
+export class ErrorBoundary extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
+  static getDerivedStateFromError(): State {
     return { hasError: true };
-  }
-
-  componentDidCatch(error: unknown, errorInfo: unknown) {
-    void error;
-    void errorInfo;
   }
 
   render() {
     if (this.state.hasError) {
-      return (
-        <div style={{ padding: "2rem", textAlign: "center" }}>
-          <h2>Something went wrong.</h2>
-          <p>Please refresh the page.</p>
-        </div>
-      );
+      return <div>Something went wrong</div>;
     }
 
     return this.props.children;
   }
 }
+
+export default ErrorBoundary;

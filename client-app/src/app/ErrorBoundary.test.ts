@@ -1,5 +1,5 @@
 /* @vitest-environment jsdom */
-import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom/client";
 import { act } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
