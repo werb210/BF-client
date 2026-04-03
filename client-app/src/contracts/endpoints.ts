@@ -1,51 +1,51 @@
 export const API_ENDPOINTS_CONTRACT = {
   BASE: "",
   AUTH: {
-    OTP_START: "/api/auth/start-otp",
-    OTP_VERIFY: "/api/auth/verify-otp"
+    OTP_START: "/api/auth/otp/start",
+    OTP_VERIFY: "/api/auth/otp/verify"
   },
   DOCUMENTS: {
-    UPLOAD: "/api/documents/upload"
+    UPLOAD: "/api/v1/documents/upload"
   },
   OFFERS: {
-    ROOT: "/api/offers"
+    ROOT: "/api/v1/offers"
   },
   TELEPHONY: {
-    TOKEN: "/api/telephony/token"
+    TOKEN: "/api/v1/voice/token"
   },
   APPLICATION: {
-    ROOT: "/api/applications",
-    UPDATE: "/api/applications",
-    CONTINUATION: "/api/applications/continuation"
+    ROOT: "/api/v1/applications",
+    UPDATE: "/api/v1/applications",
+    CONTINUATION: "/api/v1/applications/continuation"
   },
   READINESS: {
-    ROOT: "/api/readiness",
-    CONTINUE: "/api/readiness/continue",
-    SESSION_PREFIX: "/api/readiness/"
+    ROOT: "/api/v1/readiness",
+    CONTINUE: "/api/v1/readiness/continue",
+    SESSION_PREFIX: "/api/v1/readiness/"
   },
   DRAFTS: {
-    SAVE: "/api/drafts/save",
-    PREFIX: "/api/drafts/"
+    SAVE: "/api/v1/drafts/save",
+    PREFIX: "/api/v1/drafts/"
   },
   PREAPP: {
-    LOOKUP: "/api/preapp/lookup",
-    CONSUME: "/api/preapp/consume"
+    LOOKUP: "/api/v1/preapp/lookup",
+    CONSUME: "/api/v1/preapp/consume"
   },
   CRM: {
-    LEADS: "/api/crm/leads",
-    WEB_LEADS: "/api/crm/web-leads"
+    LEADS: "/api/v1/crm/lead",
+    WEB_LEADS: "/api/v1/crm/web-leads"
   },
   CLIENT_APPLICATIONS: {
-    ROOT: "/api/applications",
-    PREFIX: "/api/applications/"
+    ROOT: "/api/v1/applications",
+    PREFIX: "/api/v1/applications/"
   },
-  ANALYTICS: "/api/analytics",
+  ANALYTICS: "/api/v1/analytics",
   PUBLIC: {
-    LENDER_COUNT: "/api/public/lender-count"
+    LENDER_COUNT: "/api/v1/public/lender-count"
   }
 } as const;
 
 export const AUTH_ENDPOINTS = {
-  OTP_START: "/api/auth/start-otp",
-  OTP_VERIFY: "/api/auth/verify-otp"
+  OTP_START: "/api/auth/otp/start",
+  OTP_VERIFY: "/api/auth/otp/verify"
 } as const;

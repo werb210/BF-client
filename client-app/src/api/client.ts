@@ -33,7 +33,12 @@ async function send<T = unknown>(
   data?: unknown,
   init?: RequestInitWithExtras
 ): Promise<HttpResponse<T>> {
-  const payload = await apiCall<T>(normalizePath(path), { ...init, method, body: data as BodyInit | null | undefined });
+  const isFormData = data instanceof FormData;
+  const body = data == null || typeof data === "string" || data instanceof URLSearchParams || data instanceof Blob || isFormData
+    ? (data as BodyInit | null | undefined)
+    : JSON.stringify(data);
+
+  const payload = await apiCall<T>(normalizePath(path), { ...init, method, body });
   return { data: payload, status: 200, headers: new Headers() };
 }
 
