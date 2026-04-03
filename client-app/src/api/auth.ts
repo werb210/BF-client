@@ -1,14 +1,21 @@
-import { apiCall, apiPost } from "@/lib/api";
+import { apiCall } from "@/lib/api";
+import { endpoints } from "@/lib/endpoints";
 import { clearToken, getToken, setToken } from "@/auth/token";
 
 type AuthUser = Record<string, unknown> | null;
 
 export function sendOtp(phone: string) {
-  return apiPost("/api/auth/send-otp", { phone });
+  return apiCall(endpoints.otpStart, {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
 }
 
 export function verifyOtp(phone: string, code: string) {
-  return apiPost("/api/auth/verify-otp", { phone, code });
+  return apiCall(endpoints.otpVerify, {
+    method: "POST",
+    body: JSON.stringify({ phone, code }),
+  });
 }
 
 export function hasToken() {
