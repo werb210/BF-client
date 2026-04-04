@@ -1,85 +1,45 @@
-import { getToken } from "./authToken";
-import { getRequestId } from "../utils/requestId";
+const API_BASE = import.meta.env.VITE_API_URL;
 
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:8080";
+function getToken() {
+  return localStorage.getItem('token');
+}
 
-function buildHeaders(options: RequestInit): Record<string, string> {
+export async function apiCall(path: string, options: RequestInit = {}) {
+  const token = getToken();
+
   const headers: Record<string, string> = {
-    ...((options.headers as Record<string, string>) || {}),
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
   };
 
-  if (!headers["x-request-id"]) {
-    headers["x-request-id"] = getRequestId();
+  if (token && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  if (!headers["Authorization"]) {
-    const token = getToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-  }
-
-  const shouldSetJsonContentType =
-    options.body !== undefined &&
-    !(options.body instanceof FormData) &&
-    !headers["Content-Type"];
-
-  if (shouldSetJsonContentType) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  return headers;
-}
-
-export async function apiCall<T = any>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const res: any = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: buildHeaders(options),
-    credentials: "include",
+    headers,
+    credentials: 'include',
+    body: options.body
+      ? typeof options.body === 'string'
+        ? options.body
+        : JSON.stringify(options.body)
+      : undefined,
   });
 
-  let payload: any = null;
-
-  try {
-    payload = await res.json?.();
-  } catch {
-    payload = null;
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API error ${res.status}: ${text}`);
   }
 
-  const status = res?.status ?? 200;
-  const ok =
-    typeof res?.ok === "boolean"
-      ? res.ok
-      : status >= 200 && status < 300;
-
-  if (!ok) {
-    throw new Error(
-      payload?.error?.message ||
-        payload?.message ||
-        `API ERROR ${status}`
-    );
-  }
-
-  if (payload?.status && payload.status !== "ok") {
-    throw new Error(
-      payload?.error?.message ||
-        payload?.message ||
-        "API ERROR"
-    );
-  }
-
-  if (payload?.status === "ok") {
-    return payload.data;
-  }
-
-  return payload;
+  const json = await res.json();
+  return json?.data ?? json;
 }
 
-export const apiRequest = apiCall;
-export const api = apiCall;
+/* backward compatibility */
+export async function apiSubmit(url: string, data: any) {
+  return apiCall(url, {
+    method: 'POST',
+    body: data,
+  });
+}
