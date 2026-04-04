@@ -10,9 +10,7 @@
       ]
     },
     "jsx": "react-jsx",
-    "types": [
-      "vite/client"
-    ],
+    "types": [],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,5 +19,10 @@
   },
   "include": [
     "client-app/src"
+  ],
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx"
   ]
 }
