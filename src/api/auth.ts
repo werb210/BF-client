@@ -1,14 +1,14 @@
 import { api } from '../lib/api';
 
 export function sendOtp(phone: string) {
-  return api('/auth/send-otp', {
+  return api('/api/auth/otp/start', {
     method: 'POST',
     body: { phone },
   });
 }
 
 export function verifyOtp(phone: string, code: string) {
-  return api('/auth/verify-otp', {
+  return api('/api/auth/otp/verify', {
     method: 'POST',
     body: { phone, code },
   });
