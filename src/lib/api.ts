@@ -1,44 +1,54 @@
-const API_BASE = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL;
 
-function getToken() {
-  return localStorage.getItem('token');
-}
+type ApiOptions = Omit<RequestInit, 'body' | 'headers'> & {
+  body?: unknown;
+  headers?: Record<string, string>;
+};
 
-export async function apiCall(path: string, options: RequestInit = {}) {
-  const token = getToken();
+export async function api<T = unknown>(path: string, options: ApiOptions = {}): Promise<T> {
+  const token = localStorage.getItem('token');
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers ?? {}),
   };
 
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
     headers,
     credentials: 'include',
-    body: options.body
-      ? typeof options.body === 'string'
-        ? options.body
-        : JSON.stringify(options.body)
-      : undefined,
+    body:
+      options.body === undefined
+        ? undefined
+        : typeof options.body === 'string'
+          ? options.body
+          : JSON.stringify(options.body),
   });
 
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
+    const errorText = data?.error || data?.message || `Request failed for ${path}`;
+    throw new Error(`API ERROR ${res.status}: ${errorText}`);
   }
 
-  const json = await res.json();
-  return json?.data ?? json;
+  if (path === '/api/auth/otp/verify') {
+    const nextToken = data?.data?.token || data?.token;
+
+    if (nextToken) {
+      localStorage.setItem('token', nextToken);
+    }
+  }
+
+  return (data?.data ?? data) as T;
 }
 
-/* backward compatibility */
-export async function apiSubmit(url: string, data: any) {
-  return apiCall(url, {
+// Backward-compatible aliases
+export const apiCall = api;
+
+export async function apiSubmit(url: string, data: unknown) {
+  return api(url, {
     method: 'POST',
     body: data,
   });
