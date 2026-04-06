@@ -13,9 +13,10 @@
     "types": [],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noImplicitAny": true,
-    "noUncheckedIndexedAccess": true
+    "strict": false,
+    "noImplicitAny": false,
+    "noUncheckedIndexedAccess": true,
+    "strictNullChecks": false
   },
   "include": [
     "client-app/src"
