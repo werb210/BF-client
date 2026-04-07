@@ -81,3 +81,13 @@ export async function verifyOtp(phone: string, code: string) {
     body: JSON.stringify({ phone, code }),
   });
 }
+
+export async function startCall(payload: any) {
+  const res = await apiClient.post(endpoints.callStart, payload);
+
+  if (!res || (res.data && typeof res.data === "object" && "error" in (res.data as Record<string, unknown>))) {
+    throw new Error("Call start failed");
+  }
+
+  return res.data;
+}

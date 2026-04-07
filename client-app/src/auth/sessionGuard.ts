@@ -122,7 +122,7 @@ export function useSessionGuard(): void {
       lastRefreshAt.current = now;
       const ok = await refreshSession();
       if (ok !== true) {
-        localStorage.removeItem("token");
+        localStorage.removeItem("bf_jwt_token");
         return;
       }
     };

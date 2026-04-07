@@ -1,18 +1,54 @@
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  throw new Error("Missing VITE_API_URL");
+}
+
+export const authToken = {
+  get: () => localStorage.getItem("bf_jwt_token"),
+  set: (token: string) => localStorage.setItem("bf_jwt_token", token),
+  clear: () => localStorage.removeItem("bf_jwt_token"),
+};
+
+function getAuthHeaders() {
+  const token = authToken.get();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function parsePayload(json: any) {
+  if (json?.status === "error") {
+    throw new Error(json.error || "Request failed");
+  }
+
+  if (json?.status === "ok" && "data" in json) {
+    return json.data;
+  }
+
+  return json;
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit, timeout = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export async function apiCall<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const base = import.meta.env.VITE_API_URL;
-
-  const token = localStorage.getItem("token");
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    ...getAuthHeaders(),
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${base}${path}`, {
+  const res = await fetchWithTimeout(`${API_URL}${path}`, {
     ...options,
     headers,
     credentials: "include",
@@ -20,17 +56,13 @@ export async function apiCall<T = unknown>(path: string, options: RequestInit = 
 
   const json = await res.json().catch(() => ({}));
 
-  const ok = typeof res.ok === "boolean" ? res.ok : res.status >= 200 && res.status < 300;
-
-  if (!ok) {
-    throw new Error((json as { error?: string })?.error || "API error");
+  if (!res.ok) {
+    const parsed = parsePayload(json);
+    const errorText = (parsed as { error?: string })?.error || (json as { error?: string })?.error || "API error";
+    throw new Error(errorText);
   }
 
-  if (json && typeof json === "object" && "data" in json) {
-    return (json as { data: T }).data;
-  }
-
-  return json as T;
+  return parsePayload(json) as T;
 }
 
 export const api = apiCall;
