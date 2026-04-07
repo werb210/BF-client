@@ -9,7 +9,7 @@ vi.mock("@/api/auth", () => ({
   getMe: () => getMeMock(),
 }));
 
-function Harness({ onUpdate }: { onUpdate: (state: { user: Record<string, unknown> | null; loading: boolean }) => void }) {
+function Harness({ onUpdate }: { onUpdate: (state: { user: Record<string, unknown> | null; loading: boolean }) => void }): null {
   const state = useAuth();
   onUpdate(state);
   return null;

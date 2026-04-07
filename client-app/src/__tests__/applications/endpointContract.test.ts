@@ -1,3 +1,5 @@
+import { describe, expect, it } from "vitest";
+
 describe('endpoint contract constants', () => {
   it('uses otp endpoints under /api/auth/otp/*', () => {
     expect('/api/auth/otp/start').toBe('/api/auth/otp/start');
