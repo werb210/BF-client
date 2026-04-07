@@ -1,13 +1,20 @@
 import { create } from "zustand";
 
 type State = {
-  data: Record<string, any>;
-  setData: (d: Record<string, any>) => void;
+  data: Record<string, unknown>;
+  setData: (d: Record<string, unknown>) => void;
   reset: () => void;
 };
 
-export const useApplicationStore = create<State>((set) => ({
+type StoreSet = (
+  partial: State | Partial<State> | ((state: State) => State | Partial<State>),
+  replace?: boolean,
+) => void;
+
+const createApplicationStore = (set: StoreSet): State => ({
   data: {},
-  setData: (d) => set((s) => ({ data: { ...s.data, ...d } })),
+  setData: (d: Record<string, unknown>) => set((s: State) => ({ data: { ...s.data, ...d } })),
   reset: () => set({ data: {} }),
-}));
+});
+
+export const useApplicationStore = create<State>(createApplicationStore);
