@@ -1,4 +1,4 @@
-const KEY = "token";
+const KEY = "bf_jwt_token";
 let token: string | null = null;
 
 export function getToken() {
