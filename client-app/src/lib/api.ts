@@ -16,12 +16,12 @@ function getAuthHeaders() {
 }
 
 function parsePayload(json: any) {
-  if (json?.status === "error") {
-    throw new Error(json.error || "Request failed");
+  if (json?.status === "ok") {
+    return json.data;
   }
 
-  if (json?.status === "ok" && "data" in json) {
-    return json.data;
+  if (json?.status === "error") {
+    throw new Error(json.error || "API error");
   }
 
   return json;
@@ -55,8 +55,9 @@ export async function apiCall<T = unknown>(path: string, options: RequestInit = 
   });
 
   const json = await res.json().catch(() => ({}));
+  const hasWrappedSuccess = json?.status === "ok";
 
-  if (!res.ok) {
+  if (!res.ok && !hasWrappedSuccess) {
     const parsed = parsePayload(json);
     const errorText = (parsed as { error?: string })?.error || (json as { error?: string })?.error || "API error";
     throw new Error(errorText);
