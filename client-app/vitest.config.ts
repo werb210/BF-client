@@ -11,6 +11,15 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom'
+    environment: 'jsdom',
+    watch: false,
+    threads: false,
+    isolate: true,
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    sequence: {
+      shuffle: false
+    },
+    setupFiles: [fileURLToPath(new URL('./src/test/setup.ts', import.meta.url))]
   }
 })
