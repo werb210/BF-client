@@ -15,8 +15,10 @@ export default defineConfig({
     watch: false,
     threads: false,
     isolate: true,
+    passWithNoTests: false,
     testTimeout: 10000,
     hookTimeout: 10000,
+    teardownTimeout: 5000,
     sequence: {
       shuffle: false
     },
