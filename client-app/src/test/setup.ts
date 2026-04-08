@@ -1,11 +1,16 @@
-import { afterAll, afterEach, vi } from "vitest";
+import { afterAll, afterEach, vi } from 'vitest'
 
-process.env.VITE_API_URL = process.env.VITE_API_URL || "http://localhost:3000";
+process.env.VITE_API_URL = 'http://test'
+
+process.on('beforeExit', () => {
+  console.log('PROCESS_EXITING')
+})
 
 afterEach(() => {
   // keep deterministic test isolation
-});
+})
 
 afterAll(() => {
-  vi.restoreAllMocks();
-});
+  vi.clearAllMocks()
+  vi.resetModules()
+})

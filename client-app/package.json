@@ -7,10 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run --config vitest.config.ts",
+    "test": "vitest run",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test:debug": "vitest run --config vitest.config.ts --detectOpenHandles"
+    "typecheck": "tsc --noEmit"
   },
   "engines": {
     "node": ">=20.10 <23"
