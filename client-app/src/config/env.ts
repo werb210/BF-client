@@ -7,14 +7,21 @@ export function getMode(): AppMode {
 export const isDevMode = (): boolean => getMode() === 'development'
 export const isTestMode = (): boolean => getMode() === 'test'
 
+function requireApiUrl(): string {
+  const apiUrl = import.meta.env.VITE_API_URL
+  if (!apiUrl) {
+    throw new Error('Missing VITE_API_URL')
+  }
+  return apiUrl
+}
+
 export function validateEnv() {
-  // Minimal safe validation (expand later)
   return {
     mode: getMode(),
-    apiUrl: import.meta.env.VITE_API_URL || '',
+    apiUrl: requireApiUrl(),
   }
 }
 
 export const env = {
-  API_URL: import.meta.env.VITE_API_URL || '',
+  API_URL: requireApiUrl(),
 }

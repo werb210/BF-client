@@ -11,20 +11,21 @@
   },
   "packageManager": "npm@10",
   "engines": {
-    "node": ">=20.10 <23"
+    "node": ">=18"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "preinstall": "npm config delete @eslint:registry || true",
+    "prebuild": "test -f client-app/index.html",
     "build": "npm --prefix client-app run build",
     "test": "npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
     "verify:no-raw-fetch": "node -e \"process.exit(0)\"",
     "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0",
-    "typecheck": "tsc --noEmit || true",
+    "typecheck": "npm --prefix client-app run typecheck",
     "test:e2e": "bash -lc 'set -a; source .env.test; set +a; npm run dev >/tmp/bf-e2e-dev.log 2>&1 & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT; sleep 5; npm --prefix client-app exec vitest run src/e2e/applicationFlow.test.ts'"
   },
   "type": "module"

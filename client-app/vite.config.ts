@@ -4,6 +4,10 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  root: '.',
+  build: {
+    outDir: 'dist'
+  },
   plugins: [react(), tsconfigPaths()],
   resolve: {
     alias: {
