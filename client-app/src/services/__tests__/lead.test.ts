@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createLead } from "../lead";
 
-const apiCallMock = vi.fn();
+const { apiCallMock } = vi.hoisted(() => ({
+  apiCallMock: vi.fn(),
+}));
 let storage = new Map<string, string>();
 
 vi.mock("@/lib/api", () => ({
@@ -27,8 +30,6 @@ describe("createLead dedupe", () => {
   });
 
   it("reuses existing lead by email/phone", async () => {
-    const { createLead } = await import("../lead");
-
     apiCallMock.mockResolvedValue({ leadId: "lead-1", pendingApplicationId: "app-1" });
 
     const payload = {
