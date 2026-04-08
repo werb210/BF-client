@@ -20,7 +20,7 @@
     "preinstall": "npm config delete @eslint:registry || true",
     "prebuild": "test -f client-app/index.html",
     "build": "npm --prefix client-app run build",
-    "test": "npm --prefix client-app run test",
+    "test": "CI=1 npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
     "verify:no-raw-fetch": "node -e \"process.exit(0)\"",

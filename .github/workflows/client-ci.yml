@@ -20,7 +20,9 @@ jobs:
 
       - run: npm run typecheck
 
-      - run: npm run test
+      - name: Run tests
+        run: CI=1 npm --prefix client-app run test
+        timeout-minutes: 5
 
       - name: Build client
         run: npm --prefix client-app run build
