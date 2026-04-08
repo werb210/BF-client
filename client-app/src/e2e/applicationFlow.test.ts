@@ -9,7 +9,7 @@ beforeEach(() => {
   vi.spyOn(global, "fetch").mockImplementation(async (input: RequestInfo | URL) => {
     const url = String(input);
 
-    if (url.endsWith("/api/v1/voice/token")) {
+    if (url.endsWith("/api/v1/telephony/token")) {
       return {
         ok: true,
         status: 200,
@@ -43,7 +43,7 @@ beforeEach(() => {
 
 (runE2E ? describe : describe.skip)("End-to-End Application Flow", () => {
   test("fetch voice token", async () => {
-    const res = await fetch(`${API}/api/v1/voice/token`, {
+    const res = await fetch(`${API}/api/v1/telephony/token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
