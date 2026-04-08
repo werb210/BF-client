@@ -18,7 +18,7 @@
   },
   "scripts": {
     "preinstall": "npm config delete @eslint:registry || true",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm --prefix client-app run build",
     "test": "npm --prefix client-app run test",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
