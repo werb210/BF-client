@@ -5,9 +5,10 @@ if (!API_URL) {
 }
 
 export const authToken = {
-  get: () => localStorage.getItem("bf_jwt_token"),
-  set: (token: string) => localStorage.setItem("bf_jwt_token", token),
-  clear: () => localStorage.removeItem("bf_jwt_token"),
+  get: () => localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token"),
+  set: (token: string) =>
+    localStorage.setItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token", token),
+  clear: () => localStorage.removeItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token"),
 };
 
 function getAuthHeaders() {
@@ -17,7 +18,7 @@ function getAuthHeaders() {
 
 function parsePayload(json: any) {
   if (json?.status === "ok") {
-    return json.data;
+    return json.data ?? json;
   }
 
   if (json?.status === "error") {
