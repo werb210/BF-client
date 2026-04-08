@@ -1,8 +1,14 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import {
+  __resetServiceWorkerStateForTests,
+  applyServiceWorkerUpdate,
+  getServiceWorkerUpdateAvailable,
+  registerServiceWorker,
+} from "../serviceWorker";
 
 describe("service worker updates", () => {
   beforeEach(() => {
-    vi.resetModules();
+    __resetServiceWorkerStateForTests();
     const listeners: Record<string, Array<(event: Event) => void>> = {};
     Object.defineProperty(globalThis, "CustomEvent", {
       value: class CustomEvent {
@@ -75,9 +81,6 @@ describe("service worker updates", () => {
       configurable: true,
     });
 
-    const module = await import("../serviceWorker");
-    const { registerServiceWorker, getServiceWorkerUpdateAvailable } = module;
-
     registerServiceWorker();
     window.dispatchEvent(new Event("load"));
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -98,9 +101,6 @@ describe("service worker updates", () => {
       configurable: true,
     });
 
-    const module = await import("../serviceWorker");
-    const { applyServiceWorkerUpdate } = module;
-
     await applyServiceWorkerUpdate();
 
     expect(waitingWorker.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
@@ -119,9 +119,6 @@ describe("service worker updates", () => {
       },
       configurable: true,
     });
-
-    const module = await import("../serviceWorker");
-    const { registerServiceWorker, applyServiceWorkerUpdate } = module;
 
     registerServiceWorker();
     await applyServiceWorkerUpdate();

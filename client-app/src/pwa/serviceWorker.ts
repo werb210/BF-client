@@ -52,6 +52,13 @@ export function getServiceWorkerUpdateAvailable() {
   return updateAvailable;
 }
 
+export function __resetServiceWorkerStateForTests() {
+  updateAvailable = false;
+  pendingReload = false;
+  registrationPromise = null;
+  updateListeners.clear();
+}
+
 export function registerServiceWorker() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;

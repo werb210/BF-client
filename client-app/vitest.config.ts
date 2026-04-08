@@ -19,9 +19,13 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     teardownTimeout: 5000,
+    retry: 0,
     sequence: {
       shuffle: false
     },
-    setupFiles: [fileURLToPath(new URL('./src/test/setup.ts', import.meta.url))]
+    setupFiles: [
+      fileURLToPath(new URL('./src/test/env.setup.ts', import.meta.url)),
+      fileURLToPath(new URL('./src/test/setup.ts', import.meta.url))
+    ]
   }
 })

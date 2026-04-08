@@ -1,4 +1,4 @@
-const originalFetch = window.fetch.bind(window)
+let installed = false
 
 function isApiPath(input: RequestInfo | URL): boolean {
   if (typeof input === "string") return input.startsWith("/api/")
@@ -7,11 +7,16 @@ function isApiPath(input: RequestInfo | URL): boolean {
   return false
 }
 
-window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-  if (!isApiPath(input)) {
-    throw new Error("DIRECT_FETCH_BLOCKED_USE_APIREQUEST")
-  }
-  return originalFetch(input, init)
-}) as typeof window.fetch
+export function installNetworkGuard(force = false) {
+  if (installed && !force) return
+  installed = true
+  const originalFetch = window.fetch.bind(window)
+  window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+    if (!isApiPath(input)) {
+      throw new Error("DIRECT_FETCH_BLOCKED_USE_APIREQUEST")
+    }
+    return originalFetch(input, init)
+  }) as typeof window.fetch
+}
 
-export {}
+installNetworkGuard()

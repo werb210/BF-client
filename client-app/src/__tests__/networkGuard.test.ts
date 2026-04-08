@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
+import { installNetworkGuard } from "@/lib/networkGuard"
 
 describe("network guard", () => {
   it("blocks non-api fetch", async () => {
@@ -6,7 +7,7 @@ describe("network guard", () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }))
     global.fetch = fetchMock as any
 
-    await import("@/lib/networkGuard")
+    installNetworkGuard(true)
 
     expect(() => window["fetch"]("https://evil.com")).toThrow("DIRECT_FETCH_BLOCKED_USE_APIREQUEST")
 
