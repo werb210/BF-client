@@ -1,20 +1,20 @@
-import { apiCall } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { clearToken, getToken, setToken } from "@/auth/token";
 
 type AuthUser = Record<string, unknown> | null;
 
 export function sendOtp(phone: string) {
-  return apiCall(endpoints.otpStart, {
+  return apiRequest(endpoints.otpStart, {
     method: "POST",
-    body: JSON.stringify({ phone }),
+    body: { phone },
   });
 }
 
 export function verifyOtp(phone: string, code: string) {
-  return apiCall(endpoints.otpVerify, {
+  return apiRequest(endpoints.otpVerify, {
     method: "POST",
-    body: JSON.stringify({ phone, code }),
+    body: { phone, code },
   });
 }
 
@@ -30,7 +30,7 @@ export async function getMe(): Promise<AuthUser> {
   }
 
   try {
-    return await apiCall("/api/auth/me");
+    return await apiRequest("/api/auth/me");
   } catch {
     return null;
   }

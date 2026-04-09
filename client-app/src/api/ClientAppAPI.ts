@@ -1,16 +1,16 @@
-import { apiCall } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 
 export const ClientAppAPI = {
   startOtp: (phone: string) =>
-    apiCall(endpoints.otpStart, {
+    apiRequest(endpoints.otpStart, {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: { phone },
     }),
 
   verifyOtp: (phone: string, code: string) =>
-    apiCall(endpoints.otpVerify, {
+    apiRequest(endpoints.otpVerify, {
       method: "POST",
-      body: JSON.stringify({ phone, code }),
+      body: { phone, code },
     }),
 };
