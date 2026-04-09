@@ -1,4 +1,7 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://server.boreal.financial';
 
 type ApiOptions = Omit<RequestInit, 'body' | 'headers'> & {
   body?: unknown;
@@ -33,7 +36,7 @@ export async function api<T = unknown>(path: string, options: ApiOptions = {}): 
     throw new Error(`API ERROR ${res.status}: ${errorText}`);
   }
 
-  if (path === '/api/auth/otp/verify') {
+  if (path.includes('/api/auth/otp/verify')) {
     const nextToken = data?.data?.token || data?.token;
 
     if (nextToken) {
