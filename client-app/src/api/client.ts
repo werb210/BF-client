@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/api";
+import { apiCall, apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 
 type HttpResponse<T = unknown> = {
@@ -69,16 +69,16 @@ export function buildApiUrl(path: string): string {
 export default apiClient;
 
 export async function startOtp(phone: string) {
-  return apiCall(endpoints.otpStart, {
+  return apiRequest(endpoints.otpStart, {
     method: "POST",
-    body: JSON.stringify({ phone }),
+    body: { phone },
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  return apiCall(endpoints.otpVerify, {
+  return apiRequest(endpoints.otpVerify, {
     method: "POST",
-    body: JSON.stringify({ phone, code }),
+    body: { phone, code },
   });
 }
 

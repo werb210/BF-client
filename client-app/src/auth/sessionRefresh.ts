@@ -1,3 +1,4 @@
+import { apiRequest } from "@/lib/api"
 import { clearToken, getToken, setToken } from "./token"
 
 let refreshPromise: Promise<boolean> | null = null
@@ -10,18 +11,10 @@ export async function refreshSession(): Promise<boolean> {
 
   refreshPromise = (async () => {
     try {
-      const res = await fetch("/api/auth/refresh", {
+      const json = await apiRequest<{ data?: { token?: string }; token?: string }>("/api/auth/refresh", {
         method: "POST",
-        credentials: "include",
       })
-
-      if (!res.ok) {
-        clearToken()
-        return false
-      }
-
-      const json = await res.json().catch(() => ({}))
-      const nextToken = json?.data?.token
+      const nextToken = json?.data?.token ?? json?.token
 
       if (!nextToken) {
         clearToken()
