@@ -9,7 +9,7 @@ type ApiOptions = Omit<RequestInit, 'body' | 'headers'> & {
 };
 
 export async function api<T = unknown>(path: string, options: ApiOptions = {}): Promise<T> {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth_token');
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ export async function api<T = unknown>(path: string, options: ApiOptions = {}): 
     const nextToken = data?.data?.token || data?.token;
 
     if (nextToken) {
-      localStorage.setItem('token', nextToken);
+      localStorage.setItem('auth_token', nextToken);
     }
   }
 
