@@ -11,11 +11,20 @@ export function sendOtp(phone: string) {
   });
 }
 
-export function verifyOtp(phone: string, code: string) {
-  return apiRequest(endpoints.otpVerify, {
+export async function verifyOtp(phone: string, code: string) {
+  const data = await apiRequest<{ token?: string }>(endpoints.otpVerify, {
     method: "POST",
     body: { phone, code },
   });
+
+  if (data?.token) {
+    setToken(data.token);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_token", data.token);
+    }
+  }
+
+  return data;
 }
 
 export function hasToken() {

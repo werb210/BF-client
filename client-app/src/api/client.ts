@@ -1,4 +1,3 @@
-import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 
 type HttpResponse<T = unknown> = {
@@ -6,6 +5,9 @@ type HttpResponse<T = unknown> = {
   status: number;
   headers: Headers;
 };
+
+type UploadProgressHandler = (event: { loaded: number; total?: number }) => void;
+type RequestInitLike = Omit<RequestInit, "body"> & { body?: unknown; onUploadProgress?: UploadProgressHandler };
 
 type RequestConfig = {
   url: string;
@@ -15,79 +17,126 @@ type RequestConfig = {
   signal?: AbortSignal;
 };
 
-type RequestInitLike = Omit<RequestInit, "body"> & { body?: unknown };
-type UploadProgressHandler = (event: { loaded: number; total?: number }) => void;
-type RequestInitWithExtras = RequestInitLike & { onUploadProgress?: UploadProgressHandler };
+const baseURL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://server.boreal.financial";
 
-function normalizePath(path: string) {
-  if (!path.startsWith("/")) {
-    throw new Error("INVALID_API_PATH");
-  }
+function getAuthHeaders(headers?: HeadersInit): HeadersInit {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-  return path;
+  return {
+    ...(headers ?? {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 }
 
 async function send<T = unknown>(
   method: string,
   path: string,
-  data?: unknown,
-  init?: RequestInitWithExtras
+  body?: unknown,
+  init?: RequestInitLike,
 ): Promise<HttpResponse<T>> {
-  const isFormData = data instanceof FormData;
-  const body = data == null || typeof data === "string" || data instanceof URLSearchParams || data instanceof Blob || isFormData
-    ? (data as BodyInit | null | undefined)
-    : JSON.stringify(data);
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
-  const payload = await apiRequest<T>(normalizePath(path), { ...init, method, body });
-  return { data: payload, status: 200, headers: new Headers() };
-}
+  const { onUploadProgress: _onUploadProgress, ...fetchInit } = init || {};
 
-async function request<T = unknown>(urlOrConfig: string | RequestConfig, init?: RequestInitWithExtras): Promise<HttpResponse<T>> {
-  if (typeof urlOrConfig === "string") {
-    return send<T>(init?.method || "GET", urlOrConfig, init?.body, init);
+  const response = await fetch(`${baseURL}${path}`, {
+    ...fetchInit,
+    method,
+    credentials: "include",
+    headers: isFormData
+      ? getAuthHeaders(init?.headers)
+      : getAuthHeaders({
+          "Content-Type": "application/json",
+          ...(init?.headers ?? {}),
+        }),
+    body:
+      body == null
+        ? undefined
+        : isFormData || typeof body === "string"
+          ? (body as BodyInit)
+          : JSON.stringify(body),
+  });
+
+  let data: T;
+
+  try {
+    data = (await response.json()) as T;
+  } catch {
+    data = null as T;
   }
 
-  const { url, method = "GET", data, headers, signal } = urlOrConfig;
-  return send<T>(method, url, data, { headers, signal });
+  if (!response.ok) {
+    throw new Error(`API ERROR ${response.status}`);
+  }
+
+  return {
+    data,
+    status: response.status,
+    headers: response.headers,
+  };
 }
 
 export const apiClient = {
-  request,
-  get: <T = unknown>(url: string, init?: RequestInitWithExtras) => send<T>("GET", url, undefined, init),
-  post: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("POST", url, data, init),
-  patch: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("PATCH", url, data, init),
-  put: <T = unknown>(url: string, data?: unknown, init?: RequestInitWithExtras) => send<T>("PUT", url, data, init),
-  delete: <T = unknown>(url: string, init?: RequestInitWithExtras) => send<T>("DELETE", url, undefined, init),
+  request: async <T = unknown>(urlOrConfig: string | RequestConfig, init?: RequestInitLike): Promise<HttpResponse<T>> => {
+    if (typeof urlOrConfig === "string") {
+      return send<T>(init?.method || "GET", urlOrConfig, init?.body, init);
+    }
+
+    return send<T>(
+      urlOrConfig.method || "GET",
+      urlOrConfig.url,
+      urlOrConfig.data,
+      {
+        headers: urlOrConfig.headers,
+        signal: urlOrConfig.signal,
+      },
+    );
+  },
+  get: <T = unknown>(url: string, init?: RequestInitLike) => send<T>("GET", url, undefined, init),
+  post: <T = unknown>(url: string, data?: unknown, init?: RequestInitLike) => send<T>("POST", url, data, init),
+  patch: <T = unknown>(url: string, data?: unknown, init?: RequestInitLike) => send<T>("PATCH", url, data, init),
+  put: <T = unknown>(url: string, data?: unknown, init?: RequestInitLike) => send<T>("PUT", url, data, init),
+  delete: <T = unknown>(url: string, init?: RequestInitLike) => send<T>("DELETE", url, undefined, init),
 };
 
-export { apiRequest as apiCall };
-
-export function buildApiUrl(path: string): string {
-  return normalizePath(path);
+export async function apiCall<T = unknown>(
+  urlOrConfig: string | RequestConfig,
+  init?: RequestInitLike,
+): Promise<T> {
+  const res = await apiClient.request<T>(urlOrConfig, init);
+  return res.data;
 }
 
-export default apiClient;
+export function buildApiUrl(path: string): string {
+  return path;
+}
 
 export async function startOtp(phone: string) {
-  return apiRequest(endpoints.otpStart, {
+  return apiCall(endpoints.otpStart, {
     method: "POST",
     body: { phone },
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  return apiRequest(endpoints.otpVerify, {
+  return apiCall(endpoints.otpVerify, {
     method: "POST",
     body: { phone, code },
   });
 }
 
-export async function startCall(payload: any) {
+export async function startCall(payload: unknown) {
   const res = await apiClient.post(endpoints.callStart, payload);
 
-  if (!res || (res.data && typeof res.data === "object" && "error" in (res.data as Record<string, unknown>))) {
+  if (
+    !res ||
+    (res.data && typeof res.data === "object" && "error" in (res.data as Record<string, unknown>))
+  ) {
     throw new Error("Call start failed");
   }
 
   return res.data;
 }
+
+export default apiClient;

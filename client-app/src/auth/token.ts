@@ -1,4 +1,5 @@
 const KEY = "bf_jwt_token";
+const AUTH_KEY = "auth_token";
 let token: string | null = null;
 
 export function getToken() {
@@ -6,7 +7,7 @@ export function getToken() {
 
   if (typeof window === "undefined") return null;
 
-  token = localStorage.getItem(KEY);
+  token = localStorage.getItem(AUTH_KEY) || localStorage.getItem(KEY);
   return token;
 }
 
@@ -15,6 +16,7 @@ export function setToken(t: string) {
 
   if (typeof window !== "undefined") {
     localStorage.setItem(KEY, t);
+    localStorage.setItem(AUTH_KEY, t);
   }
 }
 
@@ -23,5 +25,6 @@ export function clearToken() {
 
   if (typeof window !== "undefined") {
     localStorage.removeItem(KEY);
+    localStorage.removeItem(AUTH_KEY);
   }
 }
