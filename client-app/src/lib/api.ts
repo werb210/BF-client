@@ -1,8 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { ENV } from "@/env";
 
-if (!API_URL) {
-  throw new Error("Missing VITE_API_URL");
-}
+const API_URL = ENV.API_BASE_URL;
 
 export const authToken = {
   get: () => localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token"),
