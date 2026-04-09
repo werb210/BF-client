@@ -1,84 +1,83 @@
 import { ENV } from "@/env";
 
-const API_URL = ENV.API_BASE_URL;
-
-export const authToken = {
-  get: () => localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token"),
-  set: (token: string) =>
-    localStorage.setItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token", token),
-  clear: () => localStorage.removeItem(import.meta.env.VITE_JWT_STORAGE_KEY || "bf_jwt_token"),
+type RequestOptions = Omit<RequestInit, "body" | "headers"> & {
+  method?: string;
+  body?: any;
+  headers?: HeadersInit;
+  credentials?: RequestCredentials;
 };
 
-function getAuthHeaders() {
-  const token = authToken.get();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+export async function apiRequest<T = any>(
+  path: string,
+  options: RequestOptions = {}
+): Promise<T> {
+  const url = `${ENV.API_BASE_URL}${path}`;
 
-function parsePayload(json: any) {
-  if (json?.status === "ok") {
-    return json.data ?? json;
-  }
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  if (json?.status === "error") {
-    throw new Error(json.error || "API error");
-  }
-
-  return json;
-}
-
-async function fetchWithTimeout(url: string, options: RequestInit, timeout = 10000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-export async function apiCall<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders(),
-    ...((options.headers as Record<string, string>) || {}),
-  };
-
-  const res = await fetchWithTimeout(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
+  const res = await fetch(url, {
+    method: options.method || "GET",
+    credentials: options.credentials ?? "include", // CRITICAL
+    headers: isFormData
+      ? options.headers
+      : {
+          "Content-Type": "application/json",
+          ...(options.headers ?? {}),
+        },
+    body:
+      options.body == null
+        ? undefined
+        : isFormData || typeof options.body === "string"
+          ? options.body
+          : JSON.stringify(options.body),
   });
 
-  const json = await res.json().catch(() => ({}));
-  const hasWrappedSuccess = json?.status === "ok";
+  const payload: unknown = await res.json().catch((): null => null);
 
-  if (!res.ok && !hasWrappedSuccess) {
-    const parsed = parsePayload(json);
-    const errorText = (parsed as { error?: string })?.error || (json as { error?: string })?.error || "API error";
-    throw new Error(errorText);
+  const isOk = typeof res.ok === "boolean" ? res.ok : res.status >= 200 && res.status < 300;
+
+  if (!isOk) {
+    const errorMessage =
+      payload && typeof payload === "object"
+        ? (payload as { error?: string; message?: string }).error ||
+          (payload as { error?: string; message?: string }).message
+        : null;
+
+    if (errorMessage) {
+      throw new Error(`API ERROR ${res.status}: ${errorMessage}`);
+    }
+
+    const text = typeof res.text === "function" ? await res.text() : "";
+    throw new Error(`API ERROR ${res.status}: ${text}`);
   }
 
-  return parsePayload(json) as T;
+  if (payload && typeof payload === "object") {
+    if ((payload as { status?: string }).status === "error") {
+      throw new Error(`API ERROR ${res.status}: ${(payload as { error?: string }).error || "Unknown API error"}`);
+    }
+
+    if ((payload as { status?: string }).status === "ok" && "data" in (payload as Record<string, unknown>)) {
+      return (payload as { data: T }).data;
+    }
+  }
+
+  return payload as T;
 }
 
-export const api = apiCall;
-export const apiRequest = apiCall;
+// Backward-compatible aliases while callsites migrate.
+export const apiCall = apiRequest;
+export const api = apiRequest;
 
-export async function apiPost<T = unknown>(path: string, body?: unknown): Promise<T> {
-  return apiCall<T>(path, {
+export async function apiPost<T = any>(path: string, body?: unknown): Promise<T> {
+  return apiRequest<T>(path, {
     method: "POST",
-    body: body == null ? undefined : JSON.stringify(body),
+    body,
   });
 }
 
-export async function apiUpload<T = unknown>(path: string, formData: FormData): Promise<T> {
-  return apiCall<T>(path, {
+export async function apiUpload<T = any>(path: string, formData: FormData): Promise<T> {
+  return apiRequest<T>(path, {
     method: "POST",
-    headers: {},
     body: formData,
   });
 }

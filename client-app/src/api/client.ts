@@ -1,4 +1,4 @@
-import { apiCall } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 
 type HttpResponse<T = unknown> = {
@@ -38,7 +38,7 @@ async function send<T = unknown>(
     ? (data as BodyInit | null | undefined)
     : JSON.stringify(data);
 
-  const payload = await apiCall<T>(normalizePath(path), { ...init, method, body });
+  const payload = await apiRequest<T>(normalizePath(path), { ...init, method, body });
   return { data: payload, status: 200, headers: new Headers() };
 }
 
@@ -60,7 +60,7 @@ export const apiClient = {
   delete: <T = unknown>(url: string, init?: RequestInitWithExtras) => send<T>("DELETE", url, undefined, init),
 };
 
-export { apiCall };
+export { apiRequest as apiCall };
 
 export function buildApiUrl(path: string): string {
   return normalizePath(path);
@@ -69,16 +69,16 @@ export function buildApiUrl(path: string): string {
 export default apiClient;
 
 export async function startOtp(phone: string) {
-  return apiCall(endpoints.otpStart, {
+  return apiRequest(endpoints.otpStart, {
     method: "POST",
-    body: JSON.stringify({ phone }),
+    body: { phone },
   });
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  return apiCall(endpoints.otpVerify, {
+  return apiRequest(endpoints.otpVerify, {
     method: "POST",
-    body: JSON.stringify({ phone, code }),
+    body: { phone, code },
   });
 }
 
