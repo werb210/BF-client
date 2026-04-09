@@ -10,7 +10,7 @@ export const createApplication = async (payload: Record<string, unknown> = {}) =
   assertAuthenticated();
 
   try {
-    const { data } = await api.post("/applications", payload);
+    const { data } = await api.post("/api/client/applications", payload);
     if (!data) {
       throw new Error("[API ERROR] EMPTY RESPONSE");
     }
@@ -47,7 +47,7 @@ export const submitApplication = async (applicationId: string) => {
 
 export const createPublicApplication = async (payload: Record<string, unknown>) => {
   try {
-    const { data } = await api.post("/applications", payload);
+    const { data } = await api.post("/api/client/applications", payload);
     if (!data) {
       throw new Error("[API ERROR] EMPTY RESPONSE");
     }
