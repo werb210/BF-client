@@ -11,7 +11,15 @@ export async function runSubmissionFlow(
   documents: SubmissionDocumentInput[]
 ) {
   // 1) create application
-  const created = await createApplication(payload) as { applicationId?: string } | null;
+  let created: { applicationId?: string } | null;
+
+  try {
+    created = await createApplication(payload) as { applicationId?: string } | null;
+  } catch (err: any) {
+    console.error("Application submission failed:", err);
+    throw err;
+  }
+
   const applicationId = created?.applicationId;
 
   if (!applicationId) {
