@@ -58,23 +58,41 @@ async function send<T = unknown>(
           : JSON.stringify(body),
   });
 
-  let data: T;
+  let json: any = null;
 
   try {
-    data = (await response.json()) as T;
+    json = await response.json();
   } catch {
-    data = null as T;
+    // no json body
   }
 
-  if (!response.ok) {
-    throw new Error(`API ERROR ${response.status}`);
+  const isOk = response.ok || (response.status >= 200 && response.status < 300);
+
+  if (isOk && json?.status === "ok") {
+    return {
+      data: json.data as T,
+      status: response.status,
+      headers: response.headers,
+    };
   }
 
-  return {
-    data,
-    status: response.status,
-    headers: response.headers,
-  };
+  if (json?.status === "error") {
+    throw new Error(json.error || json.message || "Unknown API error");
+  }
+
+  if (!isOk) {
+    throw new Error(json?.error || json?.message || `HTTP ${response.status}`);
+  }
+
+  if (isOk) {
+    return {
+      data: json as T,
+      status: response.status,
+      headers: response.headers,
+    };
+  }
+
+  throw new Error(`Malformed API response (status ${response.status})`);
 }
 
 export const apiClient = {
