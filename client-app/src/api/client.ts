@@ -1,4 +1,5 @@
 import { endpoints } from "@/lib/endpoints";
+import { ENV } from "@/env";
 
 type HttpResponse<T = unknown> = {
   data: T;
@@ -17,9 +18,7 @@ type RequestConfig = {
   signal?: AbortSignal;
 };
 
-const baseURL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://server.boreal.financial";
+const API_BASE = ENV.API_BASE || "https://server.boreal.financial";
 
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
@@ -40,7 +39,7 @@ async function send<T = unknown>(
 
   const { onUploadProgress: _onUploadProgress, ...fetchInit } = init || {};
 
-  const response = await fetch(`${baseURL}${path}`, {
+  const response = await fetch(`${API_BASE}${path}`, {
     ...fetchInit,
     method,
     credentials: "include",
@@ -128,6 +127,24 @@ export async function apiCall<T = unknown>(
 
 export function buildApiUrl(path: string): string {
   return path;
+}
+
+export async function apiFetch(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${ENV.API_BASE}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("API ERROR:", res.status, text);
+    throw new Error(`API ${res.status}`);
+  }
+
+  return res.json();
 }
 
 export async function startOtp(phone: string) {
