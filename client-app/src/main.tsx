@@ -9,6 +9,8 @@ try {
   console.error("ENV ERROR IGNORED:", err);
 }
 
+console.log("NEW BUILD LIVE:", new Date().toISOString());
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

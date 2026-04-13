@@ -3,27 +3,38 @@ name: client-ci
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm ci
+      - name: Install
+        run: npm ci
 
-      - run: npm run typecheck
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Run tests
+      - name: Test
         run: CI=1 npm --prefix client-app run test
         timeout-minutes: 5
 
-      - name: Build client
+      - name: Build
         run: npm --prefix client-app run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "client-app"
+          output_location: "dist"
