@@ -1,33 +1,26 @@
-type EnvConfig = {
-  API_BASE_URL: string;
-  API_VERSION: string;
-};
+const REQUIRED_ENV = [
+  "VITE_API_BASE",
+];
 
-function getEnv(): EnvConfig {
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    "https://server.boreal.financial";
-
-  const API_VERSION =
-    import.meta.env.VITE_API_VERSION ||
-    "v1";
-
-  // ONLY enforce strict validation in DEV
-  if (import.meta.env.DEV) {
-    if (!API_BASE_URL) {
-      throw new Error("Missing VITE_API_BASE_URL");
-    }
-
-    if (!API_VERSION) {
-      throw new Error("Missing VITE_API_VERSION");
-    }
+function getEnv(key: string): string {
+  const value = import.meta.env[key];
+  if (!value) {
+    console.warn(`Missing env: ${key}`);
   }
-
-  return {
-    API_BASE_URL,
-    API_VERSION,
-  };
+  return value;
 }
 
-export const ENV = getEnv();
+export const ENV = {
+  API_BASE: getEnv("VITE_API_BASE") || "https://server.boreal.financial",
+  API_VERSION: import.meta.env.VITE_API_VERSION || "v1", // fallback to prevent crash
+};
+
+// REMOVE HARD FAILURE VALIDATION
+export function validateEnv() {
+  const missing = REQUIRED_ENV.filter((key) => !import.meta.env[key]);
+
+  if (missing.length > 0) {
+    console.warn("Missing env vars:", missing);
+    // DO NOT THROW — this was breaking the app
+  }
+}
