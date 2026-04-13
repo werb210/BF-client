@@ -1,28 +1,16 @@
-import "@/lib/networkGuard";
+import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./app/App";
-import { ENV, validateEnv } from "./env";
-import { waitForServer } from "./init";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import App from "./App";
+import { validateEnv } from "./env";
 
-async function start() {
-  try {
-    validateEnv();
-  } catch (err) {
-    console.error("ENV VALIDATION FAILED:", err);
-  }
-
-  if (import.meta.env.DEV) {
-    console.log("ENV:", ENV);
-  }
-
-  await waitForServer();
-
-  ReactDOM.createRoot(document.getElementById("root")!).render(
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  );
+try {
+  validateEnv();
+} catch (err) {
+  console.error("ENV ERROR IGNORED:", err);
 }
 
-void start();
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
