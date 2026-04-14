@@ -19,9 +19,6 @@ export async function verifyOtp(phone: string, code: string) {
 
   if (data?.token) {
     setToken(data.token);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth_token", data.token);
-    }
   }
 
   return data;
