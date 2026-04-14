@@ -1,5 +1,6 @@
 import { endpoints } from "@/lib/endpoints";
 import { ENV } from "@/env";
+import { getToken } from "@/auth/token";
 
 type HttpResponse<T = unknown> = {
   data: T;
@@ -21,7 +22,7 @@ type RequestConfig = {
 const API_BASE = ENV.API_BASE || "https://server.boreal.financial";
 
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = getToken();
 
   return {
     ...(headers ?? {}),
