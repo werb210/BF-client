@@ -89,10 +89,11 @@ const RevenueOptions = [
 ];
 
 const MonthlyRevenueOptions = [
-  "Under $10,000",
-  "$10,001 to $30,000",
-  "$30,001 to $100,000",
-  "Over $100,000",
+  "$10,000 to $25,000",
+  "$25,000 to $50,000",
+  "$50,000 to $100,000",
+  "$100,000 to $250,000",
+  "Over $250,000",
 ];
 
 const AccountsReceivableOptions = [
@@ -438,7 +439,10 @@ fixedAssets:
 
   const fieldGridStyle = {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gridTemplateColumns:
+      typeof window !== "undefined" && window.innerWidth < 600
+        ? "1fr"
+        : "1fr 1fr",
     gap: tokens.spacing.md,
   };
 
@@ -467,7 +471,48 @@ fixedAssets:
 
   return (
     <>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f3f4f6",
+          padding: "0 0 48px",
+        }}
+      >
+        <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
+          <div
+            style={{
+              height: 4,
+              background: "#2563eb",
+              width: `${(1 / 6) * 100}%`,
+              transition: "width 0.3s ease",
+            }}
+          />
+        </div>
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
+          <h1
+            style={{
+              color: "#2563eb",
+              fontSize: 28,
+              fontWeight: 700,
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
+            Step 1: Financial Profile
+          </h1>
+          <p
+            style={{
+              color: "#6b7280",
+              textAlign: "center",
+              marginBottom: 32,
+              fontSize: 15,
+            }}
+          >
+            Tell us about your funding needs and business profile.
+          </p>
+          <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
+      <div className="wizard-step-shell">
         <StepHeader step={1} title="Financial Profile" />
         {submitError && (
           <Card variant="muted" data-error={true}>
@@ -918,7 +963,10 @@ fixedAssets:
             Continue →
           </Button>
         </div>
+      </div>
       </WizardLayout>
+      </div>
+      </div>
 
       {showLocationModal && (
         <div

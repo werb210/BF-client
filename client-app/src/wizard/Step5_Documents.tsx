@@ -435,6 +435,13 @@ export function Step5_Documents() {
   }
 
   return (
+    <div style={{ minHeight: "100vh", background: "#f3f4f6", padding: "0 0 48px" }}>
+      <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
+        <div style={{ height: 4, background: "#2563eb", width: `${(5 / 6) * 100}%`, transition: "width 0.3s ease" }} />
+      </div>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
+        <h1 style={{ color: "#2563eb", fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>Step 5: Required Documents</h1>
+        <p style={{ color: "#6b7280", textAlign: "center", marginBottom: 32, fontSize: 15 }}>Upload all required documents to continue.</p>
     <WizardLayout>
       <StepHeader step={5} title="Required Documents" />
 
@@ -518,6 +525,8 @@ export function Step5_Documents() {
         </div>
       </div>
     </WizardLayout>
+    </div>
+    </div>
   );
 }
 
