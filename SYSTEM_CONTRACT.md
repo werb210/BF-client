@@ -225,3 +225,9 @@ The Client App must support without refactor:
 	•	Timeline updates
 
 ⸻
+
+14. React Router
+	•	`<BrowserRouter>` MUST wrap `<App />` in `src/main.tsx`.
+	•	Never remove the BrowserRouter from `src/main.tsx`.
+	•	Never add a second BrowserRouter anywhere else in the tree — only one Router provider is allowed per React app.
+	•	Components using `useLocation`, `useNavigate`, `useParams`, or `<Routes>` will crash with "basename null" if rendered outside the BrowserRouter.
