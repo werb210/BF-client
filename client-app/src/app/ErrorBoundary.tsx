@@ -2,6 +2,7 @@ import * as React from "react";
 
 type Props = {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 };
 
 type State = {
@@ -20,7 +21,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return <div>Something went wrong</div>;
+      return this.props.fallback ?? <div>Something went wrong</div>;
     }
 
     return this.props.children;

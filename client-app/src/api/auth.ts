@@ -48,3 +48,5 @@ export async function initAuth() {
     clearToken();
   }
 }
+
+export const startOtp = sendOtp;

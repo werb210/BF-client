@@ -20,7 +20,6 @@ import {
 } from "@/api/applications";
 import { buildClientHistoryEvents } from "@/portal/clientHistory";
 import { components, layout, tokens } from "@/styles";
-import CallUsButton from "@/telephony/components/CallUsButton";
 import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
 
 export function ApplicationPortalPage(): JSX.Element {
@@ -317,7 +316,7 @@ export function ApplicationPortalPage(): JSX.Element {
     <div style={layout.page}>
       <div style={layout.portalColumn}>
         {submittedBanner}
-        <CallUsButton />
+        <button onClick={() => void startCall()} style={{ border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "10px 14px", cursor: "pointer" }}>Call Us!</button>
       </div>
       <ApplicationPortalView
         businessName={businessName}
