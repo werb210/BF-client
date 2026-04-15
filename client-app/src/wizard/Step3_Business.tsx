@@ -235,7 +235,33 @@ export function Step3_Business() {
   };
 
   return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f3f4f6",
+        padding: "0 0 48px",
+      }}
+    >
+      <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
+        <div
+          style={{
+            height: 4,
+            background: "#2563eb",
+            width: `${(3 / 6) * 100}%`,
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
+        <h1 style={{ color: "#2563eb", fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
+          Step 3: Business Details
+        </h1>
+        <p style={{ color: "#6b7280", textAlign: "center", marginBottom: 32, fontSize: 15 }}>
+          Provide your core business details.
+        </p>
+        <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
+      <div className="wizard-step-shell">
       <StepHeader step={3} title="Business Details" />
       {saveError && (
         <Card variant="muted" data-error={true}>
@@ -262,7 +288,10 @@ export function Step3_Business() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gridTemplateColumns:
+              typeof window !== "undefined" && window.innerWidth < 600
+                ? "1fr"
+                : "1fr 1fr",
             gap: tokens.spacing.md,
           }}
         >
@@ -478,18 +507,16 @@ export function Step3_Business() {
 
           <div>
             <label style={components.form.label}>Number of Employees</label>
-            <div style={{ display: "flex", alignItems: "center", gap: tokens.spacing.sm }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 style={{
-                  height: "40px",
-                  width: "40px",
-                  borderRadius: tokens.radii.pill,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.surface,
-                  color: tokens.colors.textPrimary,
-                  fontSize: "18px",
-                  outline: "none",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#f9fafb",
                   cursor: "pointer",
+                  fontSize: 18,
                 }}
                 onClick={() =>
                   setField(
@@ -501,30 +528,18 @@ export function Step3_Business() {
               >
                 −
               </button>
-              <Input
-                id={getWizardFieldId("step3", "employees")}
-                type="number"
-                min="0"
-                style={{ textAlign: "center" }}
-                value={values.employees ?? ""}
-                onChange={(e: unknown) => setField("employees", e.target.value)}
-                onKeyDown={(e: unknown) => {
-                  if (e.key === "Enter") {
-                    handleAutoAdvance("employees", values);
-                  }
-                }}
-              />
+              <span style={{ minWidth: 40, textAlign: "center", fontSize: 16, fontWeight: 500 }}>
+                {Number(values.employees || 0)}
+              </span>
               <button
                 style={{
-                  height: "40px",
-                  width: "40px",
-                  borderRadius: tokens.radii.pill,
-                  border: `1px solid ${tokens.colors.border}`,
-                  background: tokens.colors.surface,
-                  color: tokens.colors.textPrimary,
-                  fontSize: "18px",
-                  outline: "none",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#f9fafb",
                   cursor: "pointer",
+                  fontSize: 18,
                 }}
                 onClick={() =>
                   setField("employees", Number(values.employees || 0) + 1)
@@ -589,7 +604,10 @@ export function Step3_Business() {
           Continue
         </Button>
       </div>
+      </div>
     </WizardLayout>
+    </div>
+    </div>
   );
 }
 
