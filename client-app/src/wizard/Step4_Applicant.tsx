@@ -36,10 +36,12 @@ import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
 import { persistApplicationStep } from "./saveStepProgress";
 import { useReadiness } from "../state/readinessStore";
+import { useAuth } from "@/auth/useAuth";
 
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -62,6 +64,13 @@ export function Step4_Applicant() {
       update({ currentStep: 4 });
     }
   }, [app.currentStep, update]);
+
+  useEffect(() => {
+    const userPhone = typeof user === "object" && user ? String((user as Record<string, unknown>).phone || "") : "";
+    if (userPhone && !values.phone) {
+      setField("phone", userPhone);
+    }
+  }, [user, values.phone]);
 
   useEffect(() => {
     trackEvent("client_step_viewed", { step: 4 });
