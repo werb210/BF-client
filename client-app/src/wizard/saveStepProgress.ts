@@ -9,15 +9,19 @@ export async function persistApplicationStep(
   const applicationId = app.applicationId || app.applicationToken;
 
   if (!applicationId) {
-    // Steps 1–3 run before the application is created on the server.
-    // Local draft is already saved. Silently skip the server call.
-    console.debug(`[autosave] step ${step}: no applicationId yet — skipping server save`);
+    // Steps 1-3 run before the application exists on the server.
+    // Local draft is already saved via saveStepData. Skip server save silently.
     return;
   }
 
-  await saveApplicationStep({
-    applicationId,
-    step,
-    data,
-  });
+  try {
+    await saveApplicationStep({
+      applicationId,
+      step,
+      data,
+    });
+  } catch (err) {
+    // Autosave is best-effort. Never block the user from advancing.
+    console.debug(`[autosave] step ${step} save failed (non-blocking):`, err);
+  }
 }
