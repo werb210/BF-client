@@ -28,9 +28,14 @@ export async function fetchApplicationContinuation() {
 }
 
 export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
-  await apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.ROOT, {
-    method: "POST",
-    body: JSON.stringify(payload)
+  // PATCH the application metadata with the step data
+  // Only called when applicationId exists (steps 4+)
+  await apiCall(`/api/client/applications/${payload.applicationId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      metadata: { [`step_${payload.step}`]: payload.data },
+      current_step: payload.step,
+    }),
   });
 }
 
