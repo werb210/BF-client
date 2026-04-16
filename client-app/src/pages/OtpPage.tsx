@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { OtpInput } from "@/components/OtpInput";
 import { resolveOtpNextStep } from "@/auth/otp";
 import { startOtp, verifyOtp } from "@/api/auth";
-import { fetchReadinessPrefill } from "@/api/readiness";
-import { setReadiness } from "@/state/readinessStore";
 import { tokens, components } from "@/styles";
 
 type Step = "phone" | "code";
@@ -21,17 +19,7 @@ export default function OtpPage() {
   useEffect(() => {
     const readinessToken = searchParams.get("readiness_token");
     if (!readinessToken) return;
-
-    void (async () => {
-      try {
-        const prefill = await fetchReadinessPrefill(readinessToken);
-        if (prefill.found && prefill.prefill) {
-          setReadiness(prefill.prefill as any);
-        }
-      } catch {
-        // visible flow should still continue even without prefill
-      }
-    })();
+    sessionStorage.setItem("readiness_token", readinessToken);
   }, [searchParams]);
 
   async function handleSendCode() {

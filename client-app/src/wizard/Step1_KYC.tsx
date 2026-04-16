@@ -28,9 +28,10 @@ import {
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { track } from "../utils/track";
 import { trackEvent } from "../utils/analytics";
-import { useReadiness } from "../state/readinessStore";
+import { setReadiness, useReadiness } from "../state/readinessStore";
 import { persistApplicationStep } from "./saveStepProgress";
 import { fetchCreditPrefill } from "../services/creditPrefill";
+import { fetchReadinessPrefill } from "@/api/readiness";
 
 const MatchCategories = [
   "Line of Credit",
@@ -245,6 +246,24 @@ fixedAssets:
   useEffect(() => {
     trackEvent("application_started", { step: 1 });
     trackEvent("client_step_viewed", { step: 1 });
+  }, []);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem("readiness_token");
+    if (!token) return;
+
+    void fetchReadinessPrefill(token)
+      .then((prefill) => {
+        if (prefill?.found && prefill.prefill) {
+          setReadiness(prefill.prefill as any);
+        }
+      })
+      .catch(() => {
+        // best-effort prefill only
+      })
+      .finally(() => {
+        sessionStorage.removeItem("readiness_token");
+      });
   }, []);
 
   useEffect(() => {
