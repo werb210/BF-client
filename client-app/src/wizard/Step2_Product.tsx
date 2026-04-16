@@ -187,10 +187,16 @@ export function Step2_Product() {
   }, [eligibility, normalizedProducts.length, update]);
 
   useEffect(() => {
-    let active = true;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 1;
+
     async function loadProducts() {
+      if (attempts >= MAX_ATTEMPTS) return;
+      attempts += 1;
       setIsLoading(true);
       setLoadError(null);
+
       try {
         const rows = await getClientLenderProducts();
         const activeProducts = filterActiveProducts(
@@ -202,7 +208,8 @@ export function Step2_Product() {
             normalizeRequirementList(product.required_documents ?? []),
           ])
         );
-        if (active) {
+
+        if (!cancelled) {
           setProducts(activeProducts);
           if (Object.keys(requirementsMap).length > 0) {
             update({
@@ -228,24 +235,24 @@ export function Step2_Product() {
           }
         }
       } catch {
-        if (active) {
+        if (!cancelled) {
           setLoadError(
-            "Unable to load lender products. Please refresh or try again later."
+            "Unable to load product options. Please try again."
           );
         }
       } finally {
-        if (active) {
+        if (!cancelled) {
           setIsLoading(false);
         }
       }
     }
 
-    loadProducts();
+    void loadProducts();
 
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [app.selectedProductId, update]);
+  }, []);
 
   function select(product: ClientLenderProduct) {
     const category = product.product_type ?? product.name;

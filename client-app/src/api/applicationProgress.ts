@@ -30,13 +30,56 @@ export async function fetchApplicationContinuation() {
 export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
   // PATCH the application metadata with the step data
   // Only called when applicationId exists (steps 4+)
-  await apiCall(`/api/client/applications/${payload.applicationId}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      metadata: { [`step_${payload.step}`]: payload.data },
-      current_step: payload.step,
-    }),
+  try {
+    await apiCall(`/api/client/applications/${payload.applicationId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        metadata: { [`step_${payload.step}`]: payload.data },
+        current_step: payload.step,
+      }),
+    });
+  } catch (err: any) {
+    const message = String(err?.message ?? "").toLowerCase();
+    const isNotFound =
+      message.includes("404") ||
+      message.includes("not found") ||
+      message.includes("application not found");
+
+    if (isNotFound) {
+      clearStaleApplicationToken();
+      console.debug("[autosave] stale application cleared");
+    }
+
+    // autosave is best-effort; swallow error
+  }
+}
+
+function clearStaleApplicationToken() {
+  if (typeof window === "undefined") return;
+
+  const draftKeys = ["boreal_draft", "application_state", "application_data"];
+
+  draftKeys.forEach((key) => {
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return;
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          ...parsed,
+          applicationToken: null,
+          applicationId: null,
+        })
+      );
+    } catch {
+      // ignore malformed cached state
+    }
   });
+
+  localStorage.removeItem("applicationToken");
 }
 
 export async function saveApplicationProgress(data: unknown) {
