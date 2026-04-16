@@ -51,21 +51,6 @@ const MatchBaselines: Record<string, number> = {
 
 const BusinessLocationOptions = ["Canada", "United States", "Other"];
 
-const IndustryCards = [
-  { title: "Construction", subtext: "General contractors and specialty trades", image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=900&q=80" },
-  { title: "Manufacturing", subtext: "Production and industrial operations", image: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?auto=format&fit=crop&w=900&q=80" },
-  { title: "Retail", subtext: "In-store and online product sales", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=80" },
-  { title: "Restaurant/Food Service", subtext: "Restaurants, catering, and food operations", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80" },
-  { title: "Technology", subtext: "Software, IT, and digital services", image: "https://images.unsplash.com/photo-1518773553398-650c184e0bb3?auto=format&fit=crop&w=900&q=80" },
-  { title: "Healthcare", subtext: "Medical, wellness, and care providers", image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=900&q=80" },
-  { title: "Transportation", subtext: "Freight, logistics, and delivery", image: "https://images.unsplash.com/photo-1494412651409-8963ce7935a7?auto=format&fit=crop&w=900&q=80" },
-  { title: "Professional Services", subtext: "Consulting, legal, and business services", image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80" },
-  { title: "Real Estate", subtext: "Property management and development", image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=900&q=80" },
-  { title: "Agriculture", subtext: "Farming and agri-business operations", image: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=900&q=80" },
-  { title: "Energy", subtext: "Utilities, oil, gas, and renewables", image: "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=900&q=80" },
-  { title: "Other", subtext: "Additional business industries", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=80" },
-];
-
 
 const PurposeOptions = [
   "Equipment Purchase",
@@ -508,27 +493,6 @@ fixedAssets:
           />
         </div>
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
-          <h1
-            style={{
-              color: "#2563eb",
-              fontSize: 28,
-              fontWeight: 700,
-              textAlign: "center",
-              marginBottom: 8,
-            }}
-          >
-            Step 1: Financial Profile
-          </h1>
-          <p
-            style={{
-              color: "#6b7280",
-              textAlign: "center",
-              marginBottom: 32,
-              fontSize: 15,
-            }}
-          >
-            Tell us about your funding needs and business profile.
-          </p>
           <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
       <div className="wizard-step-shell">
@@ -549,8 +513,6 @@ fixedAssets:
             {autosaveError}
           </Card>
         )}
-        <StepHeader step={1} title="Financial Profile" />
-
         {readinessEnabled && (
           <Card
             variant="muted"
@@ -742,49 +704,45 @@ fixedAssets:
               )}
             </div>
 
-<div data-error={showErrors && fieldErrors.industry}>
-              <label style={components.form.label}>Industry</label>
-              <input id={getWizardFieldId("step1", "industry")} value={app.kyc.industry || ""} readOnly hidden />
-              <div
+            <div data-error={showErrors && fieldErrors.industry}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>
+                Industry *
+              </label>
+              <select
+                id={getWizardFieldId("step1", "industry")}
+                value={app.kyc.industry || ""}
+                onChange={(e) => {
+                  const nextKyc = { ...app.kyc, industry: e.target.value };
+                  update({ kyc: nextKyc });
+                  handleAutoAdvance("industry", nextKyc);
+                }}
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: tokens.spacing.sm,
+                  width: "100%",
+                  padding: "10px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  color: "#111827",
+                  background: "#fff",
+                  boxSizing: "border-box",
+                  appearance: "none",
+                  cursor: "pointer",
                 }}
               >
-                {IndustryCards.map((industry) => {
-                  const selected = app.kyc.industry === industry.title;
-                  return (
-                    <button
-                      key={industry.title}
-                      className="industry-card"
-                      type="button"
-                      onClick={() => {
-                        const nextKyc = { ...app.kyc, industry: industry.title };
-                        update({ kyc: nextKyc });
-                        handleAutoAdvance("industry", nextKyc);
-                      }}
-                      style={{
-                        borderRadius: tokens.radii.md,
-                        border: `2px solid ${selected ? tokens.colors.primary : tokens.colors.border}`,
-                        background: tokens.colors.surface,
-                        textAlign: "left",
-                        overflow: "hidden",
-                        padding: 0,
-                        cursor: "pointer",
-                        boxShadow: selected ? tokens.shadows.focus : "0 6px 16px rgba(15, 23, 42, 0.08)",
-                        transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                      }}
-                    >
-                      <img loading="lazy" src={industry.image} alt={industry.title} style={{ width: "100%", height: "108px" }} />
-                      <div style={{ padding: tokens.spacing.sm, display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div style={{ fontSize: "15px", fontWeight: 600, color: tokens.colors.textPrimary }}>{industry.title}</div>
-                        <div style={{ fontSize: "13px", color: tokens.colors.textSecondary }}>{industry.subtext}</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                <option value="">Select industry...</option>
+                <option>Construction</option>
+                <option>Manufacturing</option>
+                <option>Retail</option>
+                <option>Restaurant/Food Service</option>
+                <option>Technology</option>
+                <option>Healthcare</option>
+                <option>Transportation</option>
+                <option>Professional Services</option>
+                <option>Real Estate</option>
+                <option>Agriculture</option>
+                <option>Energy</option>
+                <option>Other</option>
+              </select>
               {showErrors && fieldErrors.industry && (
                 <div style={components.form.errorText}>Select your industry.</div>
               )}

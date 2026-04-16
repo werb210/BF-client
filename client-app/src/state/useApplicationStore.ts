@@ -208,14 +208,16 @@ export function useApplicationStore() {
   const saveToServer = useMemo(
     () =>
       debounce(async (state: ApplicationData) => {
-        if (!state.applicationToken) return;
+        if (!state.applicationToken || typeof state.applicationToken !== "string") return;
+        if (state.applicationToken.length < 10) return;
+        if (!hasActiveAuthSession()) return;
         await apiCall(`/api/client/applications/${state.applicationToken}`, {
           method: "PATCH",
           body: JSON.stringify({
-            metadata: { draft: state },
+            metadata: { draft: { step: state.currentStep } },
           }),
         }).catch(() => {
-          // Autosave is best-effort — never block the user
+          // Silent — autosave is best-effort
         });
       }, 1500),
     []

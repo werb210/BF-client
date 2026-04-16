@@ -7,6 +7,15 @@ import { tokens, components } from "@/styles";
 
 type Step = "phone" | "code";
 
+function formatToE164(input: string): string {
+  const digits = input.replace(/\D/g, "");
+  if (digits.length === 0) return "";
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length < 10) return `+1${digits}`;
+  return `+${digits}`;
+}
+
 export default function OtpPage() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -71,7 +80,7 @@ export default function OtpPage() {
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatToE164(e.target.value))}
               onKeyDown={(e) => e.key === "Enter" && void handleSendCode()}
               placeholder="+15550000000"
               style={components.inputs.base}
