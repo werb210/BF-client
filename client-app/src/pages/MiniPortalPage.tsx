@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
+import { apiCall } from "@/api/client";
+import { ENV } from "@/env";
+import { getToken } from "@/auth/token";
 import { tokens } from "@/styles";
 
 type Message = {
@@ -60,7 +63,7 @@ export default function MiniPortalPage() {
 
     async function loadAll() {
       try {
-        const appData = await fetch(`/api/applications/${encodeURIComponent(applicationId)}`).then((r) => r.json());
+        const appData = await apiCall<{ data?: { stage?: string }; stage?: string }>(`/api/applications/${encodeURIComponent(applicationId)}`);
         if (!active) return;
         const normalized = String(appData?.data?.stage || appData?.stage || "").toLowerCase();
         if (normalized in stageLookup) {
@@ -71,9 +74,8 @@ export default function MiniPortalPage() {
       }
 
       try {
-        const thread = await fetch(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).then((r) => r.json());
+        const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
         if (!active) return;
-        const incoming = Array.isArray(thread?.data) ? thread.data : Array.isArray(thread) ? thread : [];
         setMessages(
           incoming.map((item: any, idx: number) => ({
             id: String(item.id || idx),
@@ -87,9 +89,13 @@ export default function MiniPortalPage() {
       }
 
       try {
-        const offerData = await fetch(`/api/applications/${encodeURIComponent(applicationId)}/offers`).then((r) => r.json());
+        const offerData = await apiCall<{ data?: Offer[] } | Offer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null);
         if (!active) return;
-        const incoming = Array.isArray(offerData?.data) ? offerData.data : Array.isArray(offerData) ? offerData : [];
+        const incoming = Array.isArray(offerData)
+          ? offerData
+          : Array.isArray(offerData?.data)
+            ? offerData.data
+            : [];
         setOffers(incoming);
       } catch {
         // noop
@@ -120,10 +126,9 @@ export default function MiniPortalPage() {
     if (!text.trim() || !applicationId) return;
     const next = text.trim();
     setText("");
-    await fetch("/api/client/messages", {
+    await apiCall("/api/client/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ applicationId, content: next }),
+      body: { applicationId, body: next, direction: "inbound" },
     });
     setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "client", content: next }]);
   }
@@ -132,7 +137,11 @@ export default function MiniPortalPage() {
     if (!applicationId) return;
     const form = new FormData();
     form.append("file", file);
-    await fetch(`/api/applications/${encodeURIComponent(applicationId)}/documents`, { method: "POST", body: form });
+    await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+      body: form,
+    });
   }
 
   function startNewApplication() {

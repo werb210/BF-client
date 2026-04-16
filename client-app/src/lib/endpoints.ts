@@ -6,7 +6,7 @@ export const endpoints = {
 } as const;
 
 export const ENDPOINTS = {
-  submitApplication: "/api/v1/application/create",
-  uploadDocument: "/api/v1/documents/upload",
-  startSigning: "/api/v1/signnow/initiate",
+  submitApplication: "/api/client/applications",
+  uploadDocument: "/api/client/documents/upload",
+  startSigning: "/api/webhooks/signnow",
 } as const;

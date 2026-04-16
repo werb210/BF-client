@@ -29,16 +29,19 @@ export const submitApplication = async (applicationId: string) => {
   }
 
   try {
-    const data = await apiRequest(ENDPOINTS.submitApplication, {
-      method: "POST",
-      body: JSON.stringify({ applicationId }),
+    // Mark application as submitted by patching its status
+    const data = await apiRequest(`/api/client/applications/${applicationId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        metadata: { submitted: true, submittedAt: new Date().toISOString() },
+      }),
     });
 
     if (!data) {
       throw new Error("[API ERROR] EMPTY RESPONSE");
     }
 
-    return assertApiResponse(data);
+    return data;
   } catch (err) {
     console.error("SUBMISSION_FAILED", err);
     throw new Error(DEFAULT_API_ERROR_MESSAGE);

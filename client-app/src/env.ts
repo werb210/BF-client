@@ -1,5 +1,8 @@
 export const ENV = {
-  API_BASE: import.meta.env.VITE_API_BASE || "https://server.boreal.financial",
+  API_BASE: import.meta.env.VITE_API_BASE ||
+            import.meta.env.VITE_API_BASE_URL ||
+            import.meta.env.VITE_API_URL ||
+            "https://server.boreal.financial",
   API_VERSION: import.meta.env.VITE_API_VERSION || "v1",
 };
 
