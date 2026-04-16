@@ -94,8 +94,10 @@ export function OtpInput({
           ref={(el) => {
             inputsRef.current[index] = el;
           }}
+          type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          pattern="\d*"
           maxLength={1}
           value={values[index]}
           onChange={(event) => handleChange(index, event.target.value)}
