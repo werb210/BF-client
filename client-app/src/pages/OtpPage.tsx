@@ -7,13 +7,16 @@ import { tokens, components } from "@/styles";
 
 type Step = "phone" | "code";
 
-function formatToE164(input: string): string {
-  const digits = input.replace(/\D/g, "");
-  if (digits.length === 0) return "";
+function toE164(raw: string): string {
+  // Strip everything except digits
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  // Already has country code (11 digits starting with 1)
   if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  // Standard 10-digit North American number
   if (digits.length === 10) return `+1${digits}`;
-  if (digits.length < 10) return `+1${digits}`;
-  return `+${digits}`;
+  // Partial entry — return as-is so user can keep typing
+  return raw;
 }
 
 export default function OtpPage() {
@@ -32,11 +35,13 @@ export default function OtpPage() {
   }, [searchParams]);
 
   async function handleSendCode() {
-    if (!phone.trim()) return;
+    const formatted = toE164(phone.trim()) || phone.trim();
+    if (!formatted) return;
+    setPhone(formatted);
     setLoading(true);
     setError(null);
     try {
-      await startOtp(phone.trim());
+      await startOtp(formatted);
       setStep("code");
     } catch {
       setError("Failed to send code. Please check your number and try again.");
@@ -46,10 +51,11 @@ export default function OtpPage() {
   }
 
   async function handleVerify(otpCode: string) {
+    const formatted = toE164(phone.trim()) || phone.trim();
     setLoading(true);
     setError(null);
     try {
-      const profile = await verifyOtp(phone.trim(), otpCode);
+      const profile = await verifyOtp(formatted, otpCode);
       const next = resolveOtpNextStep((profile as any)?.profile ?? null);
 
       if (next.action === "portal") {
@@ -80,7 +86,11 @@ export default function OtpPage() {
             <input
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(formatToE164(e.target.value))}
+              onChange={(e) => setPhone(e.target.value)}
+              onBlur={(e) => {
+                const formatted = toE164(e.target.value);
+                if (formatted) setPhone(formatted);
+              }}
               onKeyDown={(e) => e.key === "Enter" && void handleSendCode()}
               placeholder="+15550000000"
               style={components.inputs.base}
