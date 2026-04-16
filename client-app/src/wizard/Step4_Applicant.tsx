@@ -223,13 +223,22 @@ export function Step4_Applicant() {
         await ClientAppAPI.update(app.applicationToken, submissionPayload);
       } else {
         const res = await ClientAppAPI.start(submissionPayload);
-        const token = res?.data?.token;
-        if (!token) {
+        // Server POST /api/applications returns { applicationId }
+        // ClientAppAPI.start uses apiRequest which unwraps {status:"ok", data:{...}}
+        // so res is { applicationId: "..." } directly
+        const applicationId =
+          (res as any)?.applicationId ||
+          (res as any)?.data?.applicationId ||
+          (res as any)?.data?.token ||
+          (res as any)?.token ||
+          null;
+
+        if (!applicationId) {
           setSaveError("We couldn't submit your application. Please try again.");
           return;
         }
-        submissionToken = token;
-        update({ applicationToken: token, applicationId: token });
+        submissionToken = applicationId;
+        update({ applicationToken: applicationId, applicationId: applicationId });
       }
 
       await persistApplicationStep(app, 4, { applicant: values });
