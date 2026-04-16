@@ -2,7 +2,7 @@ export async function uploadDocument(file: File) {
   const form = new FormData();
   form.append("file", file);
 
-  const res = await fetch("/api/v1/documents/upload", {
+  const res = await fetch("/api/documents/upload", {
     method: "POST",
     body: form,
   });

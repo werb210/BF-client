@@ -1,8 +1,8 @@
 export const endpoints = {
   otpStart: "/api/auth/otp/start",
   otpVerify: "/api/auth/otp/verify",
-  voiceToken: "/api/v1/telephony/token",
-  callStart: "/api/v1/call/start",
+  voiceToken: "/api/telephony/token",
+  callStart: "/api/call/start",
 } as const;
 
 export const ENDPOINTS = {

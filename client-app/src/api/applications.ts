@@ -21,27 +21,60 @@ export const createApplication = async (payload: Record<string, unknown> = {}) =
   }
 };
 
-export const submitApplication = async (applicationId: string) => {
+export const submitApplication = async (
+  payloadOrId: string | Record<string, unknown>,
+  options?: { idempotencyKey?: string; continuationToken?: string }
+) => {
   assertAuthenticated();
 
-  if (!applicationId) {
-    throw new Error("Missing applicationId");
-  }
+  // Support both old string call and new payload object call from Step6
+  const isPayloadObject = typeof payloadOrId === "object" && payloadOrId !== null;
 
   try {
-    // Mark application as submitted by patching its status
-    const data = await apiRequest(`/api/client/applications/${applicationId}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        metadata: { submitted: true, submittedAt: new Date().toISOString() },
-      }),
-    });
+    if (isPayloadObject) {
+      // Step6 path: POST full application payload to create/finalize
+      const payload = payloadOrId as Record<string, unknown>;
 
-    if (!data) {
-      throw new Error("[API ERROR] EMPTY RESPONSE");
+      const applicationId =
+        (payload.applicationId as string) ||
+        (payload.token as string) ||
+        null;
+
+      if (!applicationId) {
+        throw new Error("Missing applicationId in submission payload");
+      }
+
+      const data = await apiRequest(`/api/client/applications/${applicationId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          metadata: {
+            submitted: true,
+            submittedAt: new Date().toISOString(),
+            ...(options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
+            ...(options?.continuationToken ? { continuationToken: options.continuationToken } : {}),
+            ...payload,
+          },
+        }),
+      });
+
+      return data;
+    } else {
+      // Simple string applicationId path
+      const applicationId = payloadOrId as string;
+
+      if (!applicationId) {
+        throw new Error("Missing applicationId");
+      }
+
+      const data = await apiRequest(`/api/client/applications/${applicationId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          metadata: { submitted: true, submittedAt: new Date().toISOString() },
+        }),
+      });
+
+      return data;
     }
-
-    return data;
   } catch (err) {
     console.error("SUBMISSION_FAILED", err);
     throw new Error(DEFAULT_API_ERROR_MESSAGE);
