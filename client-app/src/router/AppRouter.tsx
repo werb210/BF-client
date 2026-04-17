@@ -4,6 +4,7 @@ import { RequireOTP } from "@/auth/RequireOTP";
 import { RequireApplicationToken } from "@/auth/RequireApplicationToken";
 import { AppSpinner } from "@/components/ui/AppSpinner";
 
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const OtpPage = lazy(() => import("@/pages/OtpPage"));
 const Step1 = lazy(() => import("@/wizard/Step1_FinancialProfile"));
 const Step2 = lazy(() => import("@/wizard/Step2_ProductCategory"));
@@ -20,7 +21,7 @@ export default function AppRouter() {
   return (
     <Suspense fallback={<AppSpinner />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/otp" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/otp" element={<OtpPage />} />
         <Route path="/expired" element={<SessionExpiredPage />} />
         <Route path="/revoked" element={<SessionRevokedPage />} />
@@ -37,9 +38,7 @@ export default function AppRouter() {
         <Route path="/application/:id" element={<RequireOTP><MiniPortalPage /></RequireOTP>} />
 
         <Route path="/apply" element={<Navigate to="/otp" replace />} />
-        <Route path="/apply/step-:n" element={<Navigate to="/otp" replace />} />
-
-        <Route path="*" element={<Navigate to="/otp" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
