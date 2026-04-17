@@ -34,22 +34,18 @@ export function OtpInput({
 
   function handleChange(index: number, value: string) {
     const cleaned = value.replace(/\D/g, "");
-
-    // iOS/Android autofill: all digits can arrive in the first box at once
     if (cleaned.length > 1) {
       const digits = cleaned.slice(0, length).split("");
       setValues((prev) => {
         const next = [...prev];
-        digits.forEach((d, i) => {
-          if (i < length) next[i] = d;
-        });
+        digits.forEach((d, i) => { if (i < length) next[i] = d; });
         return next;
       });
-      const lastIndex = Math.min(digits.length, length) - 1;
-      requestAnimationFrame(() => inputsRef.current[lastIndex]?.focus());
+      requestAnimationFrame(() => {
+        inputsRef.current[Math.min(digits.length, length) - 1]?.focus();
+      });
       return;
     }
-
     const digit = cleaned.slice(-1);
     setValues((prev) => {
       const next = [...prev];
