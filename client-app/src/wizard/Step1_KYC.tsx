@@ -52,10 +52,7 @@ const MatchBaselines: Record<string, number> = {
 const BusinessLocationOptions = ["Canada", "United States", "Other"];
 
 
-const PurposeOptions = [
-  "Working Capital",
-  "Expansion",
-];
+const PurposeOptions = ["Working Capital", "Expansion"];
 
 const SalesHistoryOptions = [
   "Zero",
@@ -105,12 +102,8 @@ type Step1KycData = Partial<{
 }>;
 
 const FixedAssetsOptions = [
-  "None",
-  "$1 to $50,000",
-  "$50,001 to $100,000",
-  "$100,001 to $250,000",
-  "$250,001 to $500,000",
-  "Over $500,000",
+  "None", "$1 to $50,000", "$50,001 to $100,000",
+  "$100,001 to $250,000", "$250,001 to $500,000", "Over $500,000",
 ];
 
 function parseCurrency(value: string): number {
