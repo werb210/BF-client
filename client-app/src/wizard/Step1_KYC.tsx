@@ -53,10 +53,8 @@ const BusinessLocationOptions = ["Canada", "United States", "Other"];
 
 
 const PurposeOptions = [
-  "Equipment Purchase",
-  "Inventory Purchase",
-  "Business Expansion",
   "Working Capital",
+  "Expansion",
 ];
 
 const SalesHistoryOptions = [
@@ -107,12 +105,12 @@ type Step1KycData = Partial<{
 }>;
 
 const FixedAssetsOptions = [
-  "No Collateral Available",
-  "$1 to $100,000",
+  "None",
+  "$1 to $50,000",
+  "$50,001 to $100,000",
   "$100,001 to $250,000",
   "$250,001 to $500,000",
-  "$500,001 to $1 million",
-  "Over $1 million",
+  "Over $500,000",
 ];
 
 function parseCurrency(value: string): number {
@@ -896,7 +894,7 @@ fixedAssets:
 
             {shouldShowFixedAssets && (
               <div data-error={showErrors && fieldErrors.fixedAssets}>
-                <label style={components.form.label}>Collateral available</label>
+                <label style={components.form.label}>Fixed assets value for loan security</label>
                 <Select
                   id={getWizardFieldId("step1", "fixedAssets")}
                   value={app.kyc.availableCollateral || app.kyc.fixedAssets || ""}

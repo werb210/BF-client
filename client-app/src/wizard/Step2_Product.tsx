@@ -254,6 +254,25 @@ export function Step2_Product() {
     };
   }, []);
 
+  function selectCategory(category: string) {
+    // Auto-select the best matching product for this category
+    const match = filteredProducts.find(
+      (p) => (p.product_type ?? p.name) === category
+    );
+    update({
+      productCategory: category,
+      selectedProductType: category,
+      selectedProduct: match
+        ? { id: match.id, name: match.name, product_type: category, lender_id: match.lender_id }
+        : undefined,
+      selectedProductId: match?.id,
+      requires_closing_cost_funding: undefined,
+      documents: {},
+      documentsDeferred: false,
+    });
+    trackEvent("client_category_selected", { category });
+  }
+
   function select(product: ClientLenderProduct) {
     const category = product.product_type ?? product.name;
     trackEvent("client_product_selected", { productId: product.id, category });
@@ -460,278 +479,69 @@ export function Step2_Product() {
             <span style={components.form.helperText}>Loading product options…</span>
           </div>
         )}
-        {visibleCategorySummaries.length > 0 && (
-          <div
-            style={{
-              border: `1px solid ${tokens.colors.border}`,
-              borderRadius: tokens.radii.lg,
-              padding: tokens.spacing.md,
-              background: "rgba(11, 42, 74, 0.06)",
-            }}
-          >
-            <div style={components.form.eyebrow}>Product categories</div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: tokens.spacing.sm,
-              marginTop: tokens.spacing.sm,
-            }}
-          >
-              {visibleCategorySummaries.map((summary) => {
-                const amountTooLow =
-                  amountValue > 0 && summary.matchingCount === 0 &&
-                  amountValue < summary.minAmount;
-                const amountTooHigh =
-                  amountValue > 0 && summary.matchingCount === 0 &&
-                  amountValue > summary.maxAmount;
-                return (
-                  <div
-                    key={summary.category}
-                    style={{
-                      borderRadius: tokens.radii.md,
-                      border: `1px solid ${tokens.colors.border}`,
-                      background: tokens.colors.surface,
-                      padding: tokens.spacing.sm,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: tokens.spacing.xs,
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <div style={{ fontWeight: 600, color: tokens.colors.primary }}>
-                        {summary.category}
-                      </div>
-                      <span style={components.form.helperText}>
-                        {summary.matchingCount} match{summary.matchingCount === 1 ? "" : "es"}
-                      </span>
-                    </div>
-                    <div style={components.form.helperText}>
-                      Range: {formatAmount(summary.minAmount, countryCode)} to{" "}
-                      {formatAmount(summary.maxAmount, countryCode)} · {summary.totalCount} total
-                    </div>
-                    {(amountTooLow || amountTooHigh) && (
-                      <div style={{ ...components.form.helperText, color: tokens.colors.warning }}>
-                        {amountTooLow && "Requested amount is below the minimum for this category."}
-                        {amountTooHigh && "Requested amount is above the maximum for this category."}
-                        <div>
-                          Try between {formatAmount(summary.minAmount, countryCode)} and{" "}
-                          {formatAmount(summary.maxAmount, countryCode)}.
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
         {loadError && (
-          <Card variant="muted">
-            <EmptyState>{loadError}</EmptyState>
-          </Card>
+          <div style={components.form.errorText}>{loadError}</div>
         )}
-        {!loadError && noProducts && (
-          <Card variant="muted">
-            <EmptyState>
-              No products match your location. Review the category ranges above
-              for alternatives.
-            </EmptyState>
-          </Card>
+        {!isLoading && !loadError && visibleCategorySummaries.length === 0 && (
+          <EmptyState>No financing products are available for your location.</EmptyState>
         )}
-        {!loadError && !noProducts && (
-          <div style={layout.stack}>
+        {!isLoading && !loadError && visibleCategorySummaries.map((summary) => {
+          const isSelected = selectedCategory === summary.category;
+          const matchPct = app.matchPercentages?.[summary.category] ?? null;
+          return (
             <div
+              key={summary.category}
+              onClick={() => selectCategory(summary.category)}
               style={{
-                border: `1px solid ${tokens.colors.border}`,
-                borderRadius: tokens.radii.md,
-                padding: tokens.spacing.md,
-                background: tokens.colors.background,
-                fontSize: tokens.typography.body.fontSize,
-                color: tokens.colors.textSecondary,
+                border: `1px solid ${isSelected ? "#2563eb" : "#e5e7eb"}`,
+                borderRadius: 8,
+                padding: "16px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                background: isSelected ? "#eff6ff" : "#fff",
+                cursor: "pointer",
+                marginBottom: 8,
+                transition: "border-color 0.15s, background 0.15s",
               }}
             >
-              Requested amount:{" "}
-              <span style={{ color: tokens.colors.textPrimary, fontWeight: 600 }}>
-                {amountDisplay}
-              </span>
-              {selectedCategory && (
-                <div style={{ marginTop: tokens.spacing.xs }}>
-                  <span style={{ fontWeight: 600 }}>Matching products:</span>{" "}
-                  {matchingProducts.length} across {matchingLenderCount} lender
-                  {matchingLenderCount === 1 ? "" : "s"} for {selectedCategory}.
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
+                  {summary.category}
                 </div>
-              )}
-              {amountError && (
-                <div style={components.form.errorText}>{amountError}</div>
-              )}
-              {alternateCategory && (
-                <div style={{ ...components.form.helperText, color: tokens.colors.warning }}>
-                  Requested amount is below the minimum for {selectedCategory}.{" "}
-                  Consider {alternateCategory.category} starting at{" "}
-                  {formatAmount(alternateCategory.minAmount, countryCode)}.
+                <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
+                  {summary.totalCount} product{summary.totalCount !== 1 ? "s" : ""} available
+                  {matchPct !== null ? ` (Match score ${matchPct}%)` : ""}
                 </div>
-              )}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
-              {groupedProducts.map((group) => (
-                <div key={group.lenderId} style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      color: tokens.colors.textSecondary,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {group.lenderName}
+                {matchPct !== null && (
+                  <div style={{ fontSize: 13, color: "#374151", marginTop: 2 }}>
+                    {matchPct}% Match
                   </div>
-                  <div style={{ display: "grid", gap: tokens.spacing.md }}>
-                    {group.products.map((product) => {
-                      const isSelected = product.id === app.selectedProductId;
-                      const previewRequirements =
-                        app.productRequirements?.[product.id] || [];
-                      const previewRequired = filterRequirementsByAmount(
-                        previewRequirements as LenderProductRequirement[],
-                        app.kyc.fundingAmount
-                      ).filter((entry) => entry.required);
-                      const showPreview = isSelected && previewRequired.length > 0;
-                      return (
-                        <Card
-                          key={product.id}
-                          onClick={() => select(product)}
-                          style={{
-                            borderColor: isSelected
-                              ? tokens.colors.success
-                              : tokens.colors.border,
-                            boxShadow: isSelected
-                              ? "0 0 0 2px rgba(22, 163, 74, 0.24)"
-                              : tokens.shadows.card,
-                            cursor: "pointer",
-                            background: isSelected
-                              ? "rgba(22, 163, 74, 0.08)"
-                              : tokens.colors.surface,
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              justifyContent: "space-between",
-                              gap: tokens.spacing.md,
-                            }}
-                          >
-                            <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.xs }}>
-                              <div
-                                style={{
-                                  fontSize: tokens.typography.h2.fontSize,
-                                  fontWeight: tokens.typography.h2.fontWeight,
-                                  color: tokens.colors.textPrimary,
-                                }}
-                              >
-                                {product.name}
-                              </div>
-                              {product.product_type && (
-                                <div style={components.form.helperText}>
-                                  Type: {product.product_type}
-                                </div>
-                              )}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: tokens.spacing.sm,
-                                  fontSize: tokens.typography.helper.fontSize,
-                                  color: tokens.colors.textSecondary,
-                                }}
-                              >
-                                <span>Country: {product.country}</span>
-                                <span>
-                                  Min: {formatAmount(product.amount_min, countryCode)}
-                                </span>
-                                <span>
-                                  Max: {formatAmount(product.amount_max, countryCode)}
-                                </span>
-                                {product.term && <span>Term: {product.term}</span>}
-                                {product.rate && <span>Rate: {product.rate}</span>}
-                              </div>
-                              {isSelected && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.xs }}>
-                                  <div style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs }}>
-                                    <span style={{ fontWeight: 600 }}>
-                                      Documents Required
-                                    </span>
-                                    <span
-                                      style={{
-                                        padding: "2px 8px",
-                                        borderRadius: tokens.radii.pill,
-                                        fontSize: "12px",
-                                        fontWeight: 600,
-                                        background: "rgba(11, 42, 74, 0.12)",
-                                        color: tokens.colors.primary,
-                                        border: "1px solid rgba(11, 42, 74, 0.3)",
-                                      }}
-                                    >
-                                      {requiredDocuments.length}
-                                    </span>
-                                  </div>
-                                  {showPreview && (
-                                    <ul style={{ margin: 0, paddingLeft: "20px" }}>
-                                      {previewRequired.map((entry) => (
-                                        <li key={entry.id}>
-                                          {formatDocumentLabel(entry.document_type)}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                  {isSelected && previewRequired.length === 0 && (
-                                    <div style={components.form.helperText}>
-                                      No required documents listed for this product.
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: tokens.spacing.xs,
-                              }}
-                            >
-                              <input
-                                type="radio"
-                                checked={isSelected}
-                                onChange={() => select(product)}
-                                aria-label={`Select ${product.name}`}
-                              />
-                              {isSelected && (
-                                <span
-                                  style={{
-                                    padding: "6px 12px",
-                                    borderRadius: tokens.radii.pill,
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    background: "rgba(22, 163, 74, 0.12)",
-                                    color: "rgb(21 128 61)",
-                                    border: "1px solid rgba(22, 163, 74, 0.35)",
-                                  }}
-                                >
-                                  Selected
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectCategory(summary.category);
+                }}
+                style={{
+                  padding: "6px 18px",
+                  borderRadius: 6,
+                  border: `1px solid ${isSelected ? "#2563eb" : "#d1d5db"}`,
+                  background: isSelected ? "#2563eb" : "#fff",
+                  color: isSelected ? "#fff" : "#374151",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {isSelected ? "Selected" : "Select"}
+              </button>
             </div>
-          </div>
-        )}
+          );
+        })}
       </Card>
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
@@ -747,9 +557,9 @@ export function Step2_Product() {
             style={{ width: "100%", maxWidth: "200px" }}
             onClick={goNext}
             disabled={
-              !selectedProduct ||
+              !selectedCategory ||
               Boolean(loadError) ||
-              noProducts
+              (!isLoading && visibleCategorySummaries.length === 0)
             }
           >
             Continue
