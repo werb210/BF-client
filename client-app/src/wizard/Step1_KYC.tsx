@@ -513,64 +513,6 @@ fixedAssets:
             {autosaveError}
           </Card>
         )}
-        {readinessEnabled && (
-          <Card
-            variant="muted"
-            style={{
-              border: `1px solid ${tokens.colors.primary}`,
-              background: "rgba(14, 165, 233, 0.1)",
-              marginBottom: tokens.spacing.md,
-            }}
-          >
-            <strong>Continuing your application</strong>
-            <div>We've loaded the details from your readiness session.</div>
-          </Card>
-        )}
-
-        <Card
-          variant="muted"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: tokens.spacing.xs,
-            marginBottom: tokens.spacing.md,
-          }}
-        >
-          {readinessEnabled && (
-            <div
-              style={{
-                display: "inline-flex",
-                width: "fit-content",
-                padding: "4px 10px",
-                borderRadius: tokens.radii.pill,
-                background: "rgba(14, 165, 233, 0.14)",
-                color: tokens.colors.primary,
-                fontWeight: 600,
-                fontSize: "12px",
-              }}
-            >
-              Pre-qualified via Capital Readiness
-            </div>
-          )}
-          {app.kyc.industry && (
-            <div className="text-sm text-neutral-400">Industry: {app.kyc.industry}</div>
-          )}
-          {app.kyc.salesHistory && (
-            <div className="text-sm text-neutral-400">Years in business: {app.kyc.salesHistory}</div>
-          )}
-          {app.kyc.monthlyRevenue && (
-            <div className="text-sm text-neutral-400">Monthly revenue: {app.kyc.monthlyRevenue}</div>
-          )}
-          {app.kyc.revenueLast12Months && (
-            <div className="text-sm text-neutral-400">Annual revenue: {app.kyc.revenueLast12Months}</div>
-          )}
-          {app.kyc.accountsReceivable && (
-            <div className="text-sm text-neutral-400">AR outstanding: {app.kyc.accountsReceivable}</div>
-          )}
-          {app.kyc.collateral !== undefined && app.kyc.collateral !== null && (
-            <div className="text-sm text-neutral-400">Collateral: {String(app.kyc.collateral)}</div>
-          )}
-        </Card>
         <Card
           style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}
           onBlurCapture={() => saveStepData(1, app.kyc)}
