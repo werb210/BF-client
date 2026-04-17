@@ -177,7 +177,6 @@ export function Step1_KYC(): JSX.Element {
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
   );
-  const readinessEnabled = Boolean(readiness);
   useEffect(() => {
     if (app.currentStep !== 1) {
       update({ currentStep: 1 });
