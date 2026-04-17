@@ -36,7 +36,6 @@ import { getEligibilityResult } from "../lender/eligibility";
 import type { NormalizedLenderProduct } from "../lender/eligibility";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
-import CapitalReadinessModal from "../components/CapitalReadinessModal";
 import { trackEvent } from "../utils/analytics";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
@@ -55,7 +54,6 @@ export function Step2_Product() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showClosingModal, setShowClosingModal] = useState(false);
-  const [showReadinessModal, setShowReadinessModal] = useState(false);
   const [closingError, setClosingError] = useState<string | null>(null);
   const [closingBusy, setClosingBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -466,12 +464,6 @@ export function Step2_Product() {
           <div style={components.form.errorText}>{saveError}</div>
         </Card>
       )}
-      <div style={{ marginBottom: tokens.spacing.sm }}>
-        <Button type="button" variant="secondary" onClick={() => setShowReadinessModal(true)}>
-          Check capital readiness
-        </Button>
-      </div>
-
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
         {isLoading && (
           <div style={{ display: "flex", alignItems: "center", gap: tokens.spacing.sm }}>
@@ -620,14 +612,6 @@ export function Step2_Product() {
           </div>
         </div>
       )}
-      <CapitalReadinessModal
-        isOpen={showReadinessModal}
-        onClose={() => setShowReadinessModal(false)}
-        onContinueApplication={(score) => {
-          update({ readinessScore: score });
-          setShowReadinessModal(false);
-        }}
-      />
     </WizardLayout>
     </div>
     </div>
