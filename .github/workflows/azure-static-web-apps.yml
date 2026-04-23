@@ -12,33 +12,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node 20
+      - name: Use Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install deps
-        working-directory: client-app
-        run: npm ci
+        run: |
+          cd client-app
+          npm ci
 
       - name: Build app
-        working-directory: client-app
-        run: npm run build
-
-      - name: Verify build output
         run: |
-          test -f client-app/dist/index.html
-          ls -la client-app/dist
+          cd client-app
+          npm run build
 
-      # CRITICAL: disable Oryx + force direct upload
-      - name: Deploy to Azure Static Web Apps
+      - name: Deploy (NO ORYX BUILD)
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "client-app"
-          output_location: "dist"
+
+          # CRITICAL: point directly to built output
+          app_location: "client-app/dist"
+
+          # CRITICAL: disable Azure build completely
           skip_app_build: true
-          skip_api_build: true
-          is_static_export: true
