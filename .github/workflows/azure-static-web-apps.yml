@@ -9,6 +9,10 @@ jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./client-app
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,24 +22,24 @@ jobs:
           node-version: 20
 
       - name: Install deps
-        run: |
-          cd client-app
-          npm ci
+        run: npm ci
 
-      - name: Build app
-        run: |
-          cd client-app
-          npm run build
+      - name: Build
+        run: npm run build
 
-      - name: Deploy (NO ORYX BUILD)
+      - name: Check build size
+        run: |
+          echo "File count:"
+          find dist | wc -l
+          echo "Total size:"
+          du -sh dist
+
+      - name: Deploy (NO ORYX)
         uses: Azure/static-web-apps-deploy@v1
         with:
+          action: "upload"
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
 
-          # CRITICAL: point directly to built output
           app_location: "client-app/dist"
-
-          # CRITICAL: disable Azure build completely
           skip_app_build: true
