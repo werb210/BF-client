@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node
+      - name: Use Node 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -29,13 +29,8 @@ jobs:
         run: |
           test -f client-app/dist/index.html
           ls -la client-app/dist
-          find client-app/dist -maxdepth 2 -type f | sort
 
-      - name: Artifact size check
-        run: |
-          du -sh client-app/dist
-          find client-app/dist -type f | wc -l
-
+      # CRITICAL: disable Oryx + force direct upload
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -44,6 +39,6 @@ jobs:
           action: "upload"
           app_location: "client-app"
           output_location: "dist"
-          api_location: ""
+          skip_app_build: true
           skip_api_build: true
-          production_branch: "main"
+          is_static_export: true
