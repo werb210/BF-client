@@ -4,7 +4,6 @@ import { BrowserRouter } from "react-router-dom";
 import "./styles/global.css";
 import App from "./App";
 import { validateEnv } from "./env";
-import { registerServiceWorker } from "./pwa/serviceWorker";
 
 try {
   validateEnv();
@@ -22,7 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>
 );
 
-// Register the service worker AFTER React mounts so the first paint is never blocked.
-if (import.meta.env.PROD) {
-  registerServiceWorker();
-}
+// Temporarily disabled while SWA deployment is stabilized.
+// if (import.meta.env.PROD) {
+//   registerServiceWorker();
+// }
