@@ -29,6 +29,10 @@ export async function fetchApplicationContinuation() {
 }
 
 export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
+  if (!isServerApplicationId(payload.applicationId)) {
+    return;
+  }
+
   // PATCH the application metadata with the step data
   // Only called when applicationId exists (steps 4+)
   try {
@@ -38,17 +42,28 @@ export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
     });
   } catch (err: any) {
     const message = String(err?.message ?? "").toLowerCase();
+    const isStaleToken =
+      err?.status === 410 ||
+      err?.code === "application_token_stale" ||
+      message.includes("410") ||
+      message.includes("application_token_stale");
     const isNotFound =
       message.includes("404") ||
       message.includes("not found") ||
       message.includes("application not found");
-    if (isNotFound) {
+    if (isStaleToken || isNotFound) {
       clearStaleApplicationToken();
       console.debug("[autosave] stale application cleared");
     }
 
     // autosave is best-effort; swallow error
   }
+}
+
+function isServerApplicationId(applicationId: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    applicationId
+  );
 }
 
 function clearStaleApplicationToken() {
