@@ -108,7 +108,17 @@ export default function OtpPage() {
         ) : (
           <div style={components.form.fieldStack}>
             <label style={components.form.label}>Verification Code</label>
-            <OtpInput length={6} onComplete={(value) => { setCode(value); void handleVerify(value); }} autoFocus />
+            <OtpInput
+              length={6}
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              pattern="\\d{4,8}"
+              onComplete={(value) => {
+                setCode(value);
+                void handleVerify(value);
+              }}
+              autoFocus
+            />
             {error && <p style={components.form.errorText}>{error}</p>}
             <button
               onClick={() => void handleVerify(code)}
