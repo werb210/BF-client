@@ -3,12 +3,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import debounce from "lodash.debounce";
 import { OfflineStore } from "./offline";
 import { ApplicationData } from "../types/application";
-import { clearDraft } from "../client/autosave";
+import { clearDraft, patchApplication } from "../client/autosave";
 import { clearSubmissionIdempotencyKey } from "../client/submissionIdempotency";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { getSessionId, trackEvent } from "../utils/analytics";
 import { loadLocalBackup, useLocalBackup } from "../system/useLocalBackup";
-import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { emptyApplicationDraft } from "../constants/applicationDraft";
 import { hasToken } from "@/api/auth";
@@ -211,11 +210,8 @@ export function useApplicationStore() {
         if (!state.applicationToken || typeof state.applicationToken !== "string") return;
         if (state.applicationToken.length < 10) return;
         if (!hasActiveAuthSession()) return;
-        await apiCall(`/api/client/applications/${state.applicationToken}`, {
-          method: "PATCH",
-          body: JSON.stringify({
-            metadata: { draft: { step: state.currentStep } },
-          }),
+        await patchApplication(state.applicationToken, {
+          metadata: { draft: { step: state.currentStep } },
         }).catch(() => {
           // Silent — autosave is best-effort
         });

@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FundingIntent } from "../../constants/wizard";
 import { getStepFieldKeys } from "../wizardSchema";
 
 describe("wizardSchema", () => {
-  it("orders step 1 fields and applies conditional finance fields", () => {
+  it("orders all 10 step 1 fields for any funding intent", () => {
     const workingCapital = getStepFieldKeys("step1", {
-      kyc: { lookingFor: FundingIntent.WORKING_CAPITAL },
+      kyc: { lookingFor: "Working Capital" },
     });
     expect(workingCapital).toEqual([
       "lookingFor",
@@ -17,10 +16,11 @@ describe("wizardSchema", () => {
       "revenueLast12Months",
       "monthlyRevenue",
       "accountsReceivable",
+      "fixedAssets",
     ]);
 
     const equipment = getStepFieldKeys("step1", {
-      kyc: { lookingFor: FundingIntent.EQUIPMENT },
+      kyc: { lookingFor: "Equipment" },
     });
     expect(equipment).toEqual([
       "lookingFor",
@@ -31,13 +31,28 @@ describe("wizardSchema", () => {
       "salesHistory",
       "revenueLast12Months",
       "monthlyRevenue",
+      "accountsReceivable",
       "fixedAssets",
     ]);
 
     const both = getStepFieldKeys("step1", {
-      kyc: { lookingFor: FundingIntent.BOTH },
+      kyc: { lookingFor: "Both" },
     });
     expect(both).toEqual([
+      "lookingFor",
+      "fundingAmount",
+      "businessLocation",
+      "industry",
+      "purposeOfFunds",
+      "salesHistory",
+      "revenueLast12Months",
+      "monthlyRevenue",
+      "accountsReceivable",
+      "fixedAssets",
+    ]);
+
+    const undefinedIntent = getStepFieldKeys("step1", { kyc: {} });
+    expect(undefinedIntent).toEqual([
       "lookingFor",
       "fundingAmount",
       "businessLocation",

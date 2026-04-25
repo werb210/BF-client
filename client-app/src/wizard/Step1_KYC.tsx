@@ -22,7 +22,6 @@ import { components, layout, scrollToFirstError, tokens } from "@/styles";
 import { loadStepData, mergeDraft, saveStepData } from "../client/autosave";
 import {
   getNextFieldKey,
-  getStepFieldKeys,
   getWizardFieldId,
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
@@ -52,7 +51,12 @@ const MatchBaselines: Record<string, number> = {
 const BusinessLocationOptions = ["Canada", "United States", "Other"];
 
 
-const PurposeOptions = ["Working Capital", "Expansion"];
+const PurposeOptions = [
+  "Working Capital",
+  "Funds to cover A/R",
+  "Buy Inventory",
+  "Expansion",
+];
 
 const SalesHistoryOptions = [
   "Zero",
@@ -170,6 +174,11 @@ export function Step1_KYC(): JSX.Element {
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
   );
+  const sessionExpired = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("reason") === "session_expired";
+  }, []);
   useEffect(() => {
     if (app.currentStep !== 1) {
       update({ currentStep: 1 });
@@ -372,14 +381,6 @@ fixedAssets:
     }
   }, [showErrors]);
 
-  const stepFields = useMemo(
-    () => getStepFieldKeys("step1", { kyc: app.kyc }),
-    [app.kyc]
-  );
-  const shouldShowAccountsReceivable =
-    stepFields.includes("accountsReceivable");
-  const shouldShowFixedAssets = stepFields.includes("fixedAssets");
-
   function getStepErrors(values: Record<string, any>) {
     return {
       lookingFor: !Validate.required(values.lookingFor),
@@ -392,10 +393,8 @@ fixedAssets:
       salesHistory: !Validate.required(values.salesHistory),
       revenueLast12Months: !Validate.required(values.revenueLast12Months),
       monthlyRevenue: !Validate.required(values.monthlyRevenue),
-      accountsReceivable:
-        shouldShowAccountsReceivable && !Validate.required(values.accountsReceivable),
-      fixedAssets:
-        shouldShowFixedAssets && !Validate.required(values.fixedAssets),
+      accountsReceivable: !Validate.required(values.accountsReceivable),
+      fixedAssets: !Validate.required(values.fixedAssets),
     };
   }
 
@@ -503,6 +502,17 @@ fixedAssets:
             }}
           >
             {autosaveError}
+          </Card>
+        )}
+        {sessionExpired && (
+          <Card
+            variant="muted"
+            style={{
+              background: "rgba(245, 158, 11, 0.12)",
+              color: tokens.colors.textPrimary,
+            }}
+          >
+            Your previous session expired. Please start again — we kept things short.
           </Card>
         )}
         <Card
@@ -785,7 +795,6 @@ fixedAssets:
                 <div style={components.form.errorText}>Select monthly revenue.</div>
               )}
             </div>
-              {shouldShowAccountsReceivable && (
               <div data-error={showErrors && fieldErrors.accountsReceivable}>
                 <label style={components.form.label}>Current AR balance</label>
                 <Select
@@ -824,9 +833,7 @@ fixedAssets:
                   </div>
                 )}
               </div>
-            )}
 
-            {shouldShowFixedAssets && (
               <div data-error={showErrors && fieldErrors.fixedAssets}>
                 <label style={components.form.label}>Fixed assets value for loan security</label>
                 <Select
@@ -856,7 +863,6 @@ fixedAssets:
                   </div>
                 )}
               </div>
-            )}
           </div>
         </Card>
 

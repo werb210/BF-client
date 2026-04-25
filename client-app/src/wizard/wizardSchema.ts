@@ -1,5 +1,3 @@
-import { FundingIntent, normalizeFundingIntent } from "../constants/wizard";
-
 export type WizardStepKey = "step1" | "step3" | "step4";
 
 export type WizardFieldMeta = {
@@ -14,21 +12,6 @@ export type WizardSchemaContext = {
   kyc?: Record<string, any>;
   business?: Record<string, any>;
   applicant?: Record<string, any>;
-};
-
-const isAccountsReceivableIntent = (intent?: string) => {
-  const normalized = normalizeFundingIntent(intent);
-  return (
-    normalized === FundingIntent.WORKING_CAPITAL ||
-    normalized === FundingIntent.BOTH
-  );
-};
-
-const isFixedAssetsIntent = (intent?: string) => {
-  const normalized = normalizeFundingIntent(intent);
-  return (
-    normalized === FundingIntent.EQUIPMENT || normalized === FundingIntent.BOTH
-  );
 };
 
 export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> = {
@@ -46,13 +29,11 @@ export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> 
         key: "accountsReceivable",
         required: true,
         autoAdvance: true,
-        conditional: ({ kyc }) => isAccountsReceivableIntent(kyc?.lookingFor),
       },
       {
         key: "fixedAssets",
         required: true,
         autoAdvance: true,
-        conditional: ({ kyc }) => isFixedAssetsIntent(kyc?.lookingFor),
       },
     ],
   },
