@@ -1,16 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type HTMLAttributes } from "react";
 import { components, tokens, behaviors } from "@/styles";
 
 type OtpInputProps = {
   length?: number;
   onComplete: (code: string) => void;
   autoFocus?: boolean;
+  autoComplete?: string;
+  inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
+  pattern?: string;
 };
 
 export function OtpInput({
   length = behaviors.otp.length,
   onComplete,
   autoFocus = behaviors.otp.autoFocus,
+  autoComplete = "one-time-code",
+  inputMode = "numeric",
+  pattern = "\\d*",
 }: OtpInputProps) {
   const [values, setValues] = useState<string[]>(() =>
     Array.from({ length }, () => "")
@@ -108,9 +114,9 @@ export function OtpInput({
             inputsRef.current[index] = el;
           }}
           type="text"
-          inputMode="numeric"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
-          pattern="\d*"
+          inputMode={inputMode}
+          autoComplete={index === 0 ? autoComplete : "off"}
+          pattern={pattern}
           maxLength={1}
           value={values[index]}
           onChange={(event) => handleChange(index, event.target.value)}
