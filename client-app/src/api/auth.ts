@@ -12,10 +12,22 @@ export function sendOtp(phone: string) {
 }
 
 export async function verifyOtp(phone: string, code: string) {
-  const data = await apiRequest<{ token?: string }>(endpoints.otpVerify, {
-    method: "POST",
-    body: { phone, code },
-  });
+  let data: { token?: string };
+  try {
+    data = await apiRequest<{ token?: string }>(endpoints.otpVerify, {
+      method: "POST",
+      body: { phone, code },
+    });
+  } catch (error: any) {
+    if (error?.status === 401) {
+      const expiredError = new Error("Code expired or incorrect. Request a new code.") as Error & {
+        status?: number;
+      };
+      expiredError.status = 401;
+      throw expiredError;
+    }
+    throw error;
+  }
 
   if (data?.token) {
     setToken(data.token);

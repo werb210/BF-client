@@ -41,6 +41,7 @@ import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
 import { persistApplicationStep } from "./saveStepProgress";
+import { dedupeProductsByBucket, type BucketId } from "./categoryAliases";
 
 function formatAmount(amount: number | null | undefined, countryCode: string) {
   if (typeof amount !== "number") return "N/A";
@@ -57,6 +58,12 @@ export function Step2_Product() {
   const [closingError, setClosingError] = useState<string | null>(null);
   const [closingBusy, setClosingBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [selectedBucket, setSelectedBucket] = useState<BucketId | null>(
+    app.productCategory ? (app.productCategory as BucketId) : null
+  );
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(
+    app.selectedProductId ? [app.selectedProductId] : []
+  );
   const countryCode = useMemo(
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
@@ -252,11 +259,12 @@ export function Step2_Product() {
     };
   }, []);
 
-  function selectCategory(category: string) {
-    // Auto-select the best matching product for this category
-    const match = filteredProducts.find(
+  function selectCategory(category: string, productIds?: string[]) {
+    const matches = filteredProducts.filter(
       (p) => (p.product_type ?? p.name) === category
     );
+    const match = matches[0];
+    const ids = productIds && productIds.length ? productIds : matches.map((product) => product.id);
     update({
       productCategory: category,
       selectedProductType: category,
@@ -268,6 +276,8 @@ export function Step2_Product() {
       documents: {},
       documentsDeferred: false,
     });
+    setSelectedBucket(category as BucketId);
+    setSelectedProductIds(ids);
     trackEvent("client_category_selected", { category });
   }
 
@@ -295,7 +305,7 @@ export function Step2_Product() {
   }
 
   function goNext() {
-    if (!selectedProduct || loadError) {
+    if (!selectedCategory || loadError) {
       return;
     }
     if (
@@ -328,7 +338,12 @@ export function Step2_Product() {
       .then(() => {
         setSaveError(null);
         track("step_completed", { step: 2 });
-        navigate("/apply/step-3");
+        navigate("/apply/step-3", {
+          state: {
+            bucket: selectedBucket || selectedCategory,
+            productIds: selectedProductIds,
+          },
+        });
       })
       .catch(() => {
         setSaveError("We couldn't save this step. Please try again.");
@@ -347,7 +362,8 @@ export function Step2_Product() {
       const token = await createLinkedApplication(
         app.applicationToken,
         app.kyc,
-        "closing_costs"
+        "closing_costs",
+        app.applicationId
       );
       update({
         linkedApplicationTokens: [
@@ -368,9 +384,16 @@ export function Step2_Product() {
       setShowClosingModal(false);
       setSaveError(null);
       track("step_completed", { step: 2 });
-      navigate("/apply/step-3");
-    } catch {
-      setClosingError("Unable to create the linked application. Try again.");
+      navigate("/apply/step-3", {
+        state: {
+          bucket: selectedBucket || selectedCategory,
+          productIds: selectedProductIds,
+        },
+      });
+    } catch (error: any) {
+      setClosingError(
+        error?.message || "Could not create the linked application. Try again."
+      );
     } finally {
       setClosingBusy(false);
     }
@@ -389,7 +412,12 @@ export function Step2_Product() {
         setSaveError(null);
         setShowClosingModal(false);
         track("step_completed", { step: 2 });
-        navigate("/apply/step-3");
+        navigate("/apply/step-3", {
+          state: {
+            bucket: selectedBucket || selectedCategory,
+            productIds: selectedProductIds,
+          },
+        });
       })
       .catch(() => {
         setSaveError("We couldn't save this step. Please try again.");
@@ -399,6 +427,16 @@ export function Step2_Product() {
   const filteredProducts = useMemo(
     () => products.filter((product) => matchesCountry(product.country, countryCode)),
     [countryCode, products]
+  );
+  const categoryBuckets = useMemo(
+    () =>
+      dedupeProductsByBucket(
+        filteredProducts.map((product) => ({
+          ...product,
+          category: product.product_type ?? product.name,
+        }))
+      ),
+    [filteredProducts]
   );
   const matchingProducts = useMemo(() => {
     return getMatchingProducts(
@@ -449,6 +487,11 @@ export function Step2_Product() {
     }
   }, [app.selectedProductId, filteredProducts, update]);
 
+  useEffect(() => {
+    if (!selectedCategory) return;
+    setSelectedBucket(selectedCategory as BucketId);
+  }, [selectedCategory]);
+
   return (
     <div style={{ minHeight: "100vh", background: "#f3f4f6", padding: "0 0 48px" }}>
       <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
@@ -477,13 +520,14 @@ export function Step2_Product() {
         {!isLoading && !loadError && visibleCategorySummaries.length === 0 && (
           <EmptyState>No financing products are available for your location.</EmptyState>
         )}
-        {!isLoading && !loadError && visibleCategorySummaries.map((summary) => {
-          const isSelected = selectedCategory === summary.category;
-          const matchPct = app.matchPercentages?.[summary.category] ?? null;
+        {!isLoading && !loadError && categoryBuckets.map((bucket) => {
+          const category = bucket.bucket;
+          const isSelected = selectedBucket === category || selectedCategory === category;
+          const matchPct = app.matchPercentages?.[category] ?? null;
           return (
             <div
-              key={summary.category}
-              onClick={() => selectCategory(summary.category)}
+              key={bucket.bucket}
+              onClick={() => selectCategory(category, bucket.products.map((product) => product.id))}
               style={{
                 border: `1px solid ${isSelected ? "#2563eb" : "#e5e7eb"}`,
                 borderRadius: 8,
@@ -499,10 +543,10 @@ export function Step2_Product() {
             >
               <div>
                 <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
-                  {summary.category}
+                  {bucket.label}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
-                  {summary.totalCount} product{summary.totalCount !== 1 ? "s" : ""} available
+                  {bucket.products.length} product{bucket.products.length !== 1 ? "s" : ""} available
                   {matchPct !== null ? ` (Match score ${matchPct}%)` : ""}
                 </div>
                 {matchPct !== null && (
@@ -515,7 +559,7 @@ export function Step2_Product() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  selectCategory(summary.category);
+                  selectCategory(category, bucket.products.map((product) => product.id));
                 }}
                 style={{
                   padding: "6px 18px",
@@ -549,9 +593,9 @@ export function Step2_Product() {
             style={{ width: "100%", maxWidth: "200px" }}
             onClick={goNext}
             disabled={
-              !selectedCategory ||
+              !selectedBucket ||
               Boolean(loadError) ||
-              (!isLoading && visibleCategorySummaries.length === 0)
+              (!isLoading && categoryBuckets.length === 0)
             }
           >
             Continue

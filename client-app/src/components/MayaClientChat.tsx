@@ -1,243 +1,269 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { QualificationSummary } from "./QualificationSummary";
-import { StartupWaitlistForm } from "./StartupWaitlistForm";
-import { useMayaSession } from "../store/mayaSession";
-import api from "@/api/client";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { submitIssueReport } from "@/api/issues";
+import { apiRequest } from "@/lib/api";
 
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt: number;
-  optimistic?: boolean;
-};
+type Msg = { role: "user" | "maya"; text: string; ts: number };
+const GREETING = "👋 Hi, I'm Maya. How can I help with your application?";
 
-type MayaMessage = {
-  id?: string | number;
-  role?: string;
-  content?: string;
-  message?: string;
-  createdAt?: string | number;
-  created_at?: string | number;
-};
-
-function toMayaMessageList(data: unknown): MayaMessage[] {
-  if (typeof data === "object" && data !== null && "messages" in data) {
-    const maybeMessages = (data as { messages?: unknown }).messages;
-    return Array.isArray(maybeMessages) ? (maybeMessages as MayaMessage[]) : [];
-  }
-  return Array.isArray(data) ? (data as MayaMessage[]) : [];
-}
-
-function mapMessages(entries: MayaMessage[]): ChatMessage[] {
-  return entries.map((entry: MayaMessage, index: number) => ({
-    id: String(entry.id || `${index}`),
-    role: entry.role === "assistant" ? "assistant" : "user",
-    content: String(entry.content || entry.message || ""),
-    createdAt: new Date(entry.createdAt || entry.created_at || Date.now()).getTime(),
-  }));
-}
-
-export default function MayaClientChat({
-  applicationId,
-  initialGreeting,
-}: {
-  applicationId?: string | null;
-  initialGreeting?: string;
-}) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function MayaClientChat({ onClose }: { onClose: () => void }) {
+  const [msgs, setMsgs] = useState<Msg[]>([
+    { role: "maya", text: GREETING, ts: Date.now() },
+  ]);
   const [input, setInput] = useState("");
-  const [showStartupWaitlist] = useState(false);
   const [sending, setSending] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [typing, setTyping] = useState(false);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  const setField = useMayaSession((state) => state.setField);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-    const onResize = () => {
-      const diff = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      setKeyboardHeight(diff);
-    };
-    viewport.addEventListener("resize", onResize);
-    viewport.addEventListener("scroll", onResize);
-    onResize();
-    return () => {
-      viewport.removeEventListener("resize", onResize);
-      viewport.removeEventListener("scroll", onResize);
-    };
-  }, []);
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs]);
 
-  useEffect(() => {
-    if (!initialGreeting) return;
-
-    setMessages((prev) => {
-      if (prev.length > 0) return prev;
-      return [
-        {
-          id: `greeting-${Date.now()}`,
-          role: "assistant",
-          content: initialGreeting,
-          createdAt: Date.now(),
-        },
-      ];
-    });
-  }, [initialGreeting]);
-
-  const sortedMessages = useMemo(
-    () => [...messages].sort((a, b) => a.createdAt - b.createdAt),
-    [messages]
-  );
-
-  useEffect(() => {
-    if (!scrollerRef.current) return;
-    scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
-  }, [sortedMessages, keyboardHeight, typing]);
-
-  useEffect(() => {
-    if (!applicationId) return;
-    let active = true;
-
-    const load = async () => {
-      try {
-        const response = await api.get(`/api/messages/${applicationId}`);
-        const { data } = response;
-        if (!active) return;
-        const mappedMessages = mapMessages(toMayaMessageList(data));
-
-        if (mappedMessages.length === 0 && initialGreeting) {
-          setMessages([
-            {
-              id: `greeting-${Date.now()}`,
-              role: "assistant",
-              content: initialGreeting,
-              createdAt: Date.now(),
-            },
-          ]);
-          return;
-        }
-
-        setMessages(mappedMessages);
-      } catch {
-        // noop
-      }
-    };
-
-    void load();
-    const timer = window.setInterval(load, 5000);
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-    };
-  }, [applicationId, initialGreeting]);
-
-  async function sendMessage() {
-    if (!input.trim() || !applicationId || sending) return;
-
-    const nextMessage = input.trim();
-    const optimisticId = `tmp-${Date.now()}`;
-    const optimisticMessage: ChatMessage = {
-      id: optimisticId,
-      role: "user",
-      content: nextMessage,
-      createdAt: Date.now(),
-      optimistic: true,
-    };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
+  async function send() {
+    const text = input.trim();
+    if (!text || sending) return;
     setInput("");
+    setMsgs((prev) => [...prev, { role: "user", text, ts: Date.now() }]);
     setSending(true);
-    setTyping(true);
-
     try {
-      await api.post("/api/messages", {
-        applicationId,
-        message: nextMessage,
-      });
-
-      const response = await api.get(`/api/messages/${applicationId}`);
-      const { data } = response;
-      const mappedMessages = mapMessages(toMayaMessageList(data));
-      setMessages(mappedMessages);
-      setField("last_message", nextMessage);
+      const response = (await apiRequest("/api/maya/message", {
+        method: "POST",
+        body: { message: text, source: "client" },
+      })) as any;
+      const reply = response?.reply ?? "I'm here — what would you like to know?";
+      setMsgs((prev) => [...prev, { role: "maya", text: reply, ts: Date.now() }]);
     } catch {
-      setMessages((prev) =>
-        prev.map((item) => (item.id === optimisticId ? { ...item, optimistic: false } : item))
-      );
+      setMsgs((prev) => [
+        ...prev,
+        {
+          role: "maya",
+          text: "I'm having trouble — want me to connect you to a human?",
+          ts: Date.now(),
+        },
+      ]);
     } finally {
       setSending(false);
-      setTyping(false);
+    }
+  }
+
+  async function escalate() {
+    try {
+      await apiRequest("/api/maya/escalate", {
+        method: "POST",
+        body: { reason: "user_requested_human" },
+      });
+      setMsgs((prev) => [
+        ...prev,
+        { role: "maya", text: "✓ A team member has been notified.", ts: Date.now() },
+      ]);
+    } catch {
+      setMsgs((prev) => [
+        ...prev,
+        { role: "maya", text: "Couldn't reach the team. Please try again.", ts: Date.now() },
+      ]);
+    }
+  }
+
+  async function report() {
+    const message = reportText.trim();
+    if (!message) return;
+    try {
+      await submitIssueReport({ message });
+      setReportOpen(false);
+      setReportText("");
+      setMsgs((prev) => [
+        ...prev,
+        { role: "maya", text: "✓ Thanks — we got your report.", ts: Date.now() },
+      ]);
+    } catch {
+      setMsgs((prev) => [...prev, { role: "maya", text: "Report failed.", ts: Date.now() }]);
     }
   }
 
   return (
     <div
-      id="portal-messages"
       style={{
-        height: "100%",
+        position: "fixed",
+        bottom: 90,
+        right: 24,
+        width: 360,
+        height: 520,
+        background: "#fff",
+        color: "#000",
+        borderRadius: 12,
+        boxShadow: "0 16px 40px rgba(0,0,0,0.18)",
         display: "flex",
         flexDirection: "column",
+        zIndex: 1000,
+        border: "1px solid #e2e8f0",
       }}
     >
       <div
-        ref={scrollerRef}
-        style={{ flex: 1, overflowY: "auto", padding: "12px 12px 8px" }}
-        aria-live="polite"
-      >
-        {sortedMessages.map((message) => (
-          <div
-            key={message.id}
-            style={{
-              marginBottom: 8,
-              display: "flex",
-              justifyContent: message.role === "user" ? "flex-end" : "flex-start",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: "85%",
-                padding: "8px 10px",
-                borderRadius: 10,
-                background: message.role === "assistant" ? "#f3f4f6" : "#2563eb",
-                color: message.role === "assistant" ? "#111827" : "#fff",
-                fontSize: 14,
-              }}
-            >
-              {message.content}
-            </div>
-          </div>
-        ))}
-        {typing ? <div style={{ opacity: 0.7 }}>Staff is typing…</div> : null}
-      </div>
-
-      <div
         style={{
-          borderTop: "1px solid #e5e7eb",
-          padding: "8px 12px",
-          paddingBottom: keyboardHeight ? 8 : 8,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: 12,
+          borderBottom: "1px solid #e2e8f0",
+          fontWeight: 600,
         }}
       >
-        <input
-          aria-label="Message input"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
+        Maya
+        <button
+          onClick={onClose}
+          aria-label="Close"
           style={{
-            width: "75%",
-            padding: "8px",
-            border: "1px solid #d1d5db",
-            borderRadius: 8,
-            marginRight: 8,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 20,
+            color: "#000",
           }}
-        />
-        <button onClick={sendMessage} disabled={sending}>
-          Send
+        >
+          ×
         </button>
       </div>
-
-      <QualificationSummary />
-      {showStartupWaitlist && <StartupWaitlistForm />}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: 12,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        {msgs.map((message) => (
+          <div
+            key={message.ts}
+            style={{
+              alignSelf: message.role === "user" ? "flex-end" : "flex-start",
+              background: message.role === "user" ? "#2563eb" : "#f1f5f9",
+              color: message.role === "user" ? "#fff" : "#000",
+              padding: "8px 12px",
+              borderRadius: 12,
+              maxWidth: "85%",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {message.text}
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+      {reportOpen && (
+        <div style={{ padding: 12, borderTop: "1px solid #e2e8f0" }}>
+          <textarea
+            value={reportText}
+            onChange={(event) => setReportText(event.target.value)}
+            rows={3}
+            placeholder="Describe the issue…"
+            style={{
+              width: "100%",
+              padding: 8,
+              color: "#000",
+              background: "#fff",
+              border: "1px solid #cbd6e2",
+              borderRadius: 4,
+            }}
+          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
+            <button onClick={() => setReportOpen(false)} style={cancelBtn}>
+              Cancel
+            </button>
+            <button onClick={report} disabled={!reportText.trim()} style={primaryBtn}>
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+      <div style={{ padding: 12, borderTop: "1px solid #e2e8f0" }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                void send();
+              }
+            }}
+            placeholder="Ask Maya anything…"
+            disabled={sending}
+            style={{
+              flex: 1,
+              padding: 8,
+              border: "1px solid #cbd6e2",
+              borderRadius: 4,
+              color: "#000",
+              background: "#fff",
+            }}
+          />
+          <button
+            onClick={() => {
+              void send();
+            }}
+            disabled={!input.trim() || sending}
+            style={primaryBtn}
+          >
+            Send
+          </button>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginTop: 8,
+          }}
+        >
+          <button onClick={escalate} style={ghostBtn}>
+            Talk to Human
+          </button>
+          <button onClick={() => setReportOpen((prev) => !prev)} style={ghostBtnDanger}>
+            Report Issue
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
+const primaryBtn: CSSProperties = {
+  background: "#2563eb",
+  color: "#fff",
+  border: "none",
+  padding: "8px 16px",
+  borderRadius: 4,
+  cursor: "pointer",
+};
+const cancelBtn: CSSProperties = {
+  background: "#fff",
+  color: "#000",
+  border: "1px solid #cbd6e2",
+  padding: "8px 16px",
+  borderRadius: 4,
+  cursor: "pointer",
+};
+const ghostBtn: CSSProperties = {
+  background: "#fff",
+  color: "#2563eb",
+  border: "1px solid #2563eb",
+  padding: "8px",
+  borderRadius: 4,
+  cursor: "pointer",
+};
+const ghostBtnDanger: CSSProperties = {
+  background: "#fff",
+  color: "#dc2626",
+  border: "1px solid #dc2626",
+  padding: "8px",
+  borderRadius: 4,
+  cursor: "pointer",
+};

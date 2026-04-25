@@ -3,26 +3,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MayaFloatingButton from "../MayaFloatingButton";
-import { apiRequest } from "@/lib/api";
-import { submitIssueReport } from "@/api/issues";
-
-vi.mock("@/lib/api", () => ({
-  apiRequest: vi.fn(),
-}));
-
-vi.mock("@/api/issues", () => ({
-  submitIssueReport: vi.fn(),
-}));
-
-vi.mock("html2canvas", () => ({
-  default: vi.fn(async () => ({
-    toDataURL: () => "data:image/png;base64,mock",
-  })),
-}));
 
 vi.mock("../MayaClientChat", () => ({
-  default: ({ initialGreeting }: { initialGreeting?: string }) => (
-    <div data-testid="maya-client-chat">{initialGreeting ?? "Mock Maya Chat"}</div>
+  default: ({ onClose }: { onClose: () => void }) => (
+    <div>
+      <div data-testid="maya-client-chat">Mock Maya Chat</div>
+      <button aria-label="Close" onClick={onClose}>×</button>
+    </div>
   ),
 }));
 
@@ -35,10 +22,6 @@ describe("MayaFloatingButton", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
-    vi.mocked(apiRequest).mockReset();
-    vi.mocked(apiRequest).mockResolvedValue({ ok: true } as Response);
-    vi.mocked(submitIssueReport).mockReset();
-    vi.mocked(submitIssueReport).mockResolvedValue({ ok: true } as never);
   });
 
   afterEach(() => {
@@ -48,87 +31,30 @@ describe("MayaFloatingButton", () => {
     container.remove();
   });
 
-  function clickByText(text: string) {
-    const button = Array.from(container.querySelectorAll("button")).find((candidate) =>
-      candidate.textContent?.includes(text)
-    );
-    expect(button).toBeTruthy();
+  it("opens chat from the floating button", async () => {
+    await act(async () => {
+      root.render(<MayaFloatingButton />);
+    });
+
+    const openButton = container.querySelector('button[aria-label="Open assistant"]');
+    expect(openButton).toBeTruthy();
+
     act(() => {
-      button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-  }
-
-  it("opens directly to chat view with the greeting", async () => {
-    await act(async () => {
-      root.render(<MayaFloatingButton />);
+      openButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    clickByText("💬");
-    expect(container.querySelector('[data-testid="maya-client-chat"]')?.textContent).toContain(
-      "Hi, I'm Maya. How can I help you with your application today?"
-    );
+    expect(container.querySelector('[data-testid="maya-client-chat"]')).toBeTruthy();
   });
 
-  it("calls apiRequest when Talk to Human is clicked and shows confirmation", async () => {
+  it("closes chat when onClose is invoked", async () => {
     await act(async () => {
       root.render(<MayaFloatingButton />);
     });
 
-    clickByText("💬");
-    clickByText("Talk to Human");
-
-    expect(apiRequest).toHaveBeenCalledWith("/api/maya/escalate", {
-      method: "POST",
-      body: JSON.stringify({ reason: "user_requested_human" }),
-    });
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(container.textContent).toContain("✓ A team member has been notified.");
-  });
-
-  it("opens report issue form from chat view", async () => {
-    await act(async () => {
-      root.render(<MayaFloatingButton />);
-    });
-
-    clickByText("💬");
-    clickByText("Report Issue");
-    expect(container.querySelector('textarea[placeholder=\"Describe the issue\"]')).toBeTruthy();
-  });
-
-  it("submits issue report and shows confirmation pill", async () => {
-    await act(async () => {
-      root.render(<MayaFloatingButton />);
-    });
-
-    clickByText("💬");
-    clickByText("Report Issue");
-
-    const textarea = container.querySelector('textarea[placeholder=\"Describe the issue\"]') as HTMLTextAreaElement;
-    expect(textarea).toBeTruthy();
+    const openButton = container.querySelector('button[aria-label="Open assistant"]');
     act(() => {
-      textarea.value = "Broken dropdown";
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
-      textarea.dispatchEvent(new Event("change", { bubbles: true }));
+      openButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-
-    clickByText("Send Report");
-
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    expect(container.textContent).toContain("✓ Thanks — your report was sent.");
-    expect(submitIssueReport).toHaveBeenCalled();
-  });
-
-  it("closes back to closed view", async () => {
-    await act(async () => {
-      root.render(<MayaFloatingButton />);
-    });
-
-    clickByText("💬");
 
     const closeButton = container.querySelector('button[aria-label="Close"]');
     expect(closeButton).toBeTruthy();
