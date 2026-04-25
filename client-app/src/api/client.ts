@@ -19,6 +19,8 @@ type RequestConfig = {
   signal?: AbortSignal;
 };
 
+type ApiClientError = Error & { status?: number; code?: string };
+
 const API_BASE = ENV.API_BASE || "https://server.boreal.financial";
 
 function getAuthHeaders(headers?: HeadersInit): HeadersInit {
@@ -77,11 +79,31 @@ async function send<T = unknown>(
   }
 
   if (json?.status === "error") {
-    throw new Error(json.error || json.message || "Unknown API error");
+    const details = json?.error;
+    const error = new Error(
+      (typeof details === "string" && details) ||
+        json?.message ||
+        "Unknown API error"
+    ) as ApiClientError;
+    error.status = response.status;
+    if (details && typeof details === "object" && "code" in details) {
+      error.code = String((details as { code?: unknown }).code ?? "");
+    }
+    throw error;
   }
 
   if (!isOk) {
-    throw new Error(json?.error || json?.message || `HTTP ${response.status}`);
+    const details = json?.error;
+    const error = new Error(
+      (typeof details === "string" && details) ||
+        json?.message ||
+        `HTTP ${response.status}`
+    ) as ApiClientError;
+    error.status = response.status;
+    if (details && typeof details === "object" && "code" in details) {
+      error.code = String((details as { code?: unknown }).code ?? "");
+    }
+    throw error;
   }
 
   if (isOk) {

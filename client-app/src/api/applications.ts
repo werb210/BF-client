@@ -5,6 +5,7 @@ import { assertApiResponse } from "../lib/assertApiResponse";
 import { assertAuthenticated } from "../auth/sessionGuard";
 import { validateFile } from "../utils/fileValidation";
 import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
+import { patchApplication } from "@/client/autosave";
 
 export const createApplication = async (payload: Record<string, unknown> = {}) => {
   assertAuthenticated();
@@ -44,17 +45,14 @@ export const submitApplication = async (
         throw new Error("Missing applicationId in submission payload");
       }
 
-      const data = await apiRequest(`/api/client/applications/${applicationId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          metadata: {
-            submitted: true,
-            submittedAt: new Date().toISOString(),
-            ...(options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
-            ...(options?.continuationToken ? { continuationToken: options.continuationToken } : {}),
-            ...payload,
-          },
-        }),
+      const data = await patchApplication(applicationId, {
+        metadata: {
+          submitted: true,
+          submittedAt: new Date().toISOString(),
+          ...(options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
+          ...(options?.continuationToken ? { continuationToken: options.continuationToken } : {}),
+          ...payload,
+        },
       });
 
       return data;
@@ -66,11 +64,8 @@ export const submitApplication = async (
         throw new Error("Missing applicationId");
       }
 
-      const data = await apiRequest(`/api/client/applications/${applicationId}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          metadata: { submitted: true, submittedAt: new Date().toISOString() },
-        }),
+      const data = await patchApplication(applicationId, {
+        metadata: { submitted: true, submittedAt: new Date().toISOString() },
       });
 
       return data;

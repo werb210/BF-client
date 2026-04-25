@@ -1,3 +1,5 @@
+import { apiRequest } from "@/lib/api";
+
 export type Step = 1 | 3 | 4;
 export type StepData = Record<string, any>;
 
@@ -59,5 +61,53 @@ export function clearDraft(
     });
   } catch {
     // ignore storage failures
+  }
+}
+
+function isApplicationTokenStaleError(err: any) {
+  const message = String(err?.message ?? "").toLowerCase();
+  return (
+    err?.status === 410 ||
+    err?.code === "application_token_stale" ||
+    message.includes("410") ||
+    message.includes("application_token_stale")
+  );
+}
+
+export function clearStaleApplicationSession() {
+  try {
+    localStorage.removeItem("bf.application.token");
+  } catch {
+    // ignore
+  }
+
+  try {
+    localStorage.removeItem("bf.application.draft");
+  } catch {
+    // ignore
+  }
+
+  try {
+    sessionStorage.clear();
+  } catch {
+    // ignore
+  }
+
+  if (typeof window !== "undefined") {
+    window.location.assign("/apply/step-1?reason=session_expired");
+  }
+}
+
+export async function patchApplication(id: string, body: unknown) {
+  try {
+    return await apiRequest(`/api/client/applications/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    });
+  } catch (err: any) {
+    if (isApplicationTokenStaleError(err)) {
+      clearStaleApplicationSession();
+    }
+    throw err;
   }
 }

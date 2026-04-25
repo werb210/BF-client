@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
+import { patchApplication } from "@/client/autosave";
 
 export const ClientAppAPI = {
   // Auth
@@ -23,17 +24,11 @@ export const ClientAppAPI = {
     }),
 
   update: (applicationId: string, payload: Record<string, unknown>) =>
-    apiRequest(`/api/client/applications/${applicationId}`, {
-      method: "PATCH",
-      body: { metadata: payload },
-    }),
+    patchApplication(applicationId, { metadata: payload }),
 
   status: (applicationId: string) =>
     apiRequest(`/api/client/application/${applicationId}/status`),
 
   updateApplication: (applicationId: string, payload: Record<string, unknown>) =>
-    apiRequest(`/api/client/applications/${applicationId}`, {
-      method: "PATCH",
-      body: payload,
-    }),
+    patchApplication(applicationId, payload),
 };

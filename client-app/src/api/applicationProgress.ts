@@ -1,6 +1,7 @@
 import { apiCall } from "./client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { hasToken } from "@/api/auth";
+import { patchApplication } from "@/client/autosave";
 
 export interface SaveApplicationStepPayload {
   applicationId: string;
@@ -31,12 +32,9 @@ export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
   // PATCH the application metadata with the step data
   // Only called when applicationId exists (steps 4+)
   try {
-    await apiCall(`/api/client/applications/${payload.applicationId}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        metadata: { [`step_${payload.step}`]: payload.data },
-        current_step: payload.step,
-      }),
+    await patchApplication(payload.applicationId, {
+      metadata: { [`step_${payload.step}`]: payload.data },
+      current_step: payload.step,
     });
   } catch (err: any) {
     const message = String(err?.message ?? "").toLowerCase();
@@ -44,11 +42,7 @@ export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
       message.includes("404") ||
       message.includes("not found") ||
       message.includes("application not found");
-    const isStaleToken =
-      message.includes("410") ||
-      message.includes("application_token_stale");
-
-    if (isNotFound || isStaleToken) {
+    if (isNotFound) {
       clearStaleApplicationToken();
       console.debug("[autosave] stale application cleared");
     }
