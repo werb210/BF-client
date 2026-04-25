@@ -29,12 +29,25 @@ function toMayaMessageList(data: unknown): MayaMessage[] {
   return Array.isArray(data) ? (data as MayaMessage[]) : [];
 }
 
-export default function MayaClientChat({ applicationId }: { applicationId?: string | null }) {
+function mapMessages(entries: MayaMessage[]): ChatMessage[] {
+  return entries.map((entry: MayaMessage, index: number) => ({
+    id: String(entry.id || `${index}`),
+    role: entry.role === "assistant" ? "assistant" : "user",
+    content: String(entry.content || entry.message || ""),
+    createdAt: new Date(entry.createdAt || entry.created_at || Date.now()).getTime(),
+  }));
+}
+
+export default function MayaClientChat({
+  applicationId,
+  initialGreeting,
+}: {
+  applicationId?: string | null;
+  initialGreeting?: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [escalated, setEscalated] = useState(false);
   const [showStartupWaitlist] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [sending, setSending] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [typing, setTyping] = useState(false);
@@ -57,6 +70,22 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
     };
   }, []);
 
+  useEffect(() => {
+    if (!initialGreeting) return;
+
+    setMessages((prev) => {
+      if (prev.length > 0) return prev;
+      return [
+        {
+          id: `greeting-${Date.now()}`,
+          role: "assistant",
+          content: initialGreeting,
+          createdAt: Date.now(),
+        },
+      ];
+    });
+  }, [initialGreeting]);
+
   const sortedMessages = useMemo(
     () => [...messages].sort((a, b) => a.createdAt - b.createdAt),
     [messages]
@@ -76,15 +105,21 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
         const response = await api.get(`/api/messages/${applicationId}`);
         const { data } = response;
         if (!active) return;
-        const list = toMayaMessageList(data);
-        setMessages(
-          list.map((entry: MayaMessage, index: number) => ({
-            id: String(entry.id || `${index}`),
-            role: entry.role === "assistant" ? "assistant" : "user",
-            content: String(entry.content || entry.message || ""),
-            createdAt: new Date(entry.createdAt || entry.created_at || Date.now()).getTime(),
-          }))
-        );
+        const mappedMessages = mapMessages(toMayaMessageList(data));
+
+        if (mappedMessages.length === 0 && initialGreeting) {
+          setMessages([
+            {
+              id: `greeting-${Date.now()}`,
+              role: "assistant",
+              content: initialGreeting,
+              createdAt: Date.now(),
+            },
+          ]);
+          return;
+        }
+
+        setMessages(mappedMessages);
       } catch {
         // noop
       }
@@ -96,7 +131,7 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
       active = false;
       window.clearInterval(timer);
     };
-  }, [applicationId]);
+  }, [applicationId, initialGreeting]);
 
   async function sendMessage() {
     if (!input.trim() || !applicationId || sending) return;
@@ -123,19 +158,14 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
       });
 
       const response = await api.get(`/api/messages/${applicationId}`);
-        const { data } = response;
-      const list = toMayaMessageList(data);
-      setMessages(
-        list.map((entry: MayaMessage, index: number) => ({
-          id: String(entry.id || `${index}`),
-          role: entry.role === "assistant" ? "assistant" : "user",
-          content: String(entry.content || entry.message || ""),
-          createdAt: new Date(entry.createdAt || entry.created_at || Date.now()).getTime(),
-        }))
-      );
+      const { data } = response;
+      const mappedMessages = mapMessages(toMayaMessageList(data));
+      setMessages(mappedMessages);
       setField("last_message", nextMessage);
     } catch {
-      setMessages((prev) => prev.map((item) => (item.id === optimisticId ? { ...item, optimistic: false } : item)));
+      setMessages((prev) =>
+        prev.map((item) => (item.id === optimisticId ? { ...item, optimistic: false } : item))
+      );
     } finally {
       setSending(false);
       setTyping(false);
@@ -146,48 +176,64 @@ export default function MayaClientChat({ applicationId }: { applicationId?: stri
     <div
       id="portal-messages"
       style={{
-        border: "1px solid #ccc",
-        padding: "1rem",
-        borderRadius: "8px",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      <h3>Chat Window</h3>
-      <label style={{ display: "inline-flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={voiceEnabled}
-          onChange={(event) => setVoiceEnabled(event.target.checked)}
-        />
-        Voice mode ready
-      </label>
-
       <div
         ref={scrollerRef}
-        style={{ maxHeight: `calc(60vh - ${keyboardHeight}px)`, overflowY: "auto" }}
+        style={{ flex: 1, overflowY: "auto", padding: "12px 12px 8px" }}
         aria-live="polite"
       >
         {sortedMessages.map((message) => (
-          <div key={message.id}>
-            <strong>{message.role === "user" ? "You" : "Staff"}:</strong>
-            <div>{message.content}</div>
+          <div
+            key={message.id}
+            style={{
+              marginBottom: 8,
+              display: "flex",
+              justifyContent: message.role === "user" ? "flex-end" : "flex-start",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "85%",
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: message.role === "assistant" ? "#f3f4f6" : "#2563eb",
+                color: message.role === "assistant" ? "#111827" : "#fff",
+                fontSize: 14,
+              }}
+            >
+              {message.content}
+            </div>
           </div>
         ))}
         {typing ? <div style={{ opacity: 0.7 }}>Staff is typing…</div> : null}
       </div>
 
-      <button onClick={() => setEscalated(true)} style={{ marginTop: "0.75rem" }}>
-        Talk to a Human
-      </button>
-      {escalated && <div style={{ color: "red", marginTop: "0.75rem" }}>A specialist has been notified.</div>}
-
-      <div style={{ marginTop: "1rem", paddingBottom: keyboardHeight ? 8 : 0 }}>
+      <div
+        style={{
+          borderTop: "1px solid #e5e7eb",
+          padding: "8px 12px",
+          paddingBottom: keyboardHeight ? 8 : 8,
+        }}
+      >
         <input
           aria-label="Message input"
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          style={{ width: "75%" }}
+          style={{
+            width: "75%",
+            padding: "8px",
+            border: "1px solid #d1d5db",
+            borderRadius: 8,
+            marginRight: 8,
+          }}
         />
-        <button onClick={sendMessage} disabled={sending}>Send</button>
+        <button onClick={sendMessage} disabled={sending}>
+          Send
+        </button>
       </div>
 
       <QualificationSummary />

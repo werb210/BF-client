@@ -44,8 +44,11 @@ export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
       message.includes("404") ||
       message.includes("not found") ||
       message.includes("application not found");
+    const isStaleToken =
+      message.includes("410") ||
+      message.includes("application_token_stale");
 
-    if (isNotFound) {
+    if (isNotFound || isStaleToken) {
       clearStaleApplicationToken();
       console.debug("[autosave] stale application cleared");
     }
@@ -80,6 +83,22 @@ function clearStaleApplicationToken() {
   });
 
   localStorage.removeItem("applicationToken");
+  const staleApplicationMessage = "Your previous application expired. Please start again.";
+  sessionStorage.setItem("boreal_toast_message", staleApplicationMessage);
+  window.dispatchEvent(
+    new CustomEvent("boreal:toast", {
+      detail: {
+        type: "warning",
+        message: staleApplicationMessage,
+      },
+    })
+  );
+  try {
+    window.location.assign("/apply/step-1");
+  } catch {
+    // noop; jsdom navigation can fail in tests
+  }
+  window.history.replaceState({}, "", "/apply/step-1");
 }
 
 export async function saveApplicationProgress(data: unknown) {
