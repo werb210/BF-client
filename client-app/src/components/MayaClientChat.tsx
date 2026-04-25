@@ -5,7 +5,7 @@ import { apiRequest } from "@/lib/api";
 type Msg = { role: "user" | "maya"; text: string; ts: number };
 const GREETING = "👋 Hi, I'm Maya. How can I help with your application?";
 
-export default function MayaClientChat({ onClose }: { onClose: () => void }) {
+export default function MayaClientChat({ onClose }: { onClose?: () => void }): JSX.Element {
   const [msgs, setMsgs] = useState<Msg[]>([
     { role: "maya", text: GREETING, ts: Date.now() },
   ]);
@@ -109,19 +109,21 @@ export default function MayaClientChat({ onClose }: { onClose: () => void }) {
         }}
       >
         Maya
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          style={{
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            fontSize: 20,
-            color: "#000",
-          }}
-        >
-          ×
-        </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 20,
+              color: "#000",
+            }}
+          >
+            ×
+          </button>
+        )}
       </div>
       <div
         style={{
