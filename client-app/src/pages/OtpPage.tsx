@@ -23,6 +23,7 @@ export default function OtpPage() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
+  const [otpInputKey, setOtpInputKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -63,8 +64,19 @@ export default function OtpPage() {
       } else {
         navigate("/apply/step-1", { replace: true });
       }
-    } catch {
-      setError("Invalid code. Please try again.");
+    } catch (error: any) {
+      if (error?.status === 401) {
+        setCode("");
+        setOtpInputKey((prev) => prev + 1);
+        try {
+          await startOtp(formatted);
+        } catch {
+          // best-effort resend
+        }
+        setError("Code expired or incorrect. Request a new code.");
+      } else {
+        setError("Invalid code. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -109,6 +121,7 @@ export default function OtpPage() {
           <div style={components.form.fieldStack}>
             <label style={components.form.label}>Verification Code</label>
             <OtpInput
+              key={otpInputKey}
               length={6}
               autoComplete="one-time-code"
               inputMode="numeric"

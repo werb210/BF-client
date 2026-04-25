@@ -13,20 +13,38 @@ export type LinkedApplicationRecord = {
 type LinkedApplicationMap = Record<string, LinkedApplicationRecord[]>;
 
 export type LinkedApplicationPayload = {
-  financialProfile: ApplicationData["kyc"];
+  parent_application_id?: string;
   linked_application_token: string;
   linked_application_reason: LinkedApplicationRecord["reason"];
+  product_category: string;
+  requested_amount: number | null;
+  kind: "closing_costs";
+  financialProfile: ApplicationData["kyc"];
 };
 
 export function buildLinkedApplicationPayload(
   parentToken: string,
   kyc: ApplicationData["kyc"],
-  reason: LinkedApplicationRecord["reason"]
+  reason: LinkedApplicationRecord["reason"],
+  parentApplicationId?: string
 ): LinkedApplicationPayload {
+  const profile = (kyc || {}) as Record<string, unknown>;
+  const closingCostsRaw = profile.closing_costs_amount;
+  const closingCostsAmount =
+    typeof closingCostsRaw === "number"
+      ? closingCostsRaw
+      : typeof closingCostsRaw === "string"
+        ? Number.parseFloat(closingCostsRaw)
+        : null;
+
   return {
+    ...(parentApplicationId ? { parent_application_id: parentApplicationId } : {}),
     financialProfile: kyc,
     linked_application_token: parentToken,
     linked_application_reason: reason,
+    product_category: "EQUIPMENT_FINANCE",
+    requested_amount: Number.isFinite(closingCostsAmount as number) ? (closingCostsAmount as number) : null,
+    kind: "closing_costs",
   };
 }
 
@@ -99,11 +117,19 @@ export const LinkedApplicationStore = {
 export async function createLinkedApplication(
   parentToken: string,
   kyc: ApplicationData["kyc"],
-  reason: LinkedApplicationRecord["reason"] = "closing_costs"
+  reason: LinkedApplicationRecord["reason"] = "closing_costs",
+  parentApplicationId?: string
 ) {
-  const payload = buildLinkedApplicationPayload(parentToken, kyc, reason);
+  const payload = buildLinkedApplicationPayload(
+    parentToken,
+    kyc,
+    reason,
+    parentApplicationId
+  );
   const res = await ClientAppAPI.start(payload);
-  const token = res?.data?.token;
+  const token =
+    res?.data?.token ||
+    (res?.data as { linked_application_token?: string } | undefined)?.linked_application_token;
   if (!token) {
     throw new Error("Missing linked application token.");
   }

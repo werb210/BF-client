@@ -16,6 +16,9 @@ describe("linked applications", () => {
       financialProfile: { phone: "+1 (555) 222-3333" },
       linked_application_token: "token-parent",
       linked_application_reason: "closing_costs",
+      product_category: "EQUIPMENT_FINANCE",
+      requested_amount: null,
+      kind: "closing_costs",
     });
   });
 
