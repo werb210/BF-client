@@ -11,16 +11,23 @@ const mockAppState = {
   applicant: {},
 };
 
+type AutosaveError = { message: string } | null;
+const store: {
+  autosaveError: AutosaveError;
+  app: typeof mockAppState;
+  update: (patch: Record<string, unknown>) => void;
+} = {
+  autosaveError: null,
+  app: mockAppState,
+  update: (_patch: Record<string, unknown>): void => undefined,
+};
+
 vi.mock("../../state/useApplicationStore", () => ({
-  useApplicationStore: () => ({
-    app: mockAppState,
-    update: updateMock,
-    autosaveError: null,
-  }),
+  useApplicationStore: (): typeof store => store,
 }));
 
 vi.mock("../../state/readinessStore", () => ({
-  useReadiness: () => null,
+  useReadiness: (): null => null,
   setReadiness: vi.fn(),
 }));
 
