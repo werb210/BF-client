@@ -38,6 +38,7 @@ import { persistApplicationStep } from "./saveStepProgress";
 
 export function Step3_Business() {
   const { app, update, autosaveError } = useApplicationStore();
+  console.log("[wizard] Step3_Business RENDER", { currentStep: app.currentStep, applicationToken: app.applicationToken, businessLocation: app.kyc?.businessLocation });
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -54,6 +55,7 @@ export function Step3_Business() {
   );
 
   useEffect(() => {
+    console.log("[wizard] Step3_Business MOUNTED effect ran", { currentStep: app.currentStep });
     if (app.currentStep !== 3) {
       update({ currentStep: 3 });
     }

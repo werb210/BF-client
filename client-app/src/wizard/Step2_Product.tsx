@@ -334,7 +334,9 @@ export function Step2_Product() {
     }).catch(() => {});
     setSaveError(null);
     track("step_completed", { step: 2 });
+    console.log("[wizard] Step2.goNext: about to advance", { selectedCategory, applicationToken: app.applicationToken, currentStep: app.currentStep });
     update({ currentStep: 3 });
+    console.log("[wizard] Step2.goNext: update({currentStep:3}) returned, calling navigate now");
     navigate("/apply/step-3", {
       state: {
         bucket: selectedBucket || selectedCategory,
