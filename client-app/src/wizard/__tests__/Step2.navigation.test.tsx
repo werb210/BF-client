@@ -27,7 +27,7 @@ const mockAppState = () => ({
   kyc: { businessLocation: "Canada", fundingAmount: "250000", lookingFor: "Capital" },
   productRequirements: {},
   matchPercentages: {},
-  linkedApplicationTokens: [],
+  linkedApplicationTokens: [] as string[],
   applicationToken: "local-1768585153909", // placeholder, like a stale draft
   productCategory: "Term Loan",
   selectedProduct: { id: "tl-1", name: "Term Loan", product_type: "Term Loan", lender_id: "l1" },
@@ -43,12 +43,12 @@ vi.mock("../../state/useApplicationStore", () => ({
   useApplicationStore: () => ({ app: mockAppState(), update: updateMock }),
 }));
 vi.mock("../../api/lenders", () => ({
-  getClientLenderProducts: vi.fn(async () => mockProducts()),
+  getClientLenderProducts: vi.fn(async (): Promise<MockProduct[]> => mockProducts()),
 }));
 vi.mock("../productSelection", () => ({
   filterActiveProducts: <T,>(rows: T[]): T[] => rows,
   buildCategorySummaries: () => [{ category: "Term Loan", matchingCount: 1, minAmount: 1000 }],
-  groupProductsByLender: () => [],
+  groupProductsByLender: (): unknown[] => [],
   getMatchingProducts: () => mockProducts(),
   isAmountWithinRange: () => true,
   matchesCountry: () => true,
@@ -76,17 +76,17 @@ vi.mock("../../utils/track", () => ({ track: vi.fn() }));
 vi.mock("../saveStepProgress", () => ({ persistApplicationStep: persistMock }));
 vi.mock("../stepGuard", () => ({ resolveStepGuard: () => 2 }));
 vi.mock("../../lender/eligibility", () => ({
-  getEligibilityResult: () => ({ eligibleProducts: [], categories: [], reasons: {} }),
+  getEligibilityResult: (): { eligibleProducts: unknown[]; categories: unknown[]; reasons: Record<string, unknown> } => ({ eligibleProducts: [], categories: [], reasons: {} }),
 }));
 vi.mock("./categoryAliases", () => ({
-  dedupeProductsByBucket: (rows: any[]) => rows.map((r) => ({
+  dedupeProductsByBucket: (rows: Array<Record<string, unknown>>): Array<{ bucket: unknown; label: unknown; products: unknown[] }> => rows.map((r) => ({
     bucket: r.product_type, label: r.product_type, products: [r],
   })),
 }));
 vi.mock("../requirements", () => ({
-  filterRequirementsByAmount: () => [],
+  filterRequirementsByAmount: (): unknown[] => [],
   formatDocumentLabel: (s: string) => s,
-  normalizeRequirementList: () => [],
+  normalizeRequirementList: (): unknown[] => [],
 }));
 
 async function clickContinue(container: HTMLElement) {
