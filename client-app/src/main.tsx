@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import "./styles/global.css";
 import App from "./App";
 import { validateEnv } from "./env";
+import { registerClientSW } from "./pwa/registerSW";
 
 try {
   validateEnv();
@@ -21,7 +22,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>
 );
 
-// Temporarily disabled while SWA deployment is stabilized.
-// if (import.meta.env.PROD) {
-//   registerServiceWorker();
-// }
+registerClientSW();
