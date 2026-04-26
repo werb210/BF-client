@@ -1,4 +1,5 @@
 // @ts-nocheck
+if (typeof console !== "undefined") console.log("[wizard] Step3_Business module evaluated");
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";

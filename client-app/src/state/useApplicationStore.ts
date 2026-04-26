@@ -105,7 +105,27 @@ function loadBorealDraft(): ApplicationData | null {
   }
 }
 
+function isUuid(v: unknown): boolean {
+  return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+}
+
+function scrubPlaceholderTokens(saved: ApplicationData | null): ApplicationData | null {
+  if (!saved) return saved;
+  const cleaned: ApplicationData = { ...saved };
+  if ((saved as any).applicationToken && !isUuid((saved as any).applicationToken)) {
+    (cleaned as any).applicationToken = null;
+    if (typeof console !== "undefined") {
+      console.warn("[store] dropped placeholder applicationToken", (saved as any).applicationToken);
+    }
+  }
+  if ((saved as any).applicationId && !isUuid((saved as any).applicationId)) {
+    (cleaned as any).applicationId = null;
+  }
+  return cleaned;
+}
+
 function hydrateApplication(saved: ApplicationData | null): ApplicationData {
+  saved = scrubPlaceholderTokens(saved);
   if (!saved) return emptyApp;
 
   const savedKyc = saved.kyc || {};
