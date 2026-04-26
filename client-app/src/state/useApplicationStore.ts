@@ -209,6 +209,9 @@ export function useApplicationStore() {
       debounce(async (state: ApplicationData) => {
         if (!state.applicationToken || typeof state.applicationToken !== "string") return;
         if (state.applicationToken.length < 10) return;
+        // Skip placeholder tokens (e.g. "local-...") — server's id column is uuid
+        // and rejects non-uuid casts with 22P02, surfacing as 500s in the console.
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(state.applicationToken)) return;
         if (!hasActiveAuthSession()) return;
         await patchApplication(state.applicationToken, {
           metadata: { draft: { step: state.currentStep } },
