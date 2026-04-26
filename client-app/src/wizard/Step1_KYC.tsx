@@ -419,6 +419,7 @@ fixedAssets:
         applicationToken: app.applicationToken || applicationId || app.applicationId || null,
         applicationId: app.applicationId || applicationId || null,
         matchPercentages,
+        currentStep: 2,
       });
       persistApplicationStep(app, 1, payloadBody).catch(() => {});
       track("step_completed", { step: 1 });
@@ -426,6 +427,7 @@ fixedAssets:
     } catch {
       // Only block if local processing failed, not server save
       console.error("Step 1 local error");
+      update({ currentStep: 2 });
       navigate("/apply/step-2"); // Navigate anyway — local data is saved
     }
   }

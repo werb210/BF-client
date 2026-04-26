@@ -175,12 +175,7 @@ export function Step2_Product() {
     trackEvent("client_step_viewed", { step: 2 });
   }, []);
 
-  useEffect(() => {
-    const guardedStep = resolveStepGuard(app.currentStep, 2);
-    if (guardedStep !== 2) {
-      navigate(`/apply/step-${guardedStep}`, { replace: true });
-    }
-  }, [app.currentStep, navigate]);
+  // [removed] resolveStepGuard effect — caused step transition races
 
   useEffect(() => {
     if (!normalizedProducts.length) return;
@@ -339,6 +334,7 @@ export function Step2_Product() {
     }).catch(() => {});
     setSaveError(null);
     track("step_completed", { step: 2 });
+    update({ currentStep: 3 });
     navigate("/apply/step-3", {
       state: {
         bucket: selectedBucket || selectedCategory,

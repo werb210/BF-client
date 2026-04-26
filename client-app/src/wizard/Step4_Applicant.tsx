@@ -76,12 +76,7 @@ export function Step4_Applicant() {
     trackEvent("client_step_viewed", { step: 4 });
   }, []);
 
-  useEffect(() => {
-    const guardedStep = resolveStepGuard(app.currentStep, 4);
-    if (guardedStep !== 4) {
-      navigate(`/apply/step-${guardedStep}`, { replace: true });
-    }
-  }, [app.currentStep, navigate]);
+  // [removed] resolveStepGuard effect (was racing transitions)
 
   useEffect(() => {
     const draft = loadStepData(4);

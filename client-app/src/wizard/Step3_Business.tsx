@@ -43,8 +43,8 @@ export function Step3_Business() {
 
   const values = { ...app.business };
   const countryCode = useMemo(
-    () => getCountryCode(app.kyc.businessLocation),
-    [app.kyc.businessLocation]
+    () => getCountryCode(app.kyc?.businessLocation),
+    [app.kyc?.businessLocation]
   );
   const regionLabel = getRegionLabel(countryCode);
   const postalLabel = getPostalLabel(countryCode);
@@ -63,12 +63,7 @@ export function Step3_Business() {
     trackEvent("client_step_viewed", { step: 3 });
   }, []);
 
-  useEffect(() => {
-    const guardedStep = resolveStepGuard(app.currentStep, 3);
-    if (guardedStep !== 3) {
-      navigate(`/apply/step-${guardedStep}`, { replace: true });
-    }
-  }, [app.currentStep, navigate]);
+  // [removed] resolveStepGuard effect — caused step transition races
 
   useEffect(() => {
     const draft = loadStepData(3);
@@ -172,6 +167,7 @@ export function Step3_Business() {
       return;
     }
     track("step_completed", { step: 3 });
+    update({ currentStep: 4 });
     navigate("/apply/step-4");
   }
 
