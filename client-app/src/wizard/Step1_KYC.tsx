@@ -29,6 +29,7 @@ import { track } from "../utils/track";
 import { trackEvent } from "../utils/analytics";
 import { setReadiness, useReadiness } from "../state/readinessStore";
 import { persistApplicationStep } from "./saveStepProgress";
+import { ClientAppAPI } from "../api/clientApp";
 import { fetchCreditPrefill } from "../services/creditPrefill";
 import { fetchReadinessPrefill } from "@/api/readiness";
 
@@ -415,20 +416,50 @@ fixedAssets:
         financialProfile: payload,
       };
       setSubmitError(null);
+
+      // If we already have a real (UUID) application token from a prior session, reuse it.
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const existingToken = app.applicationToken || applicationId || app.applicationId || null;
+      let token: string | null = existingToken && typeof existingToken === "string" && UUID_RE.test(existingToken)
+        ? existingToken
+        : null;
+
+      if (!token) {
+        try {
+          const res: any = await ClientAppAPI.start(payloadBody);
+          token =
+            res?.applicationId ||
+            res?.data?.applicationId ||
+            res?.token ||
+            res?.data?.token ||
+            res?.data?.applicationToken ||
+            null;
+        } catch (err) {
+          console.error("[wizard] Step 1 ClientAppAPI.start failed", err);
+          setSubmitError("We couldn't start your application. Please check your connection and try again.");
+          return;
+        }
+
+        if (!token || !UUID_RE.test(token)) {
+          console.error("[wizard] Step 1 server did not return a valid application UUID", { token });
+          setSubmitError("We couldn't start your application. Please try again in a moment.");
+          return;
+        }
+      }
+
       update({
-        applicationToken: app.applicationToken || applicationId || app.applicationId || null,
-        applicationId: app.applicationId || applicationId || null,
+        applicationToken: token,
+        applicationId: token,
         matchPercentages,
         currentStep: 2,
       });
-      persistApplicationStep(app, 1, payloadBody).catch(() => {});
+      persistApplicationStep({ ...app, applicationToken: token, applicationId: token }, 1, payloadBody).catch(() => {});
       track("step_completed", { step: 1 });
+      console.log("[wizard] Step 1 advancing with real applicationToken", token);
       navigate("/apply/step-2");
-    } catch {
-      // Only block if local processing failed, not server save
-      console.error("Step 1 local error");
-      update({ currentStep: 2 });
-      navigate("/apply/step-2"); // Navigate anyway — local data is saved
+    } catch (err) {
+      console.error("[wizard] Step 1 unexpected error", err);
+      setSubmitError("Something went wrong. Please try again.");
     }
   }
 
