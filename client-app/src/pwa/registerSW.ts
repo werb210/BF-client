@@ -20,3 +20,28 @@ export function applyClientSWUpdate(): void {
   if (!wb) return;
   wb.messageSkipWaiting();
 }
+
+
+// [sw] update check on navigation — keeps the active SW from serving stale chunks
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  let lastPath = window.location.pathname;
+  const checkUpdate = () => {
+    if (window.location.pathname === lastPath) return;
+    lastPath = window.location.pathname;
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      reg?.update().catch(() => {});
+    });
+  };
+  window.addEventListener("popstate", checkUpdate);
+  // pushState/replaceState don't fire popstate; patch them to trigger an update check.
+  const _push = history.pushState.bind(history);
+  history.pushState = (data: unknown, unused: string, url?: string | URL | null): void => {
+    _push(data, unused, url);
+    checkUpdate();
+  };
+  const _replace = history.replaceState.bind(history);
+  history.replaceState = (data: unknown, unused: string, url?: string | URL | null): void => {
+    _replace(data, unused, url);
+    checkUpdate();
+  };
+}

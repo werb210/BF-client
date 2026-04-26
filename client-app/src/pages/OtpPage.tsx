@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { OtpInput } from "@/components/OtpInput";
 import { resolveOtpNextStep } from "@/auth/otp";
@@ -28,6 +28,9 @@ export default function OtpPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const sendInFlightRef = useRef(false);
+  const lastSentAtRef = useRef<number>(0);
+  const SEND_COOLDOWN_MS = 30_000;
 
   useEffect(() => {
     const readinessToken = searchParams.get("readiness_token");
@@ -38,15 +41,30 @@ export default function OtpPage() {
   async function handleSendCode() {
     const formatted = toE164(phone.trim()) || phone.trim();
     if (!formatted) return;
+    if (sendInFlightRef.current) {
+      console.log("[otp] handleSendCode skipped: in-flight");
+      return;
+    }
+    const now = Date.now();
+    if (now - lastSentAtRef.current < SEND_COOLDOWN_MS) {
+      console.log("[otp] handleSendCode skipped: cooldown", { remainingMs: SEND_COOLDOWN_MS - (now - lastSentAtRef.current) });
+      // Still advance the UI to the code step; the user already has a valid SMS in flight.
+      setPhone(formatted);
+      setStep("code");
+      return;
+    }
+    sendInFlightRef.current = true;
     setPhone(formatted);
     setLoading(true);
     setError(null);
     try {
       await startOtp(formatted);
+      lastSentAtRef.current = Date.now();
       setStep("code");
     } catch {
       setError("Failed to send code. Please check your number and try again.");
     } finally {
+      sendInFlightRef.current = false;
       setLoading(false);
     }
   }
@@ -68,11 +86,8 @@ export default function OtpPage() {
       if (error?.status === 401) {
         setCode("");
         setOtpInputKey((prev) => prev + 1);
-        try {
-          await startOtp(formatted);
-        } catch {
-          // best-effort resend
-        }
+        // Do NOT auto-resend here — that was producing the duplicate-OTP / 429 from Twilio.
+        // The user can press "Resend" explicitly; that path is gated by sendInFlightRef + cooldown.
         setError("Code expired or incorrect. Request a new code.");
       } else {
         setError("Invalid code. Please try again.");
