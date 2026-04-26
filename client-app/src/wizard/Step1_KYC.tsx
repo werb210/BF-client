@@ -29,7 +29,6 @@ import { track } from "../utils/track";
 import { trackEvent } from "../utils/analytics";
 import { setReadiness, useReadiness } from "../state/readinessStore";
 import { persistApplicationStep } from "./saveStepProgress";
-import { ClientAppAPI } from "../api/clientApp";
 import { fetchCreditPrefill } from "../services/creditPrefill";
 import { fetchReadinessPrefill } from "@/api/readiness";
 
@@ -426,16 +425,27 @@ fixedAssets:
 
       if (!token) {
         try {
-          const res: any = await ClientAppAPI.start(payloadBody);
+          // Use the public draft-mint endpoint. POST /api/public/application/start
+          // accepts an empty body and returns { status: "ok", data: { applicationId } }.
+          // The wizard then PATCHes /api/client/applications/:id on each subsequent step.
+          const baseUrl = (import.meta.env.VITE_API_URL as string | undefined) || "https://server.boreal.financial";
+          const startRes = await fetch(`${baseUrl}/api/public/application/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source: "client_direct" }),
+          });
+          if (!startRes.ok) {
+            console.error("[wizard] /api/public/application/start failed", { status: startRes.status });
+            setSubmitError("We couldn't start your application. Please check your connection and try again.");
+            return;
+          }
+          const startBody = await startRes.json().catch(() => null);
           token =
-            res?.applicationId ||
-            res?.data?.applicationId ||
-            res?.token ||
-            res?.data?.token ||
-            res?.data?.applicationToken ||
+            (startBody?.data?.applicationId as string | undefined) ||
+            (startBody?.applicationId as string | undefined) ||
             null;
         } catch (err) {
-          console.error("[wizard] Step 1 ClientAppAPI.start failed", err);
+          console.error("[wizard] Step 1 application/start request failed", err);
           setSubmitError("We couldn't start your application. Please check your connection and try again.");
           return;
         }

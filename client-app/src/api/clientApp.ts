@@ -23,10 +23,15 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
     try {
       return await fn();
     } catch (err: unknown) {
+        // [retry] 4xx short-circuit — permanent errors must not be retried
+        const status = (err as any)?.status ?? (err as any)?.response?.status;
+        if (typeof status === "number" && status >= 400 && status < 500) {
+          throw err;
+        }
       lastError = err;
       const apiError = err as ApiError;
-      const status = apiError.response?.status;
-      const retriable = !status || [429, 500, 502, 503, 504].includes(status);
+      const responseStatus = apiError.response?.status;
+      const retriable = !responseStatus || [429, 500, 502, 503, 504].includes(responseStatus);
       if (!retriable || i === attempts - 1) {
         throw err;
       }
