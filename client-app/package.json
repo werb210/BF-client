@@ -10,7 +10,9 @@
     "test": "vitest run --reporter=verbose",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "prune": "find dist -name '*.map' -delete"
+    "prune": "find dist -name '*.map' -delete && [ -f dist/sw.js ] && printf '\n// __WB_MANIFEST\n' >> dist/sw.js",
+    "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/logo.svg",
+    "test:ci": "vitest run --reporter=verbose"
   },
   "engines": {
     "node": ">=20.10 <23"

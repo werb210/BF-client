@@ -72,7 +72,7 @@ describe("service worker updates", () => {
 
     Object.defineProperty(navigator, "serviceWorker", {
       value: {
-        getRegistration: vi.fn().mockResolvedValue(registration),
+        register: vi.fn().mockResolvedValue(registration),
         addEventListener: (event: string, cb: () => void) => {
           controllerChangeListeners[event] = cb;
         },
