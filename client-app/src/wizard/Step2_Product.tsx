@@ -328,26 +328,23 @@ export function Step2_Product() {
       setShowClosingModal(true);
       return;
     }
-    void persistApplicationStep(app, 2, {
+    // Fire-and-forget autosave; navigation must never block on the network.
+    // Mirrors Step 1's startApplication() pattern.
+    persistApplicationStep(app, 2, {
       selectedProduct: app.selectedProduct || null,
       selectedProductId: app.selectedProductId || null,
       selectedProductType: app.selectedProductType || null,
       productCategory: app.productCategory || null,
       requires_closing_cost_funding: app.requires_closing_cost_funding,
-    })
-      .then(() => {
-        setSaveError(null);
-        track("step_completed", { step: 2 });
-        navigate("/apply/step-3", {
-          state: {
-            bucket: selectedBucket || selectedCategory,
-            productIds: selectedProductIds,
-          },
-        });
-      })
-      .catch(() => {
-        setSaveError("We couldn't save this step. Please try again.");
-      });
+    }).catch(() => {});
+    setSaveError(null);
+    track("step_completed", { step: 2 });
+    navigate("/apply/step-3", {
+      state: {
+        bucket: selectedBucket || selectedCategory,
+        productIds: selectedProductIds,
+      },
+    });
   }
 
   async function confirmClosingCosts() {
