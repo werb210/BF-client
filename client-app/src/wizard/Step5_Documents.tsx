@@ -179,12 +179,7 @@ export function Step5_Documents() {
     trackEvent("client_step_viewed", { step: 5 });
   }, []);
 
-  useEffect(() => {
-    const guardedStep = resolveStepGuard(app.currentStep, 5);
-    if (guardedStep !== 5) {
-      navigate(`/apply/step-${guardedStep}`, { replace: true });
-    }
-  }, [app.currentStep, navigate]);
+  // [removed] resolveStepGuard effect (was racing transitions)
 
   useEffect(() => {
     if (docError || missingRequiredDocs.length > 0 || hasBlockingUploadErrors) {
@@ -397,6 +392,7 @@ export function Step5_Documents() {
       .then(() => {
         setDocError(null);
         track("step_completed", { step: 5 });
+        update({ currentStep: 6 });
         navigate("/apply/step-6");
       })
       .catch(() => {
