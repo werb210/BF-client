@@ -10,6 +10,7 @@ import {
 import type { ApiError } from "@/types/api";
 import { API_ENDPOINTS_CONTRACT, DOCUMENT_CONTRACT } from "@/contracts";
 import { validateFile } from "@/utils/fileValidation";
+import type { ApplicationData as ApplicationDraft } from "@/types/application";
 
 type ClientAppStartResponse = z.infer<typeof ClientAppStartResponseSchema>;
 type ClientAppStatusResponse = z.infer<typeof ClientAppStatusResponseSchema>;
@@ -98,8 +99,10 @@ export const ClientAppAPI = {
       api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, { documentsDeferred: true })
     );
   },
-  submit(token: string) {
-    return withRetry(() => api.post<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`));
+  submit(token: string, payload: { app: ApplicationDraft; normalized: unknown }) {
+    return withRetry(() =>
+      api.post<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`, payload)
+    );
   },
   status(token: string) {
     return withRetry(async () => {

@@ -9,7 +9,6 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { WizardLayout } from "../components/WizardLayout";
-import { submitApplication } from "../api/applications";
 import {
   assertSubmissionReady,
   buildSubmissionPayload,
@@ -46,6 +45,7 @@ import { apiCall } from "../api/client";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
+import { normalizeForSubmit } from "./submitNormalize";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
@@ -310,6 +310,7 @@ export function Step6_Review(): JSX.Element {
       });
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
+      const normalizedPayload = normalizeForSubmit(app);
       const attribution = getClientAttribution();
       trackEvent("client_submission_started");
       trackEvent("client_application_submitted", { step: 6 });
@@ -362,17 +363,15 @@ export function Step6_Review(): JSX.Element {
         ...attribution,
       });
       track("submit");
-      const submissionResponse = await submitApplication(
-        {
+      const submissionResponse = await ClientAppAPI.submit(app.applicationToken!, {
+        app: {
+          ...app,
           ...payload,
           attribution,
           ...getLeadFingerprint(),
         },
-        {
-          idempotencyKey,
-          continuationToken: app.continuationToken,
-        }
-      );
+        normalized: normalizedPayload,
+      });
       localStorage.removeItem("creditSessionToken");
       const refreshed = await ClientAppAPI.status(app.applicationToken!);
       const hydrated = extractApplicationFromStatus(
