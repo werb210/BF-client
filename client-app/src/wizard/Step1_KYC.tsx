@@ -190,7 +190,7 @@ export function Step1_KYC(): JSX.Element {
     if (app.currentStep !== 1) {
       update({ currentStep: 1 });
     }
-  }, [app.currentStep, update]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
 
   useEffect(() => {
     if (!readiness) return;

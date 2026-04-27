@@ -64,7 +64,7 @@ export function Step4_Applicant() {
     if (app.currentStep !== 4) {
       update({ currentStep: 4 });
     }
-  }, [app.currentStep, update]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
 
   useEffect(() => {
     const userPhone = typeof user === "object" && user ? String((user as Record<string, unknown>).phone || "") : "";
