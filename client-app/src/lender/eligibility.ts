@@ -10,6 +10,8 @@ export type NormalizedLenderProduct = {
   requiredDocs?: string[];
   businessQuestions?: string[];
   applicantQuestions?: string[];
+  // BF_CREDIT_BAND_v36 — Block 36
+  minCreditScore?: number | null;
 };
 
 export type EligibilityInput = {
@@ -17,6 +19,8 @@ export type EligibilityInput = {
   amountRequested?: number | string;
   businessLocation?: string;
   accountsReceivableBalance?: number | string;
+  // BF_CREDIT_BAND_v36 — applicant's selected credit score band label.
+  creditScoreRange?: string | null;
 };
 
 export type EligibilityReasonSummary = {
@@ -44,7 +48,21 @@ const REASONS = {
   unsupportedCountry: "Business location unsupported",
   factoringRequiresReceivables: "Factoring requires accounts receivable balance",
   filteredByIntent: "Filtered by funding intent",
+  belowMinCreditScore: "Credit score below lender minimum",
 };
+
+// BF_CREDIT_BAND_v36 — local mirror of bandUpperBound to avoid extra deps.
+function bandUpperBoundLocal(label: string | null): number | null {
+  if (!label) return null;
+  switch (label) {
+    case "Under 560":  return 559;
+    case "561 to 600": return 600;
+    case "600 to 660": return 660;
+    case "661 to 720": return 720;
+    case "Over 720":   return 9999;
+    default: return null;
+  }
+}
 
 function parseAmount(value?: number | string) {
   if (typeof value === "number") return value;
@@ -124,6 +142,15 @@ export function getEligibilityResult(
     }
     if (product.category === "Factoring" && accountsReceivableBalance <= 0) {
       failures.push(REASONS.factoringRequiresReceivables);
+    }
+    // BF_CREDIT_BAND_v36 — Block 36 — credit score gate.
+    if (product.minCreditScore != null && product.minCreditScore > 0) {
+      const bandUpper = bandUpperBoundLocal(input.creditScoreRange ?? null);
+      // If user did not pick a band ("Prefer not to say"), do NOT filter
+      // out (optional field — show all otherwise-matching products).
+      if (bandUpper != null && bandUpper < product.minCreditScore) {
+        failures.push(REASONS.belowMinCreditScore);
+      }
     }
 
     if (failures.length) {

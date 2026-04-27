@@ -37,6 +37,7 @@ import { shouldAutoAdvance } from "../utils/autoadvance";
 import { persistApplicationStep } from "./saveStepProgress";
 import { useReadiness } from "../state/readinessStore";
 import { useAuth } from "@/auth/useAuth";
+import { CREDIT_SCORE_BANDS } from "./creditScoreBands";
 
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
@@ -658,6 +659,32 @@ export function Step4_Applicant() {
               placeholder="%"
             />
           </div>
+        </div>
+
+        {/* BF_CREDIT_BAND_v36 — optional applicant credit score band */}
+        <div style={{ marginTop: tokens.spacing.md }}>
+          <label style={components.form.label}>Credit Score Range <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
+          <select
+            value={(values as any).creditScoreRange || ""}
+            onChange={(e) => {
+              const next = { ...values, creditScoreRange: e.target.value };
+              update({ applicant: next });
+            }}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              border: `1px solid ${tokens.colors.border}`,
+              borderRadius: 8,
+              fontSize: 14,
+              background: tokens.colors.surface,
+              color: tokens.colors.textPrimary,
+            }}
+          >
+            <option value="">Prefer not to say</option>
+            {CREDIT_SCORE_BANDS.map((b) => (
+              <option key={b.label} value={b.label}>{b.label}</option>
+            ))}
+          </select>
         </div>
 
         <label
