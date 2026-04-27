@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { StepHeader } from "../components/StepHeader";
@@ -326,47 +326,7 @@ fixedAssets:
     };
   }, [update]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("creditPrefill");
-    if (!stored) return;
-
-    try {
-      const data = JSON.parse(stored) as Record<string, string>;
-      const nextKyc = {
-        ...app.kyc,
-        industry: prefillData.industry || app.kyc.industry || "",
-        yearsInBusiness: prefillData.yearsInBusiness || app.kyc.yearsInBusiness || "",
-        salesHistory: prefillData.yearsInBusiness || app.kyc.salesHistory || "",
-        annualRevenue: prefillData.annualRevenue || app.kyc.annualRevenue || "",
-        revenueLast12Months: prefillData.annualRevenue || app.kyc.revenueLast12Months || "",
-        monthlyRevenue: prefillData.monthlyRevenue || app.kyc.monthlyRevenue || "",
-        arBalance: prefillData.arBalance || app.kyc.arBalance || "",
-        accountsReceivable: prefillData.arBalance || app.kyc.accountsReceivable || "",
-        availableCollateral:
-          prefillData.availableCollateral || data.collateralAvailable || app.kyc.availableCollateral || "",
-        fixedAssets:
-          prefillData.availableCollateral || data.collateralAvailable || app.kyc.fixedAssets || "",
-      };
-
-      const changed =
-        nextKyc.industry !== app.kyc.industry ||
-        nextKyc.salesHistory !== app.kyc.salesHistory ||
-        nextKyc.yearsInBusiness !== app.kyc.yearsInBusiness ||
-        nextKyc.revenueLast12Months !== app.kyc.revenueLast12Months ||
-        nextKyc.annualRevenue !== app.kyc.annualRevenue ||
-        nextKyc.monthlyRevenue !== app.kyc.monthlyRevenue ||
-        nextKyc.arBalance !== app.kyc.arBalance ||
-        nextKyc.accountsReceivable !== app.kyc.accountsReceivable ||
-        nextKyc.availableCollateral !== app.kyc.availableCollateral ||
-        nextKyc.fixedAssets !== app.kyc.fixedAssets;
-
-      if (changed) {
-        update({ kyc: nextKyc });
-      }
-    } catch {
-      // ignore malformed prefill payload
-    }
-  }, [app.kyc, update]);
+  // Block 15: removed broken creditPrefill effect that referenced an out-of-scope `prefillData`
 
   useEffect(() => {
     const normalized = normalizeFundingIntent(app.kyc.lookingFor);
@@ -401,11 +361,17 @@ fixedAssets:
   const fieldErrors = getStepErrors(app.kyc);
   const isValid = Object.values(fieldErrors).every((error) => !error);
 
-  async function startApplication() {
+  const startInFlightRef = useRef(false);
+  async function startApplication(kycSnapshot?: typeof app.kyc) {
+    if (startInFlightRef.current) return;
+    startInFlightRef.current = true;
     try {
-      saveStepData(1, app.kyc);
-      enforceV1StepSchema("step1", app.kyc);
-      const payload = app.kyc;
+      // Use the caller-supplied snapshot if provided (auto-advance path) so we
+      // validate against the just-updated values, not a stale render closure. (Block 15)
+      const kyc = kycSnapshot ?? app.kyc;
+      saveStepData(1, kyc);
+      enforceV1StepSchema("step1", kyc);
+      const payload = kyc;
 
       const amount = parseCurrency(payload.fundingAmount);
       const matchPercentages = buildMatchPercentages(
@@ -470,6 +436,8 @@ fixedAssets:
     } catch (err) {
       console.error("[wizard] Step 1 unexpected error", err);
       setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      startInFlightRef.current = false;
     }
   }
 
@@ -503,7 +471,7 @@ fixedAssets:
     const nextErrors = getStepErrors(nextValues);
     const nextIsValid = Object.values(nextErrors).every((error) => !error);
     if (nextIsValid) {
-      void startApplication();
+      void startApplication(nextValues);
     }
   };
 

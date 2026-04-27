@@ -122,11 +122,14 @@ export const toStep1SchemaInput = (kyc: Record<string, any>): Step1Data => ({
   businessLocation: String(kyc.businessLocation ?? ""),
   industry: String(kyc.industry ?? ""),
   purposeOfFunds: String(kyc.purposeOfFunds ?? ""),
-  salesHistoryYears: String(kyc.salesHistory ?? ""),
-  annualRevenueRange: String(kyc.revenueLast12Months ?? ""),
+  // Dual-bound fields: forms write to both canonical keys, but legacy state may
+  // only have one. Validator reads whichever is populated so it matches what the
+  // dropdown is actually displaying. (Block 15)
+  salesHistoryYears: String(kyc.salesHistory || kyc.yearsInBusiness || ""),
+  annualRevenueRange: String(kyc.revenueLast12Months || kyc.annualRevenue || ""),
   avgMonthlyRevenueRange: String(kyc.monthlyRevenue ?? ""),
-  accountsReceivableRange: String(kyc.accountsReceivable ?? ""),
-  fixedAssetsValueRange: String(kyc.fixedAssets ?? ""),
+  accountsReceivableRange: String(kyc.accountsReceivable || kyc.arBalance || ""),
+  fixedAssetsValueRange: String(kyc.fixedAssets || kyc.availableCollateral || ""),
 });
 
 export const toStep3SchemaInput = (
