@@ -1,25 +1,17 @@
-// BF_LANDING_CENTERED_v29 — Block 29
-// Hero is centered on the page; OTP card sits centered directly below it.
-// Header, feature cards, and "Why Choose" section unchanged from v25/v27.
+// BF_LANDING_NO_HEADER_CTA_v31 — Block 31
+// Header no longer shows the "Get Started →" link. The inline OTP card is
+// now the single, unambiguous call to action. Logo stays left-aligned.
 import React from 'react';
-import { Link } from 'react-router-dom';
 import PhoneOTPInline from '../components/PhoneOTPInline';
 
 export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff', color: '#0f172a' }}>
       <header style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        display: 'flex', justifyContent: 'flex-start', alignItems: 'center',
         padding: '20px 32px', borderBottom: '1px solid #e2e8f0',
       }}>
         <div style={{ fontWeight: 700, fontSize: 20 }}>Boreal Financial</div>
-        <Link
-          to="/otp"
-          style={{
-            padding: '10px 20px', background: '#1e3a8a', color: '#fff',
-            borderRadius: 6, textDecoration: 'none', fontWeight: 600,
-          }}
-        >Get Started →</Link>
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 24px' }}>
