@@ -1,12 +1,14 @@
-// BF_PHONE_OTP_INLINE_v29 — Block 29
-// Inline OTP form. Normalizes user input to E.164 before sending to Twilio.
-// Display:  "(587) 888-1837"
-// Submit:   "+15878881837"
-//
-// Why: Azure log showed `OTP ERROR: Invalid parameter 'To': 5878881837` —
-// Twilio rejects anything that isn't E.164. v27 sent the raw input string,
-// so a digits-only number like "5878881837" was rejected.
-import React, { useState } from 'react';
+// BF_PHONE_OTP_INLINE_v31 — Block 31
+// Inline OTP form with three new properties vs v29:
+//   1. /api/public/application/start is called WITHOUT Authorization header
+//      and WITHOUT credentials. The endpoint is public; sending an Auth
+//      header forced a CORS preflight that stalled, leaving the form stuck
+//      on "Starting...".
+//   2. AbortController with a 15s ceiling on every fetch. Hangs become
+//      visible errors that let the user retry.
+//   3. Auto-submit: once the user types 6 digits in the code field, we
+//      verifyAndStart() automatically — no second button press.
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const API_BASE =
@@ -14,7 +16,6 @@ const API_BASE =
 
 type Phase = 'phone' | 'code' | 'submitting';
 
-// Strip non-digits, drop a leading "1" country code, and return up to 10 digits.
 function tenDigits(raw: string): string {
   const d = (raw || '').replace(/\D+/g, '');
   if (d.length === 11 && d.startsWith('1')) return d.slice(1);
@@ -22,7 +23,6 @@ function tenDigits(raw: string): string {
   return d;
 }
 
-// User-facing display format.
 function formatDisplay(raw: string): string {
   const d = tenDigits(raw);
   if (d.length === 0) return '';
@@ -31,11 +31,35 @@ function formatDisplay(raw: string): string {
   return '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6, 10);
 }
 
-// API submission format. Returns null if not exactly 10 digits.
 function toE164(raw: string): string | null {
   const d = tenDigits(raw);
   if (d.length !== 10) return null;
   return '+1' + d;
+}
+
+// Fetch wrapper that hard-aborts after `timeoutMs` and surfaces a clean error.
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number, phaseTag: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    // eslint-disable-next-line no-console
+    console.log('[otp] ' + phaseTag + '.send', { url: input });
+    const res = await fetch(input, { ...init, signal: controller.signal });
+    // eslint-disable-next-line no-console
+    console.log('[otp] ' + phaseTag + '.status', { status: res.status });
+    return res;
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      // eslint-disable-next-line no-console
+      console.warn('[otp] ' + phaseTag + '.timeout', { ms: timeoutMs });
+      throw new Error('Network is taking too long. Please try again.');
+    }
+    // eslint-disable-next-line no-console
+    console.warn('[otp] ' + phaseTag + '.error', { msg: err?.message });
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export default function PhoneOTPInline() {
@@ -45,9 +69,10 @@ export default function PhoneOTPInline() {
   const [code, setCode] = useState<string>('');
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Cached so verify + application/start use the same canonical value.
   const [phoneE164, setPhoneE164] = useState<string>('');
+
+  // Guard against double-fire when auto-submit and user click race.
+  const submittingRef = useRef<boolean>(false);
 
   async function sendCode(): Promise<void> {
     setError(null);
@@ -61,12 +86,17 @@ export default function PhoneOTPInline() {
     try {
       // eslint-disable-next-line no-console
       console.log('[otp] start.send.e164', { phone: e164 });
-      const res = await fetch(API_BASE + '/api/auth/otp/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone: e164, channel: 'sms' }),
-      });
+      const res = await fetchWithTimeout(
+        API_BASE + '/api/auth/otp/start',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ phone: e164, channel: 'sms' }),
+        },
+        15000,
+        'start',
+      );
       if (!res.ok) {
         const body = await res.text().catch(() => String(res.status));
         // eslint-disable-next-line no-console
@@ -84,14 +114,18 @@ export default function PhoneOTPInline() {
   }
 
   async function verifyAndStart(): Promise<void> {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setError(null);
     if (!/^\d{4,8}$/.test(code.trim())) {
       setError('Enter the code you received.');
+      submittingRef.current = false;
       return;
     }
     if (!phoneE164) {
       setError('Phone number missing — start over.');
       setPhase('phone');
+      submittingRef.current = false;
       return;
     }
     setBusy(true);
@@ -100,12 +134,17 @@ export default function PhoneOTPInline() {
       // 1. Verify the OTP.
       // eslint-disable-next-line no-console
       console.log('[otp] verify.send', { phone: phoneE164 });
-      const verifyRes = await fetch(API_BASE + '/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone: phoneE164, code }),
-      });
+      const verifyRes = await fetchWithTimeout(
+        API_BASE + '/api/auth/otp/verify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ phone: phoneE164, code }),
+        },
+        15000,
+        'verify',
+      );
       const verifyBody = await verifyRes.json().catch(() => ({}));
       if (!verifyRes.ok) {
         throw new Error((verifyBody as any)?.message || 'Code is incorrect');
@@ -120,18 +159,25 @@ export default function PhoneOTPInline() {
       // eslint-disable-next-line no-console
       console.log('[otp] verify.ok', { hasJwt: !!jwt });
 
-      // 2. Mint the application row.
-      const startRes = await fetch(API_BASE + '/api/public/application/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(jwt ? { Authorization: 'Bearer ' + jwt } : {}),
+      // 2. Mint the application row. PUBLIC endpoint — DO NOT send
+      // Authorization or credentials. Doing so triggers a CORS preflight
+      // that the public endpoint isn't configured to satisfy, and the call
+      // hangs indefinitely (the bug Block 31 was created to fix).
+      const startRes = await fetchWithTimeout(
+        API_BASE + '/api/public/application/start',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // No credentials, no Authorization. Endpoint is public.
+          body: JSON.stringify({ source: 'client_direct', phone: phoneE164 }),
         },
-        credentials: 'include',
-        body: JSON.stringify({ source: 'client_direct', phone: phoneE164 }),
-      });
+        15000,
+        'mint',
+      );
       const startBody = await startRes.json().catch(() => ({}));
       if (!startRes.ok) {
+        // eslint-disable-next-line no-console
+        console.warn('[otp] mint.fail', { status: startRes.status, body: startBody });
         throw new Error((startBody as any)?.message || ('Could not start application: ' + startRes.status));
       }
       const appToken =
@@ -157,8 +203,20 @@ export default function PhoneOTPInline() {
       setError(err?.message || 'Something went wrong');
     } finally {
       setBusy(false);
+      submittingRef.current = false;
     }
   }
+
+  // BF_OTP_AUTOSUBMIT_v31 — auto-fire verifyAndStart when the user finishes
+  // typing the 6-digit OTP. Native iOS/Android one-time-code autofill also
+  // triggers this path the moment the OS hands the code over.
+  useEffect(() => {
+    if (phase !== 'code') return;
+    if (busy) return;
+    if (!/^\d{6}$/.test(code.trim())) return;
+    void verifyAndStart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, phase]);
 
   return (
     <div
@@ -182,6 +240,7 @@ export default function PhoneOTPInline() {
             placeholder="(555) 000-0000"
             value={phoneDisplay}
             onChange={(e) => setPhoneDisplay(formatDisplay(e.target.value))}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !busy) { void sendCode(); } }}
             style={{
               width: '100%', padding: '12px 14px', fontSize: 16,
               border: '1px solid #cbd5e1', borderRadius: 8, marginBottom: 12,
@@ -216,9 +275,11 @@ export default function PhoneOTPInline() {
             type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
+            maxLength={6}
             placeholder="123456"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))}
+            autoFocus
             style={{
               width: '100%', padding: '12px 14px', fontSize: 18, letterSpacing: 4,
               border: '1px solid #cbd5e1', borderRadius: 8, marginBottom: 12,
@@ -241,7 +302,7 @@ export default function PhoneOTPInline() {
           <button
             type="button"
             disabled={busy}
-            onClick={() => { setPhase('phone'); setCode(''); setError(null); }}
+            onClick={() => { setPhase('phone'); setCode(''); setError(null); submittingRef.current = false; }}
             style={{
               marginTop: 10, background: 'transparent', border: 0,
               color: '#1e3a8a', fontSize: 13, cursor: 'pointer', padding: 0,
@@ -250,6 +311,9 @@ export default function PhoneOTPInline() {
           >
             ← Use a different number
           </button>
+          <p style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center' }}>
+            Code arrives automatically — we&apos;ll continue once you finish typing.
+          </p>
         </>
       )}
     </div>
