@@ -8,6 +8,8 @@ export const CATEGORY_BUCKETS = [
   { id: "FACTORING", label: "Factoring", aliases: ["INVOICE_FACTORING"] },
   { id: "PURCHASE_ORDER_FINANCE", label: "Purchase Order Financing", aliases: ["PO"] },
   { id: "MERCHANT_CASH_ADVANCE", label: "Merchant Cash Advance", aliases: ["MCA"] },
+  // BF_MEDIA_FUNDING_v38 — Block 38-F (client)
+  { id: "MEDIA_FUNDING", label: "Media Funding", aliases: ["MCA"] },
   { id: "ASSET_BASED_LENDING", label: "Asset Based Lending", aliases: [] },
   { id: "SBA_GOVERNMENT", label: "SBA / Government", aliases: [] },
   { id: "STARTUP_CAPITAL", label: "Startup Capital", aliases: [] },
