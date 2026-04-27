@@ -27,6 +27,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Verify SWA config in artifact (Block 16)
+        working-directory: ./client-app
+        run: |
+          if [ ! -f dist/staticwebapp.config.json ]; then
+            echo "::error::dist/staticwebapp.config.json missing — SPA fallback will break (hard reloads will 404)."
+            exit 1
+          fi
+          echo "✓ staticwebapp.config.json present in dist/"
+
       - name: Check build size
         run: |
           echo "File count:"
