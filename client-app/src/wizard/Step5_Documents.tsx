@@ -173,7 +173,7 @@ export function Step5_Documents() {
     if (app.currentStep !== 5) {
       update({ currentStep: 5 });
     }
-  }, [app.currentStep, update]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
 
   useEffect(() => {
     trackEvent("client_step_viewed", { step: 5 });
