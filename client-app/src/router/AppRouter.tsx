@@ -6,12 +6,17 @@ import { AppSpinner } from "@/components/ui/AppSpinner";
 
 const LandingPage        = lazy(() => import("@/pages/LandingPage"));
 const OtpPage            = lazy(() => import("@/pages/OtpPage"));
-const Step1              = lazy(() => import("@/wizard/Step1_FinancialProfile"));
-const Step2              = lazy(() => import("@/wizard/Step2_ProductCategory"));
-const Step3              = lazy(() => import("@/wizard/Step3_BusinessDetails"));
-const Step4              = lazy(() => import("@/wizard/Step4_ApplicantInformation"));
-const Step5              = lazy(() => import("@/wizard/Step5_Documents"));
-const Step6              = lazy(() => import("@/wizard/Step6_TermsSignature"));
+// BF_EAGER_WIZARD_v39 — Block 39-B — wizard steps are now eager imports.
+// Lazy chunks were causing React 18 transition stalls when the Service
+// Worker returned stale chunk-hash 404s (e.g., after a fresh deploy).
+// Bundling all six steps in the main JS adds ~30KB but eliminates the
+// "click Continue but nothing happens" failure mode entirely.
+import Step1 from "@/wizard/Step1_FinancialProfile";
+import Step2 from "@/wizard/Step2_ProductCategory";
+import Step3 from "@/wizard/Step3_BusinessDetails";
+import Step4 from "@/wizard/Step4_ApplicantInformation";
+import Step5 from "@/wizard/Step5_Documents";
+import Step6 from "@/wizard/Step6_TermsSignature";
 const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
 const SessionExpiredPage = lazy(() => import("@/pages/SessionExpiredPage").then((m) => ({ default: m.SessionExpiredPage })));
 const SessionRevokedPage = lazy(() => import("@/pages/SessionRevokedPage").then((m) => ({ default: m.SessionRevokedPage })));
