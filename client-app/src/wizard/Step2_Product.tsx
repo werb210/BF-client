@@ -124,6 +124,13 @@ export function Step2_Product() {
       category: product.product_type ?? product.name,
       minAmount: product.amount_min ?? 0,
       maxAmount: product.amount_max ?? 0,
+      // BF_CREDIT_BAND_v36
+      minCreditScore:
+        product.min_credit_score != null
+          ? Number(product.min_credit_score)
+          : product.minCreditScore != null
+            ? Number(product.minCreditScore)
+            : null,
       supportedCountries: product.country ? [product.country] : [],
       requiredDocs: normalizeRequirementList(
         product.required_documents ?? []
@@ -139,10 +146,13 @@ export function Step2_Product() {
         amountRequested: app.kyc.fundingAmount,
         businessLocation: app.kyc.businessLocation,
         accountsReceivableBalance: app.kyc.accountsReceivable,
+        // BF_CREDIT_BAND_v36 — pass through applicant's credit band.
+        creditScoreRange: (app.applicant as any)?.creditScoreRange ?? null,
       },
       app.matchPercentages
     );
   }, [
+    app.applicant,
     app.kyc.accountsReceivable,
     app.kyc.businessLocation,
     app.kyc.fundingAmount,
