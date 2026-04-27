@@ -430,11 +430,50 @@ fixedAssets:
           // accepts an empty body and returns { status: "ok", data: { applicationId } }.
           // The wizard then PATCHes /api/client/applications/:id on each subsequent step.
           const baseUrl = (import.meta.env.VITE_API_URL as string | undefined) || "https://server.boreal.financial";
-          const startRes = await fetch(`${baseUrl}/api/public/application/start`, {
+          // BF_START_FETCH_LIFECYCLE_v21 — Block 21
+const __startFetchTs = Date.now();
+const __startAbort = new AbortController();
+const __startTimer = setTimeout(() => {
+  // eslint-disable-next-line no-console
+  console.warn('[wizard] startApplication TIMEOUT — aborting fetch after 20s');
+  __startAbort.abort();
+}, 20000);
+// eslint-disable-next-line no-console
+console.log('[wizard] startApplication request begin');
+let startRes: any;
+try {
+  startRes = await fetch(`${baseUrl}/api/public/application/start`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ source: "client_direct" }),
+            signal: __startAbort.signal,
           });
+  // eslint-disable-next-line no-console
+  console.log('[wizard] startApplication response', {
+    status: (startRes as any)?.status ?? (startRes as any)?.data?.status ?? 'unknown',
+    elapsed_ms: Date.now() - __startFetchTs,
+    body: (startRes as any)?.data ?? (startRes as any),
+  });
+} catch (err: any) {
+  // eslint-disable-next-line no-console
+  const __isAbort = err?.name === 'AbortError';
+  console.error('[wizard] startApplication error', {
+    name: err?.name,
+    message: err?.message,
+    status: err?.response?.status,
+    elapsed_ms: Date.now() - __startFetchTs,
+    aborted: __isAbort,
+  });
+  if (__isAbort) {
+    // eslint-disable-next-line no-console
+    console.warn('[wizard] startApplication aborted');
+  }
+  clearTimeout(__startTimer);
+  throw err;
+} finally {
+  clearTimeout(__startTimer);
+}
+
           if (!startRes.ok) {
             console.error("[wizard] /api/public/application/start failed", { status: startRes.status });
             setSubmitError("We couldn't start your application. Please check your connection and try again.");
