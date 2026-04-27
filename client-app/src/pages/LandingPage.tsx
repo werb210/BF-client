@@ -1,7 +1,6 @@
-// BF_LANDING_RESTORED_v25 — Block 25
-// Restored hero landing page. The OTP gate happens after the user clicks
-// "Start Your Application". Do not redirect / to /otp; the marketing hero
-// belongs here.
+// BF_LANDING_CENTERED_v29 — Block 29
+// Hero is centered on the page; OTP card sits centered directly below it.
+// Header, feature cards, and "Why Choose" section unchanged from v25/v27.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PhoneOTPInline from '../components/PhoneOTPInline';
@@ -24,16 +23,19 @@ export default function LandingPage() {
       </header>
 
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 24px' }}>
-        <h1 style={{ fontSize: 56, lineHeight: 1.1, margin: 0, fontWeight: 800, color: '#0f172a' }}>
-          Professional Business Financing Solutions
-        </h1>
-        <p style={{ fontSize: 18, color: '#475569', marginTop: 24, maxWidth: 760, lineHeight: 1.5 }}>
-          Connecting Canadian and US businesses with tailored financing solutions.
-          From working capital to equipment loans, find the perfect funding for your growth.
-        </p>
+        { /* BF_LANDING_HERO_CENTERED_v29 */ }
+        <div style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 56, lineHeight: 1.1, margin: 0, fontWeight: 800, color: '#0f172a' }}>
+            Professional Business Financing Solutions
+          </h1>
+          <p style={{ fontSize: 18, color: '#475569', marginTop: 24, lineHeight: 1.5 }}>
+            Connecting Canadian and US businesses with tailored financing solutions.
+            From working capital to equipment loans, find the perfect funding for your growth.
+          </p>
+        </div>
 
-        { /* BF_LANDING_OTP_INLINE_v27 */ }
-        <div style={{ marginTop: 32, maxWidth: 460 }}>
+        { /* BF_LANDING_OTP_CENTERED_v29 */ }
+        <div style={{ marginTop: 32, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
           <PhoneOTPInline />
         </div>
 
