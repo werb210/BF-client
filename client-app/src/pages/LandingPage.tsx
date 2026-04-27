@@ -4,6 +4,7 @@
 // belongs here.
 import React from 'react';
 import { Link } from 'react-router-dom';
+import PhoneOTPInline from '../components/PhoneOTPInline';
 
 export default function LandingPage() {
   return (
@@ -31,15 +32,9 @@ export default function LandingPage() {
           From working capital to equipment loans, find the perfect funding for your growth.
         </p>
 
-        <div style={{ marginTop: 32 }}>
-          <Link
-            to="/otp"
-            style={{
-              display: 'inline-block', padding: '16px 32px',
-              background: '#f59e0b', color: '#fff', fontWeight: 700, fontSize: 18,
-              borderRadius: 8, textDecoration: 'none',
-            }}
-          >Start Your Application →</Link>
+        { /* BF_LANDING_OTP_INLINE_v27 */ }
+        <div style={{ marginTop: 32, maxWidth: 460 }}>
+          <PhoneOTPInline />
         </div>
 
         <section style={{
