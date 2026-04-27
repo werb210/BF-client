@@ -425,76 +425,38 @@ fixedAssets:
         : null;
 
       if (!token) {
-        try {
-          // Use the public draft-mint endpoint. POST /api/public/application/start
-          // accepts an empty body and returns { status: "ok", data: { applicationId } }.
-          // The wizard then PATCHes /api/client/applications/:id on each subsequent step.
-          const baseUrl = (import.meta.env.VITE_API_URL as string | undefined) || "https://server.boreal.financial";
-          // BF_START_FETCH_LIFECYCLE_v21 — Block 21
-const __startFetchTs = Date.now();
-const __startAbort = new AbortController();
-const __startTimer = setTimeout(() => {
-  // eslint-disable-next-line no-console
-  console.warn('[wizard] startApplication TIMEOUT — aborting fetch after 20s');
-  __startAbort.abort();
-}, 20000);
-// eslint-disable-next-line no-console
-console.log('[wizard] startApplication request begin');
-let startRes: any;
-try {
-  startRes = await fetch(`${baseUrl}/api/public/application/start`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ source: "client_direct" }),
-            signal: __startAbort.signal,
-          });
-  // eslint-disable-next-line no-console
-  console.log('[wizard] startApplication response', {
-    status: (startRes as any)?.status ?? (startRes as any)?.data?.status ?? 'unknown',
-    elapsed_ms: Date.now() - __startFetchTs,
-    body: (startRes as any)?.data ?? (startRes as any),
-  });
-} catch (err: any) {
-  // eslint-disable-next-line no-console
-  const __isAbort = err?.name === 'AbortError';
-  console.error('[wizard] startApplication error', {
-    name: err?.name,
-    message: err?.message,
-    status: err?.response?.status,
-    elapsed_ms: Date.now() - __startFetchTs,
-    aborted: __isAbort,
-  });
-  if (__isAbort) {
-    // eslint-disable-next-line no-console
-    console.warn('[wizard] startApplication aborted');
-  }
-  clearTimeout(__startTimer);
-  throw err;
-} finally {
-  clearTimeout(__startTimer);
-}
-
-          if (!startRes.ok) {
-            console.error("[wizard] /api/public/application/start failed", { status: startRes.status });
-            setSubmitError("We couldn't start your application. Please check your connection and try again.");
-            return;
-          }
-          const startBody = await startRes.json().catch(() => null);
-          token =
-            (startBody?.data?.applicationId as string | undefined) ||
-            (startBody?.applicationId as string | undefined) ||
-            null;
-        } catch (err) {
-          console.error("[wizard] Step 1 application/start request failed", err);
-          setSubmitError("We couldn't start your application. Please check your connection and try again.");
-          return;
+        // BF_CLIENT_UUID_TOKEN_v23 — Block 23
+        // Generate the application token on the client and skip the Step 1 server round-trip.
+        const __existingToken =
+          typeof localStorage !== "undefined" ? localStorage.getItem("bf_application_token") : null;
+        const __clientToken =
+          __existingToken ||
+          (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `bf-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("bf_application_token", __clientToken);
+          localStorage.setItem("bf_application_pending_submit", "1");
         }
-
-        if (!token || !UUID_RE.test(token)) {
-          console.error("[wizard] Step 1 server did not return a valid application UUID", { token });
-          setSubmitError("We couldn't start your application. Please try again in a moment.");
-          return;
-        }
+        // eslint-disable-next-line no-console
+        console.log("[wizard] startApplication client-uuid mode", {
+          token: __clientToken,
+          reused: !!__existingToken,
+        });
+        const startRes: any = {
+          ok: true,
+          status: 200,
+          data: {
+            applicationToken: __clientToken,
+            applicationId: __clientToken,
+            source: "client_uuid",
+          },
+          applicationToken: __clientToken,
+          applicationId: __clientToken,
+        };
+        // eslint-disable-next-line no-console
+        console.log("[wizard] startApplication response (synthetic, client-side)", startRes);
+        token = __clientToken;
       }
 
       update({
