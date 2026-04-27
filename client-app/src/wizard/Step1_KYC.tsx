@@ -179,6 +179,13 @@ export function Step1_KYC(): JSX.Element {
     const params = new URLSearchParams(window.location.search);
     return params.get("reason") === "session_expired";
   }, []);
+  // BF_STEP1_CLEANUP_v25 — clear Block 23 residue on mount
+  useEffect(() => {
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem("bf_application_pending_submit");
+    }
+  }, []);
+
   useEffect(() => {
     if (app.currentStep !== 1) {
       update({ currentStep: 1 });
@@ -425,38 +432,80 @@ fixedAssets:
         : null;
 
       if (!token) {
-        // BF_CLIENT_UUID_TOKEN_v23 — Block 23
-        // Generate the application token on the client and skip the Step 1 server round-trip.
-        const __existingToken =
-          typeof localStorage !== "undefined" ? localStorage.getItem("bf_application_token") : null;
-        const __clientToken =
-          __existingToken ||
-          (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-            ? crypto.randomUUID()
-            : `bf-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
-        if (typeof localStorage !== "undefined") {
-          localStorage.setItem("bf_application_token", __clientToken);
-          localStorage.setItem("bf_application_pending_submit", "1");
+        // BF_STEP1_RESTORED_v25 — Block 25
+        // Real server-mint flow. /api/public/application/start completes in ~40ms
+        // per Block 20 server diagnostics. Lifecycle logging from Block 21 is
+        // preserved so we can see fetch outcomes in the console.
+        const __apiBase =
+          ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
+        const __startUrl = __apiBase + '/api/public/application/start';
+        const __startTs = Date.now();
+        const __startAbort = new AbortController();
+        const __startTimer = setTimeout(() => {
+          // eslint-disable-next-line no-console
+          console.warn('[wizard] startApplication TIMEOUT — aborting after 20s');
+          __startAbort.abort();
+        }, 20000);
+        // eslint-disable-next-line no-console
+        console.log('[wizard] startApplication request begin', { url: __startUrl });
+
+        let startRes: any;
+        try {
+          const __res = await fetch(__startUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            signal: __startAbort.signal,
+            body: JSON.stringify({ source: 'client_direct' }),
+          });
+          const __body = await __res.json().catch(() => ({}));
+          if (!__res.ok) {
+            // eslint-disable-next-line no-console
+            console.error('[wizard] startApplication response', {
+              status: __res.status, body: __body, elapsed_ms: Date.now() - __startTs,
+            });
+            throw new Error('startApplication failed: ' + __res.status);
+          }
+          // eslint-disable-next-line no-console
+          console.log('[wizard] startApplication response', {
+            status: __res.status, body: __body, elapsed_ms: Date.now() - __startTs,
+          });
+          const __token =
+            (__body as any)?.applicationToken ??
+            (__body as any)?.applicationId ??
+            (__body as any)?.id ??
+            (__body as any)?.data?.applicationToken ??
+            (__body as any)?.data?.applicationId ??
+            (__body as any)?.data?.id;
+          if (!__token) {
+            // eslint-disable-next-line no-console
+            console.error('[wizard] startApplication response missing token', __body);
+            throw new Error('startApplication response missing token');
+          }
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('bf_application_token', String(__token));
+            localStorage.removeItem('bf_application_pending_submit');
+          }
+          startRes = {
+            ok: true,
+            status: __res.status,
+            data: __body,
+            applicationToken: __token,
+            applicationId: __token,
+          };
+        } catch (err: any) {
+          // eslint-disable-next-line no-console
+          console.error('[wizard] startApplication error', {
+            name: err?.name, message: err?.message, aborted: err?.name === 'AbortError',
+            elapsed_ms: Date.now() - __startTs,
+          });
+          clearTimeout(__startTimer);
+          throw err;
+        } finally {
+          clearTimeout(__startTimer);
         }
-        // eslint-disable-next-line no-console
-        console.log("[wizard] startApplication client-uuid mode", {
-          token: __clientToken,
-          reused: !!__existingToken,
-        });
-        const startRes: any = {
-          ok: true,
-          status: 200,
-          data: {
-            applicationToken: __clientToken,
-            applicationId: __clientToken,
-            source: "client_uuid",
-          },
-          applicationToken: __clientToken,
-          applicationId: __clientToken,
-        };
-        // eslint-disable-next-line no-console
-        console.log("[wizard] startApplication response (synthetic, client-side)", startRes);
-        token = __clientToken;
+
+        token = startRes?.applicationToken || startRes?.applicationId || token;
       }
 
       update({
