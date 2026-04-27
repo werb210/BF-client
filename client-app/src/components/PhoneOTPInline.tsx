@@ -297,25 +297,6 @@ export default function PhoneOTPInline() {
               textAlign: 'center', boxSizing: 'border-box',
             }}
           />
-          {/* BF_OTP_PASTE_v37 — manual paste fallback for browsers/OS without SMS autofill */}
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const text = await navigator.clipboard.readText();
-                const digits = (text || "").replace(/\D+/g, "").slice(0, 6);
-                if (digits.length >= 4) { setCode(digits); }
-              } catch { /* clipboard denied or unsupported */ }
-            }}
-            style={{
-              display: "block", width: "100%", padding: "8px 12px",
-              fontSize: 13, fontWeight: 500, color: "#0f172a",
-              background: "#f1f5f9", border: "1px solid #cbd5e1",
-              borderRadius: 8, marginBottom: 12, cursor: "pointer",
-            }}
-          >
-            Paste Code from Clipboard
-          </button>
           {error && <div role="alert" style={{ color: '#b91c1c', fontSize: 13, marginBottom: 8 }}>{error}</div>}
           <button
             type="button"
