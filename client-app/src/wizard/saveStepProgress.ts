@@ -1,27 +1,15 @@
-import { saveApplicationStep } from "../api/applicationProgress";
 import { ApplicationData } from "../types/application";
 
+// BF_LOCAL_FIRST_v35 — Block 35: per-step server save disabled. The wizard
+// is local-first; the server only sees the application at Step 6 submit.
+// The function signature is preserved so all existing `await
+// persistApplicationStep(app, N, data)` call sites remain valid no-ops.
+// To re-enable later (e.g. an explicit "Save & Continue Later" button),
+// route the call through ClientAppAPI.update() with a new schema-flag.
 export async function persistApplicationStep(
-  app: ApplicationData,
-  step: number,
-  data: Record<string, any>
+  _app: ApplicationData,
+  _step: number,
+  _data: Record<string, any>
 ) {
-  const applicationId = app.applicationId || app.applicationToken;
-
-  if (!applicationId) {
-    // Steps 1-3 run before the application exists on the server.
-    // Local draft is already saved via saveStepData. Skip server save silently.
-    return;
-  }
-
-  try {
-    await saveApplicationStep({
-      applicationId,
-      step,
-      data,
-    });
-  } catch (err) {
-    // Autosave is best-effort. Never block the user from advancing.
-    console.debug(`[autosave] step ${step} save failed (non-blocking):`, err);
-  }
+  return;
 }

@@ -224,23 +224,17 @@ export function useApplicationStore() {
     localStorage.setItem(APPLICATION_DATA_KEY, serialized);
   }, [app]);
 
-  const saveToServer = useMemo(
-    () =>
-      debounce(async (state: ApplicationData) => {
-        if (!state.applicationToken || typeof state.applicationToken !== "string") return;
-        if (state.applicationToken.length < 10) return;
-        // Skip placeholder tokens (e.g. "local-...") — server's id column is uuid
-        // and rejects non-uuid casts with 22P02, surfacing as 500s in the console.
-        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(state.applicationToken)) return;
-        if (!hasActiveAuthSession()) return;
-        await patchApplication(state.applicationToken, {
-          metadata: { draft: { step: state.currentStep } },
-        }).catch(() => {
-          // Silent — autosave is best-effort
-        });
-      }, 1500),
-    []
-  );
+  // BF_LOCAL_FIRST_v35 — Block 35: per-step server PATCH disabled. The wizard
+  // is now a local-first form. OfflineStore.save() (called inside update())
+  // is the single source of truth client-side. The full payload is sent
+  // exactly once at Step 6 via ClientAppAPI.submit(). The function shape
+  // and .cancel() method are preserved as a no-op so existing call sites
+  // (`void saveToServer(updated)`, `saveToServer.cancel()`) keep compiling.
+  const saveToServer = useMemo(() => {
+    const fn = (_state: ApplicationData) => Promise.resolve();
+    (fn as any).cancel = () => {};
+    return fn as ((s: ApplicationData) => Promise<void>) & { cancel: () => void };
+  }, []);
 
   function init() {
     if (initialized) return;

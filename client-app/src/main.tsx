@@ -5,6 +5,7 @@ import "./styles/global.css";
 import App from "./App";
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
+import { startPendingSubmitWatcher } from "./state/pendingSubmit";
 
 try {
   validateEnv();
@@ -13,6 +14,9 @@ try {
 }
 
 console.log("NEW BUILD LIVE:", new Date().toISOString());
+
+// BF_LOCAL_FIRST_v35 — auto-retry pending submits on online/interval/boot.
+startPendingSubmitWatcher();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

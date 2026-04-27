@@ -46,6 +46,7 @@ import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
 import { normalizeForSubmit } from "./submitNormalize";
+import { savePendingSubmit, clearPendingSubmit } from "../state/pendingSubmit";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
@@ -291,23 +292,10 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
+    // BF_LOCAL_FIRST_v35 — Block 35: pre-submit PATCH removed. The full
+    // payload is sent in the ClientAppAPI.submit() call below. Keeping a
+    // separate PATCH here was the source of the stale-token 500/410 flood.
     try {
-      await ClientAppAPI.update(app.applicationToken!, {
-        financialProfile: app.kyc,
-        selectedProduct: app.selectedProduct,
-        selectedProductId: app.selectedProductId,
-        selectedProductType: app.selectedProductType,
-        requires_closing_cost_funding: app.requires_closing_cost_funding,
-        business: app.business,
-        applicant: app.applicant,
-        documents: app.documents,
-        documentsDeferred: Boolean(app.documentsDeferred),
-        termsAccepted: app.termsAccepted && Boolean(app.infoConfirmed) && Boolean(app.shareAuthorization),
-        typedSignature: app.typedSignature,
-        coApplicantSignature: app.coApplicantSignature,
-        signatureDate: app.signatureDate || today,
-        currentStep: app.currentStep,
-      });
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const normalizedPayload = normalizeForSubmit(app);
@@ -363,7 +351,12 @@ export function Step6_Review(): JSX.Element {
         ...attribution,
       });
       track("submit");
-      const submissionResponse = await ClientAppAPI.submit(app.applicationToken!, {
+      // BF_LOCAL_FIRST_v35 — Block 35: stale-token-resilient submit.
+      // If the local applicationToken no longer exists server-side
+      // (404 / application_not_found), mint a fresh one and retry once.
+      // The full payload lives in the submit() body so server-side state
+      // doesn't need to have anything pre-populated.
+      const submitBody = {
         app: {
           ...app,
           ...payload,
@@ -371,8 +364,39 @@ export function Step6_Review(): JSX.Element {
           ...getLeadFingerprint(),
         },
         normalized: normalizedPayload,
-      });
+      };
+      let submissionResponse: any;
+      try {
+        submissionResponse = await ClientAppAPI.submit(app.applicationToken!, submitBody);
+      } catch (submitErr: any) {
+        const status = Number(submitErr?.status ?? submitErr?.response?.status ?? 0);
+        const code = String(submitErr?.code ?? submitErr?.body?.code ?? "");
+        const stale = status === 404 || status === 410 || code === "application_token_stale" || code === "application_not_found";
+        if (!stale) throw submitErr;
+        // Re-mint and retry once.
+        console.warn("[submit] stale applicationToken; re-minting and retrying", { status, code });
+        const apiBase = (import.meta as any).env?.VITE_API_BASE_URL
+          ?? (typeof window !== "undefined" ? "https://server.boreal.financial" : "");
+        const mintRes = await fetch(`${apiBase}/api/public/application/start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({}),
+        });
+        if (!mintRes.ok) throw submitErr;
+        const mintJson = await mintRes.json().catch(() => ({}));
+        const fresh = String(
+          mintJson?.data?.applicationId ?? mintJson?.applicationId ?? ""
+        );
+        if (!fresh) throw submitErr;
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("bf_application_token", fresh);
+        }
+        update({ applicationToken: fresh, applicationId: fresh });
+        submissionResponse = await ClientAppAPI.submit(fresh, submitBody);
+      }
       localStorage.removeItem("creditSessionToken");
+      clearPendingSubmit(); // BF_LOCAL_FIRST_v35
       const refreshed = await ClientAppAPI.status(app.applicationToken!);
       const hydrated = extractApplicationFromStatus(
         refreshed?.data || {},
@@ -437,6 +461,18 @@ export function Step6_Review(): JSX.Element {
           navigate("/portal", { replace: true });
         }, 1200);
         return;
+      }
+      // BF_LOCAL_FIRST_v35 — outbox: persist the full submit payload so
+      // the auto-retry watcher can re-attempt on online/interval/boot.
+      try {
+        if (app?.applicationToken) {
+          savePendingSubmit(app.applicationToken, {
+            app: { ...app, ...buildSubmissionPayload(app), ...getLeadFingerprint() },
+            normalized: normalizeForSubmit(app),
+          });
+        }
+      } catch (outboxErr) {
+        console.debug("[submit] outbox save failed", outboxErr);
       }
       logError(error, { stage: "submission" });
       setSubmitError("Submission failed. Please retry.");

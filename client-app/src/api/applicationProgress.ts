@@ -28,36 +28,10 @@ export async function fetchApplicationContinuation() {
   return apiCall(API_ENDPOINTS_CONTRACT.APPLICATION.CONTINUATION) as Promise<ContinuationSessionResponse>;
 }
 
-export async function saveApplicationStep(payload: SaveApplicationStepPayload) {
-  if (!isServerApplicationId(payload.applicationId)) {
-    return;
-  }
-
-  // PATCH the application metadata with the step data
-  // Only called when applicationId exists (steps 4+)
-  try {
-    await patchApplication(payload.applicationId, {
-      metadata: { [`step_${payload.step}`]: payload.data },
-      current_step: payload.step,
-    });
-  } catch (err: any) {
-    const message = String(err?.message ?? "").toLowerCase();
-    const isStaleToken =
-      err?.status === 410 ||
-      err?.code === "application_token_stale" ||
-      message.includes("410") ||
-      message.includes("application_token_stale");
-    const isNotFound =
-      message.includes("404") ||
-      message.includes("not found") ||
-      message.includes("application not found");
-    if (isStaleToken || isNotFound) {
-      clearStaleApplicationToken();
-      console.debug("[autosave] stale application cleared");
-    }
-
-    // autosave is best-effort; swallow error
-  }
+export async function saveApplicationStep(_payload: SaveApplicationStepPayload) {
+  // BF_LOCAL_FIRST_v35 — Block 35: per-step server save disabled. Wizard is
+  // local-first; the canonical send is Step 6 ClientAppAPI.submit().
+  return;
 }
 
 function isServerApplicationId(applicationId: string) {
