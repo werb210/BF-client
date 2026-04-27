@@ -361,16 +361,51 @@ fixedAssets:
   const fieldErrors = getStepErrors(app.kyc);
   const isValid = Object.values(fieldErrors).every((error) => !error);
 
+  // Expose live state on window for diagnostics — paste `__bfWizard` in console to inspect.
+  if (typeof window !== "undefined") {
+    (window as any).__bfWizard = {
+      kyc: app.kyc,
+      applicationToken: app.applicationToken,
+      currentStep: app.currentStep,
+      isValid,
+      fieldErrors,
+    };
+  }
+
   const startInFlightRef = useRef(false);
   async function startApplication(kycSnapshot?: typeof app.kyc) {
-    if (startInFlightRef.current) return;
+    console.log("[wizard] startApplication ENTRY", {
+      hasSnapshot: Boolean(kycSnapshot),
+      inFlight: startInFlightRef.current,
+    });
+    if (startInFlightRef.current) {
+      console.warn("[wizard] startApplication SKIPPED — in-flight guard tripped. Forcing reset in case it was stuck.");
+      // Stuck-guard recovery: if we got here with the flag set, clear it so the next
+      // click can proceed. The previous attempt either completed or threw past finally.
+      startInFlightRef.current = false;
+      return;
+    }
     startInFlightRef.current = true;
+    // Safety timeout: hard-reset the in-flight flag after 10s no matter what.
+    const inFlightTimeout = setTimeout(() => {
+      if (startInFlightRef.current) {
+        console.warn("[wizard] startApplication safety timeout — resetting in-flight flag");
+        startInFlightRef.current = false;
+      }
+    }, 10_000);
     try {
       // Use the caller-supplied snapshot if provided (auto-advance path) so we
       // validate against the just-updated values, not a stale render closure. (Block 15)
       const kyc = kycSnapshot ?? app.kyc;
+      console.log("[wizard] Step 1 about to validate", { kyc });
       saveStepData(1, kyc);
-      enforceV1StepSchema("step1", kyc);
+      try {
+        enforceV1StepSchema("step1", kyc);
+      } catch (zodErr) {
+        console.error("[wizard] Step 1 ZOD VALIDATION FAILED", { kyc, zodErr });
+        throw zodErr;
+      }
+      console.log("[wizard] Step 1 validation passed");
       const payload = kyc;
 
       const amount = parseCurrency(payload.fundingAmount);
@@ -437,7 +472,9 @@ fixedAssets:
       console.error("[wizard] Step 1 unexpected error", err);
       setSubmitError("Something went wrong. Please try again.");
     } finally {
+      clearTimeout(inFlightTimeout);
       startInFlightRef.current = false;
+      console.log("[wizard] startApplication EXIT — flag cleared");
     }
   }
 
@@ -881,8 +918,18 @@ fixedAssets:
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
             onClick={() => {
+              console.log("[wizard] Continue clicked", {
+                isValid,
+                fieldErrors,
+                kycSnapshot: app.kyc,
+                inFlight: startInFlightRef.current,
+                applicationToken: app.applicationToken ?? null,
+              });
               setShowErrors(true);
-              if (!isValid) return;
+              if (!isValid) {
+                console.warn("[wizard] Continue blocked by isValid=false");
+                return;
+              }
               setShowErrors(false);
               void startApplication();
             }}
