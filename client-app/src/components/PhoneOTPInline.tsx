@@ -73,6 +73,11 @@ export default function PhoneOTPInline() {
 
   // Guard against double-fire when auto-submit and user click race.
   const submittingRef = useRef<boolean>(false);
+  // BF_OTP_AUTOSUBMIT_ONCE_v32 — remember which exact code we already auto-fired
+  // for. After a failed attempt the catch block restores phase=='code' while
+  // `code` is still the same string, which previously re-triggered the effect
+  // and hammered /api/auth/otp/verify with the same single-use code (401 flood).
+  const autoSubmittedCodeRef = useRef<string | null>(null);
 
   async function sendCode(): Promise<void> {
     setError(null);
@@ -105,6 +110,7 @@ export default function PhoneOTPInline() {
       }
       // eslint-disable-next-line no-console
       console.log('[otp] start.ok');
+      autoSubmittedCodeRef.current = null; // BF_OTP_AUTOSUBMIT_ONCE_v32 — fresh code, allow auto-submit
       setPhase('code');
     } catch (err: any) {
       setError(err?.message || 'Failed to send code');
@@ -207,13 +213,18 @@ export default function PhoneOTPInline() {
     }
   }
 
-  // BF_OTP_AUTOSUBMIT_v31 — auto-fire verifyAndStart when the user finishes
-  // typing the 6-digit OTP. Native iOS/Android one-time-code autofill also
-  // triggers this path the moment the OS hands the code over.
+  // BF_OTP_AUTOSUBMIT_v31 + BF_OTP_AUTOSUBMIT_ONCE_v32 — auto-fire
+  // verifyAndStart when the user finishes typing the 6-digit OTP, but only
+  // once per unique code value. After a failed attempt phase is restored to
+  // 'code' while `code` is unchanged — without this guard the effect would
+  // re-fire and burn through Twilio Verify with the same single-use digits.
   useEffect(() => {
     if (phase !== 'code') return;
     if (busy) return;
-    if (!/^\d{6}$/.test(code.trim())) return;
+    const trimmed = code.trim();
+    if (!/^\d{6}$/.test(trimmed)) return;
+    if (autoSubmittedCodeRef.current === trimmed) return;
+    autoSubmittedCodeRef.current = trimmed;
     void verifyAndStart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, phase]);
@@ -302,7 +313,7 @@ export default function PhoneOTPInline() {
           <button
             type="button"
             disabled={busy}
-            onClick={() => { setPhase('phone'); setCode(''); setError(null); submittingRef.current = false; }}
+            onClick={() => { setPhase('phone'); setCode(''); setError(null); submittingRef.current = false; autoSubmittedCodeRef.current = null; /* BF_OTP_AUTOSUBMIT_ONCE_v32 */ }}
             style={{
               marginTop: 10, background: 'transparent', border: 0,
               color: '#1e3a8a', fontSize: 13, cursor: 'pointer', padding: 0,
