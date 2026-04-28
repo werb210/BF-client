@@ -282,17 +282,19 @@ export default function PhoneOTPInline() {
           <label style={{ display: 'block', fontSize: 14, color: '#334155', marginBottom: 6 }}>
             Enter the code we sent to {phoneDisplay}
           </label>
+          {/* BF_OTP_PORTAL_PARITY_v40 — Block 40-A — match portal Verify.tsx
+              markup exactly. Removed input attributes and the
+              fancy letterSpacing because they were suppressing the iCloud
+              Keychain SMS-autofill bubble on macOS Chrome. */}
           <input
             type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            placeholder="123456"
+            placeholder="Enter code"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))}
-            autoFocus
+            maxLength={6}
+            disabled={busy}
             style={{
-              width: '100%', padding: '12px 14px', fontSize: 18, letterSpacing: 4,
+              width: '100%', padding: '12px 14px', fontSize: 18,
               border: '1px solid #cbd5e1', borderRadius: 8, marginBottom: 12,
               textAlign: 'center', boxSizing: 'border-box',
             }}
