@@ -8,6 +8,7 @@ import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
 // BF_UPLOAD_QUEUE_v51 — V1 upload-later retry queue
 import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
+import { validateBootToken } from "./state/validateBootToken";
 
 try {
   validateEnv();
@@ -21,6 +22,8 @@ console.log("NEW BUILD LIVE:", new Date().toISOString());
 startPendingSubmitWatcher();
 // BF_UPLOAD_QUEUE_v51
 startUploadQueueWatcher();
+
+void validateBootToken();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

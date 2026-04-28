@@ -595,13 +595,22 @@ export function Step3_Business() {
       </Card>
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
-        <Button
-          style={{ width: "100%", maxWidth: "220px" }}
-          onClick={next}
-          disabled={!isValid}
-        >
-          Continue
-        </Button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
+          <Button
+            variant="secondary"
+            style={{ width: "100%", maxWidth: "160px" }}
+            onClick={() => navigate("/apply/step-2")}
+          >
+            ← Back
+          </Button>
+          <Button
+            style={{ width: "100%", maxWidth: "220px" }}
+            onClick={next}
+            disabled={!isValid}
+          >
+            Continue
+          </Button>
+        </div>
       </div>
       </div>
     </WizardLayout>
