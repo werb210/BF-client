@@ -6,6 +6,8 @@ import App from "./App";
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
+// BF_UPLOAD_QUEUE_v51 — V1 upload-later retry queue
+import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
 
 try {
   validateEnv();
@@ -17,6 +19,8 @@ console.log("NEW BUILD LIVE:", new Date().toISOString());
 
 // BF_LOCAL_FIRST_v35 — auto-retry pending submits on online/interval/boot.
 startPendingSubmitWatcher();
+// BF_UPLOAD_QUEUE_v51
+startUploadQueueWatcher();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
