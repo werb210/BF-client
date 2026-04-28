@@ -953,13 +953,22 @@ export function Step4_Applicant() {
       </Card>
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
-        <Button
-          style={{ width: "100%", maxWidth: "260px" }}
-          onClick={next}
-          disabled={!isValid}
-        >
-          Continue to Documents →
-        </Button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
+          <Button
+            variant="secondary"
+            style={{ width: "100%", maxWidth: "160px" }}
+            onClick={() => navigate("/apply/step-3")}
+          >
+            ← Back
+          </Button>
+          <Button
+            style={{ width: "100%", maxWidth: "260px" }}
+            onClick={next}
+            disabled={!isValid}
+          >
+            Continue to Documents →
+          </Button>
+        </div>
       </div>
       </div>
     </WizardLayout>
