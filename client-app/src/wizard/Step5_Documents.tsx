@@ -40,6 +40,8 @@ import {
   resolveDocumentStatus,
   type DocumentStatus,
 } from "../documents/documentStatus";
+// BF_UPLOAD_QUEUE_v51
+import { enqueueUploadFromFile } from "../lib/uploadQueue";
 
 function getDynamicRequirementRules() {
   return [
@@ -350,7 +352,6 @@ export function Step5_Documents() {
             setUploadProgress((prev) => ({ ...prev, [docType]: progress }));
           },
         });
-
         const refreshed = await ClientAppAPI.status(app.applicationToken!);
         const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
 
@@ -367,10 +368,24 @@ export function Step5_Documents() {
         break;
       } catch {
         if (attempt === 3) {
-          setDocErrors((prev) => ({
-            ...prev,
-            [docType]: "Document upload failed. Please retry.",
-          }));
+          // BF_UPLOAD_QUEUE_v51 — on final failure, queue file for background retry.
+          try {
+            await enqueueUploadFromFile({
+              applicationToken: app.applicationToken!,
+              applicationId: app.applicationId,
+              documentType: docType,
+              file,
+            });
+            setDocErrors((prev) => ({
+              ...prev,
+              [docType]: "Upload failed right now. Queued for retry while you continue.",
+            }));
+          } catch {
+            setDocErrors((prev) => ({
+              ...prev,
+              [docType]: "Document upload failed. Please retry.",
+            }));
+          }
         }
       }
     }
