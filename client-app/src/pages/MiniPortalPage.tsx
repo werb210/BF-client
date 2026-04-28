@@ -13,6 +13,22 @@ type Message = {
   staffName?: string;
 };
 
+// BF_MINI_PORTAL_FIX_v48 — server returns snake_case in {items: [...]}; we
+// normalize to this camelCase Offer shape after fetch.
+type ServerOffer = {
+  id: string;
+  application_id?: string;
+  lender_name?: string;
+  lender_logo_url?: string | null;
+  amount?: string | number | null;
+  rate_factor?: string | null;
+  term?: string | null;
+  payment_frequency?: string | null;
+  expiry_date?: string | null;
+  document_url?: string | null;
+  status?: string;
+};
+
 type Offer = {
   id: string;
   lenderName: string;
@@ -23,7 +39,23 @@ type Offer = {
   paymentFrequency?: string;
   expiresAt?: string;
   pdfUrl?: string;
+  status?: string;
 };
+
+function normalizeOffer(s: ServerOffer): Offer {
+  return {
+    id: s.id,
+    lenderName: s.lender_name ?? "Unknown lender",
+    lenderLogoUrl: s.lender_logo_url ?? undefined,
+    amount: s.amount === null || s.amount === undefined ? undefined : String(s.amount),
+    rateOrFactor: s.rate_factor ?? undefined,
+    term: s.term ?? undefined,
+    paymentFrequency: s.payment_frequency ?? undefined,
+    expiresAt: s.expiry_date ?? undefined,
+    pdfUrl: s.document_url ?? undefined,
+    status: s.status,
+  };
+}
 
 const STAGES = ["Received!", "In Review", "Documents Required", "Additional Steps Required", "Off to Lender", "Offer"] as const;
 
@@ -88,15 +120,20 @@ export default function MiniPortalPage() {
         // noop
       }
 
+      // BF_MINI_PORTAL_FIX_v48 — server returns { items: ServerOffer[] }.
       try {
-        const offerData = await apiCall<{ data?: Offer[] } | Offer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null);
+        const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(
+          `/api/offers?applicationId=${encodeURIComponent(applicationId)}`
+        ).catch((): null => null);
         if (!active) return;
-        const incoming = Array.isArray(offerData)
+        const incoming: ServerOffer[] = Array.isArray(offerData)
           ? offerData
-          : Array.isArray(offerData?.data)
-            ? offerData.data
-            : [];
-        setOffers(incoming);
+          : Array.isArray((offerData as { items?: ServerOffer[] })?.items)
+            ? ((offerData as { items: ServerOffer[] }).items)
+            : Array.isArray((offerData as { data?: ServerOffer[] })?.data)
+              ? ((offerData as { data: ServerOffer[] }).data)
+              : [];
+        setOffers(incoming.map(normalizeOffer));
       } catch {
         // noop
       }
@@ -121,6 +158,38 @@ export default function MiniPortalPage() {
     });
     return Array.from(tags).map((tag) => hashtagMap[tag as keyof typeof hashtagMap]);
   }, [messages]);
+
+  // BF_MINI_PORTAL_FIX_v48 — wire offer accept/decline to BF-Server endpoints.
+  async function acceptOffer(offerId: string) {
+    if (!offerId) return;
+    try {
+      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" });
+      setOffers((current) =>
+        current.map((o) => (o.id === offerId ? { ...o, status: "accepted" } : o))
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("offer_accept_failed", err);
+    }
+  }
+
+  async function requestChanges(offerId: string) {
+    if (!offerId) return;
+    const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : "";
+    if (reason === null) return; // user cancelled
+    try {
+      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/decline`, {
+        method: "POST",
+        body: JSON.stringify({ reason: (reason ?? "").trim() }),
+      });
+      setOffers((current) =>
+        current.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("offer_decline_failed", err);
+    }
+  }
 
   async function sendMessage() {
     if (!text.trim() || !applicationId) return;
@@ -211,9 +280,28 @@ export default function MiniPortalPage() {
                 <div style={{ fontSize: 14 }}>Term: {offer.term || "—"}</div>
                 <div style={{ fontSize: 14 }}>Payment: {offer.paymentFrequency || "—"}</div>
                 <div style={{ fontSize: 14 }}>Expiry: {offer.expiresAt || "—"}</div>
-                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                  <button style={{ flex: 1, border: "1px solid #2563eb", color: "#2563eb", background: "#fff", borderRadius: 8, padding: "8px 10px" }}>View PDF</button>
-                  <button style={{ flex: 1, border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "8px 10px" }}>Request Changes</button>
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  {offer.pdfUrl && (
+                    <a
+                      href={offer.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid="view-pdf-link"
+                      style={{ flex: 1, border: "1px solid #2563eb", color: "#2563eb", background: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", textDecoration: "none" }}
+                    >View PDF</a>
+                  )}
+                  <button
+                    type="button"
+                    data-testid="accept-offer-btn"
+                    onClick={() => void acceptOffer(offer.id)}
+                    style={{ flex: 1, border: "1px solid #059669", color: "#059669", background: "#fff", borderRadius: 8, padding: "8px 10px" }}
+                  >Accept</button>
+                  <button
+                    type="button"
+                    data-testid="request-changes-btn"
+                    onClick={() => void requestChanges(offer.id)}
+                    style={{ flex: 1, border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "8px 10px" }}
+                  >Request Changes</button>
                 </div>
               </article>
             ))}
