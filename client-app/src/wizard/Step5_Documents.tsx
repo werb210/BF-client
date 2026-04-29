@@ -482,6 +482,20 @@ export function Step5_Documents() {
             />
           </Card>
         )}
+        {/* BF_CLIENT_WIZARD_STEP5_DEFER_BTN_v59 — defer-upload action
+          placed under the missing-documents banner and above the
+          upload list, where users see it before they've scrolled past
+          the upload section. The duplicate at the bottom of the
+          sticky CTA bar was removed. */}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button
+            variant="ghost"
+            onClick={uploadLater}
+            disabled={isLoading || hasUploadsInFlight}
+          >
+            I will supply all required documents at a later time
+          </Button>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
           {groupedRequirements.map(([category, entries]) => (
             <div key={category} style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>
@@ -525,14 +539,10 @@ export function Step5_Documents() {
           >
             Continue
           </Button>
-          <Button
-            variant="ghost"
-            style={{ width: "100%", maxWidth: "220px" }}
-            onClick={uploadLater}
-            disabled={isLoading || hasUploadsInFlight}
-          >
-            Supply Documents Later
-          </Button>
+          {/* BF_CLIENT_WIZARD_STEP5_DEFER_BTN_v59 — the old "Supply
+            Documents Later" button that lived here was moved up to
+            sit under the missing-docs banner. Search this file for
+            the matching anchor to find its new location. */}
         </div>
       </div>
     </WizardLayout>
