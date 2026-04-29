@@ -115,41 +115,47 @@ export const ClientAppAPI = {
       api.post<GenericObjectResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/submit`, payload)
     );
   },
+  // BF_CLIENT_v64_CLIENTAPP_URLS — server endpoint is
+  //   GET /api/client/application/:id/status   (singular, /status suffix)
+  // returning { status: { applicationId, pipelineState, processingStage, updatedAt } }.
+  // Unwrap to a flat object so extractApplicationFromStatus can read fields
+  // off res.data without changes. parseApiResponse removed because the
+  // legacy ClientAppStatusResponseSchema does not match the new wrapped shape.
   status(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`);
-      const { data: resPayload } = res;
-      parseApiResponse(
-        ClientAppStatusResponseSchema,
-        resPayload,
-        "GET /applications/{token}"
+      const res = await api.get<{ status?: Record<string, unknown> } & Record<string, unknown>>(
+        `/api/client/application/${encodeURIComponent(token)}/status`
       );
-      return res;
+      const flat = ((res as { data?: { status?: Record<string, unknown> } }).data?.status
+        ?? (res as { data?: Record<string, unknown> }).data
+        ?? {}) as ClientAppStatusResponse;
+      return { ...res, data: flat };
     });
   },
+  // BF_CLIENT_v64_CLIENTAPP_URLS — same canonical /status endpoint as status().
   getApplication(applicationId: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`);
-      const { data: resPayload } = res;
-      parseApiResponse(
-        ClientAppStatusResponseSchema,
-        resPayload,
-        "GET /applications/{applicationId}"
+      const res = await api.get<{ status?: Record<string, unknown> } & Record<string, unknown>>(
+        `/api/client/application/${encodeURIComponent(applicationId)}/status`
       );
-      return res;
+      const flat = ((res as { data?: { status?: Record<string, unknown> } }).data?.status
+        ?? (res as { data?: Record<string, unknown> }).data
+        ?? {}) as ClientAppStatusResponse;
+      return { ...res, data: flat };
     });
   },
   updateApplication(applicationId: string, payload: unknown) {
     return withRetry(() => api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${applicationId}`, payload));
   },
+  // BF_CLIENT_v64_CLIENTAPP_URLS — server endpoint is
+  //   GET /api/client/messages?applicationId=:id
+  // returning { status: "ok", data: Message[] }. The api client unwraps
+  // the {status:"ok", data} envelope automatically, so res.data is the
+  // array. parseApiResponse removed for the same reason as status().
   getMessages(token: string) {
     return withRetry(async () => {
-      const res = await api.get<ClientAppMessagesResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}/messages`);
-      const { data: resPayload } = res;
-      parseApiResponse(
-        ClientAppMessagesResponseSchema,
-        resPayload,
-        "GET /applications/{token}/messages"
+      const res = await api.get<ClientAppMessagesResponse>(
+        `/api/client/messages?applicationId=${encodeURIComponent(token)}`
       );
       return res;
     });
