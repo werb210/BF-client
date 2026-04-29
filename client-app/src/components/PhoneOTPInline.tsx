@@ -200,6 +200,11 @@ export default function PhoneOTPInline() {
         localStorage.setItem('bf_application_token', String(appToken));
         localStorage.removeItem('bf_application_pending_submit');
       }
+      try {
+        const { reconcileWithBootToken } = await import("../state/useApplicationStore");
+        reconcileWithBootToken();
+      } catch { /* defensive — don't block OTP on store errors */ }
+      // BF_CLIENT_WIZARD_TOKEN_RECONCILE_v58_OTP_ANCHOR
       // eslint-disable-next-line no-console
       console.log('[otp] application.minted', { appToken });
 

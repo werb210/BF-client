@@ -201,50 +201,45 @@ export function Step4_Applicant() {
       return;
     }
 
-    let submissionToken = app.applicationToken || null;
-    try {
-      const submissionPayload = {
-        financialProfile: app.kyc,
-        business: app.business,
-        applicant: values,
-        product_category: app.productCategory,
-        selected_product: app.selectedProduct,
-        selected_product_type: app.selectedProductType,
-        readiness_lead_id: app.readinessLeadId,
-        session_token: app.readinessSessionToken || app.continuationToken,
-        source: "credit_readiness_bridge",
-      };
-
-      if (app.applicationToken) {
-        await ClientAppAPI.update(app.applicationToken, submissionPayload);
-      } else {
-        const res = await ClientAppAPI.start(submissionPayload);
-        // Server POST /api/applications returns { applicationId }
-        // ClientAppAPI.start uses apiRequest which unwraps {status:"ok", data:{...}}
-        // so res is { applicationId: "..." } directly
+    setSaveError(null);
+    void persistApplicationStep(app, 4, { applicant: values }).catch(() => {});
+    const submissionPayload = {
+      financialProfile: app.kyc,
+      business: app.business,
+      applicant: values,
+      product_category: app.productCategory,
+      selected_product: app.selectedProduct,
+      selected_product_type: app.selectedProductType,
+      readiness_lead_id: app.readinessLeadId,
+      session_token: app.readinessSessionToken || app.continuationToken,
+      source: "credit_readiness_bridge",
+    };
+    if (app.applicationToken) {
+      ClientAppAPI.update(app.applicationToken, submissionPayload).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[wizard] Step 4 server PATCH failed", err);
+      });
+    } else {
+      ClientAppAPI.start(submissionPayload).then((res) => {
         const applicationId =
           (res as any)?.applicationId ||
           (res as any)?.data?.applicationId ||
           (res as any)?.data?.token ||
           (res as any)?.token ||
           null;
-
-        if (!applicationId) {
-          setSaveError("We couldn't submit your application. Please try again.");
-          return;
+        if (applicationId) {
+          update({ applicationToken: applicationId, applicationId: applicationId });
+          try { localStorage.setItem("bf_application_token", String(applicationId)); } catch {}
         }
-        submissionToken = applicationId;
-        update({ applicationToken: applicationId, applicationId: applicationId });
-      }
-
-      await persistApplicationStep(app, 4, { applicant: values });
-      setSaveError(null);
-    } catch {
-      setSaveError("We couldn't submit your application. Please try again.");
-      return;
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[wizard] Step 4 server START failed", err);
+      });
     }
     track("step_completed", { step: 4 });
-    navigate(submissionToken ? `/status?token=${encodeURIComponent(submissionToken)}` : "/status");
+    update({ currentStep: 5 });
+    navigate("/apply/step-5");
+    // BF_CLIENT_WIZARD_LOCAL_FIRST_v58_STEP4_ANCHOR
   }
 
   const baseRequiredFields = [
