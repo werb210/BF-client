@@ -86,8 +86,13 @@ function loadClientDraft(): ApplicationData | null {
 
 
 function loadApplicationStateDraft(): ApplicationData | null {
+  // BF_CLIENT_WIZARD_URL_SOT_v56 — read ONLY the canonical key. The
+  // legacy `application_data` key is no longer written by current code,
+  // but stale entries from pre-v55b sessions persisted in users'
+  // browsers and were shadowing fresh `application_state`, causing the
+  // wizard to hydrate with a wrong currentStep on every boot.
   try {
-    const raw = localStorage.getItem(APPLICATION_DATA_KEY) || localStorage.getItem(APPLICATION_STATE_KEY);
+    const raw = localStorage.getItem(APPLICATION_STATE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ApplicationData;
   } catch {
@@ -205,12 +210,16 @@ function hydrateApplication(saved: ApplicationData | null): ApplicationData {
 
 export function useApplicationStore() {
   const [app, setApp] = useState<ApplicationData>(() => {
+    try {
+      localStorage.removeItem(APPLICATION_DATA_KEY);
+    } catch { }
+
     const fromCanonical = loadApplicationStateDraft();
     if (fromCanonical) {
       try {
         localStorage.removeItem(BOREAL_DRAFT_KEY);
         localStorage.removeItem(CLIENT_DRAFT_KEY);
-      } catch { /* ignore */ }
+      } catch { }
       return hydrateApplication(fromCanonical);
     }
 
@@ -224,7 +233,7 @@ export function useApplicationStore() {
         localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(winner));
         localStorage.removeItem(BOREAL_DRAFT_KEY);
         localStorage.removeItem(CLIENT_DRAFT_KEY);
-      } catch { /* ignore */ }
+      } catch { }
     }
 
     return hydrateApplication(winner);
@@ -239,22 +248,13 @@ export function useApplicationStore() {
 
   useLocalBackup(app);
 
-  // BF_CLIENT_WIZARD_NAV_FIX_v55b — collapse legacy multi-key writes to a
-  // single canonical key.
   useEffect(() => {
     try {
       localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
     } catch {
-      /* quota exceeded — non-fatal, in-memory state still authoritative */
     }
   }, [app]);
 
-  // BF_LOCAL_FIRST_v35 — Block 35: per-step server PATCH disabled. The wizard
-  // is now a local-first form. OfflineStore.save() (called inside update())
-  // is the single source of truth client-side. The full payload is sent
-  // exactly once at Step 6 via ClientAppAPI.submit(). The function shape
-  // and .cancel() method are preserved as a no-op so existing call sites
-  // (`void saveToServer(updated)`, `saveToServer.cancel()`) keep compiling.
   const saveToServer = useMemo(() => {
     const fn = (_state: ApplicationData) => Promise.resolve();
     (fn as any).cancel = () => {};
@@ -339,10 +339,6 @@ export function useApplicationStore() {
     setApp((prev) => ({ ...prev, ...backup }));
   }, [app.applicationToken]);
 
-  // BF_CLIENT_WIZARD_NAV_FIX_v55b — removed legacy CLIENT_DRAFT_KEY
-  // debounced writer. APPLICATION_STATE_KEY effect above is the single
-  // canonical write path.
-
   useEffect(() => {
     if (!app.currentStep || trackedStep.current === app.currentStep) return;
 
@@ -384,11 +380,10 @@ export function useApplicationStore() {
   }, [app, canAutosave, isOffline, saveToServer]);
 
   useEffect(() => {
-    // BF_CLIENT_WIZARD_NAV_FIX_v55b — only the canonical key.
     const persist = () => {
       try {
         localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
-      } catch { /* quota — ignore */ }
+      } catch { }
     };
 
     window.addEventListener("blur", persist);
@@ -421,3 +416,5 @@ export function useApplicationStore() {
     },
   };
 }
+
+// BF_CLIENT_WIZARD_URL_SOT_v56_STORE_ANCHOR
