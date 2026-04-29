@@ -11,7 +11,7 @@
 // path change. We pull the new step number out, set currentStep, and React
 // renders the new Step component. No route element swap → no transition
 // stall, no chunk loading, no guard redirect.
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { OfflineStore } from "@/state/offline";
@@ -44,21 +44,30 @@ export default function Wizard() {
     return n >= 1 && n <= 6 ? n : null;
   }, [location.pathname]);
 
+  // BF_CLIENT_WIZARD_NAV_FIX_v55b — guard against URL/store ping-pong.
+  const lastSyncedStep = useRef<number | null>(null);
+
   // URL → store. When URL is /apply/step-N, force currentStep=N.
   useEffect(() => {
-    if (stepFromUrl != null && app.currentStep !== stepFromUrl) {
-      update({ currentStep: stepFromUrl });
-    }
+    if (stepFromUrl == null) return;
+    if (app.currentStep === stepFromUrl) return;
+    if (lastSyncedStep.current === stepFromUrl) return;
+
+    lastSyncedStep.current = stepFromUrl;
+    update({ currentStep: stepFromUrl });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepFromUrl]);
 
   // Store → URL. Keep URL synced for refresh/share/back-compat. `replace`
   // so we don't pollute history with every intra-wizard transition.
   useEffect(() => {
-    const want = `/apply/step-${clampStep(app.currentStep || 1)}`;
-    if (location.pathname !== want) {
-      navigate(want, { replace: true });
-    }
+    const target = clampStep(app.currentStep || 1);
+    const want = `/apply/step-${target}`;
+    if (location.pathname === want) return;
+    if (lastSyncedStep.current === target) return;
+
+    lastSyncedStep.current = target;
+    navigate(want, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app.currentStep]);
 

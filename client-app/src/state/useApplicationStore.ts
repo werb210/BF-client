@@ -204,9 +204,31 @@ function hydrateApplication(saved: ApplicationData | null): ApplicationData {
 }
 
 export function useApplicationStore() {
-  const [app, setApp] = useState<ApplicationData>(() =>
-    hydrateApplication(loadApplicationStateDraft() || loadBorealDraft() || loadClientDraft() || OfflineStore.load())
-  );
+  const [app, setApp] = useState<ApplicationData>(() => {
+    const fromCanonical = loadApplicationStateDraft();
+    if (fromCanonical) {
+      try {
+        localStorage.removeItem(BOREAL_DRAFT_KEY);
+        localStorage.removeItem(CLIENT_DRAFT_KEY);
+      } catch { /* ignore */ }
+      return hydrateApplication(fromCanonical);
+    }
+
+    const fromBoreal = loadBorealDraft();
+    const fromClient = loadClientDraft();
+    const fromOffline = OfflineStore.load();
+    const winner = fromBoreal || fromClient || fromOffline;
+
+    if (winner) {
+      try {
+        localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(winner));
+        localStorage.removeItem(BOREAL_DRAFT_KEY);
+        localStorage.removeItem(CLIENT_DRAFT_KEY);
+      } catch { /* ignore */ }
+    }
+
+    return hydrateApplication(winner);
+  });
   const [initialized, setInitialized] = useState(false);
   const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const { isOffline } = useNetworkStatus();
@@ -217,11 +239,14 @@ export function useApplicationStore() {
 
   useLocalBackup(app);
 
+  // BF_CLIENT_WIZARD_NAV_FIX_v55b — collapse legacy multi-key writes to a
+  // single canonical key.
   useEffect(() => {
-    const serialized = JSON.stringify(app);
-    localStorage.setItem(BOREAL_DRAFT_KEY, serialized);
-    localStorage.setItem(APPLICATION_STATE_KEY, serialized);
-    localStorage.setItem(APPLICATION_DATA_KEY, serialized);
+    try {
+      localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
+    } catch {
+      /* quota exceeded — non-fatal, in-memory state still authoritative */
+    }
   }, [app]);
 
   // BF_LOCAL_FIRST_v35 — Block 35: per-step server PATCH disabled. The wizard
@@ -314,13 +339,9 @@ export function useApplicationStore() {
     setApp((prev) => ({ ...prev, ...backup }));
   }, [app.applicationToken]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      localStorage.setItem(CLIENT_DRAFT_KEY, JSON.stringify(app));
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [app]);
+  // BF_CLIENT_WIZARD_NAV_FIX_v55b — removed legacy CLIENT_DRAFT_KEY
+  // debounced writer. APPLICATION_STATE_KEY effect above is the single
+  // canonical write path.
 
   useEffect(() => {
     if (!app.currentStep || trackedStep.current === app.currentStep) return;
@@ -363,9 +384,11 @@ export function useApplicationStore() {
   }, [app, canAutosave, isOffline, saveToServer]);
 
   useEffect(() => {
+    // BF_CLIENT_WIZARD_NAV_FIX_v55b — only the canonical key.
     const persist = () => {
-      localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
-      localStorage.setItem(APPLICATION_DATA_KEY, JSON.stringify(app));
+      try {
+        localStorage.setItem(APPLICATION_STATE_KEY, JSON.stringify(app));
+      } catch { /* quota — ignore */ }
     };
 
     window.addEventListener("blur", persist);
