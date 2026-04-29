@@ -406,11 +406,24 @@ export function Step6_Review(): JSX.Element {
       }
       localStorage.removeItem("creditSessionToken");
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
-      const refreshed = await ClientAppAPI.status(app.applicationToken!);
-      const hydrated = extractApplicationFromStatus(
-        refreshed?.data || {},
-        app.applicationToken!
-      );
+      // BF_CLIENT_v63_SUBMIT_HYDRATE_GUARD
+      // Server has GET /api/client/application/:id/status (singular, with
+      // /status suffix). The client's ClientAppAPI.status hits
+      // /api/client/applications/{token} which does NOT exist and 404s.
+      // The submit POST itself already returned 200; hydration is opportunistic.
+      // Never let a hydration error masquerade as a submit failure.
+      let refreshed: any = null;
+      let hydrated: any = {};
+      try {
+        refreshed = await ClientAppAPI.status(app.applicationToken!);
+        hydrated = extractApplicationFromStatus(
+          refreshed?.data || {},
+          app.applicationToken!
+        );
+      } catch (hydrateErr) {
+        // eslint-disable-next-line no-console
+        console.warn("[wizard] post-submit hydrate skipped (non-fatal):", hydrateErr);
+      }
       const nextApplicationId =
         hydrated.applicationId ||
         app.applicationId ||

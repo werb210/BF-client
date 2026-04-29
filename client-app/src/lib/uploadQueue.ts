@@ -7,6 +7,11 @@ const DB_NAME = "bf-upload-queue";
 const STORE_NAME = "uploads";
 const DB_VERSION = 2;
 const MAX_QUEUE_SIZE = 20;
+// BF_CLIENT_v63_QUEUE_MAX_ATTEMPTS — drop items that have failed this many
+// times in a row. Without a cap the worker retries forever every 30s, which
+// produces the pre-login 401 spam in DevTools when stale items survive a
+// session boundary.
+const MAX_ATTEMPTS = 5;
 
 export interface QueuedUploadDescriptor {
   id?: number;
@@ -147,8 +152,14 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
         if (item.id !== undefined) {
           const existing = await reqAsPromise(store.get(item.id) as IDBRequest<QueuedUploadDescriptor | undefined>);
           if (existing) {
-            existing.attempts = (existing.attempts ?? 0) + 1;
-            store.put(existing);
+            const nextAttempts = (existing.attempts ?? 0) + 1;
+            if (nextAttempts >= MAX_ATTEMPTS) {
+              // BF_CLIENT_v63_QUEUE_MAX_ATTEMPTS — give up.
+              if (item.id !== undefined) store.delete(item.id);
+            } else {
+              existing.attempts = nextAttempts;
+              store.put(existing);
+            }
           }
         }
         await txDone(wtx);
