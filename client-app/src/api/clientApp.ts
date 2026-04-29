@@ -88,8 +88,14 @@ export const ClientAppAPI = {
       formData.append(DOCUMENT_CONTRACT.FIELDS.CATEGORY, payload.documentType);
       formData.append(DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID, String(payload.applicationId ?? ""));
       if (payload.applicationToken) formData.append("application_token", payload.applicationToken);
+      // BF_CLIENT_UPLOAD_BOUNDARY_v62 — do NOT manually set Content-Type
+      // for FormData. Setting "multipart/form-data" without ";boundary=..."
+      // causes multer to throw "Multipart: Boundary not found" → 500 on every
+      // upload (and every retry from the upload queue). The fetch wrapper in
+      // src/api/client.ts already short-circuits Content-Type for FormData
+      // bodies; native fetch then auto-emits "multipart/form-data; boundary=..."
+      // with the correct boundary derived from the FormData instance.
       const res = await api.post<GenericObjectResponse>(DOCUMENT_CONTRACT.UPLOAD, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (event: { loaded: number; total?: number }) => {
           if (!event.total) return;
           const percent = Math.round((event.loaded / event.total) * 100);
