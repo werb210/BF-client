@@ -159,19 +159,18 @@ export function Step3_Business() {
       return;
     }
 
-    try {
-      if (app.applicationToken) {
-        await ClientAppAPI.update(app.applicationToken, { business: values });
-      }
-      await persistApplicationStep(app, 3, { business: values });
-      setSaveError(null);
-    } catch {
-      setSaveError("We couldn't save your business details. Please try again.");
-      return;
+    setSaveError(null);
+    void persistApplicationStep(app, 3, { business: values }).catch(() => {});
+    if (app.applicationToken) {
+      ClientAppAPI.update(app.applicationToken, { business: values }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("[wizard] Step 3 server PATCH failed", err);
+      });
     }
     track("step_completed", { step: 3 });
     update({ currentStep: 4 });
     navigate("/apply/step-4");
+    // BF_CLIENT_WIZARD_LOCAL_FIRST_v58_STEP3_ANCHOR
   }
 
   const fieldValues = {
