@@ -290,10 +290,11 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
-    if (missingIdDocs.length > 0) {
-      blockSubmit("Please upload all required applicant IDs before submitting.");
-      return;
-    }
+    // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — applicant photo IDs moved to
+    // Step 5, where they participate in the existing "Supply Documents
+    // Later" deferral flow. Step 6 no longer blocks submission on
+    // missing photo IDs; the missingIdDocs check that lived here was
+    // removed.
 
     if (!app.termsAccepted) {
       blockSubmit("Please complete all confirmations before submitting.");
@@ -646,70 +647,11 @@ export function Step6_Review(): JSX.Element {
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" />
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
-        <div>
-          <h2 style={components.form.sectionTitle}>Applicant IDs</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>
-            {idRequirements
-              .filter((entry) => entry.required)
-              .map((entry) => {
-                const docError = docErrors[entry.key];
-                const isUploading = uploadingDocs[entry.key];
-                const docStatus = app.documents[entry.key]?.status;
-                return (
-                  <FileUploadCard
-                    key={entry.key}
-                    title={entry.label}
-                    status={isUploading ? "Uploading" : docStatus || "missing"}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const file = event.dataTransfer.files?.[0] || null;
-                      handleIdUpload(entry.key, file);
-                    }}
-                  >
-                    <input
-                      id={`id-doc-${entry.key}`}
-                      type="file"
-                      style={{ display: "none" }}
-                      onChange={(e: unknown) =>
-                        handleIdUpload(entry.key, e.target.files?.[0] || null)
-                      }
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={isUploading}
-                      loading={isUploading}
-                      onClick={() =>
-                        document.getElementById(`id-doc-${entry.key}`)?.click()
-                      }
-                      style={{ width: "100%" }}
-                    >
-                      Upload ID
-                    </Button>
-                    {app.documents[entry.key] && (
-                      <div style={components.form.helperText}>
-                        Uploaded: {app.documents[entry.key].name}
-                      </div>
-                    )}
-                    {docError && (
-                      <div style={components.form.errorText}>{docError}</div>
-                    )}
-                    {!docError && !app.documents[entry.key] && (
-                      <div style={components.form.errorText}>
-                        This ID is required.
-                      </div>
-                    )}
-                    {docStatus === "rejected" && (
-                      <div style={components.form.errorText}>
-                        ID rejected. Please upload a new file.
-                      </div>
-                    )}
-                  </FileUploadCard>
-                );
-              })}
-          </div>
-        </div>
+        {/* BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — Applicant IDs section
+          removed from Step 6. Primary + partner photo ID requirements
+          moved to Step 5 so they go through the existing "Supply
+          Documents Later" deferral flow. Step 6 is now T&C →
+          signature → submit. */}
 
         {(!docsAccepted || !processingComplete) && (
           <Card
@@ -867,7 +809,9 @@ export function Step6_Review(): JSX.Element {
                   termsAccepted: app.termsAccepted && Boolean(app.infoConfirmed) && Boolean(app.shareAuthorization),
                   typedSignature: Boolean(app.typedSignature?.trim()),
                   partnerSignature: hasPartner ? Boolean(app.coApplicantSignature?.trim()) : true,
-                  missingIdDocs: missingIdDocs.length,
+                  // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — photo IDs moved
+                  // to Step 5; never block submit on them here.
+                  missingIdDocs: 0,
                   missingRequiredDocs: missingRequiredDocs.length,
                   docsAccepted,
                   ocrComplete,

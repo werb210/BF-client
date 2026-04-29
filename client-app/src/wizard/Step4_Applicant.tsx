@@ -636,33 +636,44 @@ export function Step4_Applicant() {
               placeholder="%"
             />
           </div>
+
+          {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — Credit Score
+            Range now lives inside the Ownership two-column row so the
+            applicant card stays in 2 columns. */}
+          <div>
+            <label style={components.form.label}>
+              Credit Score Range{" "}
+              <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>
+                (optional)
+              </span>
+            </label>
+            <select
+              value={(values as any).creditScoreRange || ""}
+              onChange={(e) => {
+                const next = { ...values, creditScoreRange: e.target.value };
+                update({ applicant: next });
+              }}
+              style={{
+                width: "100%",
+                padding: "10px 14px",
+                border: `1px solid ${tokens.colors.border}`,
+                borderRadius: 8,
+                fontSize: 14,
+                background: tokens.colors.surface,
+                color: tokens.colors.textPrimary,
+              }}
+            >
+              <option value="">Prefer not to say</option>
+              {CREDIT_SCORE_BANDS.map((b) => (
+                <option key={b.label} value={b.label}>{b.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* BF_CREDIT_BAND_v36 — optional applicant credit score band */}
-        <div style={{ marginTop: tokens.spacing.md }}>
-          <label style={components.form.label}>Credit Score Range <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
-          <select
-            value={(values as any).creditScoreRange || ""}
-            onChange={(e) => {
-              const next = { ...values, creditScoreRange: e.target.value };
-              update({ applicant: next });
-            }}
-            style={{
-              width: "100%",
-              padding: "10px 14px",
-              border: `1px solid ${tokens.colors.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: tokens.colors.surface,
-              color: tokens.colors.textPrimary,
-            }}
-          >
-            <option value="">Prefer not to say</option>
-            {CREDIT_SCORE_BANDS.map((b) => (
-              <option key={b.label} value={b.label}>{b.label}</option>
-            ))}
-          </select>
-        </div>
+        {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — old standalone
+          full-width Credit Score block was here; removed because the
+          field is now part of the Ownership row above. */}
 
         <label
           style={{
@@ -923,6 +934,37 @@ export function Step4_Applicant() {
                   }}
                   placeholder="%"
                 />
+              </div>
+
+              {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — partner
+                credit score band, beside Partner Ownership %. */}
+              <div>
+                <label style={components.form.label}>
+                  Partner Credit Score Range{" "}
+                  <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>
+                    (optional)
+                  </span>
+                </label>
+                <select
+                  value={(partner as any).creditScoreRange || ""}
+                  onChange={(e) =>
+                    setPartnerField("creditScoreRange", e.target.value)
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: `1px solid ${tokens.colors.border}`,
+                    borderRadius: 8,
+                    fontSize: 14,
+                    background: tokens.colors.surface,
+                    color: tokens.colors.textPrimary,
+                  }}
+                >
+                  <option value="">Prefer not to say</option>
+                  {CREDIT_SCORE_BANDS.map((b) => (
+                    <option key={b.label} value={b.label}>{b.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

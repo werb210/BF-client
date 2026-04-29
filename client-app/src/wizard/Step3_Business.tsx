@@ -119,7 +119,9 @@ export function Step3_Business() {
   const isBusinessPhoneLocked = false;
 
   const isValid = [
-    "companyName",
+    // BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — companyName is mirrored
+    // from businessName on every keystroke, so requiring both is
+    // redundant.
     "businessName",
     "legalName",
     "businessStructure",
@@ -137,7 +139,7 @@ export function Step3_Business() {
     saveStepData(3, values);
     enforceV1StepSchema("step3", values);
     const requiredFields = [
-      "companyName",
+      // BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — see isValid for rationale.
       "businessName",
       "legalName",
       "businessStructure",
@@ -197,7 +199,7 @@ export function Step3_Business() {
 
   const isStepValid = (nextValues: typeof values) =>
     [
-      "companyName",
+      // BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — see isValid for rationale.
       "businessName",
       "legalName",
       "businessStructure",
@@ -293,36 +295,28 @@ export function Step3_Business() {
             gap: tokens.spacing.md,
           }}
         >
-          <div>
-            <label style={components.form.label}>Company Name</label>
-            <Input
-              id={getWizardFieldId("step3", "companyName")}
-              value={values.companyName || ""}
-              onChange={(e: unknown) => {
-                const companyName = e.target.value;
-                const nextValues = {
-                  ...values,
-                  companyName,
-                  businessName: values.businessName || companyName,
-                  legalName: values.legalName || companyName,
-                };
-                update({ business: nextValues });
-              }}
-              disabled={isCompanyNameLocked}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("companyName", values);
-                }
-              }}
-            />
-          </div>
+          {/* BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — Company Name
+            input was removed from the UI. The companyName field is
+            kept in state and mirrored from Business Name (DBA) on
+            every keystroke so server records stay valid until the
+            column itself is dropped (separate cross-repo round). */}
 
           <div>
             <label style={components.form.label}>Business Name (DBA)</label>
             <Input
               id={getWizardFieldId("step3", "businessName")}
               value={values.businessName || ""}
-              onChange={(e: unknown) => setField("businessName", e.target.value)}
+              onChange={(e: unknown) => {
+                const businessName = e.target.value;
+                const nextValues = {
+                  ...values,
+                  businessName,
+                  // Mirror into companyName so the server record keeps
+                  // a non-null value during the transition.
+                  companyName: businessName,
+                };
+                update({ business: nextValues });
+              }}
               disabled={isBusinessNameLocked}
               onKeyDown={(e: unknown) => {
                 if (e.key === "Enter") {

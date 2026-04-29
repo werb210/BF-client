@@ -71,18 +71,41 @@ const RequirementRow = memo(function RequirementRow({
       status={isUploading ? `Uploading ${progress}%` : docStatus}
       data-error={Boolean(docError) || docStatus === "missing" || docStatus === "rejected"}
       onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
+      onDrop={async (event) => {
         event.preventDefault();
-        const file = event.dataTransfer.files?.[0] || null;
-        onDrop(docType, file);
+        // BF_CLIENT_WIZARD_STEP5_MULTIFILE_v60 — accept multiple
+        // dropped files and upload sequentially. The server creates
+        // one document row per file regardless of category, so all
+        // uploads land against the same document_type. Awaiting each
+        // call avoids races on the per-docType progress + uploading
+        // state that handleFile mutates inside.
+        const files = Array.from(event.dataTransfer.files || []);
+        if (files.length === 0) {
+          onDrop(docType, null);
+          return;
+        }
+        for (const file of files) {
+          await onDrop(docType, file);
+        }
       }}
     >
       <input
         id={`doc-${entry.id}`}
         type="file"
+        multiple
         accept=".pdf,.docx,.xlsx,.png,.jpg"
         style={{ display: "none" }}
-        onChange={(e: unknown) => onDrop(docType, e.target.files?.[0] || null)}
+        onChange={async (e: unknown) => {
+          // BF_CLIENT_WIZARD_STEP5_MULTIFILE_v60 — same logic as drop.
+          const files = Array.from((e.target as HTMLInputElement).files || []);
+          if (files.length === 0) {
+            onDrop(docType, null);
+            return;
+          }
+          for (const file of files) {
+            await onDrop(docType, file);
+          }
+        }}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.xs }}>
         <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs }}>
@@ -101,7 +124,9 @@ const RequirementRow = memo(function RequirementRow({
           style={{ width: "100%" }}
           aria-label={`Upload ${formatDocumentLabel(docType)}`}
         >
-          Upload file
+          {/* BF_CLIENT_WIZARD_STEP5_MULTIFILE_v60 — plural to hint
+            that the picker accepts multiple files at once. */}
+          Upload files
         </Button>
         {isUploading ? <div style={components.form.helperText}>Upload progress: {progress}%</div> : null}
         {app.documents[docType] && <div style={components.form.helperText}>Uploaded: {app.documents[docType].name}</div>}
@@ -217,7 +242,13 @@ export function Step5_Documents() {
         amountValue
       );
       const dynamicRules = getDynamicRequirementRules();
-      const normalized = ensureAlwaysRequiredDocuments(mergeRequirementLists(aggregated, dynamicRules));
+      // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — partner photo ID is
+      // required only when the applicant marked "multiple owners".
+      const hasPartner = Boolean(app.applicant?.hasMultipleOwners);
+      const normalized = ensureAlwaysRequiredDocuments(
+        mergeRequirementLists(aggregated, dynamicRules),
+        { hasPartner }
+      );
 
       if (active) {
         setIsLoading(true);
@@ -238,7 +269,8 @@ export function Step5_Documents() {
         }
         const merged = cachedFromStatus
           ? ensureAlwaysRequiredDocuments(
-              mergeRequirementLists(normalized, cachedFromStatus)
+              mergeRequirementLists(normalized, cachedFromStatus),
+              { hasPartner }
             )
           : normalized;
         setRequirementsRaw(merged);
@@ -263,6 +295,10 @@ export function Step5_Documents() {
     app.kyc.fundingAmount,
     app.selectedProductId,
     selectedCategory,
+    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — re-load requirements when
+    // the applicant toggles "multiple owners" so the partner photo ID
+    // requirement appears / disappears in the same render pass.
+    app.applicant?.hasMultipleOwners,
     update,
   ]);
 
