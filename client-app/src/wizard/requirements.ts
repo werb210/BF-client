@@ -79,6 +79,9 @@ export function sortRequirements(requirements: LenderProductRequirement[]) {
 export function formatDocumentLabel(value: string) {
   const overrides: Record<string, string> = {
     bank_statements: "6 months bank statements",
+    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — moved from Step 6.
+    primary_applicant_id: "Primary applicant photo ID",
+    partner_applicant_id: "Business partner photo ID",
   };
   if (overrides[value]) return overrides[value];
   const withSpaces = value.replace(/[_-]+/g, " ").trim();

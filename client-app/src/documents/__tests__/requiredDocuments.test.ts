@@ -19,8 +19,15 @@ describe("aggregateRequiredDocuments", () => {
       50000
     );
     const docTypes = requirements.map((entry) => entry.document_type);
+    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — primary_applicant_id is
+    // an always-required entry now that photo IDs live on Step 5.
     expect(docTypes.sort()).toEqual(
-      ["bank_statements", "equipment_quote", "ownership_info"].sort()
+      [
+        "bank_statements",
+        "equipment_quote",
+        "ownership_info",
+        "primary_applicant_id",
+      ].sort()
     );
   });
 
@@ -44,6 +51,10 @@ describe("aggregateRequiredDocuments", () => {
       75000
     );
     const docTypes = requirements.map((entry) => entry.document_type);
-    expect(docTypes.sort()).toEqual(["bank_statements", "tax_returns"].sort());
+    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — primary_applicant_id is
+    // an always-required entry now that photo IDs live on Step 5.
+    expect(docTypes.sort()).toEqual(
+      ["bank_statements", "primary_applicant_id", "tax_returns"].sort()
+    );
   });
 });
