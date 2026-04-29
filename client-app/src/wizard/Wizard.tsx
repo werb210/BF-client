@@ -1,17 +1,30 @@
-// BF_WIZARD_NUCLEAR_v40 — Block 40-A — single-route, state-based wizard.
-// Replaces six per-step routes (/apply/step-1 ... /apply/step-6) with one
-// Wizard component that reads `app.currentStep` from the store and renders
-// the right Step component. The URL is kept in sync (back-compat with old
-// links and bookmarks), but the rendered component is determined by store
-// state, not by Routes.
+// BF_CLIENT_WIZARD_URL_SOT_v56 — URL is the single source of truth for
+// the wizard step. Replaces v40/v55b's store-driven design where a
+// store→URL useEffect could navigate the URL back to a stale value on
+// the very first render of a freshly-mounted Wizard, leaving users
+// stuck on Step 2 after clicking Continue (regression observed live in
+// v55c with applicationToken=67b6bc97-...).
 //
-// Why this works: when Step 2 calls navigate("/apply/step-3"), React Router
-// sees the SAME route (path="/apply/step-:stepNumber") with a different
-// param. The Wizard instance stays mounted; only useEffect fires on the
-// path change. We pull the new step number out, set currentStep, and React
-// renders the new Step component. No route element swap → no transition
-// stall, no chunk loading, no guard redirect.
-import { useEffect, useMemo, useRef } from "react";
+// Why the old code raced: AppRouter declares six per-step routes that
+// each render <Wizard/>. React Router unmounts and remounts Wizard on
+// every step transition. The new instance hydrates `app.currentStep`
+// from localStorage on first render. Both URL→store and store→URL
+// effects fire on first commit; if localStorage had a stale
+// `currentStep`, store→URL would call navigate() back to that step
+// before URL→store could update the store. The user's URL bar showed
+// /apply/step-3 but the rendered component was still Step 2.
+//
+// New design:
+//   - location.pathname /apply/step-N defines `effectiveStep`.
+//   - `app.currentStep` is mirrored FROM the URL (one-way only), so
+//     legacy code that reads it still works.
+//   - Steps that want to advance call `navigate("/apply/step-N")`
+//     directly.
+//   - There is NO store→URL effect, so no race on mount.
+//
+// Pairs with the useApplicationStore.ts fix that purges the legacy
+// `application_data` key on boot (it was shadowing fresh data).
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { OfflineStore } from "@/state/offline";
@@ -44,39 +57,29 @@ export default function Wizard() {
     return n >= 1 && n <= 6 ? n : null;
   }, [location.pathname]);
 
-  // BF_CLIENT_WIZARD_NAV_FIX_v55b — guard against URL/store ping-pong.
-  const lastSyncedStep = useRef<number | null>(null);
+  // URL is the source of truth. Store currentStep is mirrored from URL.
+  const effectiveStep = clampStep(stepFromUrl ?? app.currentStep ?? 1);
 
-  // URL → store. When URL is /apply/step-N, force currentStep=N.
+  // One-way mirror: URL → store. Keeps legacy code that reads
+  // app.currentStep working.
   useEffect(() => {
     if (stepFromUrl == null) return;
     if (app.currentStep === stepFromUrl) return;
-    if (lastSyncedStep.current === stepFromUrl) return;
-
-    lastSyncedStep.current = stepFromUrl;
     update({ currentStep: stepFromUrl });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepFromUrl]);
+  }, [stepFromUrl, app.currentStep, update]);
 
-  // Store → URL. Keep URL synced for refresh/share/back-compat. `replace`
-  // so we don't pollute history with every intra-wizard transition.
-  useEffect(() => {
-    const target = clampStep(app.currentStep || 1);
-    const want = `/apply/step-${target}`;
-    if (location.pathname === want) return;
-    if (lastSyncedStep.current === target) return;
-
-    lastSyncedStep.current = target;
-    navigate(want, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [app.currentStep]);
-
-  // Inline RequireApplicationToken: any step beyond 1 needs a token. If we
-  // lost it, bounce back to Step 1. This replaces the per-route guard.
+  // Token guard: any step beyond 1 requires an application token. If we
+  // don't have one, bounce to step 1.
   const cached = OfflineStore.load() as { applicationToken?: string | null } | null;
   const hasAppToken = Boolean(app.applicationToken) || Boolean(cached?.applicationToken);
 
-  let safeStep = clampStep(app.currentStep || 1);
+  useEffect(() => {
+    if (effectiveStep > 1 && !hasAppToken && location.pathname !== "/apply/step-1") {
+      navigate("/apply/step-1", { replace: true });
+    }
+  }, [effectiveStep, hasAppToken, location.pathname, navigate]);
+
+  let safeStep = effectiveStep;
   if (safeStep > 1 && !hasAppToken) {
     safeStep = 1;
   }
@@ -89,8 +92,11 @@ export default function Wizard() {
       pathname: location.pathname,
       stepFromUrl,
       hasAppToken,
+      storeCurrentStep: app.currentStep,
     });
   }
 
   return <StepComponent />;
 }
+
+// BF_CLIENT_WIZARD_URL_SOT_v56_WIZARD_ANCHOR
