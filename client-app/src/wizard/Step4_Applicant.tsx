@@ -163,7 +163,9 @@ export function Step4_Applicant() {
     saveStepData(4, values);
     enforceV1StepSchema("step4", values);
     const requiredFields = [
-      "fullName",
+      // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — fullName removed; first
+      // and last cover the same intent, and fullName is still
+      // auto-derived from them in the input onChange handlers.
       "firstName",
       "lastName",
       "email",
@@ -243,7 +245,7 @@ export function Step4_Applicant() {
   }
 
   const baseRequiredFields = [
-    "fullName",
+    // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — see next() for rationale.
     "firstName",
     "lastName",
     "email",
@@ -406,30 +408,10 @@ export function Step4_Applicant() {
             gap: tokens.spacing.md,
           }}
         >
-          <div>
-            <label style={components.form.label}>Full Name</label>
-            <Input
-              id={getWizardFieldId("step4", "fullName")}
-              value={values.fullName || ""}
-              onChange={(e: unknown) => {
-                const fullName = e.target.value;
-                const [firstName = "", ...rest] = fullName.trim().split(/\s+/);
-                const lastName = rest.join(" ");
-                const nextValues = {
-                  ...values,
-                  fullName,
-                  firstName: firstName || values.firstName,
-                  lastName: lastName || values.lastName,
-                };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("fullName", values);
-                }
-              }}
-            />
-          </div>
+          {/* BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — removed redundant
+            Full Name field. fullName is auto-derived from First Name
+            and Last Name onChange handlers below, and submission code
+            that depends on applicant.fullName still receives it. */}
 
           <div>
             <label style={components.form.label}>First Name</label>

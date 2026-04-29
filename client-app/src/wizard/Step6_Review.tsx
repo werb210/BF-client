@@ -42,6 +42,14 @@ import {
   trackEvent,
 } from "../utils/analytics";
 import { apiCall } from "../api/client";
+// BF_CLIENT_WIZARD_STEP6_IMPORT_v59 — Step 6 references
+// API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT at runtime but the import
+// was missing. In production this threw ReferenceError on Step 6 mount,
+// blocking the user with "Application Error / A fatal error occurred."
+// after Step 5. The lender-count fetch is wrapped in .catch() so even
+// when the endpoint 404s the page still renders — but only if the
+// symbol is at least defined.
+import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
