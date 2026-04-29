@@ -647,11 +647,14 @@ export function Step6_Review(): JSX.Element {
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" />
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
-        {/* BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — Applicant IDs section
-          removed from Step 6. Primary + partner photo ID requirements
-          moved to Step 5 so they go through the existing "Supply
-          Documents Later" deferral flow. Step 6 is now T&C →
-          signature → submit. */}
+        {/* BF_CLIENT_WIZARD_STEP6_PGI_v61 — Step 6 reordered to
+          PGI → T&C → consent checkboxes → signature → submit.
+          Personal Guarantee Insurance is captured as an optional
+          preference (app.pgiOptIn = "yes" | "no" | undefined). It does
+          not block submit, has no separate T&C, and is mirrored into
+          the existing submit payload under metadata. The signature
+          grid now lives AFTER the consent checkboxes so the user
+          signs LAST. v60 anchor was: BF_CLIENT_WIZARD_STEP6_NOIDS_v60. */}
 
         {(!docsAccepted || !processingComplete) && (
           <Card
@@ -674,6 +677,32 @@ export function Step6_Review(): JSX.Element {
           </Card>
         )}
 
+        {/* PGI question — Personal Guarantee Insurance */}
+        <div data-testid="step6-pgi-section">
+          <h2 style={components.form.sectionTitle}>Personal Guarantee Insurance (PGI)</h2>
+          <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
+            Most lenders require a personal guarantee — meaning you are personally responsible if the business cannot repay. Personal Guarantee Insurance protects you if that happens.
+          </p>
+          <div style={{ ...layout.stackTight, marginTop: tokens.spacing.sm }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
+              <input type="radio" name="pgi-opt-in" value="yes" checked={app.pgiOptIn === "yes"} onChange={() => update({ pgiOptIn: "yes" })} style={{ width: "auto", marginTop: 4 }} />
+              <span>Yes, send me PGI details with my offers</span>
+            </label>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
+              <input type="radio" name="pgi-opt-in" value="no" checked={app.pgiOptIn === "no"} onChange={() => update({ pgiOptIn: "no" })} style={{ width: "auto", marginTop: 4 }} />
+              <span>No, I will proceed without PGI</span>
+            </label>
+          </div>
+          <details style={{ marginTop: tokens.spacing.sm }}>
+            <summary style={{ cursor: "pointer", color: tokens.colors.textSecondary, fontSize: tokens.typography.body.fontSize }}>
+              Learn more about PGI
+            </summary>
+            <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
+              PGI is an optional insurance product that covers your personal guarantee obligation if your business defaults on the loan. Premiums vary by loan size, term, and credit profile, typically 1–3% of the loan amount. If you opt in, lenders will quote PGI alongside their loan offers; you can still decline at the offer stage. Coverage and pricing are determined by the insurer, not Boreal Financial.
+            </p>
+          </details>
+        </div>
+
         <div>
           <h2 style={components.form.sectionTitle}>Terms & Conditions</h2>
           <div
@@ -691,6 +720,47 @@ export function Step6_Review(): JSX.Element {
             {TERMS_TEXT}
           </div>
         </div>
+
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: tokens.spacing.xs,
+            fontSize: tokens.typography.label.fontSize,
+            fontWeight: tokens.typography.label.fontWeight,
+            color: tokens.colors.textPrimary,
+          }}
+        >
+          <Checkbox checked={Boolean(app.infoConfirmed)} onChange={toggleInfoConfirmed} />
+          <span>I confirm the information is accurate</span>
+        </label>
+
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: tokens.spacing.xs,
+            fontSize: tokens.typography.label.fontSize,
+            fontWeight: tokens.typography.label.fontWeight,
+            color: tokens.colors.textPrimary,
+          }}
+        >
+          <Checkbox checked={Boolean(app.shareAuthorization)} onChange={toggleShareAuthorization} />
+          <span>I authorize Boreal Financial to share my application with lenders</span>
+        </label>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: tokens.spacing.xs,
+            fontSize: tokens.typography.label.fontSize,
+            fontWeight: tokens.typography.label.fontWeight,
+            color: tokens.colors.textPrimary,
+          }}
+        >
+          <Checkbox checked={app.termsAccepted} onChange={toggleTerms} />
+          <span>I agree to the Terms & Conditions</span>
+        </label>
 
         <div
           style={{
@@ -735,47 +805,6 @@ export function Step6_Review(): JSX.Element {
             <Input value={app.signatureDate || today} readOnly />
           </div>
         </div>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={Boolean(app.infoConfirmed)} onChange={toggleInfoConfirmed} />
-          <span>I confirm the information is accurate</span>
-        </label>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={Boolean(app.shareAuthorization)} onChange={toggleShareAuthorization} />
-          <span>I authorize Boreal Financial to share my application with lenders</span>
-        </label>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={app.termsAccepted} onChange={toggleTerms} />
-          <span>I agree to the Terms & Conditions</span>
-        </label>
 
         {typeof app.readinessScore === "number" && (
           <div style={components.form.helperText}>
