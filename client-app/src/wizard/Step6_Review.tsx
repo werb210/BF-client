@@ -358,6 +358,7 @@ export function Step6_Review(): JSX.Element {
       // (404 / application_not_found), mint a fresh one and retry once.
       // The full payload lives in the submit() body so server-side state
       // doesn't need to have anything pre-populated.
+      // BF_CLIENT_v71_BLOCK_3_4 — ensure wizard submit always flows through buildSubmitBody normalizers.
       const submitBody = buildSubmitBody({
         app: {
           ...app,
