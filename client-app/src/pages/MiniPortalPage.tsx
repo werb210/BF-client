@@ -4,77 +4,25 @@ import { useApplicationStore } from "@/state/useApplicationStore";
 import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
-import { tokens } from "@/styles";
+import MessageThread, { type ThreadMessage } from "@/components/messaging/MessageThread";
+import "./MiniPortalPage.css";
 
-type Message = {
-  id: string;
-  role: "client" | "staff";
-  content: string;
-  staffName?: string;
-};
+const STAGES = [
+  { key: "received", label: "Received" },
+  { key: "documents_required", label: "Documents Required" },
+  { key: "in_review", label: "In Review" },
+  { key: "additional_steps_required", label: "Additional Steps Required" },
+  { key: "off_to_lender", label: "Off to Lender" },
+  { key: "offer", label: "Offer" },
+] as const;
+type StageKey = (typeof STAGES)[number]["key"];
+const STAGE_BY_KEY: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...acc, [s.key]: i }), {} as Record<string, number>);
 
-// BF_MINI_PORTAL_FIX_v48 — server returns snake_case in {items: [...]}; we
-// normalize to this camelCase Offer shape after fetch.
-type ServerOffer = {
-  id: string;
-  application_id?: string;
-  lender_name?: string;
-  lender_logo_url?: string | null;
-  amount?: string | number | null;
-  rate_factor?: string | null;
-  term?: string | null;
-  payment_frequency?: string | null;
-  expiry_date?: string | null;
-  document_url?: string | null;
-  status?: string;
-};
-
-type Offer = {
-  id: string;
-  lenderName: string;
-  lenderLogoUrl?: string;
-  amount?: string;
-  rateOrFactor?: string;
-  term?: string;
-  paymentFrequency?: string;
-  expiresAt?: string;
-  pdfUrl?: string;
-  status?: string;
-};
-
-function normalizeOffer(s: ServerOffer): Offer {
-  return {
-    id: s.id,
-    lenderName: s.lender_name ?? "Unknown lender",
-    lenderLogoUrl: s.lender_logo_url ?? undefined,
-    amount: s.amount === null || s.amount === undefined ? undefined : String(s.amount),
-    rateOrFactor: s.rate_factor ?? undefined,
-    term: s.term ?? undefined,
-    paymentFrequency: s.payment_frequency ?? undefined,
-    expiresAt: s.expiry_date ?? undefined,
-    pdfUrl: s.document_url ?? undefined,
-    status: s.status,
-  };
-}
-
-const STAGES = ["Received!", "In Review", "Documents Required", "Additional Steps Required", "Off to Lender", "Offer"] as const;
-
-const stageLookup: Record<string, number> = {
-  received: 0,
-  in_review: 1,
-  documents_required: 2,
-  additional_steps_required: 3,
-  off_to_lender: 4,
-  offer: 5,
-};
-
-const hashtagMap = {
-  "#upload": "Upload Documents",
-  "#networth": "Personal Net Worth",
-  "#equipment": "Equipment Collateral Form",
-  "#realestate": "Real Estate Collateral Form",
-  "#other": "Other Forms",
-} as const;
+type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean };
+type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean };
+const normalizeOffer = (s: ServerOffer): Offer => ({ id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) });
+function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!expiresAt) return "ok"; const t = new Date(expiresAt).getTime(); if (Number.isNaN(t)) return "ok"; const diffDays = (t - Date.now()) / 86_400_000; if (diffDays <= 2) return "danger"; if (diffDays <= 4) return "warn"; return "ok"; }
+const ACTION_CHIPS = [{ id: "upload", label: "Upload Documents" }, { id: "new", label: "New Application" }, { id: "networth", label: "Personal Net Worth" }, { id: "equipment", label: "Equipment Collateral Form" }, { id: "realestate", label: "Real Estate Collateral Form" }, { id: "debt", label: "Debt Schedule" }, { id: "media", label: "Media Attachments" }, { id: "other", label: "Other Forms" }] as const;
 
 export default function MiniPortalPage() {
   const { id: routeId } = useParams();
@@ -82,231 +30,32 @@ export default function MiniPortalPage() {
   const navigate = useNavigate();
   const { app, reset } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
+  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [percent, setPercent] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState("");
-  const [stageIndex, setStageIndex] = useState(0);
-  const [offers, setOffers] = useState<Offer[]>([]);
-
-  useEffect(() => {
-    if (!applicationId) return;
-
-    let active = true;
-
-    async function loadAll() {
-      try {
-        const appData = await apiCall<{ data?: { stage?: string }; stage?: string }>(`/api/applications/${encodeURIComponent(applicationId)}`);
-        if (!active) return;
-        const normalized = String(appData?.data?.stage || appData?.stage || "").toLowerCase();
-        if (normalized in stageLookup) {
-          setStageIndex(stageLookup[normalized as keyof typeof stageLookup]);
-        }
-      } catch {
-        // keep defaults
-      }
-
-      try {
-        const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
-        if (!active) return;
-        setMessages(
-          incoming.map((item: any, idx: number) => ({
-            id: String(item.id || idx),
-            role: item.role === "staff" ? "staff" : "client",
-            content: String(item.content || ""),
-            staffName: item.staffName,
-          }))
-        );
-      } catch {
-        // noop
-      }
-
-      // BF_MINI_PORTAL_FIX_v48 — server returns { items: ServerOffer[] }.
-      try {
-        const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(
-          `/api/offers?applicationId=${encodeURIComponent(applicationId)}`
-        ).catch((): null => null);
-        if (!active) return;
-        const incoming: ServerOffer[] = Array.isArray(offerData)
-          ? offerData
-          : Array.isArray((offerData as { items?: ServerOffer[] })?.items)
-            ? ((offerData as { items: ServerOffer[] }).items)
-            : Array.isArray((offerData as { data?: ServerOffer[] })?.data)
-              ? ((offerData as { data: ServerOffer[] }).data)
-              : [];
-        setOffers(incoming.map(normalizeOffer));
-      } catch {
-        // noop
-      }
-    }
-
-    void loadAll();
-    const poll = setInterval(() => void loadAll(), 5000);
-
-    return () => {
-      active = false;
-      clearInterval(poll);
-    };
-  }, [applicationId]);
-
-  const triggeredActions = useMemo(() => {
-    const tags = new Set<string>();
-    messages.forEach((message) => {
-      if (message.role !== "staff") return;
-      Object.keys(hashtagMap).forEach((tag) => {
-        if (message.content.toLowerCase().includes(tag)) tags.add(tag);
-      });
-    });
-    return Array.from(tags).map((tag) => hashtagMap[tag as keyof typeof hashtagMap]);
-  }, [messages]);
-
-  // BF_MINI_PORTAL_FIX_v48 — wire offer accept/decline to BF-Server endpoints.
-  async function acceptOffer(offerId: string) {
-    if (!offerId) return;
-    try {
-      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" });
-      setOffers((current) =>
-        current.map((o) => (o.id === offerId ? { ...o, status: "accepted" } : o))
-      );
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("offer_accept_failed", err);
-    }
+  useEffect(() => { if (!applicationId) return; let active = true; async function loadAll() {
+    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!active) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); const p = appData?.data?.completion_pct ?? appData?.completion_pct ?? null; if (typeof p === "number" && p >= 0 && p <= 100) setPercent(Math.round(p)); } catch {}
+    try { const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []); if (!active) return; setMessages(incoming.map((item: any, idx: number) => { const dir = String(item.direction ?? "").toLowerCase(); const role: "self" | "other" = dir === "inbound" ? "self" : "other"; return { id: String(item.id || idx), authorRole: role, authorName: item.authorName ?? (role === "self" ? "You" : "Boreal"), body: String(item.body ?? item.content ?? ""), createdAt: String(item.createdAt ?? item.created_at ?? new Date().toISOString()) }; })); } catch {}
+    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!active) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
   }
+  void loadAll(); const poll = setInterval(() => void loadAll(), 5000); return () => { active = false; clearInterval(poll); }; }, [applicationId]);
 
-  async function requestChanges(offerId: string) {
-    if (!offerId) return;
-    const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : "";
-    if (reason === null) return; // user cancelled
-    try {
-      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/decline`, {
-        method: "POST",
-        body: JSON.stringify({ reason: (reason ?? "").trim() }),
-      });
-      setOffers((current) =>
-        current.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))
-      );
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("offer_decline_failed", err);
-    }
-  }
+  const onChip = (id: string) => { if (id === "new") { reset(); navigate("/apply/step-1"); return; } if (id === "upload") { (document.getElementById("mp-upload") as HTMLInputElement | null)?.click(); return; } navigate(`/forms/${id}?applicationId=${encodeURIComponent(applicationId)}`); };
+  const onHashtagClick = (tag: string) => { const id = tag.replace(/^#/, ""); const chip = ACTION_CHIPS.find((c) => c.id === id); if (chip) onChip(chip.id); else navigate(`/forms/${id}?applicationId=${encodeURIComponent(applicationId)}`); };
+  async function acceptOffer(offerId: string) { await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" }); setPendingOfferId(offerId); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o))); }
+  async function requestChanges(offerId: string) { const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : ""; if (reason === null) return; await apiCall(`/api/offers/${encodeURIComponent(offerId)}/decline`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))); }
+  async function sendMessage() { if (!text.trim() || !applicationId) return; const next = text.trim(); setText(""); await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body: next, direction: "inbound" } }); setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString() }]); }
+  async function uploadDocument(file: File) { if (!applicationId) return; const form = new FormData(); form.append("file", file); await fetch(`${ENV.API_BASE}/api/client/documents/upload`, { method: "POST", headers: { Authorization: `Bearer ${getToken() ?? ""}` }, body: form }); }
 
-  async function sendMessage() {
-    if (!text.trim() || !applicationId) return;
-    const next = text.trim();
-    setText("");
-    await apiCall("/api/client/messages", {
-      method: "POST",
-      body: { applicationId, body: next, direction: "inbound" },
-    });
-    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "client", content: next }]);
-  }
-
-  async function uploadDocument(file: File) {
-    if (!applicationId) return;
-    const form = new FormData();
-    form.append("file", file);
-    await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${getToken() ?? ""}` },
-      body: form,
-    });
-  }
-
-  function startNewApplication() {
-    reset();
-    navigate("/apply/step-1");
-  }
+  const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
+  const showOfferView = stageIndex === STAGE_BY_KEY.offer;
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: "grid", gridTemplateColumns: `repeat(${STAGES.length}, minmax(0,1fr))`, gap: 10 }}>
-          {STAGES.map((stage, index) => (
-            <div key={stage} style={{ textAlign: "center" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", border: `2px solid ${index <= stageIndex ? "#2563eb" : "#9ca3af"}`, background: index < stageIndex ? "#2563eb" : "#fff", color: index < stageIndex ? "#fff" : "#2563eb", margin: "0 auto 8px", display: "grid", placeItems: "center", fontSize: 12 }}>{index < stageIndex ? "✓" : index + 1}</div>
-              <div style={{ fontSize: 12, color: tokens.colors.textSecondary }}>{stage}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: stageIndex === 5 ? "1fr" : "2fr 1fr", gap: 20 }}>
-        <section style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", minHeight: 420, display: "flex", flexDirection: "column" }}>
-          <div style={{ padding: 12, borderBottom: "1px solid #e5e7eb", fontWeight: 600 }}>Message Thread</div>
-          <div style={{ flex: 1, padding: 12, overflowY: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-            {messages.map((message) => (
-              <div key={message.id} style={{ display: "flex", justifyContent: message.role === "client" ? "flex-end" : "flex-start", gap: 8 }}>
-                {message.role === "staff" && <div style={{ width: 28, height: 28, borderRadius: "50%", background: "#d1d5db", display: "grid", placeItems: "center", fontSize: 12 }}>{(message.staffName || "BF").slice(0, 2).toUpperCase()}</div>}
-                <div style={{ background: message.role === "staff" ? "#f3f4f6" : "#fff", border: "1px solid #d1d5db", borderRadius: 12, padding: "8px 12px", maxWidth: "78%" }}>
-                  {message.content}
-                  {message.role === "staff" && (
-                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      {triggeredActions.map((action) => (
-                        <button key={action} style={{ fontSize: 12, padding: "4px 8px", borderRadius: 8, border: "1px solid #93c5fd", background: "#eff6ff" }}>{action}</button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop: "1px solid #e5e7eb", padding: 12, display: "flex", gap: 8 }}>
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" style={{ flex: 1, border: "1px solid #d1d5db", borderRadius: 8, padding: "8px 12px" }} onKeyDown={(e) => e.key === "Enter" && void sendMessage()} />
-            <button onClick={() => void sendMessage()} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "8px 12px" }}>Send</button>
-          </div>
-        </section>
-
-        {stageIndex !== 5 ? (
-          <aside style={{ background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb", padding: 16, display: "flex", flexDirection: "column", gap: 8, alignSelf: "start" }}>
-            <button style={{ padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb" }}>Upload Documents</button>
-            <input type="file" onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadDocument(file); }} />
-            <button onClick={startNewApplication} style={{ padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb" }}>New Application</button>
-            {triggeredActions.map((action) => (
-              <button key={action} style={{ padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb" }}>{action}</button>
-            ))}
-            <button style={{ marginTop: 8, padding: "10px", borderRadius: 8, border: "none", background: "#2563eb", color: "#fff", width: "100%" }}>Call Us!</button>
-          </aside>
-        ) : (
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: 12 }}>
-            {offers.map((offer) => (
-              <article key={offer.id} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <strong>{offer.lenderName}</strong>
-                  {offer.lenderLogoUrl && <img src={offer.lenderLogoUrl} alt={offer.lenderName} style={{ height: 24 }} />}
-                </div>
-                <div style={{ fontSize: 14, marginTop: 8 }}>Amount: {offer.amount || "—"}</div>
-                <div style={{ fontSize: 14 }}>Rate/Factor: {offer.rateOrFactor || "—"}</div>
-                <div style={{ fontSize: 14 }}>Term: {offer.term || "—"}</div>
-                <div style={{ fontSize: 14 }}>Payment: {offer.paymentFrequency || "—"}</div>
-                <div style={{ fontSize: 14 }}>Expiry: {offer.expiresAt || "—"}</div>
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  {offer.pdfUrl && (
-                    <a
-                      href={offer.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-testid="view-pdf-link"
-                      style={{ flex: 1, border: "1px solid #2563eb", color: "#2563eb", background: "#fff", borderRadius: 8, padding: "8px 10px", textAlign: "center", textDecoration: "none" }}
-                    >View PDF</a>
-                  )}
-                  <button
-                    type="button"
-                    data-testid="accept-offer-btn"
-                    onClick={() => void acceptOffer(offer.id)}
-                    style={{ flex: 1, border: "1px solid #059669", color: "#059669", background: "#fff", borderRadius: 8, padding: "8px 10px" }}
-                  >Accept</button>
-                  <button
-                    type="button"
-                    data-testid="request-changes-btn"
-                    onClick={() => void requestChanges(offer.id)}
-                    style={{ flex: 1, border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "8px 10px" }}
-                  >Request Changes</button>
-                </div>
-              </article>
-            ))}
-          </section>
-        )}
+    <div className="mp-root">
+      <div className="mp-tracker" role="list" aria-label="Application progress">{stageRow.map((s, i) => <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}><div className="mp-stage__bullet">{s.completed ? "✓" : i + 1}</div><div className="mp-stage__label">{s.label}</div>{s.current && percent > 0 ? <div className="mp-stage__pct">{percent}%</div> : null}</div>)}</div>
+      <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
+        <section className="mp-thread-card"><header className="mp-thread-card__header">Messages</header><div className="mp-thread-card__body"><MessageThread messages={messages} onHashtagClick={onHashtagClick} emptyText="Say hi to get started." /></div><div className="mp-thread-card__composer"><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} /><button onClick={() => void sendMessage()}>Send</button></div></section>
+        {!showOfferView && <aside className="mp-actions"><div className="mp-actions__chips">{ACTION_CHIPS.map((c) => <button key={c.id} type="button" className="mp-chip" onClick={() => onChip(c.id)}>{c.label}</button>)}</div><input id="mp-upload" type="file" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadDocument(f); }} /><a className="mp-callus" href="tel:+18888884444">📞 Call Us!</a></aside>}
+        {showOfferView && <section className="mp-offers">{offers.length === 0 ? <div className="mp-offers__empty">No offers yet.</div> : offers.map((o) => { const exp = expirationColor(o.expiresAt); return <article key={o.id} className={`mp-offer mp-offer--${exp}`}><header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>{o.lenderLogoUrl ? <img className="mp-offer__logo" src={o.lenderLogoUrl} alt={o.lenderName} /> : null}<div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "—"}</div><dl className="mp-offer__meta"><dt>Rate / Factor</dt><dd>{o.rateOrFactor ?? "—"}</dd><dt>Term</dt><dd>{o.term ?? "—"}</dd><dt>Payment</dt><dd>{o.paymentFrequency ?? "—"}</dd><dt>Expiration</dt><dd>{o.expiresAt ?? "—"}</dd></dl>{o.status === "pending_acceptance" || pendingOfferId === o.id ? <div className="mp-offer__pending">✓ Sent for staff confirmation. We'll text you when it's ready to sign.</div> : <div className="mp-offer__actions">{o.pdfUrl ? <a href={o.pdfUrl} target="_blank" rel="noopener noreferrer" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost">View PDF</a> : null}<button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button><button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button></div>}</article>; })}</section>}
       </div>
     </div>
   );
