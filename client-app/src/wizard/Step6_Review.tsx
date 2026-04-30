@@ -53,6 +53,7 @@ import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
+import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit } from "../state/pendingSubmit";
 
@@ -357,15 +358,15 @@ export function Step6_Review(): JSX.Element {
       // (404 / application_not_found), mint a fresh one and retry once.
       // The full payload lives in the submit() body so server-side state
       // doesn't need to have anything pre-populated.
-      const submitBody = {
+      const submitBody = buildSubmitBody({
         app: {
           ...app,
           ...payload,
           attribution,
           ...getLeadFingerprint(),
         },
-        normalized: normalizedPayload,
-      };
+      });
+      submitBody.normalized = { ...submitBody.normalized, ...normalizedPayload };
       let submissionResponse: any;
       try {
         submissionResponse = await ClientAppAPI.submit(app.applicationToken!, submitBody);

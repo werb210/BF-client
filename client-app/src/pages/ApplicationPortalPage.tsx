@@ -203,6 +203,9 @@ export function ApplicationPortalPage(): JSX.Element {
           ? "We located your existing submission. Your portal is ready below."
           : "We’ve received your application. Track progress and upload documents here."}
       </p>
+      <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
+        Current status: {formatStageLabel(String(application?.pipeline_state || application?.stage || "received"))}
+      </p>
     </div>
   ) : null;
 
