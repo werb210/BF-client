@@ -28,5 +28,11 @@
     "typecheck": "npm --prefix client-app run typecheck",
     "test:e2e": "bash -lc 'set -a; source .env.test; set +a; npm run dev >/tmp/bf-e2e-dev.log 2>&1 & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT; sleep 5; npm --prefix client-app exec vitest run src/e2e/applicationFlow.test.ts'"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/user-event": "^14.5.2",
+    "jsdom": "^24.0.0"
+  }
 }
