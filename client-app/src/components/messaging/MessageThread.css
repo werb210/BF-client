@@ -1,0 +1,42 @@
+/* BF_CLIENT_v68_BLOCK_3_1 */
+.msg-thread {
+  display: flex; flex-direction: column; gap: 12px; padding: 12px;
+  overflow-y: auto;
+}
+.msg-thread--empty {
+  align-items: center; justify-content: center;
+  color: #6b7280; font-size: 13px; min-height: 120px;
+}
+.msg-row { display: flex; gap: 8px; align-items: flex-end; }
+.msg-row--right { justify-content: flex-end; }
+.msg-row--left  { justify-content: flex-start; }
+.msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #d1d5db; color: #374151; font-size: 11px;
+  font-weight: 600; display: grid; place-items: center; flex: 0 0 28px;
+}
+.msg-avatar--self { background: #2563eb; color: #fff; }
+.msg-bubble-wrap { display: flex; flex-direction: column; max-width: 78%; }
+.msg-bubble {
+  padding: 8px 12px; border-radius: 14px; font-size: 14px;
+  line-height: 1.4; word-wrap: break-word; white-space: pre-wrap;
+}
+.msg-bubble--self  { background: #d6e8ff; color: #0b3a82; border-bottom-right-radius: 4px; }
+.msg-bubble--other { background: #f3f4f6; color: #1f2937; border-bottom-left-radius: 4px; }
+.msg-meta {
+  font-size: 11px; color: #6b7280; margin-top: 4px;
+  display: flex; gap: 6px; align-items: center;
+}
+.msg-row--right .msg-meta { justify-content: flex-end; }
+.msg-hashtag-chip {
+  display: inline-block; margin: 0 2px; padding: 2px 8px;
+  font-size: 12px; font-weight: 500;
+  border: 1px solid #93c5fd; background: #eff6ff; color: #1d4ed8;
+  border-radius: 8px; cursor: pointer;
+}
+.msg-hashtag-chip:hover { background: #dbeafe; }
+
+@media (max-width: 640px) {
+  .msg-bubble-wrap { max-width: 85%; }
+  .msg-bubble { font-size: 13px; }
+}
