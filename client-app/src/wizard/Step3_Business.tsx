@@ -119,11 +119,11 @@ export function Step3_Business() {
   const isBusinessPhoneLocked = false;
 
   const isValid = [
-    // BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — companyName is mirrored
-    // from businessName on every keystroke, so requiring both is
-    // redundant.
+    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName removed from this
+    // list; it's optional on the form and is filled from businessName
+    // on continue when blank. companyName is mirrored from businessName
+    // on every keystroke, so requiring both is also redundant.
     "businessName",
-    "legalName",
     "businessStructure",
     "address",
     "city",
@@ -138,10 +138,17 @@ export function Step3_Business() {
   async function next() {
     saveStepData(3, values);
     enforceV1StepSchema("step3", values);
+    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — copy DBA/business name into
+    // the legal name when the legal field was left blank, so downstream
+    // consumers (CRM mirror, lender submission payloads) still receive
+    // a populated legal name without forcing the applicant to re-type it.
+    if (!Validate.required(values.legalName) && Validate.required(values.businessName)) {
+      values = { ...values, legalName: values.businessName };
+      update({ business: values });
+    }
     const requiredFields = [
-      // BF_CLIENT_WIZARD_STEP3_COMPANYNAME_v60 — see isValid for rationale.
+      // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
       "businessName",
-      "legalName",
       "businessStructure",
       "address",
       "city",
@@ -327,7 +334,9 @@ export function Step3_Business() {
           </div>
 
           <div>
-            <label style={components.form.label}>Business Legal Name</label>
+            {/* BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legal name is optional now;
+              if blank on continue we copy the DBA/business name into it. */}
+            <label style={components.form.label}>Business Legal Name (if applicable)</label>
             <Input
               id={getWizardFieldId("step3", "legalName")}
               value={values.legalName || ""}
