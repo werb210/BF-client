@@ -3,6 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { OtpInput } from "@/components/OtpInput";
 import { resolveOtpNextStep } from "@/auth/otp";
 import { startOtp, verifyOtp } from "@/api/auth";
+// BF_CLIENT_v67_OTP_BOOT_FROM_SERVER — sync server-side submission state
+// (from the v68 OTP verify enrichment) into the local profile before the
+// boot router reads it, so users with empty localStorage still land on
+// /portal when the server confirms they have a submitted application.
+import { ClientProfileStore } from "@/state/clientProfiles";
 import { tokens, components } from "@/styles";
 
 type Step = "phone" | "code";
@@ -75,7 +80,24 @@ export default function OtpPage() {
     setError(null);
     try {
       const profile = await verifyOtp(formatted, otpCode);
-      const next = resolveOtpNextStep((profile as any)?.profile ?? null);
+
+      // BF_CLIENT_v67_OTP_BOOT_FROM_SERVER — when the server says this
+      // phone has a submitted application, write it into the local
+      // profile so resolveOtpNextStep returns action="portal" even when
+      // localStorage was previously empty (logout, different browser,
+      // cleared cache). Best-effort: missing fields → no-op, preserves
+      // today's behavior on older servers.
+      const verifyData = (profile as any) ?? {};
+      if (
+        verifyData?.hasSubmittedApplication === true &&
+        typeof verifyData?.submittedApplicationId === "string" &&
+        verifyData.submittedApplicationId
+      ) {
+        ClientProfileStore.markSubmitted(formatted, verifyData.submittedApplicationId);
+      }
+
+      const localProfile = ClientProfileStore.getProfile(formatted);
+      const next = resolveOtpNextStep(localProfile);
 
       if (next.action === "portal") {
         navigate("/portal", { replace: true });
