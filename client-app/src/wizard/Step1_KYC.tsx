@@ -771,18 +771,27 @@ fixedAssets:
                   cursor: "pointer",
                 }}
               >
+                {/* BF_CLIENT_v66_STEP1_INDUSTRIES — expanded to better
+                    cover SMB lending demand. New entries are inserted in
+                    alphabetical position; "Other" remains last. */}
                 <option value="">Select industry...</option>
+                <option>Agriculture</option>
+                <option>Auto Sales &amp; Repair</option>
                 <option>Construction</option>
-                <option>Manufacturing</option>
-                <option>Retail</option>
-                <option>Restaurant/Food Service</option>
-                <option>Technology</option>
+                <option>Education</option>
+                <option>Energy</option>
                 <option>Healthcare</option>
-                <option>Transportation</option>
+                <option>Hospitality &amp; Lodging</option>
+                <option>Logistics &amp; Trucking</option>
+                <option>Manufacturing</option>
+                <option>Personal Services</option>
                 <option>Professional Services</option>
                 <option>Real Estate</option>
-                <option>Agriculture</option>
-                <option>Energy</option>
+                <option>Restaurant/Food Service</option>
+                <option>Retail</option>
+                <option>Technology</option>
+                <option>Transportation</option>
+                <option>Wholesale &amp; Distribution</option>
                 <option>Other</option>
               </select>
               {showErrors && fieldErrors.industry && (

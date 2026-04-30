@@ -39,6 +39,16 @@ import { useReadiness } from "../state/readinessStore";
 import { useAuth } from "@/auth/useAuth";
 import { CREDIT_SCORE_BANDS } from "./creditScoreBands";
 
+// BF_CLIENT_v66_STEP4_CAPITALIZE — title-case helper (Unicode-aware
+// for the basic Latin alphabet; preserves embedded punctuation like
+// hyphens and apostrophes).
+function toTitleCaseV66(input: string): string {
+  if (!input) return input;
+  return input
+    .toLowerCase()
+    .replace(/(^|[\s\-'])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+}
+
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
@@ -66,12 +76,11 @@ export function Step4_Applicant() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
 
-  useEffect(() => {
-    const userPhone = typeof user === "object" && user ? String((user as Record<string, unknown>).phone || "") : "";
-    if (userPhone && !values.phone) {
-      setField("phone", userPhone);
-    }
-  }, [user, values.phone]);
+  // BF_CLIENT_v66_STEP4_NO_PHONE_PREFILL — do not auto-fill the applicant
+  // phone with the OTP-login user's phone. The OTP phone identifies the
+  // session, not necessarily the applicant; readiness/creditPrefill paths
+  // remain free to populate this field with applicant-entered data.
+  // (effect intentionally removed)
 
   useEffect(() => {
     trackEvent("client_step_viewed", { step: 4 });
@@ -427,6 +436,18 @@ export function Step4_Applicant() {
                 };
                 update({ applicant: nextValues });
               }}
+              onBlur={() => {
+                // BF_CLIENT_v66_STEP4_CAPITALIZE
+                const cased = toTitleCaseV66(values.firstName || "");
+                if (cased !== (values.firstName || "")) {
+                  const nextValues = {
+                    ...values,
+                    firstName: cased,
+                    fullName: `${cased} ${values.lastName || ""}`.trim(),
+                  };
+                  update({ applicant: nextValues });
+                }
+              }}
               onKeyDown={(e: unknown) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("firstName", values);
@@ -447,6 +468,18 @@ export function Step4_Applicant() {
                   fullName: `${values.firstName || ""} ${lastName}`.trim(),
                 };
                 update({ applicant: nextValues });
+              }}
+              onBlur={() => {
+                // BF_CLIENT_v66_STEP4_CAPITALIZE
+                const cased = toTitleCaseV66(values.lastName || "");
+                if (cased !== (values.lastName || "")) {
+                  const nextValues = {
+                    ...values,
+                    lastName: cased,
+                    fullName: `${values.firstName || ""} ${cased}`.trim(),
+                  };
+                  update({ applicant: nextValues });
+                }
               }}
               onKeyDown={(e: unknown) => {
                 if (e.key === "Enter") {
@@ -535,6 +568,13 @@ export function Step4_Applicant() {
               onChange={(e: unknown) => {
                 const nextValues = { ...values, city: e.target.value };
                 update({ applicant: nextValues });
+              }}
+              onBlur={() => {
+                // BF_CLIENT_v66_STEP4_CAPITALIZE
+                const cased = toTitleCaseV66(values.city || "");
+                if (cased !== (values.city || "")) {
+                  update({ applicant: { ...values, city: cased } });
+                }
               }}
               onKeyDown={(e: unknown) => {
                 if (e.key === "Enter") {

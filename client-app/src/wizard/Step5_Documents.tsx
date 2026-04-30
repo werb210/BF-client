@@ -274,12 +274,14 @@ export function Step5_Documents() {
             )
           : normalized;
         setRequirementsRaw(merged);
+        // BF_CLIENT_v66_STATUS_NO_LOOP — do NOT reset documentsDeferred on
+        // Step 5 mount. The previous reset wiped the user's "upload docs
+        // later" choice every time they re-entered Step 5 (e.g. via Back).
         update({
           productRequirements: {
             ...(app.productRequirements || {}),
             aggregated: merged,
           },
-          documentsDeferred: false,
         });
         setIsLoading(false);
       }
@@ -309,43 +311,29 @@ export function Step5_Documents() {
     }
   }, [app.applicationToken!, app.selectedProductId]);
 
+  // BF_CLIENT_v66_STATUS_NO_LOOP — only refresh fields the server's /status
+  // endpoint actually returns. Until the server enriches /status with
+  // documents / documentsDeferred / documentReviewComplete /
+  // financialReviewComplete, leave them alone client-side. Writing the
+  // empty defaults back was creating fresh object identities each poll
+  // and re-firing this useEffect into an infinite loop.
   const refreshDocumentStatus = useCallback(() => {
     if (!app.applicationToken!) return;
     void ClientAppAPI.status(app.applicationToken!)
       .then((res) => {
-        const refreshed = extractApplicationFromStatus(
-          res?.data ?? {},
-          app.applicationToken!
-        );
         const cachedRequirements = syncRequiredDocumentsFromStatus(res?.data);
-        update({
-          documents: refreshed.documents || app.documents,
-          documentsDeferred:
-            typeof refreshed.documentsDeferred === "boolean"
-              ? refreshed.documentsDeferred
-              : app.documentsDeferred,
-          documentReviewComplete:
-            refreshed.documentReviewComplete ?? app.documentReviewComplete,
-          financialReviewComplete:
-            refreshed.financialReviewComplete ?? app.financialReviewComplete,
-          productRequirements: cachedRequirements
-            ? {
-                ...(app.productRequirements || {}),
-                aggregated: cachedRequirements,
-              }
-            : app.productRequirements,
-        });
+        if (cachedRequirements) {
+          update({
+            productRequirements: {
+              ...(app.productRequirements || {}),
+              aggregated: cachedRequirements,
+            },
+          });
+        }
       })
       .catch(() => {
       });
-  }, [
-    app.applicationToken!,
-    app.documents,
-    app.documentsDeferred,
-    app.documentReviewComplete,
-    app.financialReviewComplete,
-    update,
-  ]);
+  }, [app.applicationToken!, app.productRequirements, update]);
 
   useEffect(() => {
     refreshDocumentStatus();

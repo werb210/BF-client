@@ -166,25 +166,17 @@ export function Step6_Review(): JSX.Element {
       .catch(() => undefined);
   }, []);
 
+  // BF_CLIENT_v66_STATUS_NO_LOOP — see Step5_Documents for full rationale.
+  // The server's /status endpoint does not currently return these fields;
+  // writing the extractApplicationFromStatus defaults back into app state
+  // was producing dozens of /status calls per visit to Step 6.
   useEffect(() => {
     if (!app.applicationToken!) return;
     ClientAppAPI.status(app.applicationToken!)
-      .then((res) => {
-        const refreshed = extractApplicationFromStatus(
-          res?.data || {},
-          app.applicationToken!
-        );
-        update({
-          documents: refreshed.documents || app.documents,
-          documentsDeferred:
-            typeof refreshed.documentsDeferred === "boolean"
-              ? refreshed.documentsDeferred
-              : app.documentsDeferred,
-          documentReviewComplete:
-            refreshed.documentReviewComplete ?? app.documentReviewComplete,
-          financialReviewComplete:
-            refreshed.financialReviewComplete ?? app.financialReviewComplete,
-        });
+      .then(() => {
+        // Successful status check; nothing to apply until the server
+        // returns review-state fields. The presence of a 200 here is
+        // enough to confirm the application id is still valid.
       })
       .catch(() => {
       });
@@ -449,8 +441,16 @@ export function Step6_Review(): JSX.Element {
         financialReviewComplete:
           hydrated.financialReviewComplete ?? app.financialReviewComplete,
       });
-      if (app.kyc?.phone && app.applicationToken!) {
-        ClientProfileStore.markSubmitted(app.kyc.phone, app.applicationToken!);
+      // BF_CLIENT_v66_SUBMIT_PHONE_FALLBACK — app.kyc.phone is only
+      // populated when the wizard prefilled from a readiness check or
+      // creditPrefill. For users who started fresh, the phone lives at
+      // app.applicant.phone (Step 4). Without this fallback, getBootRoute
+      // routes the user back to step 1 next time they OTP in instead of
+      // /portal, because hasSubmittedProfile() never sees the marker.
+      const submittedPhone =
+        (app.kyc?.phone || app.applicant?.phone || "").toString().trim();
+      if (submittedPhone && app.applicationToken!) {
+        ClientProfileStore.markSubmitted(submittedPhone, app.applicationToken!);
       }
       clearDraft();
       clearSubmissionIdempotencyKey();
