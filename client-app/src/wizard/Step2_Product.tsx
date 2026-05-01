@@ -49,6 +49,23 @@ function formatAmount(amount: number | null | undefined, countryCode: string) {
 }
 
 export function Step2_Product() {
+  // BF_CLIENT_BLOCK_1_25_SUBMIT_GATE_AND_STEP_DEEPLINK — honor ?startAt=<n>
+  // when present and prefill is complete. Allows the website's
+  // /credit-results Apply Now button to deeplink to Step 2 without
+  // making the user click through Step 1 again.
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const startAtRaw = params.get("startAt");
+    const startAt = startAtRaw ? Number(startAtRaw) : NaN;
+    if (Number.isInteger(startAt) && startAt >= 2 && startAt <= 6) {
+      const target = `/apply/step-${startAt}`;
+      if (window.location.pathname !== target) {
+        // Use replace to avoid leaving step-1 in history.
+        window.history.replaceState(null, "", target);
+      }
+    }
+  }
+
   const { app, update } = useApplicationStore();
   const navigate = useNavigate();
   const [products, setProducts] = useState<ActiveProduct[]>([]);

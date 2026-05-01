@@ -160,6 +160,14 @@ export function canSubmitApplication({
   creditSummaryComplete: boolean;
   documentsDeferred: boolean;
 }) {
+  // BF_CLIENT_BLOCK_1_25_SUBMIT_GATE_AND_STEP_DEEPLINK — when the user
+  // defers documents, there is nothing to accept, OCR, or summarize.
+  // Those three gates were preventing submit from ever enabling on the
+  // deferred-docs path, even with valid signatures and consent boxes.
+  const docsPathwayClear =
+    documentsDeferred ||
+    (missingRequiredDocs === 0 && docsAccepted && ocrComplete && creditSummaryComplete);
+
   return (
     isOnline &&
     hasIdempotencyKey &&
@@ -169,10 +177,7 @@ export function canSubmitApplication({
     typedSignature &&
     partnerSignature &&
     missingIdDocs === 0 &&
-    (documentsDeferred || missingRequiredDocs === 0) &&
-    docsAccepted &&
-    ocrComplete &&
-    creditSummaryComplete
+    docsPathwayClear
   );
 }
 
