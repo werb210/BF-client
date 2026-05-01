@@ -170,7 +170,21 @@ export function Step4_Applicant() {
 
   async function next() {
     saveStepData(4, values);
-    enforceV1StepSchema("step4", values);
+    try {
+      enforceV1StepSchema("step4", values);
+    } catch (zodErr: any) {
+      // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
+      // failures so the user sees what to fix instead of silently stuck.
+      // eslint-disable-next-line no-console
+      console.error("[wizard] Step 4 schema validation failed", { values, zodErr });
+      const issue = zodErr?.issues?.[0];
+      const field = Array.isArray(issue?.path) ? String(issue.path[0] ?? "") : "";
+      const msg = field
+        ? `Please review the ${field} field — ${issue?.message ?? "invalid value"}.`
+        : "Please review the applicant details — one or more fields are invalid.";
+      setSaveError(msg);
+      return;
+    }
     const requiredFields = [
       // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — fullName removed; first
       // and last cover the same intent, and fullName is still
