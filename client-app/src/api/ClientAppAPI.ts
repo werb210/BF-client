@@ -31,4 +31,14 @@ export const ClientAppAPI = {
 
   updateApplication: (applicationId: string, payload: Record<string, unknown>) =>
     patchApplication(applicationId, payload),
+
+  // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — final submission of the
+  // wizard payload. The server endpoint is at:
+  //   POST /api/client/applications/:token/submit
+  // and accepts body shape { app, normalized } per BF_WIZARD_TO_PORTAL_v33.
+  submit: (applicationToken: string, body: Record<string, unknown>) =>
+    apiRequest(`/api/client/applications/${encodeURIComponent(applicationToken)}/submit`, {
+      method: "POST",
+      body,
+    }),
 };

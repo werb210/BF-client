@@ -29,7 +29,24 @@ export const step3Schema = z
     state: nonEmptyString,
     postalCode: nonEmptyString,
     phone: nonEmptyString,
-    website: z.string().url().nullable(),
+    website: z
+      .union([z.string(), z.null(), z.undefined()])
+      .transform((value) => {
+        if (value === null || value === undefined) return null;
+        const trimmed = String(value).trim();
+        if (trimmed.length === 0) return null;
+        // Auto-prefix scheme so bare domains like "test.com" pass.
+        const candidate = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+        try {
+          // eslint-disable-next-line no-new
+          new URL(candidate);
+          return candidate;
+        } catch {
+          // Genuinely unparseable input — surface as a Zod issue.
+          throw new Error("invalid_url");
+        }
+      })
+      .pipe(z.string().url().nullable()),
     startDate: nonEmptyString,
     employeeCount: z.number().int().nonnegative(),
     estimatedRevenue: z.number().nonnegative(),

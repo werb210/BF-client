@@ -137,7 +137,21 @@ export function Step3_Business() {
 
   async function next() {
     saveStepData(3, values);
-    enforceV1StepSchema("step3", values);
+    try {
+      enforceV1StepSchema("step3", values);
+    } catch (zodErr: any) {
+      // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
+      // failures so the user sees what to fix instead of silently stuck.
+      // eslint-disable-next-line no-console
+      console.error("[wizard] Step 3 schema validation failed", { values, zodErr });
+      const issue = zodErr?.issues?.[0];
+      const field = Array.isArray(issue?.path) ? String(issue.path[0] ?? "") : "";
+      const msg = field
+        ? `Please review the ${field} field — ${issue?.message ?? "invalid value"}.`
+        : "Please review the business details — one or more fields are invalid.";
+      setSaveError(msg);
+      return;
+    }
     // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — copy DBA/business name into
     // the legal name when the legal field was left blank, so downstream
     // consumers (CRM mirror, lender submission payloads) still receive
