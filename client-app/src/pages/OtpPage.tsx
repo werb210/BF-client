@@ -81,6 +81,14 @@ export default function OtpPage() {
     try {
       const profile = await verifyOtp(formatted, otpCode);
 
+      // BF_CLIENT_v?_BLOCK_1_15_PHONE_BASED_READINESS_PREFILL — stash
+      // verified phone for Step1_KYC to use on phone-based prefill lookup.
+      try {
+        sessionStorage.setItem("verified_phone", formatted);
+      } catch {
+        // sessionStorage unavailable (private mode, ITP) — best-effort, skip.
+      }
+
       // BF_CLIENT_v67_OTP_BOOT_FROM_SERVER — when the server says this
       // phone has a submitted application, write it into the local
       // profile so resolveOtpNextStep returns action="portal" even when
