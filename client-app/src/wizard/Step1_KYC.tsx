@@ -243,7 +243,7 @@ fixedAssets:
     const token = sessionStorage.getItem("readiness_token");
     if (!token) return;
 
-    void fetchReadinessPrefill(token)
+    void fetchReadinessPrefill(token, "token")
       .then((prefill) => {
         if (prefill?.found && prefill.prefill) {
           setReadiness(prefill.prefill as any);
@@ -255,6 +255,102 @@ fixedAssets:
       .finally(() => {
         sessionStorage.removeItem("readiness_token");
       });
+  }, []);
+
+  // BF_CLIENT_v?_BLOCK_1_15_PHONE_BASED_READINESS_PREFILL — phone-based
+  // hydration. Runs once on Step 1 mount when the user just OTP'd in with a
+  // phone the website already knows about.
+  useEffect(() => {
+    const phone = sessionStorage.getItem("verified_phone");
+    if (!phone) return;
+
+    void fetchReadinessPrefill(phone, "phone")
+      .then((response) => {
+        if (!response?.found || !response.prefill) return;
+        const p = response.prefill as Record<string, unknown>;
+
+        // Promote into the readiness store (legacy consumers).
+        setReadiness(p as any);
+
+        // Hydrate the wizard's KYC slice with the V1 14-field response.
+        const fullName = String(p.fullName ?? "").trim();
+        const [firstName = "", ...lastParts] = fullName.split(/\s+/);
+        const lastName = lastParts.join(" ");
+
+        update({
+          kyc: {
+            ...app.kyc,
+            // identity
+            companyName: (p.companyName as string) ?? app.kyc.companyName ?? "",
+            fullName: fullName || app.kyc.fullName || "",
+            email: (p.email as string) ?? app.kyc.email ?? "",
+            phone: (p.phone as string) ?? app.kyc.phone ?? phone,
+            // business profile
+            industry: (p.industry as string) ?? app.kyc.industry ?? "",
+            businessLocation:
+              (p.businessLocation as string) ?? app.kyc.businessLocation ?? "",
+            // funding profile
+            fundingType: (p.fundingType as string) ?? app.kyc.fundingType ?? "",
+            requestedAmount:
+              p.requestedAmount != null && p.requestedAmount !== ""
+                ? String(p.requestedAmount)
+                : app.kyc.requestedAmount ?? "",
+            purposeOfFunds:
+              (p.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
+            // financial profile (V1 bucket strings — these are exact matches
+            // to the Step 1 select options, no remapping needed)
+            yearsInBusiness:
+              (p.salesHistoryYears as string) ??
+              (p.yearsInBusiness as string) ??
+              app.kyc.yearsInBusiness ??
+              "",
+            annualRevenue:
+              (p.annualRevenueRange as string) ??
+              (p.annualRevenue as string) ??
+              app.kyc.annualRevenue ??
+              "",
+            monthlyRevenue:
+              (p.avgMonthlyRevenueRange as string) ??
+              app.kyc.monthlyRevenue ??
+              "",
+            arBalance:
+              (p.accountsReceivableRange as string) ?? app.kyc.arBalance ?? "",
+            availableCollateral:
+              (p.fixedAssetsValueRange as string) ??
+              app.kyc.availableCollateral ??
+              "",
+          },
+          business: {
+            ...app.business,
+            companyName:
+              (p.companyName as string) ?? app.business.companyName ?? "",
+            businessName:
+              (p.companyName as string) ?? app.business.businessName ?? "",
+            legalName:
+              (p.companyName as string) ?? app.business.legalName ?? "",
+          },
+          applicant: {
+            ...app.applicant,
+            fullName: fullName || app.applicant.fullName || "",
+            firstName: firstName || app.applicant.firstName || "",
+            lastName: lastName || app.applicant.lastName || "",
+            email: (p.email as string) ?? app.applicant.email ?? "",
+            phone: (p.phone as string) ?? app.applicant.phone ?? phone,
+          },
+        });
+      })
+      .catch(() => {
+        // best-effort prefill only
+      })
+      .finally(() => {
+        try {
+          sessionStorage.removeItem("verified_phone");
+        } catch {
+          // sessionStorage unavailable — leave the entry; harmless.
+        }
+      });
+    // intentionally run-once: this hydrates from the server on initial mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
