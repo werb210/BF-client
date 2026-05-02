@@ -88,21 +88,26 @@ export function Step6_Review(): JSX.Element {
       .map((entry) => entry.document_type);
   }, [app.kyc?.fundingAmount, app.productRequirements, requirementsKey]);
   const missingRequiredDocs = useMemo(() => getMissingRequiredDocs(app), [app]);
-  const docsAccepted = useMemo(() => {
+  // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX — the previous gate required
+  // staff to have already clicked "Accept" on every document AND for the
+  // server-side OCR + banking + credit summary workers to have completed
+  // before Submit was enabled. That's not the workflow — those steps
+  // happen post-submit, on the staff side. The applicant submits when
+  // they've uploaded their docs and signed.
+  const docsPresent = useMemo(() => {
     if (app.documentsDeferred) return true;
     if (requiredDocTypes.length === 0) return true;
-    return requiredDocTypes.every(
-      (docType) => app.documents[docType]?.status === "accepted"
-    );
+    return requiredDocTypes.every((docType) => {
+      const doc = app.documents[docType];
+      // Anything except missing/rejected counts as ready for submit.
+      return Boolean(doc) && doc.status !== "rejected";
+    });
   }, [app.documents, app.documentsDeferred, requiredDocTypes]);
-  const processingComplete = useMemo(() => {
-    if (app.documentsDeferred) return true;
-    return Boolean(app.documentReviewComplete && app.financialReviewComplete);
-  }, [app.documentReviewComplete, app.documentsDeferred, app.financialReviewComplete]);
-  const ocrComplete = app.documentsDeferred ? true : Boolean(app.ocrComplete ?? app.documentReviewComplete);
-  const creditSummaryComplete = app.documentsDeferred
-    ? true
-    : Boolean(app.creditSummaryComplete ?? app.financialReviewComplete);
+  // Kept under the old names so nothing downstream breaks.
+  const docsAccepted = docsPresent;
+  const processingComplete = true;
+  const ocrComplete = true;
+  const creditSummaryComplete = true;
   const idRequirements = useMemo(
     () => [
       {
@@ -253,23 +258,14 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
+    // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX — only block on actual user
+    // input gaps; do not block on staff-side acceptance or async workers.
     if (shouldBlockForMissingDocuments(app)) {
-      blockSubmit("Please upload all required documents before submitting.");
+      blockSubmit("Please upload all required documents, or choose 'I will supply documents later'.");
       return;
     }
-
-    if (!docsAccepted) {
-      blockSubmit("Your required documents must be accepted before you can sign.");
-      return;
-    }
-
-    if (!processingComplete) {
-      blockSubmit("We’re still completing application checks. Please check back shortly.");
-      return;
-    }
-
-    if (!ocrComplete || !creditSummaryComplete) {
-      blockSubmit("We’re still completing application checks. Please check back shortly.");
+    if (!docsPresent) {
+      blockSubmit("One or more documents was rejected. Please re-upload before submitting.");
       return;
     }
 
@@ -671,23 +667,12 @@ export function Step6_Review(): JSX.Element {
           grid now lives AFTER the consent checkboxes so the user
           signs LAST. v60 anchor was: BF_CLIENT_WIZARD_STEP6_NOIDS_v60. */}
 
-        {(!docsAccepted || !processingComplete) && (
-          <Card
-            variant="muted"
-            data-error={true}
-            style={{ background: "rgba(245, 158, 11, 0.12)" }}
-          >
-            <div style={layout.stackTight}>
-              {!docsAccepted && (
-                <div style={components.form.errorText}>
-                  Required documents must be accepted before you can sign.
-                </div>
-              )}
-              {!processingComplete && (
-                <div style={components.form.errorText}>
-                  Your application checks are still running.
-                </div>
-              )}
+        {(!docsPresent && !app.documentsDeferred) && (
+          <Card variant="muted" data-error={true}>
+            <div style={{ fontWeight: 600 }}>One or more documents needs attention</div>
+            <div style={components.form.helperText}>
+              Please return to Step 5 and re-upload any rejected documents, or choose
+              "I will supply documents later".
             </div>
           </Card>
         )}
