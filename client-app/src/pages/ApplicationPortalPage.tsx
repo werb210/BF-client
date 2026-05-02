@@ -21,6 +21,8 @@ import {
 import { buildClientHistoryEvents } from "@/portal/clientHistory";
 import { components, layout, tokens } from "@/styles";
 import { DEFAULT_API_ERROR_MESSAGE } from "@/utils/apiErrorHandler";
+// BF_CLIENT_BLOCK_1_37_POST_SUBMIT_INSTALL_PROMPT
+import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 
 export function ApplicationPortalPage(): JSX.Element {
   const { id } = useParams();
@@ -321,6 +323,8 @@ export function ApplicationPortalPage(): JSX.Element {
         {submittedBanner}
         <button onClick={() => void startCall()} style={{ border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "10px 14px", cursor: "pointer" }}>Call Us!</button>
       </div>
+      {/* BF_CLIENT_BLOCK_1_37_POST_SUBMIT_INSTALL_PROMPT — show install banner on first arrival after submit. */}
+      {submissionState?.submitted ? <InstallAppPrompt /> : null}
       <ApplicationPortalView
         businessName={businessName}
         stage={stage}
