@@ -36,6 +36,7 @@ import { getEligibilityResult } from "../lender/eligibility";
 import type { NormalizedLenderProduct } from "../lender/eligibility";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
+import { Checkbox } from "../components/ui/Checkbox";
 import { trackEvent } from "../utils/analytics";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
@@ -601,6 +602,21 @@ export function Step2_Product() {
           );
         })}
       </Card>
+      {/* BF_CLIENT_STEP2_CLOSING_COSTS_v81 — applies to Equipment Finance only.
+          On submit, BF-Server creates a hidden companion application for the
+          closing costs at 20% of the equipment ask. */}
+      {selectedCategory === "EQUIPMENT_FINANCE" && (
+        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12 }}>
+          <Checkbox
+            checked={Boolean(app.requires_closing_cost_funding)}
+            onChange={(e) => update({ requires_closing_cost_funding: e.target.checked })}
+          />
+          <span style={{ fontSize: 13, color: tokens.colors.textSecondary }}>
+            Also include funding for closing costs (we'll add a small Term/LOC
+            sub-application at 20% of the equipment ask — handled behind the scenes).
+          </span>
+        </label>
+      )}
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>

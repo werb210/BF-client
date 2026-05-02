@@ -88,6 +88,15 @@ describe("submission payload", () => {
     });
   });
 
+  it("BF_CLIENT_STEP2_CLOSING_COSTS_v81 — flag round-trips through submission", () => {
+    const out = buildSubmissionPayload({
+      ...baseApp,
+      productCategory: "EQUIPMENT_FINANCE",
+      requires_closing_cost_funding: true,
+    });
+    expect(out.application.requires_closing_cost_funding).toBe(true);
+  });
+
   it("detects missing required documents", () => {
     const missing = getMissingRequiredDocs({
       ...baseApp,
