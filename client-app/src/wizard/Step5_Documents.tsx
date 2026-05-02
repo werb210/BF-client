@@ -367,24 +367,53 @@ export function Step5_Documents() {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       try {
-        await ClientAppAPI.uploadDocument({
-          applicationToken: app.applicationToken!,
+        const uploadRes = await ClientAppAPI.uploadDocument({
           applicationId: app.applicationId,
+          applicationToken: app.applicationToken!,
           documentType: docType,
           file,
           onProgress: (progress) => {
             setUploadProgress((prev) => ({ ...prev, [docType]: progress }));
           },
         });
-        const refreshed = await ClientAppAPI.status(app.applicationToken!);
-        const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
 
+        // BF_CLIENT_STEP5_OPTIMISTIC_v80 — write the doc to local state
+        // immediately on 200. Step 5's `missingRequiredDocs` reads from
+        // app.documents; if we wait on the server status response we can hang
+        // until the next render tick (or forever, if the status endpoint is
+        // not returning the documents map yet — see BF-Server Block 80).
+        const uploadedId =
+          ((uploadRes as any)?.data?.data?.id ?? (uploadRes as any)?.data?.id) || null;
         update({
           documentsDeferred: false,
-          documents: hydrated.documents || app.documents,
-          documentReviewComplete: hydrated.documentReviewComplete ?? app.documentReviewComplete,
-          financialReviewComplete: hydrated.financialReviewComplete ?? app.financialReviewComplete,
+          documents: {
+            ...app.documents,
+            [docType]: {
+              id: uploadedId,
+              name: file.name,
+              status: "uploaded",
+              uploadedAt: new Date().toISOString(),
+            },
+          },
         });
+
+        // Refetch in the background; if it returns documents we'll merge them.
+        try {
+          const refreshed = await ClientAppAPI.status(app.applicationToken!);
+          const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
+          if (hydrated.documents && Object.keys(hydrated.documents).length > 0) {
+            update({
+              documents: { ...app.documents, ...hydrated.documents },
+              documentReviewComplete:
+                hydrated.documentReviewComplete ?? app.documentReviewComplete,
+              financialReviewComplete:
+                hydrated.financialReviewComplete ?? app.financialReviewComplete,
+            });
+          }
+        } catch {
+          // Non-fatal — the optimistic update already enabled Continue.
+        }
+
         setDocErrors((prev) => ({ ...prev, [docType]: "" }));
         trackEvent("document_uploaded", { category: docType });
         trackEvent("client_document_uploaded", { documentType: docType });
@@ -444,18 +473,46 @@ export function Step5_Documents() {
       setDocError("Missing application token. Please restart your application.");
       return;
     }
+    // BF_CLIENT_STEP5_DEFER_HARDENED_v80 — set the local flag first so the
+    // "Continue" path treats this as a valid Step 5 completion regardless of
+    // whether the server PATCH or the local persistApplicationStep call hits a
+    // transient error. The server PATCH is the source of truth, but we never
+    // block the user from advancing once they've made the choice.
+    update({ documentsDeferred: true });
+    track("step_completed", { step: 5, deferred: true });
+
     try {
       await ClientAppAPI.deferDocuments(app.applicationToken!);
-      update({ documentsDeferred: true });
+    } catch (err) {
+      // Log but do not block — the next persist will pick up documentsDeferred.
+      console.warn("[step5] deferDocuments PATCH failed; continuing anyway", err);
+    }
+
+    try {
       await persistApplicationStep(app, 5, {
         documents: app.documents,
         documentsDeferred: true,
       });
-      track("step_completed", { step: 5, deferred: true });
-      navigate("/apply/step-6");
-    } catch {
-      setDocError("Couldn't defer documents. Please try again.");
+    } catch (err) {
+      console.warn("[step5] persistApplicationStep failed; continuing anyway", err);
     }
+
+    update({ currentStep: 6 });
+    navigate("/apply/step-6");
+  }
+
+  // BF_CLIENT_STEP5_DIAG_v80 — dev-only log to make stuck-Continue cases
+  // diagnosable from the browser console without DevTools network panel.
+  if (typeof window !== "undefined" && (import.meta as any)?.env?.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug("[step5] gate", {
+      docError,
+      isLoading,
+      missingRequiredDocs,
+      hasBlockingUploadErrors,
+      hasUploadsInFlight,
+      documentsDeferred: app.documentsDeferred,
+    });
   }
 
   const canContinue =
