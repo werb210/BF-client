@@ -165,6 +165,45 @@ describe("submission payload", () => {
     ).toBe(false);
   });
 
+
+  it("BF_CLIENT_BLOCK_v82 — submit enabled when docs uploaded but not yet accepted", () => {
+    const can = canSubmitApplication({
+      isOnline: true,
+      hasIdempotencyKey: true,
+      hasApplicationToken: true,
+      hasSelectedProductId: true,
+      termsAccepted: true,
+      typedSignature: true,
+      partnerSignature: true,
+      missingIdDocs: 0,
+      missingRequiredDocs: 0,
+      docsAccepted: true,
+      ocrComplete: false,
+      creditSummaryComplete: false,
+      documentsDeferred: false,
+    });
+    expect(can).toBe(true);
+  });
+
+  it("BF_CLIENT_BLOCK_v82 — submit enabled with documentsDeferred", () => {
+    const can = canSubmitApplication({
+      isOnline: true,
+      hasIdempotencyKey: true,
+      hasApplicationToken: true,
+      hasSelectedProductId: true,
+      termsAccepted: true,
+      typedSignature: true,
+      partnerSignature: true,
+      missingIdDocs: 0,
+      missingRequiredDocs: 99,
+      docsAccepted: false,
+      ocrComplete: false,
+      creditSummaryComplete: false,
+      documentsDeferred: true,
+    });
+    expect(can).toBe(true);
+  });
+
   it("blocks submission if required data missing", () => {
     expect(() =>
       assertSubmissionReadiness({
