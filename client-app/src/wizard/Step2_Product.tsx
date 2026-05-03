@@ -462,7 +462,18 @@ export function Step2_Product() {
       dedupeProductsByBucket(
         filteredProducts.map((product) => ({
           ...product,
-          category: product.product_type ?? product.name,
+          // BF_CLIENT_BLOCK_v98_STEP2_BUCKET_BY_CATEGORY_v1
+          // Server returns `category` (the short-form code: LOC,
+          // TERM, EQUIPMENT, FACTORING, PO, MCA, MEDIA, ABL, SBA,
+          // STARTUP). Older clients sometimes used `product_type`,
+          // and `name` is a last-resort fallback for unrecognized
+          // payload shapes. Without preferring `category`, products
+          // with custom names ("Todd's Term loan", "Business Line
+          // of Credit") fail bucketFor() and disappear from Step 2.
+          category:
+            (product as any).category ??
+            product.product_type ??
+            product.name,
         }))
       ),
     [filteredProducts]
