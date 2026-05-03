@@ -42,7 +42,8 @@ import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
 import { persistApplicationStep } from "./saveStepProgress";
-import { dedupeProductsByBucket, type BucketId } from "./categoryAliases";
+// BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
+import { bucketFor, dedupeProductsByBucket, type BucketId } from "./categoryAliases";
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 import {
   computeAllowedCategories,
@@ -289,11 +290,25 @@ export function Step2_Product() {
   }, []);
 
   function selectCategory(category: string, productIds?: string[]) {
-    const matches = filteredProducts.filter(
-      (p) => (p.product_type ?? p.name) === category
-    );
+    // BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
+    // Bucket clicks always pass productIds (from bucket.products.map).
+    // Use those to resolve the actual product objects — the previous
+    // name-vs-bucketId equality match never succeeded for products
+    // with custom names like "Business Line of Credit", which left
+    // selectedProductId undefined and silently broke the Step 6
+    // submit gate.
+    let ids = productIds && productIds.length ? productIds : [];
+    if (!ids.length) {
+      const targetBucket = bucketFor(category);
+      ids = filteredProducts
+        .filter(
+          (p) =>
+            bucketFor(((p as any).category ?? p.product_type ?? p.name) as string) === targetBucket
+        )
+        .map((p) => p.id);
+    }
+    const matches = filteredProducts.filter((p) => ids.includes(p.id));
     const match = matches[0];
-    const ids = productIds && productIds.length ? productIds : matches.map((product) => product.id);
     update({
       productCategory: category,
       selectedProductType: category,
@@ -489,9 +504,17 @@ export function Step2_Product() {
   const visibleCategoryBuckets = useMemo(
     () => categoryBuckets.filter((bucket) => {
       const cat = (bucketIdToCat as any)(bucket.bucket);
-      return cat ? allowedCategorySet.has(cat) : false;
+      if (!cat || !allowedCategorySet.has(cat)) return false;
+      // BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
+      // Hide the bucket if no product inside it can serve the
+      // requested amount. Avoids dead-end picks like MCA at $250k
+      // (max $200k) or Media at $250k (min $1M).
+      if (!amountValue) return true;
+      return bucket.products.some((p) =>
+        isAmountWithinRange(amountValue, p.amount_min, p.amount_max)
+      );
     }),
-    [categoryBuckets, allowedCategorySet]
+    [categoryBuckets, allowedCategorySet, amountValue]
   );
   const matchingProducts = useMemo(() => {
     return getMatchingProducts(

@@ -43,9 +43,14 @@ const locationRule: Record<LocationKey, readonly Cat[] | "BLOCK"> = {
 const purposeRule: Record<PurposeKey, readonly Cat[]> = {
   startup: ["LOC","TERM","EQUIPMENT","ABL","SBA","STARTUP"],
   media: ["LOC","TERM","MEDIA"],
-  working_capital: ALL_CATEGORIES.filter((c) => c !== "STARTUP"),
+  // BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
+  // MEDIA only appears when the user explicitly picks Media Financing
+  // as their purpose. Drop it from working_capital and expansion.
+  working_capital: ALL_CATEGORIES.filter((c) => c !== "STARTUP" && c !== "MEDIA"),
   ar: ["LOC","FACTORING","PO","MCA"], inventory: ["LOC","PO","MCA"],
-  expansion: ALL_CATEGORIES.filter((c) => c !== "EQUIPMENT" && c !== "STARTUP" && c !== "SBA"),
+  expansion: ALL_CATEGORIES.filter(
+    (c) => c !== "EQUIPMENT" && c !== "STARTUP" && c !== "SBA" && c !== "MEDIA"
+  ),
 };
 const yearsRule: Record<YearsKey, readonly Cat[]> = {
   "0": ["SBA","STARTUP"],
