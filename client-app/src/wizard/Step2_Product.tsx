@@ -618,8 +618,13 @@ export function Step2_Product() {
           companion product would match the computed companion amount.
           Capital&Equipment users do not see this — their capital leg
           already serves the same purpose. */}
-      {(app.kyc as any)?.lookingFor === "equipment" &&
-        Number((app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount ?? 0) > 0 && (
+      {(() => {
+        const lf = String((app.kyc as any)?.lookingFor ?? "").toUpperCase();
+        const equipAmt = Number((app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount ?? 0);
+        const isEquipmentOnly = lf === "EQUIPMENT" || lf === "EQUIPMENT_FINANCING";
+        if (!isEquipmentOnly || equipAmt <= 0) return null;
+        return (
+          // BF_CLIENT_BLOCK_v91 — original checkbox JSX, unchanged
           <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12 }}>
             <Checkbox
               checked={Boolean(app.requires_closing_cost_funding)}
@@ -630,7 +635,8 @@ export function Step2_Product() {
               sub-application at 20% of the equipment ask — handled behind the scenes).
             </span>
           </label>
-        )}
+        );
+      })()}
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
