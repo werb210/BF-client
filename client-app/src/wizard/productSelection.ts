@@ -40,12 +40,21 @@ export function parseCurrencyAmount(value?: string | number | null) {
 
 export function isAmountWithinRange(
   amount: number,
-  minAmount?: number | null,
-  maxAmount?: number | null
+  minAmount?: number | string | null,
+  maxAmount?: number | string | null
 ) {
   if (Number.isNaN(amount) || amount <= 0) return false;
-  if (typeof minAmount === "number" && amount < minAmount) return false;
-  if (typeof maxAmount === "number" && amount > maxAmount) return false;
+  // BF_CLIENT_BLOCK_v100_AMOUNT_COERCE_v1
+  // node-postgres returns NUMERIC columns as strings ("5000", "200000").
+  // The previous typeof === "number" guards silently skipped both checks
+  // when the API preserved the string form, so v99's amount-fit filter
+  // on Step 2's visibleCategoryBuckets had nothing to filter on (MCA
+  // still showed for $300k etc.). Coerce string -> number at entry,
+  // then range-check with finite-number guards.
+  const min = typeof minAmount === "string" ? Number(minAmount) : minAmount;
+  const max = typeof maxAmount === "string" ? Number(maxAmount) : maxAmount;
+  if (typeof min === "number" && Number.isFinite(min) && amount < min) return false;
+  if (typeof max === "number" && Number.isFinite(max) && amount > max) return false;
   return true;
 }
 
