@@ -4,14 +4,24 @@
 // status, Production schedule, Minimum guarantees / presales). Unlike
 // every other category, MEDIA does not get the global always-required
 // appendage of bank statements + primary applicant photo ID.
+// BF_CLIENT_BLOCK_v102_HOTFIX_TEST_TYPING_v2 — every fixture has an
+// explicit type so noImplicitAny does not flag null literals on
+// description / min_amount / max_amount as implicit any.
 import { describe, expect, it } from "vitest";
 import {
   aggregateRequiredDocuments,
   ensureAlwaysRequiredDocuments,
 } from "../requiredDocuments";
+import type { LenderProductRequirement } from "../../wizard/requirements";
+
+type RawProductDoc = {
+  category: string;
+  required: boolean;
+  description: string | null;
+};
 
 describe("ensureAlwaysRequiredDocuments — MEDIA carve-out (v102)", () => {
-  const mediaDocs = [
+  const mediaDocs: LenderProductRequirement[] = [
     { id: "budget", document_type: "Budget", required: true, min_amount: null, max_amount: null },
     { id: "fp", document_type: "Finance plan", required: true, min_amount: null, max_amount: null },
     { id: "tcs", document_type: "Tax credit status", required: true, min_amount: null, max_amount: null },
@@ -40,38 +50,24 @@ describe("ensureAlwaysRequiredDocuments — MEDIA carve-out (v102)", () => {
   });
 
   it("non-MEDIA categories still get the global always-required appendage", () => {
-    const locDocs = [
+    const locDocs: LenderProductRequirement[] = [
       { id: "ar", document_type: "A/R", required: true, min_amount: null, max_amount: null },
     ];
     const out = ensureAlwaysRequiredDocuments(locDocs, { category: "LOC" });
     const docTypes = out.map((e) => e.document_type);
     expect(docTypes).toContain("A/R");
     expect(docTypes).toContain("primary_applicant_id");
-    // bank_statements key comes from DOCUMENT_CATEGORIES.BANK_STATEMENTS;
-    // the test asserts on the canonical photo ID + length to avoid coupling
-    // to that constant's literal value.
     expect(out.length).toBeGreaterThanOrEqual(3);
   });
 
   it("missing category opts behaves as non-MEDIA (legacy callers)", () => {
     const out = ensureAlwaysRequiredDocuments([], {});
-    // Should add bank statements + primary_applicant_id (length >= 2)
     expect(out.length).toBeGreaterThanOrEqual(2);
     expect(out.find((e) => e.document_type === "primary_applicant_id")).toBeDefined();
   });
 
   it("aggregateRequiredDocuments threads category through to ensure...", () => {
-    // BF_CLIENT_BLOCK_v102_HOTFIX_TEST_TYPING_v1
-    // Explicit row type avoids TS7018 on inline `description: null`.
-    type ProductDocRow = {
-      category: string;
-      required: boolean;
-      description: string | null;
-    };
-    const products: Array<{
-      category: string;
-      required_documents: ProductDocRow[];
-    }> = [
+    const products: Array<{ category: string; required_documents: RawProductDoc[] }> = [
       {
         category: "MEDIA",
         required_documents: [
