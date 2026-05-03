@@ -169,3 +169,114 @@ export function buildLegs(input: {
   }
   return legs;
 }
+
+
+// BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
+// Adapter from the wizard's display-string KYC store to the
+// declarative enum keys consumed by computeAllowedCategories.
+
+const REVENUE12_MAP: Record<string, Revenue12Key> = {
+  "Zero to $150,000": "0-150k",
+  "$150,001 to $500,000": "150-500k",
+  "$500,001 to $1,000,000": "500k-1m",
+  "$1,000,001 to $3,000,000": "1m-3m",
+  "Over $3,000,000": ">3m",
+};
+
+const AVG_MONTHLY_MAP: Record<string, AvgMonthlyKey> = {
+  "Under $10,000": "<10k",
+  "$10,000 to $25,000": "10-25k",
+  "$25,000 to $50,000": "25-50k",
+  "$50,000 to $100,000": "50-100k",
+  "$100,000 to $250,000": "100-250k",
+  "Over $250,000": ">250k",
+};
+
+const AR_MAP: Record<string, ArKey> = {
+  "No Account Receivables": "none",
+  "Zero to $100,000": "0-100k",
+  "$100,000 to $250,000": "100-250k",
+  "$250,000 to $500,000": "250-500k",
+  "$500,000 to $1,000,000": "500k-1m",
+  "$1,000,000 to $3,000,000": "1m-3m",
+  "Over $3,000,000": ">3m",
+};
+
+const FIXED_ASSETS_MAP: Record<string, FixedAssetsKey> = {
+  "None": "none",
+  "$1 to $50,000": "1-50k",
+  "$50,001 to $100,000": "50-100k",
+  "$100,001 to $250,000": "100-250k",
+  "$250,001 to $500,000": "250-500k",
+  "Over $500,000": ">500k",
+};
+
+const YEARS_MAP: Record<string, YearsKey> = {
+  "Zero": "0",
+  "Under 1 Year": "<1",
+  "1 to 3 Years": "1-3",
+  "Over 3 Years": ">3",
+};
+
+const PURPOSE_MAP: Record<string, PurposeKey> = {
+  "Working Capital": "working_capital",
+  "Funds to cover A/R": "ar",
+  "Buy Inventory": "inventory",
+  "Expansion": "expansion",
+  "Start up Funding": "startup",
+  "Media Financing": "media",
+};
+
+function mapLookingFor(raw: unknown): LookingFor | undefined {
+  const v = String(raw ?? "").trim().toUpperCase();
+  if (v === "WORKING_CAPITAL" || v === "CAPITAL") return "capital";
+  if (v === "EQUIPMENT" || v === "EQUIPMENT_FINANCING") return "equipment";
+  if (v === "BOTH" || v === "CAPITAL_AND_EQUIPMENT") return "capital_and_equipment";
+  return undefined;
+}
+
+function mapLocation(raw: unknown): LocationKey | undefined {
+  const v = String(raw ?? "").trim();
+  if (v === "Canada" || v === "CA") return "CA";
+  if (v === "United States" || v === "US" || v === "USA") return "US";
+  if (v === "Other") return "OTHER";
+  return undefined;
+}
+
+export function mapKycToAnswers(kyc: Record<string, any> | null | undefined): Step1Answers {
+  if (!kyc) return {};
+  return {
+    lookingFor: mapLookingFor(kyc.lookingFor),
+    location: mapLocation(kyc.businessLocation),
+    industry: kyc.industry || undefined,
+    purpose: PURPOSE_MAP[String(kyc.purposeOfFunds ?? "")] ?? undefined,
+    years: YEARS_MAP[String(kyc.salesHistory ?? kyc.yearsInBusiness ?? "")] ?? undefined,
+    revenue12: REVENUE12_MAP[String(kyc.revenueLast12Months ?? kyc.annualRevenue ?? "")] ?? undefined,
+    avgMonthly: AVG_MONTHLY_MAP[String(kyc.monthlyRevenue ?? "")] ?? undefined,
+    ar: AR_MAP[String(kyc.accountsReceivable ?? kyc.arBalance ?? "")] ?? undefined,
+    fixedAssets: FIXED_ASSETS_MAP[String(kyc.fixedAssets ?? "")] ?? undefined,
+    fundingAmount: typeof kyc.fundingAmount === "number"
+      ? kyc.fundingAmount
+      : Number(String(kyc.fundingAmount ?? "").replace(/[^0-9.]/g, "")) || 0,
+    capitalAmount: Number(String(kyc.capitalAmount ?? "").replace(/[^0-9.]/g, "")) || undefined,
+    equipmentAmount: Number(String(kyc.equipmentAmount ?? "").replace(/[^0-9.]/g, "")) || undefined,
+  };
+}
+
+const BUCKET_TO_CAT: Record<string, Cat> = {
+  LINE_OF_CREDIT: "LOC",
+  TERM_LOAN: "TERM",
+  EQUIPMENT_FINANCE: "EQUIPMENT",
+  FACTORING: "FACTORING",
+  PURCHASE_ORDER_FINANCE: "PO",
+  MERCHANT_CASH_ADVANCE: "MCA",
+  MEDIA_FUNDING: "MEDIA",
+  MEDIA: "MEDIA",
+  ASSET_BASED_LENDING: "ABL",
+  SBA_GOVERNMENT: "SBA",
+  STARTUP_CAPITAL: "STARTUP",
+};
+
+export function bucketIdToCat(bucketId: string): Cat | null {
+  return BUCKET_TO_CAT[bucketId] ?? null;
+}

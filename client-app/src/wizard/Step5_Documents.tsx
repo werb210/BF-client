@@ -43,14 +43,15 @@ import {
 // BF_UPLOAD_QUEUE_v51
 import { enqueueUploadFromFile } from "../lib/uploadQueue";
 
+// BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
+// The hardcoded "every applicant must upload contracts/invoices/tax_returns"
+// list is wrong — it's a leftover from before product-driven required_documents
+// existed. Required docs now come exclusively from each matching lender
+// product's required_documents array (unioned across legs in Step 5's
+// aggregateRequiredDocuments call). Bank statements and photo IDs are
+// added back globally by ensureAlwaysRequiredDocuments.
 function getDynamicRequirementRules() {
-  return [
-    { id: "bank_statements", document_type: "bank_statements", required: true },
-    { id: "financial_statements", document_type: "financial_statements", required: true },
-    { id: "tax_returns", document_type: "tax_returns", required: true },
-    { id: "contracts", document_type: "contracts", required: true },
-    { id: "invoices", document_type: "invoices", required: true },
-  ];
+  return [];
 }
 
 const RequirementRow = memo(function RequirementRow({

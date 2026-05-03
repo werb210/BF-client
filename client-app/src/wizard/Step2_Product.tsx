@@ -43,6 +43,12 @@ import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
 import { persistApplicationStep } from "./saveStepProgress";
 import { dedupeProductsByBucket, type BucketId } from "./categoryAliases";
+// BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
+import {
+  computeAllowedCategories,
+  mapKycToAnswers,
+  bucketIdToCat,
+} from "./eligibilityRules";
 
 function formatAmount(amount: number | null | undefined, countryCode: string) {
   if (typeof amount !== "number") return "N/A";
@@ -461,6 +467,21 @@ export function Step2_Product() {
       ),
     [filteredProducts]
   );
+  // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
+  // Filter the product-derived bucket list against the rules engine.
+  // Anything that fails the Step 1 narrowing is hidden from Step 2.
+  const allowedCategorySet = useMemo(() => {
+    const answers = (mapKycToAnswers as any)(app.kyc);
+    const allowed = (computeAllowedCategories as any)(answers) as string[];
+    return new Set(allowed);
+  }, [app.kyc]);
+  const visibleCategoryBuckets = useMemo(
+    () => categoryBuckets.filter((bucket) => {
+      const cat = (bucketIdToCat as any)(bucket.bucket);
+      return cat ? allowedCategorySet.has(cat) : false;
+    }),
+    [categoryBuckets, allowedCategorySet]
+  );
   const matchingProducts = useMemo(() => {
     return getMatchingProducts(
       products,
@@ -553,7 +574,7 @@ export function Step2_Product() {
                 : "No financing products match your requested amount. Try a different amount or contact us."}
           </EmptyState>
         )}
-        {!isLoading && !loadError && categoryBuckets.map((bucket) => {
+        {!isLoading && !loadError && visibleCategoryBuckets.map((bucket) => {
           const category = bucket.bucket;
           const isSelected = selectedBucket === category || selectedCategory === category;
           const matchPct = app.matchPercentages?.[category] ?? null;
@@ -653,7 +674,7 @@ export function Step2_Product() {
             disabled={
               !selectedBucket ||
               Boolean(loadError) ||
-              (!isLoading && categoryBuckets.length === 0)
+              (!isLoading && visibleCategoryBuckets.length === 0)
             }
           >
             Continue

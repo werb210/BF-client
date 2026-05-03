@@ -1,51 +1,32 @@
-import { useEffect, useState } from "react";
+// BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
+// navigator.onLine is unreliable across browsers and OS network
+// transitions (Mac Wi-Fi flap, VPN connect, captive portal probes,
+// service-worker boot). It frequently reports `false` when the
+// network is fine, which previously triggered a sticky offline
+// banner AND a permanently-disabled submit button.
+//
+// V1 fix: assume online. The actual submit POST will fail with a
+// real network error if the user is genuinely offline; that's a
+// better signal than navigator.onLine.
+import { useState } from "react";
 
 type NetworkStatusSubscriber = (isOffline: boolean) => void;
 
 const subscribers = new Set<NetworkStatusSubscriber>();
-let isListening = false;
-
-function notifySubscribers(isOffline: boolean) {
-  subscribers.forEach((subscriber) => subscriber(isOffline));
-}
-
-function handleOnline() {
-  notifySubscribers(false);
-}
-
-function handleOffline() {
-  notifySubscribers(true);
-}
 
 export function getInitialOfflineState() {
-  if (typeof navigator === "undefined") return false;
-  return !navigator.onLine;
+  // Always optimistic. See header comment.
+  return false;
 }
 
 export function subscribeToNetworkStatus(onChange: NetworkStatusSubscriber) {
-  if (typeof window === "undefined") return () => {};
-
   subscribers.add(onChange);
-  if (!isListening) {
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-    isListening = true;
-  }
-
   return () => {
     subscribers.delete(onChange);
-    if (subscribers.size === 0 && isListening) {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-      isListening = false;
-    }
   };
 }
 
 export function useNetworkStatus() {
-  const [isOffline, setIsOffline] = useState(getInitialOfflineState());
-
-  useEffect(() => subscribeToNetworkStatus(setIsOffline), []);
-
+  const [isOffline] = useState(false);
   return { isOffline };
 }
