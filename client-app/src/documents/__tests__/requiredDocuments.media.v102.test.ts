@@ -61,7 +61,17 @@ describe("ensureAlwaysRequiredDocuments — MEDIA carve-out (v102)", () => {
   });
 
   it("aggregateRequiredDocuments threads category through to ensure...", () => {
-    const products = [
+    // BF_CLIENT_BLOCK_v102_HOTFIX_TEST_TYPING_v1
+    // Explicit row type avoids TS7018 on inline `description: null`.
+    type ProductDocRow = {
+      category: string;
+      required: boolean;
+      description: string | null;
+    };
+    const products: Array<{
+      category: string;
+      required_documents: ProductDocRow[];
+    }> = [
       {
         category: "MEDIA",
         required_documents: [

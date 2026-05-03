@@ -8,9 +8,19 @@
 import { describe, expect, it } from "vitest";
 import { normalizeRequirementList } from "../requirements";
 
+// BF_CLIENT_BLOCK_v102_HOTFIX_TEST_TYPING_v1
+// Mirrors the production JSONB row shape written by BF-portal
+// LendersPage.tsx:537 — { category, required, description }.
+// Explicit type avoids TS7018 (implicit any) on inline `description: null`.
+type ProductDocRow = {
+  category: string;
+  required: boolean;
+  description: string | null;
+};
+
 describe("normalizeRequirementList — production doc shape (v102)", () => {
   it("accepts the {category, required, description} shape", () => {
-    const raw = [
+    const raw: ProductDocRow[] = [
       { category: "3 years accountant prepared financials", required: true, description: null },
       { category: "PnL — Interim financials", required: true, description: null },
       { category: "A/R", required: true, description: null },
