@@ -88,6 +88,10 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
       selected_product: app.selectedProduct,
       selected_product_type: app.selectedProductType,
       requires_closing_cost_funding: app.requires_closing_cost_funding,
+      // BF_CLIENT_BLOCK_v92_FULL_WIZARD_FINALIZE_v1
+      looking_for: (app.kyc as any)?.lookingFor,
+      capital_amount: (app.kyc as any)?.capitalAmount ?? (app.kyc as any)?.fundingAmount,
+      equipment_amount: (app.kyc as any)?.equipmentAmount,
       terms_accepted: app.termsAccepted,
       typed_signature: app.typedSignature,
       co_applicant_signature: app.coApplicantSignature,
