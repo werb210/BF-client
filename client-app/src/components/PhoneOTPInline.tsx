@@ -165,6 +165,24 @@ export default function PhoneOTPInline() {
       // eslint-disable-next-line no-console
       console.log('[otp] verify.ok', { hasJwt: !!jwt });
 
+      const hasSubmitted =
+        (verifyBody as any)?.hasSubmittedApplication === true ||
+        (verifyBody as any)?.data?.hasSubmittedApplication === true;
+      const submittedApplicationId =
+        (verifyBody as any)?.submittedApplicationId ??
+        (verifyBody as any)?.data?.submittedApplicationId ??
+        null;
+      if (hasSubmitted && typeof submittedApplicationId === 'string' && submittedApplicationId.length > 0) {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('bf_application_token', submittedApplicationId);
+          localStorage.removeItem('bf_application_pending_submit');
+        }
+        // eslint-disable-next-line no-console
+        console.log('[otp] route.miniportal', { submittedApplicationId });
+        navigate('/application/' + submittedApplicationId);
+        return;
+      }
+
       // 2. Mint the application row. PUBLIC endpoint — DO NOT send
       // Authorization or credentials. Doing so triggers a CORS preflight
       // that the public endpoint isn't configured to satisfy, and the call
