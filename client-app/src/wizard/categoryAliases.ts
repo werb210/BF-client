@@ -1,6 +1,17 @@
 // Map every server-recognised category code to a display bucket.
 // One bucket per row; legacy short codes fold into the long form.
 
+// BF_CLIENT_BLOCK_v88_ALL_TEN_CATEGORIES_ALIASES_v1
+// Aligned to BF-Server's 10 normalized short codes:
+//   LOC, TERM, EQUIPMENT, FACTORING, PO, MCA, MEDIA, ABL, SBA, STARTUP
+// Each bucket's `aliases` array MUST contain the server short code
+// for that category. Without this, dedupeProductsByBucket() drops
+// every product that arrives with a short-code category and Step 2
+// shows fewer products than the server actually returns.
+//
+// Removed: MEDIA_FUNDING bucket (was aliased to "MCA", which is a
+// different category; the canonical MEDIA bucket below absorbs all
+// media-funding products correctly).
 export const CATEGORY_BUCKETS = [
   { id: "LINE_OF_CREDIT", label: "Line of Credit", aliases: ["LOC"] },
   { id: "TERM_LOAN", label: "Term Loan", aliases: ["TERM"] },
@@ -8,12 +19,10 @@ export const CATEGORY_BUCKETS = [
   { id: "FACTORING", label: "Factoring", aliases: ["INVOICE_FACTORING"] },
   { id: "PURCHASE_ORDER_FINANCE", label: "Purchase Order Financing", aliases: ["PO"] },
   { id: "MERCHANT_CASH_ADVANCE", label: "Merchant Cash Advance", aliases: ["MCA"] },
-  // BF_MEDIA_FUNDING_v38 — Block 38-F (client)
-  { id: "MEDIA_FUNDING", label: "Media Funding", aliases: ["MCA"] },
-  { id: "ASSET_BASED_LENDING", label: "Asset Based Lending", aliases: [] },
-  { id: "SBA_GOVERNMENT", label: "SBA / Government", aliases: [] },
-  { id: "STARTUP_CAPITAL", label: "Startup Capital", aliases: [] },
-  { id: "MEDIA", label: "Media Financing", aliases: [] },
+  { id: "MEDIA", label: "Media / Film Financing", aliases: ["MEDIA_FUNDING"] },
+  { id: "ASSET_BASED_LENDING", label: "Asset Based Lending", aliases: ["ABL"] },
+  { id: "SBA_GOVERNMENT", label: "SBA / Government", aliases: ["SBA"] },
+  { id: "STARTUP_CAPITAL", label: "Startup Capital", aliases: ["STARTUP"] },
 ] as const;
 
 export type BucketId = (typeof CATEGORY_BUCKETS)[number]["id"];
