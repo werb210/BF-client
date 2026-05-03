@@ -53,7 +53,14 @@ export function aggregateRequiredDocuments(
     });
   });
 
-  return ensureAlwaysRequiredDocuments(Array.from(docMap.values()));
+  // BF_CLIENT_BLOCK_v102_MEDIA_NO_GLOBAL_DOCS_v1
+  // Thread category through so MEDIA can opt out of the global
+  // always-required docs (bank statements + photo ID). MEDIA is the
+  // only category where the lender-product list is the complete and
+  // exclusive doc set per Todd's spec.
+  return ensureAlwaysRequiredDocuments(Array.from(docMap.values()), {
+    category: selectedCategory,
+  });
 }
 
 export function ensureAlwaysRequiredDocuments(
@@ -63,8 +70,21 @@ export function ensureAlwaysRequiredDocuments(
   // applicant photo ID is always required. Both move from Step 6 to
   // Step 5 so they participate in the existing "Supply Documents
   // Later" deferral flow.
-  opts: { hasPartner?: boolean } = {}
+  // BF_CLIENT_BLOCK_v102_MEDIA_NO_GLOBAL_DOCS_v1
+  // opts.category lets the caller signal MEDIA / Film Finance so we
+  // skip the global appendage. For MEDIA the per-product list (Budget,
+  // Finance plan, Tax credit status, Production schedule, Minimum
+  // guarantees / presales) is the complete required set — no bank
+  // statements, no photo ID.
+  opts: { hasPartner?: boolean; category?: string } = {}
 ) {
+  const isMedia =
+    String(opts.category ?? "").trim().toUpperCase() === "MEDIA";
+  if (isMedia) {
+    // Return the lender-product list unchanged. No global appendage.
+    return [...requirements];
+  }
+
   const docMap = new Map(
     requirements.map((entry) => [entry.document_type, entry])
   );
