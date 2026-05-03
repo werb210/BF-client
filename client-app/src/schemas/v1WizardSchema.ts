@@ -22,7 +22,12 @@ export const step1Schema = z
 export const step3Schema = z
   .object({
     dba: nonEmptyString,
-    legalName: nonEmptyString,
+    // BF_CLIENT_BLOCK_v102_LEGAL_NAME_OPTIONAL_v1
+    // UI label is "Business Legal Name (if applicable)". Step3_Business.tsx
+    // already mirrors businessName into legalName when blank, but the
+    // schema validated the raw empty string first and surfaced
+    // "String must contain at least 1 character(s)". Allow empty/undefined.
+    legalName: z.string().trim().optional().default(""),
     structure: nonEmptyString,
     address: nonEmptyString,
     city: nonEmptyString,

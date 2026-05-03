@@ -27,10 +27,17 @@ export function normalizeRequirementList(
           max_amount: null,
         } as LenderProductRequirement;
       }
+      // BF_CLIENT_BLOCK_v102_DOC_CATEGORY_FIELD_v1
+      // Server stores per-product docs as {category, required, description}
+      // (see BF-portal LendersPage.tsx:537 and BF-Server's lender_products
+      // JSONB). The legacy shape used document_type; both shapes have
+      // appeared in the wild. Accept category and name as fallbacks so
+      // the product-specific docs aren't silently dropped on Step 5.
       const documentType =
-        typeof entry?.document_type === "string"
-          ? entry.document_type.trim()
-          : "";
+        (typeof entry?.document_type === "string" && entry.document_type.trim()) ||
+        (typeof entry?.category === "string" && entry.category.trim()) ||
+        (typeof entry?.name === "string" && entry.name.trim()) ||
+        "";
       if (!documentType) return null;
       return {
         id: String(entry?.id ?? documentType),
