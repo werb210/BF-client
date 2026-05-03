@@ -233,12 +233,13 @@ export function Step6_Review(): JSX.Element {
       setSubmitting(false);
     };
 
+    // BF_CLIENT_BLOCK_v102_OFFLINE_GATE_v1
+    // Single isOnline check (always true post-v96; reflects useNetworkStatus's
+    // optimistic-online policy because navigator.onLine is unreliable on Wi-Fi
+    // transitions / captive portals / SW boot). The redundant raw
+    // navigator.onLine fallback that lived here was the actual reason real
+    // submits returned "you're offline" while the network was fine.
     if (!isOnline) {
-      blockSubmit("You're offline. Please reconnect to submit your application.");
-      return;
-    }
-
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
       blockSubmit("You're offline. Please reconnect to submit your application.");
       return;
     }

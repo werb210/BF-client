@@ -289,7 +289,29 @@ fixedAssets:
   }, []);
 
   useEffect(() => {
-    const token = sessionStorage.getItem("readiness_token");
+    // BF_CLIENT_BLOCK_v102_URL_PREFILL_v1
+    // BF-Website hands off the readiness session via URL search params
+    // because sessionStorage is per-origin and can't survive the redirect
+    // from boreal.financial -> client.boreal.financial. Accept any of:
+    //   ?continue=         (BF-Server submitCreditReadiness redirect)
+    //   ?sessionId=        (BF-Website utils/session.ts)
+    //   ?readinessSession= (BF-Website utils/session.ts duplicate key)
+    // Falls back to sessionStorage for any in-app navigation that already
+    // primed it (legacy callers).
+    let token: string | null = null;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      token =
+        params.get("continue") ||
+        params.get("sessionId") ||
+        params.get("readinessSession") ||
+        null;
+    } catch {
+      token = null;
+    }
+    if (!token) {
+      token = sessionStorage.getItem("readiness_token");
+    }
     if (!token) return;
 
     void fetchReadinessPrefill(token, "token")
