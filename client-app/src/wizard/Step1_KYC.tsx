@@ -51,7 +51,15 @@ const MatchBaselines: Record<string, number> = {
 const BusinessLocationOptions = ["Canada", "United States", "Other"];
 
 
+// BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
+// PurposeOptions is now built dynamically in the component — see
+// `visiblePurposeOptions` — so "Start up Funding" and "Media Financing"
+// can be conditionally hidden when no matching product exists. The
+// canonical static list lives here for reference; consumers should
+// use `visiblePurposeOptions` instead.
 const PurposeOptions = [
+  "Start up Funding",
+  "Media Financing",
   "Working Capital",
   "Funds to cover A/R",
   "Buy Inventory",
@@ -165,7 +173,21 @@ function buildMatchPercentages(amount: number): Record<string, number> {
 export function Step1_KYC(): JSX.Element {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
+  // BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
   const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showMinRevenueModal, setShowMinRevenueModal] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const ProductSync = (await import("./productSelection"))?.ProductSync;
+        const list = ProductSync ? ProductSync.load() : [];
+        if (!cancelled) setProducts(list);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
   const [showErrors, setShowErrors] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -174,6 +196,26 @@ export function Step1_KYC(): JSX.Element {
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
   );
+
+  const startupAvailable = useMemo(() => {
+    const country = app.kyc.businessLocation === "Canada" ? "CA"
+      : app.kyc.businessLocation === "United States" ? "US" : null;
+    if (!country) return false;
+    return products.some((p) => {
+      const cat = String((p as any).category ?? "").toUpperCase();
+      if (cat !== "STARTUP" && cat !== "STARTUP_CAPITAL") return false;
+      const c = String((p as any).country ?? "").toUpperCase();
+      if (c !== country && c !== "BOTH" && c !== "") return false;
+      return ((p as any).active ?? true) === true;
+    });
+  }, [products, app.kyc.businessLocation]);
+  const visiblePurposeOptions = useMemo(() => {
+    return PurposeOptions.filter((opt) => opt !== "Start up Funding" || startupAvailable);
+  }, [startupAvailable]);
+  const visibleSalesHistoryOptions = useMemo(() => {
+    return SalesHistoryOptions.filter((opt) => opt !== "Zero" || startupAvailable);
+  }, [startupAvailable]);
+
   const sessionExpired = useMemo(() => {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
@@ -823,6 +865,7 @@ fixedAssets:
                   });
                   if (value === "Other") {
                     setShowLocationModal(true);
+                    return;
                   }
                   handleAutoAdvance("businessLocation", nextKyc);
                 }}
@@ -908,7 +951,7 @@ fixedAssets:
                 hasError={showErrors && fieldErrors.purposeOfFunds}
               >
                 <option value="">Select…</option>
-                {PurposeOptions.map((option) => (
+                {visiblePurposeOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -936,7 +979,7 @@ fixedAssets:
                 hasError={showErrors && fieldErrors.salesHistory}
               >
                 <option value="">Years in business</option>
-                {SalesHistoryOptions.map((option) => (
+                {visibleSalesHistoryOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
@@ -981,7 +1024,13 @@ fixedAssets:
                 id={getWizardFieldId("step1", "monthlyRevenue")}
                 value={app.kyc.monthlyRevenue || ""}
                 onChange={(e: unknown) => {
-                  const nextKyc = { ...app.kyc, monthlyRevenue: e.target.value };
+                  const value = e.target.value;
+                  if (value === "Under $10,000") {
+                    setShowMinRevenueModal(true);
+                    update({ kyc: { ...app.kyc, monthlyRevenue: "" } });
+                    return;
+                  }
+                  const nextKyc = { ...app.kyc, monthlyRevenue: value };
                   update({ kyc: nextKyc });
                   handleAutoAdvance("monthlyRevenue", nextKyc);
                 }}
@@ -1099,36 +1148,18 @@ fixedAssets:
       </div>
 
       {showLocationModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: tokens.spacing.md,
-            zIndex: 50,
-          }}
-        >
-          <div
-            style={{
-              ...components.card.base,
-              maxWidth: "420px",
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: tokens.spacing.sm,
-            }}
-          >
-            <h2 style={components.form.sectionTitle}>Funding availability</h2>
-            <p style={components.form.subtitle}>
-              Boreal funding is currently limited to businesses located in
-              Canada or the United States.
-            </p>
-            <Button style={{ width: "100%" }} onClick={() => setShowLocationModal(false)}>
-              OK
-            </Button>
+        <div className="wizard-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="wizard-modal">
+            <h3>Sorry, we can't help you</h3>
+            <p>At this time we only fund corporations registered in either Canada or the United States.</p>
+          </div>
+        </div>
+      )}
+      {showMinRevenueModal && (
+        <div className="wizard-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="wizard-modal">
+            <h3>Revenue threshold not met</h3>
+            <p>Your business does not currently meet our minimum monthly revenue threshold. Please reach out once revenue has grown.</p>
           </div>
         </div>
       )}

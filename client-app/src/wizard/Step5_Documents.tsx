@@ -231,16 +231,59 @@ export function Step5_Documents() {
         } catch {
         }
       }
-      const matchingProducts = filterProductsForApplicant(
-        lenderProducts,
-        countryCode,
-        amountValue
+      // BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
+      // Multi-leg doc union: each leg of the application contributes
+      // its own required-doc set; we union and dedupe.
+      const lookingFor = (app.kyc as any)?.lookingFor as
+        | "capital" | "equipment" | "capital_and_equipment" | undefined;
+      const closingCostsChecked = Boolean(
+        (app as any).requires_closing_cost_funding ??
+        (app as any).requiresClosingCostFunding
       );
-      const aggregated = aggregateRequiredDocuments(
-        matchingProducts,
-        selectedCategory,
-        amountValue
+      const equipmentAmount = parseCurrencyAmount(
+        (app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount
       );
+      const capitalAmount = parseCurrencyAmount(
+        (app.kyc as any)?.capitalAmount ?? app.kyc.fundingAmount
+      );
+
+      type Leg = { category: string; amount: number };
+      const legs: Leg[] = [];
+      if (lookingFor === "equipment") {
+        legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
+        if (closingCostsChecked && equipmentAmount > 0) {
+          const companion = Math.round(equipmentAmount * 0.2);
+          legs.push({
+            category: companion <= 50_000 ? "TERM" : "LOC",
+            amount: companion,
+          });
+        }
+      } else if (lookingFor === "capital_and_equipment") {
+        if (selectedCategory) legs.push({ category: selectedCategory, amount: capitalAmount });
+        legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
+      } else {
+        legs.push({ category: selectedCategory, amount: amountValue });
+      }
+
+      const aggregatedByLeg = legs.flatMap((leg) => {
+        const matching = filterProductsForApplicant(
+          lenderProducts,
+          countryCode,
+          leg.amount
+        );
+        return aggregateRequiredDocuments(matching, leg.category, leg.amount);
+      });
+      // Dedupe by document_type, OR-ing the `required` flag.
+      const aggregatedMap = new Map<string, typeof aggregatedByLeg[number]>();
+      for (const entry of aggregatedByLeg) {
+        const existing = aggregatedMap.get(entry.document_type);
+        aggregatedMap.set(entry.document_type, {
+          ...existing,
+          ...entry,
+          required: Boolean(existing?.required || entry.required),
+        });
+      }
+      const aggregated = Array.from(aggregatedMap.values());
       const dynamicRules = getDynamicRequirementRules();
       // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — partner photo ID is
       // required only when the applicant marked "multiple owners".

@@ -612,21 +612,25 @@ export function Step2_Product() {
           );
         })}
       </Card>
-      {/* BF_CLIENT_STEP2_CLOSING_COSTS_v81 — applies to Equipment Finance only.
-          On submit, BF-Server creates a hidden companion application for the
-          closing costs at 20% of the equipment ask. */}
-      {selectedCategory === "EQUIPMENT_FINANCE" && (
-        <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12 }}>
-          <Checkbox
-            checked={Boolean(app.requires_closing_cost_funding)}
-            onChange={(e) => update({ requires_closing_cost_funding: e.target.checked })}
-          />
-          <span style={{ fontSize: 13, color: tokens.colors.textSecondary }}>
-            Also include funding for closing costs (we'll add a small Term/LOC
-            sub-application at 20% of the equipment ask — handled behind the scenes).
-          </span>
-        </label>
-      )}
+      {/* BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
+          Closing-costs checkbox is shown only for pure-Equipment
+          applications (Q1 = equipment) AND only when at least one
+          companion product would match the computed companion amount.
+          Capital&Equipment users do not see this — their capital leg
+          already serves the same purpose. */}
+      {(app.kyc as any)?.lookingFor === "equipment" &&
+        Number((app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount ?? 0) > 0 && (
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12 }}>
+            <Checkbox
+              checked={Boolean(app.requires_closing_cost_funding)}
+              onChange={(e) => update({ requires_closing_cost_funding: e.target.checked })}
+            />
+            <span style={{ fontSize: 13, color: tokens.colors.textSecondary }}>
+              Also include funding for closing costs (we'll add a small Term/LOC
+              sub-application at 20% of the equipment ask — handled behind the scenes).
+            </span>
+          </label>
+        )}
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
