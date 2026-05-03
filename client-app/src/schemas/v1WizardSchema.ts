@@ -133,9 +133,18 @@ const nullableNumber = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+// BF_CLIENT_BLOCK_v94_ZOD_DUAL_AMOUNT_HOTFIX_v1
+// Pure-Equipment users write to kyc.equipmentAmount (not fundingAmount).
+// Capital & Equipment users write to BOTH fundingAmount (capital leg) and
+// equipmentAmount (equipment leg). Capital users write to fundingAmount.
+// Read whichever is populated so the .positive() assertion passes for all
+// three lookingFor states.
 export const toStep1SchemaInput = (kyc: Record<string, any>): Step1Data => ({
   fundingType: String(kyc.lookingFor ?? ""),
-  requestedAmount: parseCurrencyNumber(kyc.fundingAmount),
+  requestedAmount:
+    parseCurrencyNumber(kyc.fundingAmount) ||
+    parseCurrencyNumber(kyc.equipmentAmount) ||
+    parseCurrencyNumber(kyc.capitalAmount),
   businessLocation: String(kyc.businessLocation ?? ""),
   industry: String(kyc.industry ?? ""),
   purposeOfFunds: String(kyc.purposeOfFunds ?? ""),
