@@ -16,9 +16,18 @@ export type CategorySummary = {
 };
 
 export function filterActiveProducts(products: ActiveProduct[]) {
-  return products.filter(
-    (product) => (product.status || "").toLowerCase() === "active"
-  );
+  // BF_CLIENT_BLOCK_v85_STEP2_PRODUCTS_VISIBLE_v1
+  // Server filters by active=true server-side and historically did not
+  // return a status field. Treat any product reaching the client as
+  // active by default; only strip products that EXPLICITLY carry a
+  // non-active status string. Without this, every product was filtered
+  // out → "No financing products are available for your location"
+  // empty state on Step 2 even though the server returned valid products.
+  return products.filter((product) => {
+    const status = (product.status ?? "").toString().trim().toLowerCase();
+    if (!status) return true;
+    return status === "active" || status === "live";
+  });
 }
 
 export function parseCurrencyAmount(value?: string | number | null) {
