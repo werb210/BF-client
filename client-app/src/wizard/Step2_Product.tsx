@@ -540,8 +540,18 @@ export function Step2_Product() {
         {loadError && (
           <div style={components.form.errorText}>{loadError}</div>
         )}
+        {/* BF_CLIENT_BLOCK_v85_STEP2_PRODUCTS_VISIBLE_v1 — distinguish
+            "no products at all" from "no products in country" from
+            "amount out of range". Previous single message blamed
+            location regardless of which filter rejected everything. */}
         {!isLoading && !loadError && visibleCategorySummaries.length === 0 && (
-          <EmptyState>No financing products are available for your location.</EmptyState>
+          <EmptyState>
+            {products.length === 0
+              ? "No financing products are currently available. Please check back shortly."
+              : filteredProducts.length === 0
+                ? `No financing products available in ${countryCode || "your region"} yet. Please contact us if you believe this is in error.`
+                : "No financing products match your requested amount. Try a different amount or contact us."}
+          </EmptyState>
         )}
         {!isLoading && !loadError && categoryBuckets.map((bucket) => {
           const category = bucket.bucket;

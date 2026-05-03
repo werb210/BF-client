@@ -3,7 +3,13 @@ export type BusinessLocation = "Canada" | "United States" | "Other" | string;
 export function getCountryCode(location?: BusinessLocation) {
   if (location === "Canada") return "CA";
   if (location === "United States") return "US";
-  return "US";
+  // BF_CLIENT_BLOCK_v85_STEP2_PRODUCTS_VISIBLE_v1
+  // Default unknown business locations to empty string, NOT "US".
+  // Downstream matchesCountry() treats an empty applicant country as
+  // "match anything", which is the correct behavior when location
+  // hasn't loaded yet. Returning "US" silently mis-filtered every CA
+  // product whenever businessLocation hadn't been set to "Canada".
+  return "";
 }
 
 export function getRegionLabel(countryCode: string) {
