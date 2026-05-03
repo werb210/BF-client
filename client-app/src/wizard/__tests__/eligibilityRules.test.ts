@@ -1,26 +1,33 @@
-// BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
+// BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
 import { describe, expect, it } from "vitest";
 import {
   computeAllowedCategories,
   detectHardStop,
   computeCompanion,
   buildLegs,
-  ALL_CATEGORIES,
   type Step1Answers,
 } from "../eligibilityRules";
 
-describe("BF_CLIENT_BLOCK_v89 — hard stops", () => {
+describe("v91 hard stops", () => {
   it("OTHER location blocks", () => {
     expect(detectHardStop({ location: "OTHER" })?.reason).toBe("OTHER_LOCATION");
     expect(computeAllowedCategories({ location: "OTHER" })).toEqual([]);
   });
-  it("<10k avg monthly revenue blocks", () => {
+  it("<10k avg monthly blocks", () => {
     expect(detectHardStop({ avgMonthly: "<10k" })?.reason).toBe("MIN_REVENUE");
     expect(computeAllowedCategories({ avgMonthly: "<10k" })).toEqual([]);
   });
+  it("hard stops short-circuit other answers", () => {
+    expect(
+      computeAllowedCategories({
+        location: "OTHER", purpose: "working_capital",
+        years: ">3", revenue12: ">3m",
+      }),
+    ).toEqual([]);
+  });
 });
 
-describe("BF_CLIENT_BLOCK_v89 — Q1 lookingFor", () => {
+describe("v91 lookingFor", () => {
   it("equipment narrows to EQUIPMENT only", () => {
     expect(computeAllowedCategories({ lookingFor: "equipment" })).toEqual(["EQUIPMENT"]);
   });
@@ -32,7 +39,7 @@ describe("BF_CLIENT_BLOCK_v89 — Q1 lookingFor", () => {
   });
 });
 
-describe("BF_CLIENT_BLOCK_v89 — country", () => {
+describe("v91 country", () => {
   it("Canada drops SBA", () => {
     const a: Step1Answers = { location: "CA" };
     expect(computeAllowedCategories(a)).not.toContain("SBA");
@@ -43,28 +50,28 @@ describe("BF_CLIENT_BLOCK_v89 — country", () => {
   });
 });
 
-describe("BF_CLIENT_BLOCK_v89 — purpose", () => {
+describe("v91 purpose", () => {
   it("inventory narrows to LOC, PO, MCA", () => {
-    expect(computeAllowedCategories({ purpose: "inventory" }).sort()).toEqual(["LOC", "MCA", "PO"]);
+    expect(computeAllowedCategories({ purpose: "inventory" }).sort()).toEqual(["LOC","MCA","PO"]);
   });
   it("media narrows to LOC, TERM, MEDIA", () => {
-    expect(computeAllowedCategories({ purpose: "media" }).sort()).toEqual(["LOC", "MEDIA", "TERM"]);
+    expect(computeAllowedCategories({ purpose: "media" }).sort()).toEqual(["LOC","MEDIA","TERM"]);
   });
 });
 
-describe("BF_CLIENT_BLOCK_v89 — closing-costs companion routing", () => {
+describe("v91 closing-costs companion routing", () => {
   it("$200k equipment → $40k TERM", () => {
     expect(computeCompanion(200_000)).toEqual({ amount: 40_000, category: "TERM" });
   });
   it("$300k equipment → $60k LOC", () => {
     expect(computeCompanion(300_000)).toEqual({ amount: 60_000, category: "LOC" });
   });
-  it("exactly $50k boundary stays TERM (≤)", () => {
+  it("$50k boundary stays TERM (≤)", () => {
     expect(computeCompanion(250_000)).toEqual({ amount: 50_000, category: "TERM" });
   });
 });
 
-describe("BF_CLIENT_BLOCK_v89 — buildLegs", () => {
+describe("v91 buildLegs", () => {
   it("capital → 1 leg", () => {
     const legs = buildLegs({
       lookingFor: "capital", selectedCapitalCategory: "LOC",
@@ -73,7 +80,7 @@ describe("BF_CLIENT_BLOCK_v89 — buildLegs", () => {
     });
     expect(legs).toEqual([{ category: "LOC", amount: 250_000 }]);
   });
-  it("equipment + closing costs → 2 legs (EQUIPMENT + companion)", () => {
+  it("equipment + closing costs → 2 legs", () => {
     const legs = buildLegs({
       lookingFor: "equipment", selectedCapitalCategory: undefined,
       capitalAmount: 0, equipmentAmount: 200_000, fundingAmount: 0,

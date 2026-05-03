@@ -81,7 +81,9 @@ const RevenueOptions = [
   "Over $3,000,000",
 ];
 
+// BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
 const MonthlyRevenueOptions = [
+  "Under $10,000",
   "$10,000 to $25,000",
   "$25,000 to $50,000",
   "$50,000 to $100,000",
@@ -176,14 +178,14 @@ export function Step1_KYC(): JSX.Element {
   // BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showMinRevenueModal, setShowMinRevenueModal] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  const [lenderProducts, setLenderProducts] = useState<any[]>([]);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const ProductSync = (await import("./productSelection"))?.ProductSync;
         const list = ProductSync ? ProductSync.load() : [];
-        if (!cancelled) setProducts(list);
+        if (!cancelled) setLenderProducts(list);
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
@@ -201,14 +203,14 @@ export function Step1_KYC(): JSX.Element {
     const country = app.kyc.businessLocation === "Canada" ? "CA"
       : app.kyc.businessLocation === "United States" ? "US" : null;
     if (!country) return false;
-    return products.some((p) => {
+    return lenderProducts.some((p) => {
       const cat = String((p as any).category ?? "").toUpperCase();
       if (cat !== "STARTUP" && cat !== "STARTUP_CAPITAL") return false;
       const c = String((p as any).country ?? "").toUpperCase();
       if (c !== country && c !== "BOTH" && c !== "") return false;
       return ((p as any).active ?? true) === true;
     });
-  }, [products, app.kyc.businessLocation]);
+  }, [lenderProducts, app.kyc.businessLocation]);
   const visiblePurposeOptions = useMemo(() => {
     return PurposeOptions.filter((opt) => opt !== "Start up Funding" || startupAvailable);
   }, [startupAvailable]);
@@ -267,7 +269,12 @@ fixedAssets:
 
     update({
       readinessLeadId: readiness.leadId,
-      kyc: nextKyc,
+      // BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
+                    kyc: {
+                      ...nextKyc,
+                      fundingAmount: nextIntent === "EQUIPMENT" ? "" : nextKyc.fundingAmount,
+                      equipmentAmount: nextIntent === "WORKING_CAPITAL" ? "" : (nextKyc as any).equipmentAmount,
+                    },
     });
   }, [
     app.kyc,
@@ -486,10 +493,15 @@ fixedAssets:
     }
   }, [showErrors]);
 
+  // BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
   function getStepErrors(values: Record<string, any>) {
+    const intent = normalizeFundingIntent(values.lookingFor);
+    const capitalRequired = intent === "WORKING_CAPITAL" || intent === "BOTH";
+    const equipmentRequired = intent === "EQUIPMENT" || intent === "BOTH";
     return {
       lookingFor: !Validate.required(values.lookingFor),
-      fundingAmount: !Validate.required(values.fundingAmount),
+      fundingAmount: capitalRequired && !Validate.required(values.fundingAmount),
+      equipmentAmount: equipmentRequired && !Validate.required(values.equipmentAmount),
       businessLocation:
         !Validate.required(values.businessLocation) ||
         values.businessLocation === "Other",
@@ -497,7 +509,9 @@ fixedAssets:
       purposeOfFunds: !Validate.required(values.purposeOfFunds),
       salesHistory: !Validate.required(values.salesHistory),
       revenueLast12Months: !Validate.required(values.revenueLast12Months),
-      monthlyRevenue: !Validate.required(values.monthlyRevenue),
+      monthlyRevenue:
+        !Validate.required(values.monthlyRevenue) ||
+        values.monthlyRevenue === "Under $10,000",
       accountsReceivable: !Validate.required(values.accountsReceivable),
       fixedAssets: !Validate.required(values.fixedAssets),
     };
@@ -790,7 +804,21 @@ fixedAssets:
                 <div style={components.form.errorText}>Please select a funding intent.</div>
               )}
             </div>
-            <div data-error={showErrors && fieldErrors.fundingAmount}>
+            {/* BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1 */}
+            {(() => {
+              const intent = normalizeFundingIntent(app.kyc.lookingFor);
+              if (intent === "EQUIPMENT") {
+                return (
+                  <div data-error={showErrors && fieldErrors.equipmentAmount}>
+                    <label style={components.form.label}>How much equipment financing are you seeking?</label>
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: sanitizeCurrencyInput(e.target.value) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
+                  </div>
+                );
+              }
+              if (intent === "BOTH") {
+                return (<>
+                              <div data-error={showErrors && fieldErrors.fundingAmount}>
               <label style={components.form.label}>How much funding are you seeking?</label>
               <Input
                 id={getWizardFieldId("step1", "fundingAmount")}
@@ -843,6 +871,67 @@ fixedAssets:
                 <div style={components.form.errorText}>Enter a funding amount.</div>
               )}
             </div>
+                  <div data-error={showErrors && fieldErrors.equipmentAmount}>
+                    <label style={components.form.label}>Equipment amount</label>
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: sanitizeCurrencyInput(e.target.value) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
+                  </div>
+                </>);
+              }
+              return (<>            <div data-error={showErrors && fieldErrors.fundingAmount}>
+              <label style={components.form.label}>How much funding are you seeking?</label>
+              <Input
+                id={getWizardFieldId("step1", "fundingAmount")}
+                inputMode="decimal"
+                value={app.kyc.fundingAmount || ""}
+                onChange={(e: unknown) => {
+                  const nextKyc = {
+                    ...app.kyc,
+                    fundingAmount: sanitizeCurrencyInput(e.target.value),
+                  };
+                  update({
+                    kyc: nextKyc,
+                    productCategory: null,
+                    selectedProduct: undefined,
+                    selectedProductId: undefined,
+                    selectedProductType: undefined,
+                    requires_closing_cost_funding: undefined,
+                    eligibleProducts: [],
+                    eligibleCategories: [],
+                    eligibilityReasons: [],
+                  });
+                }}
+                onBlur={() => {
+                  if (!app.kyc.fundingAmount) return;
+                  const formatted = formatCurrencyValue(
+                    app.kyc.fundingAmount,
+                    countryCode
+                  );
+                  const nextKyc = { ...app.kyc, fundingAmount: formatted };
+                  update({ kyc: nextKyc });
+                  handleAutoAdvance("fundingAmount", nextKyc);
+                }}
+                onKeyDown={(e: unknown) => {
+                  if (e.key === "Enter") {
+                    const nextKyc = {
+                      ...app.kyc,
+                      fundingAmount: formatCurrencyValue(
+                        app.kyc.fundingAmount || "",
+                        countryCode
+                      ),
+                    };
+                    update({ kyc: nextKyc });
+                    handleAutoAdvance("fundingAmount", nextKyc);
+                  }
+                }}
+                placeholder={countryCode === "CA" ? "CA$" : "$"}
+                hasError={showErrors && fieldErrors.fundingAmount}
+              />
+              {showErrors && fieldErrors.fundingAmount && (
+                <div style={components.form.errorText}>Enter a funding amount.</div>
+              )}
+            </div></>);
+            })()}
 
             <div data-error={showErrors && fieldErrors.businessLocation}>
               <label style={components.form.label}>Business Location</label>

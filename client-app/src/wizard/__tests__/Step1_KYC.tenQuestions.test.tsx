@@ -71,15 +71,19 @@ describe("Step1_KYC ten questions", () => {
   });
 
   it("renders all 10 step-1 fields for each lookingFor value", () => {
-    const lookingForValues = ["Working Capital", "Equipment", "Both", undefined];
+    const scenarios = [
+      { lookingFor: "Working Capital", amountFields: ["fundingAmount"] },
+      { lookingFor: "Equipment", amountFields: ["equipmentAmount"] },
+      { lookingFor: "Both", amountFields: ["fundingAmount", "equipmentAmount"] },
+      { lookingFor: undefined, amountFields: ["fundingAmount"] },
+    ];
 
-    for (const value of lookingForValues) {
-      mockAppState.kyc = { lookingFor: value as string | undefined } as any;
+    for (const scenario of scenarios) {
+      mockAppState.kyc = { lookingFor: scenario.lookingFor as string | undefined } as any;
       const { container, root } = renderStep1();
 
       [
         "lookingFor",
-        "fundingAmount",
         "businessLocation",
         "industry",
         "purposeOfFunds",
@@ -89,6 +93,9 @@ describe("Step1_KYC ten questions", () => {
         "accountsReceivable",
         "fixedAssets",
       ].forEach((fieldKey) => {
+        expect(container.querySelector(`#step1-${fieldKey}`)).toBeTruthy();
+      });
+      scenario.amountFields.forEach((fieldKey) => {
         expect(container.querySelector(`#step1-${fieldKey}`)).toBeTruthy();
       });
 

@@ -249,7 +249,7 @@ export function Step5_Documents() {
 
       type Leg = { category: string; amount: number };
       const legs: Leg[] = [];
-      if (lookingFor === "equipment") {
+      if (lookingFor === "equipment" || /EQUIPMENT/i.test(lookingFor ?? "")) {
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
         if (closingCostsChecked && equipmentAmount > 0) {
           const companion = Math.round(equipmentAmount * 0.2);
@@ -258,7 +258,7 @@ export function Step5_Documents() {
             amount: companion,
           });
         }
-      } else if (lookingFor === "capital_and_equipment") {
+      } else if (lookingFor === "capital_and_equipment" || /BOTH/i.test(lookingFor ?? "")) {
         if (selectedCategory) legs.push({ category: selectedCategory, amount: capitalAmount });
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
       } else {
