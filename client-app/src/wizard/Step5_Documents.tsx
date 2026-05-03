@@ -289,9 +289,11 @@ export function Step5_Documents() {
       // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — partner photo ID is
       // required only when the applicant marked "multiple owners".
       const hasPartner = Boolean(app.applicant?.hasMultipleOwners);
+      // BF_CLIENT_BLOCK_v102_MEDIA_NO_GLOBAL_DOCS_v1 — pass category so
+      // MEDIA applications skip the bank-statements + photo-ID appendage.
       const normalized = ensureAlwaysRequiredDocuments(
         mergeRequirementLists(aggregated, dynamicRules),
-        { hasPartner }
+        { hasPartner, category: selectedCategory }
       );
 
       if (active) {
@@ -311,10 +313,12 @@ export function Step5_Documents() {
           cachedFromStatus = extractRequiredDocumentsFromStatus(status?.data ?? null);
         } catch {
         }
+        // BF_CLIENT_BLOCK_v102_MEDIA_NO_GLOBAL_DOCS_v1 — same MEDIA carve-out
+        // applies to the merge-with-cached-status path.
         const merged = cachedFromStatus
           ? ensureAlwaysRequiredDocuments(
               mergeRequirementLists(normalized, cachedFromStatus),
-              { hasPartner }
+              { hasPartner, category: selectedCategory }
             )
           : normalized;
         setRequirementsRaw(merged);
