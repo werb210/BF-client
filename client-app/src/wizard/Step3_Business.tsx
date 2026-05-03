@@ -300,7 +300,8 @@ export function Step3_Business() {
           {autosaveError}
         </Card>
       )}
-      <StepHeader step={3} title="Business Details" />
+      {/* BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — duplicate StepHeader removed.
+          The first instance at the top of the WizardLayout still renders. */}
 
       <Card
         style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}
