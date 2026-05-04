@@ -13,6 +13,7 @@ import { RegionSelect } from "../components/RegionSelect";
 import { Validate } from "../utils/validate";
 import {
   formatCurrencyValue,
+  formatCurrencyOnInput,
   formatPostalCode,
   formatPhoneNumber,
   getCountryCode,
@@ -576,10 +577,13 @@ export function Step3_Business() {
               onChange={(e: unknown) => {
                 const nextValues = {
                   ...values,
-                  estimatedRevenue: sanitizeCurrencyInput(e.target.value),
+                  estimatedRevenue: formatCurrencyOnInput(e.target.value, countryCode),
                 };
                 update({ business: nextValues });
               }}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               onBlur={() => {
                 if (!values.estimatedRevenue) return;
                 const nextValues = {
