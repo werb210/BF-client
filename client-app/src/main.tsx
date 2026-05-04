@@ -1,6 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+// BF_CLIENT_BLOCK_v103_TAILWIND_PIPELINE_FIX_v1
+// theme/global.css carries @tailwind base/components/utilities and the
+// Boreal CSS variables. styles/global.css is the legacy reset-only file
+// kept for the 13 lines of body/box-sizing rules. Both are imported.
+import "./theme/global.css";
 import "./styles/global.css";
 import App from "./App";
 import { validateEnv } from "./env";
