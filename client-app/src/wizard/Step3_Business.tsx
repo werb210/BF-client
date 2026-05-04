@@ -1,6 +1,6 @@
 // @ts-nocheck
 if (typeof console !== "undefined") console.log("[wizard] Step3_Business module evaluated");
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { ClientAppAPI } from "../api/clientApp";
@@ -44,7 +44,15 @@ export function Step3_Business() {
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const values = { ...app.business };
+  // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — stabilize `values` ref so
+  // merge effects below don't re-fire on every parent render.
+  const values = useMemo<Record<string, any>>(
+    () => ({ ...((app.business as Record<string, any>) || {}) }),
+    [app.business]
+  );
+  // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — gate one-time merges.
+  const draftMergedRef = useRef(false);
+  const creditPrefillMergedRef = useRef(false);
   const countryCode = useMemo(
     () => getCountryCode(app.kyc?.businessLocation),
     [app.kyc?.businessLocation]
@@ -70,8 +78,11 @@ export function Step3_Business() {
   // [removed] resolveStepGuard effect — caused step transition races
 
   useEffect(() => {
+    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — run-once draft merge.
+    if (draftMergedRef.current) return;
     const draft = loadStepData(3);
     if (!draft) return;
+    draftMergedRef.current = true;
     const merged = mergeDraft(values, draft);
     const changed = Object.keys(merged).some(
       (key) => merged[key] !== values[key]
@@ -79,12 +90,16 @@ export function Step3_Business() {
     if (changed) {
       update({ business: merged });
     }
-  }, [update, values]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   useEffect(() => {
+    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — run-once credit prefill merge.
+    if (creditPrefillMergedRef.current) return;
     const stored = localStorage.getItem("creditPrefill");
     if (!stored) return;
+    creditPrefillMergedRef.current = true;
 
     try {
       const data = JSON.parse(stored) as Record<string, string>;
@@ -108,7 +123,8 @@ export function Step3_Business() {
     } catch {
       // ignore malformed prefill payload
     }
-  }, [update, values]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function setField(key: string, value: unknown) {
     update({ business: { ...values, [key]: value } });
@@ -157,9 +173,10 @@ export function Step3_Business() {
     // the legal name when the legal field was left blank, so downstream
     // consumers (CRM mirror, lender submission payloads) still receive
     // a populated legal name without forcing the applicant to re-type it.
-    if (!Validate.required(values.legalName) && Validate.required(values.businessName)) {
-      values = { ...values, legalName: values.businessName };
-      update({ business: values });
+    let nextValues = values;
+    if (!Validate.required(nextValues.legalName) && Validate.required(nextValues.businessName)) {
+      nextValues = { ...nextValues, legalName: nextValues.businessName };
+      update({ business: nextValues });
     }
     const requiredFields = [
       // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
@@ -176,7 +193,7 @@ export function Step3_Business() {
     ];
 
     const missing = requiredFields.find(
-      (field) => !Validate.required(values[field])
+      (field) => !Validate.required(nextValues[field])
     );
     if (missing) {
       setSaveError("Please complete all required business details.");
@@ -184,9 +201,9 @@ export function Step3_Business() {
     }
 
     setSaveError(null);
-    void persistApplicationStep(app, 3, { business: values }).catch(() => {});
+    void persistApplicationStep(app, 3, { business: nextValues }).catch(() => {});
     if (app.applicationToken) {
-      ClientAppAPI.update(app.applicationToken, { business: values }).catch((err) => {
+      ClientAppAPI.update(app.applicationToken, { business: nextValues }).catch((err) => {
         // eslint-disable-next-line no-console
         console.warn("[wizard] Step 3 server PATCH failed", err);
       });
