@@ -224,6 +224,12 @@ export function Step6_Review(): JSX.Element {
   }
 
   async function submit() {
+    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — visible click ack + outer guard
+    console.info("[wizard] Step6 submit() invoked", {
+      applicationToken: app.applicationToken,
+      hasSig: Boolean(app.typedSignature?.trim()),
+      docsDeferred: Boolean(app.documentsDeferred),
+    });
     if (submitting) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -463,6 +469,8 @@ export function Step6_Review(): JSX.Element {
         navigate("/portal", { replace: true });
       }, 1200);
     } catch (error: unknown) {
+      // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — surface real submit errors.
+      console.error("[wizard] Step6 submit() failed", error);
       const response =
         typeof error === "object" && error !== null && "response" in error
           ? (error as { response?: { status?: number; data?: Record<string, any> } }).response
