@@ -300,25 +300,66 @@ export function Step5_Documents() {
         legs.push({ category: selectedCategory, amount: amountValue });
       }
 
-      const aggregatedByLeg = legs.flatMap((leg) => {
-        const matching = filterProductsForApplicant(
-          lenderProducts,
-          countryCode,
-          leg.amount
-        );
-        return aggregateRequiredDocuments(matching, leg.category, leg.amount);
-      });
-      // Dedupe by document_type, OR-ing the `required` flag.
-      const aggregatedMap = new Map<string, typeof aggregatedByLeg[number]>();
-      for (const entry of aggregatedByLeg) {
-        const existing = aggregatedMap.get(entry.document_type);
-        aggregatedMap.set(entry.document_type, {
-          ...existing,
-          ...entry,
-          required: Boolean(existing?.required || entry.required),
+      // BF_CLIENT_BLOCK_v119_STEP5_PREFER_SERVER_REQUIRED_DOCS_v1
+      // The server's /api/portal/lender-products/required-docs route
+      // (BF-Server v115 / v117 / v118) is the authoritative source for
+      // the deduped union of required document categories — it normalizes
+      // long->short product-category codes (TERM_LOAN->TERM) and probes
+      // the live amount_min / amount_max columns. The client's
+      // aggregateRequiredDocuments below compares the wizard's long
+      // codes against the DB's short codes WITHOUT normalization, so it
+      // filtered out every product and the rendered list collapsed to
+      // just the global appendage (bank statements + photo ID). Try the
+      // server first; fall back to the client union only if the server
+      // returns nothing or is unreachable (offline / 5xx).
+      let aggregated: LenderProductRequirement[] = [];
+      try {
+        const serverItems = await fetchRequiredDocsUnion({
+          country:
+            countryCode ||
+            (app?.kyc as any)?.country ||
+            (app?.kyc as any)?.businessLocation,
+          product_category:
+            selectedCategory || (app?.productCategory as string | undefined),
+          funding_amount: amountValue || undefined,
+          industry: (app?.kyc as any)?.industry,
+          revenue_last_12:
+            Number(
+              (app?.kyc as any)?.annualRevenue ||
+                (app?.kyc as any)?.revenueLast12Months ||
+                0
+            ) || undefined,
+          monthly_revenue:
+            Number((app?.kyc as any)?.monthlyRevenue || 0) || undefined,
+          years_in_business:
+            Number((app?.kyc as any)?.yearsInBusiness || 0) || undefined,
         });
+        if (serverItems.length > 0) {
+          aggregated = serverItems;
+        }
+      } catch {
       }
-      const aggregated = Array.from(aggregatedMap.values());
+
+      if (aggregated.length === 0) {
+        const aggregatedByLeg = legs.flatMap((leg) => {
+          const matching = filterProductsForApplicant(
+            lenderProducts,
+            countryCode,
+            leg.amount
+          );
+          return aggregateRequiredDocuments(matching, leg.category, leg.amount);
+        });
+        const aggregatedMap = new Map<string, typeof aggregatedByLeg[number]>();
+        for (const entry of aggregatedByLeg) {
+          const existing = aggregatedMap.get(entry.document_type);
+          aggregatedMap.set(entry.document_type, {
+            ...existing,
+            ...entry,
+            required: Boolean(existing?.required || entry.required),
+          });
+        }
+        aggregated = Array.from(aggregatedMap.values());
+      }
       const dynamicRules = getDynamicRequirementRules();
       // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — partner photo ID is
       // required only when the applicant marked "multiple owners".
