@@ -49,8 +49,25 @@ export default function MiniPortalPage() {
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
   const showOfferView = stageIndex === STAGE_BY_KEY.offer;
 
+  const currentStageLabel = STAGES[stageIndex]?.label ?? "";
+  const shortId = applicationId
+    ? applicationId.length > 8
+      ? applicationId.slice(-8).toUpperCase()
+      : applicationId.toUpperCase()
+    : "";
+
   return (
     <div className="mp-root">
+      <header className="mp-app-header">
+        <div className="mp-app-header__left">
+          <span className="mp-app-header__label">Application</span>
+          <span className="mp-app-header__id">{shortId || "—"}</span>
+        </div>
+        <div className="mp-app-header__right">
+          <span className="mp-app-header__stage-label">Stage</span>
+          <span className="mp-app-header__stage-value">{currentStageLabel}</span>
+        </div>
+      </header>
       <div className="mp-tracker" role="list" aria-label="Application progress">{stageRow.map((s, i) => <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}><div className="mp-stage__bullet">{s.completed ? "✓" : i + 1}</div><div className="mp-stage__label">{s.label}</div>{s.current && percent > 0 ? <div className="mp-stage__pct">{percent}%</div> : null}</div>)}</div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card"><header className="mp-thread-card__header">Messages</header><div className="mp-thread-card__body"><MessageThread messages={messages} onHashtagClick={onHashtagClick} emptyText="Say hi to get started." /></div><div className="mp-thread-card__composer"><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} /><button onClick={() => void sendMessage()}>Send</button></div></section>

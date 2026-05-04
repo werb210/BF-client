@@ -89,3 +89,17 @@ export function formatPhoneNumber(value: string, countryCode: string) {
 
   return digits.slice(0, 15);
 }
+
+
+export function formatCurrencyOnInput(value: string, countryCode: string): string {
+  const cleaned = sanitizeCurrencyInput(value);
+  if (!cleaned) return "";
+  const [intPart, decPart] = cleaned.split(".");
+  if (intPart === "" && decPart === undefined) return "";
+  const locale = countryCode === "CA" ? "en-CA" : "en-US";
+  const intNum = Number.parseInt(intPart || "0", 10);
+  if (Number.isNaN(intNum)) return cleaned;
+  const groupedInt = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(intNum);
+  if (decPart === undefined) return groupedInt;
+  return groupedInt + "." + decPart.slice(0, 2);
+}

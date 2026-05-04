@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import ScrollToTop from "@/components/ScrollToTop";
 import { lazy, Suspense } from "react";
 import { RequireOTP } from "@/auth/RequireOTP";
 import { AppSpinner } from "@/components/ui/AppSpinner";
@@ -14,6 +15,7 @@ const OfflineFallback    = lazy(() => import("@/pages/OfflineFallback").then((m)
 export default function AppRouter() {
   return (
     <Suspense fallback={<AppSpinner />}>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/otp" element={<OtpPage />} />

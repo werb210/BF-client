@@ -27,38 +27,7 @@ export default function LandingPage() {
             <PhoneOTPInline />
           </div>
 
-          <section className="mt-20 grid grid-cols-1 gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: "📄",
-                title: "Streamlined Application",
-                body: "Complete your business loan application in minutes with our intuitive, multi-step process.",
-              },
-              {
-                icon: "💰",
-                title: "Competitive Rates",
-                body: "Access competitive financing options tailored to your business needs and industry.",
-              },
-              {
-                icon: "🛡️",
-                title: "Secure & Compliant",
-                body: "Bank-level security with full compliance to financial regulations and data protection.",
-              },
-            ].map((c) => (
-              <div
-                key={c.title}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
-              >
-                <div className="text-3xl">{c.icon}</div>
-                <h3 className="mt-3 text-lg font-semibold text-white">
-                  {c.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-white/75">
-                  {c.body}
-                </p>
-              </div>
-            ))}
-          </section>
+          {/* BF_CLIENT_BLOCK_v104_MOBILE_POLISH_v1 — three-cards section removed per Todd mobile feedback. */}
         </section>
       </main>
 
