@@ -120,8 +120,13 @@ const FixedAssetsOptions = [
   "$100,001 to $250,000", "$250,001 to $500,000", "Over $500,000",
 ];
 
-function parseCurrency(value: string): number {
-  const cleaned = value.replace(/[^0-9.]/g, "");
+// BF_CLIENT_BLOCK_v110_PARSECURRENCY_GUARD_v1 — for Equipment-only flow
+// payload.fundingAmount is undefined. Without this guard, value.replace()
+// throws and startApplication shows "Something went wrong. Please try again."
+// banner, blocking the user from advancing past Step 1.
+function parseCurrency(value: string | undefined | null): number {
+  if (value === undefined || value === null) return Number.NaN;
+  const cleaned = String(value).replace(/[^0-9.]/g, "");
   return Number.parseFloat(cleaned);
 }
 
@@ -589,10 +594,15 @@ fixedAssets:
       console.log("[wizard] Step 1 validation passed");
       const payload = kyc;
 
-      const amount = parseCurrency(payload.fundingAmount);
-      const matchPercentages = buildMatchPercentages(
-        Number.isNaN(amount) ? 0 : amount
-      );
+      // BF_CLIENT_BLOCK_v110_PARSECURRENCY_GUARD_v1 — Equipment-only flows
+      // fill equipmentAmount instead of fundingAmount. Use whichever is set.
+      const fundingAmt = parseCurrency(payload.fundingAmount);
+      const equipmentAmt = parseCurrency((payload as any).equipmentAmount);
+      const resolved =
+        !Number.isNaN(fundingAmt) ? fundingAmt :
+        !Number.isNaN(equipmentAmt) ? equipmentAmt : 0;
+      const amount = resolved;
+      const matchPercentages = buildMatchPercentages(amount);
       const payloadBody = {
         financialProfile: payload,
       };
