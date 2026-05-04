@@ -104,10 +104,18 @@ export function Step2_Product() {
     app.selectedProduct?.product_type ||
     app.selectedProduct?.name ||
     "";
-  const amountValue = useMemo(
-    () => parseCurrencyAmount(app.kyc.fundingAmount),
-    [app.kyc.fundingAmount]
-  );
+  // BF_CLIENT_BLOCK_v111_STEP2_EQUIPMENT_AMOUNT_v1 — Equipment-only flow
+  // populates app.kyc.equipmentAmount and leaves app.kyc.fundingAmount empty.
+  // Without this fallback, amountValue = 0 for Equipment flows, which makes
+  // visibleCategorySummaries filter Equipment Finance out as "amount too
+  // low" and Step 2 renders empty.
+  const amountValue = useMemo(() => {
+    const fundingAmt = parseCurrencyAmount(app.kyc.fundingAmount);
+    if (Number.isFinite(fundingAmt) && fundingAmt > 0) return fundingAmt;
+    const equipAmt = parseCurrencyAmount((app.kyc as any)?.equipmentAmount);
+    if (Number.isFinite(equipAmt) && equipAmt > 0) return equipAmt;
+    return 0;
+  }, [app.kyc.fundingAmount, (app.kyc as any)?.equipmentAmount]);
   const amountValid = selectedProduct
     ? isAmountWithinRange(
         amountValue,
