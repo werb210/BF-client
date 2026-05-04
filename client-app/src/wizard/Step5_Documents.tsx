@@ -199,7 +199,9 @@ export function Step5_Documents() {
     [requiredDocs, uploadingDocs]
   );
 
-  // BF_CLIENT_BLOCK_v106_DOC_REQUIREMENTS_UNION_v1 — pull deduped union
+  // BF_CLIENT_BLOCK_v107_DOC_REQUIREMENTS_SHAPE_FIX_v1 — pull deduped union
+  // (supersedes v106; fetcher now returns LenderProductRequirement[])
+  // pull deduped union
   // of required docs from BF-Server based on borrower's Step 1+2 inputs.
   useEffect(() => {
     let cancelled = false;
