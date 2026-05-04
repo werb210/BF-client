@@ -18,7 +18,29 @@ export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> 
   step1: {
     fields: [
       { key: "lookingFor", required: true, autoAdvance: true },
-      { key: "fundingAmount", required: true, autoAdvance: true },
+      // BF_CLIENT_BLOCK_v109_EQUIPMENT_AUTOADVANCE_v1 — equipmentAmount is
+      // shown when lookingFor in (EQUIPMENT, BOTH). Without it in the
+      // schema, autoAdvance after that field returns undefined and the
+      // wizard appears stuck on Step 1 for Equipment-only users.
+      {
+        key: "equipmentAmount",
+        required: true,
+        autoAdvance: true,
+        conditional: ({ kyc }) => {
+          const v = String(kyc?.lookingFor ?? "").toUpperCase();
+          return v === "EQUIPMENT" || v === "BOTH";
+        },
+      },
+      {
+        key: "fundingAmount",
+        required: true,
+        autoAdvance: true,
+        // Only required for capital flows. Equipment-only hides this input.
+        conditional: ({ kyc }) => {
+          const v = String(kyc?.lookingFor ?? "").toUpperCase();
+          return v === "WORKING_CAPITAL" || v === "BOTH" || v === "" || v === "CAPITAL";
+        },
+      },
       { key: "businessLocation", required: true, autoAdvance: true },
       { key: "industry", required: true, autoAdvance: true },
       { key: "purposeOfFunds", required: true, autoAdvance: true },

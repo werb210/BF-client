@@ -24,11 +24,16 @@ export function getIdentityLabel(countryCode: string) {
   return countryCode === "CA" ? "SIN" : "SSN";
 }
 
-export function sanitizeCurrencyInput(value: string) {
-  return value.replace(/[^0-9.]/g, "");
+// BF_CLIENT_BLOCK_v109_EQUIPMENT_AUTOADVANCE_v1 — defend against
+// undefined value (rapid re-render / back-nav can null briefly).
+// "Cannot read properties of undefined (reading 'replace')" was the
+// symptom in the captured console log.
+export function sanitizeCurrencyInput(value: string | undefined | null) {
+  if (value === undefined || value === null) return "";
+  return String(value).replace(/[^0-9.]/g, "");
 }
 
-export function formatCurrencyValue(value: string, countryCode: string) {
+export function formatCurrencyValue(value: string | undefined | null, countryCode: string) {
   const cleaned = sanitizeCurrencyInput(value);
   if (!cleaned) return "";
   const amount = Number.parseFloat(cleaned);
@@ -91,7 +96,7 @@ export function formatPhoneNumber(value: string, countryCode: string) {
 }
 
 
-export function formatCurrencyOnInput(value: string, countryCode: string): string {
+export function formatCurrencyOnInput(value: string | undefined | null, countryCode: string): string {
   const cleaned = sanitizeCurrencyInput(value);
   if (!cleaned) return "";
   const [intPart, decPart] = cleaned.split(".");
