@@ -1,5 +1,7 @@
 // @ts-nocheck
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+// BF_CLIENT_BLOCK_v106_DOC_REQUIREMENTS_UNION_v1
+import { fetchRequiredDocsUnion } from "../api/lenderProducts";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { ClientAppAPI } from "../api/clientApp";
@@ -196,6 +198,36 @@ export function Step5_Documents() {
     () => requiredDocs.some((entry) => uploadingDocs[entry.document_type]),
     [requiredDocs, uploadingDocs]
   );
+
+  // BF_CLIENT_BLOCK_v106_DOC_REQUIREMENTS_UNION_v1 — pull deduped union
+  // of required docs from BF-Server based on borrower's Step 1+2 inputs.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const items = await fetchRequiredDocsUnion({
+          country: (app?.kyc as any)?.country || (app?.kyc as any)?.businessLocation,
+          product_category: (app?.productCategory as string | undefined) || (app?.kyc as any)?.lookingFor,
+          funding_amount: Number((app?.kyc as any)?.fundingAmount || 0) || undefined,
+          industry: (app?.kyc as any)?.industry,
+          revenue_last_12: Number((app?.kyc as any)?.annualRevenue || (app?.kyc as any)?.revenueLast12Months || 0) || undefined,
+          monthly_revenue: Number((app?.kyc as any)?.monthlyRevenue || 0) || undefined,
+          years_in_business: Number((app?.kyc as any)?.yearsInBusiness || 0) || undefined,
+        });
+        if (cancelled || items.length === 0) return;
+        update({
+          productRequirements: {
+            ...((app?.productRequirements as Record<string, any>) || {}),
+            aggregated: items,
+          },
+          selectedProductId: (app?.selectedProductId as string) || "aggregated",
+        });
+      } catch {
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (app.currentStep !== 5) {
