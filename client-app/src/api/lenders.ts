@@ -36,3 +36,40 @@ export async function getClientLenderProducts(): Promise<ClientLenderProduct[]> 
   const { data } = res;
   return Array.isArray(data) ? data : [];
 }
+
+
+export type RequiredDocsQuery = {
+  country?: string;
+  product_category?: string;
+  funding_amount?: number;
+  industry?: string;
+  revenue_last_12?: number;
+  monthly_revenue?: number;
+  years_in_business?: number;
+};
+
+export type RequiredDocsResponse = {
+  items: string[];
+};
+
+export async function getRequiredLenderProductDocs(
+  query: RequiredDocsQuery
+): Promise<string[]> {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, String(value));
+    }
+  }
+
+  const queryString = search.toString();
+  const res = await api.get<RequiredDocsResponse>(
+    `/api/portal/lender-products/required-docs${queryString ? `?${queryString}` : ""}`
+  );
+
+  const items = res.data?.items;
+  return Array.isArray(items)
+    ? items.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+}
