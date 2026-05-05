@@ -243,11 +243,13 @@ export function Step5_Documents() {
 
   // [removed] resolveStepGuard effect (was racing transitions)
 
-  useEffect(() => {
-    if (docError || missingRequiredDocs.length > 0 || hasBlockingUploadErrors) {
-      scrollToFirstError();
-    }
-  }, [docError, hasBlockingUploadErrors, missingRequiredDocs.length]);
+  // BF_CLIENT_BLOCK_v130b_STEP5_SCROLL_AND_OTP_PHONE_CLAIM_v1 — (A)
+  // The previous autosroll useEffect ran scrollToFirstError() whenever
+  // docError / missingRequiredDocs.length / hasBlockingUploadErrors
+  // changed. That fires on every successful upload (which removes a
+  // doc from the missing list, mutating the array length), slamming
+  // the page back to the top mid-flow. The scroll is now invoked
+  // exactly once inside next() on the missing-docs error branch.
 
   useEffect(() => {
     let active = true;
@@ -621,6 +623,11 @@ export function Step5_Documents() {
   function next() {
     if (missingRequiredDocs.length > 0 || hasBlockingUploadErrors) {
       setDocError("Please upload all required documents.");
+      // BF_CLIENT_BLOCK_v130b_STEP5_SCROLL_AND_OTP_PHONE_CLAIM_v1 — (A)
+      // Single, intentional scroll-to-error invocation. Triggered only
+      // when the user explicitly clicks Continue with missing/rejected
+      // docs — never on every upload state mutation.
+      scrollToFirstError();
       return;
     }
     void persistApplicationStep(app, 5, {

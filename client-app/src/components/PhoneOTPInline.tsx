@@ -193,7 +193,18 @@ export default function PhoneOTPInline() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           // No credentials, no Authorization. Endpoint is public.
-          body: JSON.stringify({ source: 'client_direct', phone: phoneE164 }),
+          // BF_CLIENT_BLOCK_v130b_STEP5_SCROLL_AND_OTP_PHONE_CLAIM_v1 — (B)
+          // Field name MUST be readiness_phone — not phone — to match the
+          // server schema in routes/publicApplication.ts (StartSchema).
+          // zod strips unknown keys silently; the previous "phone" payload
+          // never reached the phone-claim code path, so the server fell
+          // through to create_blank_application and minted a fresh app
+          // instead of claiming the website's draft (the row v134's
+          // submitCreditReadiness now correctly creates with
+          // metadata.readiness_phone). This rename activates the claim
+          // path so the wizard receives the same uuid the staff portal
+          // already sees.
+          body: JSON.stringify({ source: 'client_direct', readiness_phone: phoneE164 }),
         },
         15000,
         'mint',
