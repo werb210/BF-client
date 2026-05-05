@@ -1,3 +1,9 @@
+// BF_CLIENT_BLOCK_v155_OTP_FALLTHROUGH_COMPAT_v1
+// After BF-Server v145, OTP verify falls through to a client
+// JWT mint when the phone has no users row. Wizard-side code
+// continues to read { data: { token } } from the response —
+// no shape change required. This sentinel records that the
+// compat audit ran cleanly.
 import { apiRequest } from "@/lib/api";
 import { endpoints } from "@/lib/endpoints";
 import { clearToken, getToken, setToken } from "@/auth/token";
