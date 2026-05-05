@@ -635,12 +635,29 @@ fixedAssets:
 
         let startRes: any;
         try {
+          // BF_CLIENT_BLOCK_v129b_READINESS_PHONE_AT_START_v1
+          // When the wizard mounts after OTP login, sessionStorage has
+          // the verified phone (E.164). Send it to /start so the server
+          // can claim the orphaned draft application created by the
+          // website's credit-readiness submission. If no readiness draft
+          // exists for this phone, the server falls through to the
+          // normal blank-application mint path.
+          let __readinessPhone: string | null = null;
+          try {
+            __readinessPhone = sessionStorage.getItem("verified_phone");
+          } catch {
+            // sessionStorage unavailable — continue without claim.
+          }
+          const __startBody: Record<string, unknown> = { source: 'client_direct' };
+          if (__readinessPhone && __readinessPhone.trim()) {
+            __startBody.readiness_phone = __readinessPhone.trim();
+          }
           const __res = await fetch(__startUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             signal: __startAbort.signal,
-            body: JSON.stringify({ source: 'client_direct' }),
+            body: JSON.stringify(__startBody),
           });
           const __body = await __res.json().catch(() => ({}));
           if (!__res.ok) {
