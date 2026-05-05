@@ -284,7 +284,21 @@ export function Step5_Documents() {
 
       type Leg = { category: string; amount: number };
       const legs: Leg[] = [];
-      if (lookingFor === "equipment" || /EQUIPMENT/i.test(lookingFor ?? "")) {
+      // BF_CLIENT_BLOCK_v127b_LEG_BUILD_EXACT_MATCH_v1
+      // Tighten branch dispatch to exact-match (uppercase enum form OR
+      // lowercase rules form). Previously regex substring matching on lookingFor
+      // matched "capital_and_equipment" and misrouted C&E to the
+      // equipment-only branch. Today the wizard always stores uppercase
+      // ("WORKING_CAPITAL", "EQUIPMENT", "BOTH") so this was latent —
+      // but a future refactor that lowercases lookingFor would silently
+      // break C&E doc collection.
+      const lookingForUpper = String(lookingFor ?? "").toUpperCase();
+      const isEquipmentOnly =
+        lookingForUpper === "EQUIPMENT";
+      const isCapitalAndEquipment =
+        lookingForUpper === "BOTH" ||
+        lookingForUpper === "CAPITAL_AND_EQUIPMENT";
+      if (isEquipmentOnly) {
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
         if (closingCostsChecked && equipmentAmount > 0) {
           const companion = Math.round(equipmentAmount * 0.2);
@@ -293,7 +307,7 @@ export function Step5_Documents() {
             amount: companion,
           });
         }
-      } else if (lookingFor === "capital_and_equipment" || /BOTH/i.test(lookingFor ?? "")) {
+      } else if (isCapitalAndEquipment) {
         if (selectedCategory) legs.push({ category: selectedCategory, amount: capitalAmount });
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
       } else {
