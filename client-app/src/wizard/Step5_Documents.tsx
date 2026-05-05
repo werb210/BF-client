@@ -312,16 +312,19 @@ export function Step5_Documents() {
       // just the global appendage (bank statements + photo ID). Try the
       // server first; fall back to the client union only if the server
       // returns nothing or is unreachable (offline / 5xx).
+      // BF_CLIENT_BLOCK_v126b_CAPITAL_EQUIPMENT_FIXES_v1
+      // Multi-leg server query. For Capital & Equipment (and any future
+      // multi-leg flow), each leg contributes its own required-doc set;
+      // we union them. Single-leg flows still make exactly one server hit
+      // — same network cost, same behavior. Two-leg flows (C&E, equipment
+      // + closing costs) make two parallel hits.
       let aggregated: LenderProductRequirement[] = [];
       try {
-        const serverItems = await fetchRequiredDocsUnion({
+        const commonParams = {
           country:
             countryCode ||
             (app?.kyc as any)?.country ||
             (app?.kyc as any)?.businessLocation,
-          product_category:
-            selectedCategory || (app?.productCategory as string | undefined),
-          funding_amount: amountValue || undefined,
           industry: (app?.kyc as any)?.industry,
           revenue_last_12:
             Number(
@@ -333,9 +336,39 @@ export function Step5_Documents() {
             Number((app?.kyc as any)?.monthlyRevenue || 0) || undefined,
           years_in_business:
             Number((app?.kyc as any)?.yearsInBusiness || 0) || undefined,
-        });
-        if (serverItems.length > 0) {
-          aggregated = serverItems;
+        };
+        const legResults = await Promise.all(
+          legs.map(async (leg) => {
+            const category =
+              leg.category || (app?.productCategory as string | undefined);
+            try {
+              return await fetchRequiredDocsUnion({
+                ...commonParams,
+                product_category: category,
+                funding_amount: leg.amount || undefined,
+              });
+            } catch {
+              return [] as LenderProductRequirement[];
+            }
+          })
+        );
+        const docMap = new Map<string, LenderProductRequirement>();
+        for (const items of legResults) {
+          for (const item of items) {
+            const key = (item as any).document_type ?? (item as any).category;
+            if (!key) continue;
+            const existing = docMap.get(key);
+            docMap.set(key, {
+              ...existing,
+              ...item,
+              required: Boolean(
+                existing?.required || (item as any).required
+              ),
+            });
+          }
+        }
+        if (docMap.size > 0) {
+          aggregated = Array.from(docMap.values());
         }
       } catch {
       }

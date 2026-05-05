@@ -143,12 +143,17 @@ export function Step2_Product() {
     () => selectedRequirements.filter((entry) => entry.required),
     [selectedRequirements]
   );
+  // BF_CLIENT_BLOCK_v126b_CAPITAL_EQUIPMENT_FIXES_v1
+  // Equipment-ONLY intent. Previously this matched "capital_and_equipment"
+  // too via .includes("equipment"), causing the closing-costs modal to
+  // fire for C&E users. C&E already includes the equipment leg via
+  // submit-time fan-out; closing-costs would be a redundant third leg.
   const isEquipmentIntent = useMemo(() => {
     const intent = (app.kyc.lookingFor || "").toLowerCase();
-    return (
-      intent.includes("equipment") ||
-      (selectedProduct?.product_type ?? "").toLowerCase().includes("equipment")
-    );
+    if (intent === "capital_and_equipment" || intent === "both") return false;
+    if (intent === "equipment" || intent === "EQUIPMENT".toLowerCase()) return true;
+    if (intent.includes("capital")) return false;
+    return (selectedProduct?.product_type ?? "").toLowerCase().includes("equipment");
   }, [app.kyc.lookingFor, selectedProduct?.product_type]);
 
   const normalizedProducts = useMemo(() => {
