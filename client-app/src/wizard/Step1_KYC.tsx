@@ -12,7 +12,9 @@ import { WizardLayout } from "../components/WizardLayout";
 import {
   formatCurrencyValue,
   getCountryCode,
+  // BF_CLIENT_BLOCK_v158 — format-on-keystroke helper.
   sanitizeCurrencyInput,
+  formatCurrencyOnInput,
 } from "../utils/location";
 import {
   FUNDING_INTENT_OPTIONS,
@@ -860,7 +862,7 @@ fixedAssets:
                 return (
                   <div data-error={showErrors && fieldErrors.equipmentAmount}>
                     <label style={components.form.label}>How much equipment financing are you seeking?</label>
-                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: sanitizeCurrencyInput(e.target.value) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
                     {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
                   </div>
                 );
@@ -876,7 +878,7 @@ fixedAssets:
                 onChange={(e: unknown) => {
                   const nextKyc = {
                     ...app.kyc,
-                    fundingAmount: sanitizeCurrencyInput(e.target.value),
+                    fundingAmount: formatCurrencyOnInput(e.target.value, countryCode),
                   };
                   update({
                     kyc: nextKyc,
@@ -922,7 +924,7 @@ fixedAssets:
             </div>
                   <div data-error={showErrors && fieldErrors.equipmentAmount}>
                     <label style={components.form.label}>Equipment amount</label>
-                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: sanitizeCurrencyInput(e.target.value) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
                     {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
                   </div>
                 </>);
@@ -936,7 +938,7 @@ fixedAssets:
                 onChange={(e: unknown) => {
                   const nextKyc = {
                     ...app.kyc,
-                    fundingAmount: sanitizeCurrencyInput(e.target.value),
+                    fundingAmount: formatCurrencyOnInput(e.target.value, countryCode),
                   };
                   update({
                     kyc: nextKyc,

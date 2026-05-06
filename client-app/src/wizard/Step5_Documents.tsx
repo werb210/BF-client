@@ -745,11 +745,23 @@ export function Step5_Documents() {
           upload list, where users see it before they've scrolled past
           the upload section. The duplicate at the bottom of the
           sticky CTA bar was removed. */}
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        {/* BF_CLIENT_BLOCK_v158 — defer-upload action upgraded from a
+          subtle right-aligned ghost link to a prominent centered
+          secondary button. Per Todd: "needs to be an obvious button
+          entered in the window". Full-width on mobile, 420px cap on
+          desktop. 48px tap target, visible border. */}
+        <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
           <Button
-            variant="ghost"
+            variant="secondary"
             onClick={uploadLater}
             disabled={isLoading || hasUploadsInFlight}
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              minHeight: "48px",
+              fontWeight: 600,
+              border: `2px solid ${tokens.colors.border ?? "rgba(255,255,255,0.18)"}`,
+            }}
           >
             I will supply all required documents at a later time
           </Button>

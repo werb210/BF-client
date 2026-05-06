@@ -23,7 +23,7 @@ export const DefaultApplicantQuestions = {
   zip: "",
   dob: "",
   ssn: "",
-  ownership: "",
+  ownership: "100", // BF_CLIENT_BLOCK_v158 — prefill 100% (editable)
   hasPartners: false,
   partners: [] as string[],
 };
