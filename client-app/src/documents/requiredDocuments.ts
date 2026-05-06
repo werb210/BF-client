@@ -65,47 +65,22 @@ export function aggregateRequiredDocuments(
 
 export function ensureAlwaysRequiredDocuments(
   requirements: LenderProductRequirement[],
-  // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — opts.hasPartner controls
-  // whether the partner photo ID requirement is included. The primary
-  // applicant photo ID is always required. Both move from Step 6 to
-  // Step 5 so they participate in the existing "Supply Documents
-  // Later" deferral flow.
-  // BF_CLIENT_BLOCK_v102_MEDIA_NO_GLOBAL_DOCS_v1
-  // opts.category lets the caller signal MEDIA / Film Finance so we
-  // skip the global appendage. For MEDIA the per-product list (Budget,
-  // Finance plan, Tax credit status, Production schedule, Minimum
-  // guarantees / presales) is the complete required set — no bank
-  // statements, no photo ID.
-  opts: { hasPartner?: boolean; category?: string } = {}
+  // BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1
+  // The server's /api/portal/lender-products/required-docs route is now the
+  // SINGLE source of truth for required documents. The portal's create-product
+  // form (BF-portal/src/pages/lenders/LendersPage.tsx) lets the operator pick
+  // every required doc per lender product (always-required + core + conditional).
+  // The previous hardcoded snake_case appendage ("bank_statements",
+  // "primary_applicant_id", "partner_applicant_id") collided with the server's
+  // human-readable canonical strings ("6 months business banking statements",
+  // "2 pieces of Government Issued ID") on the dedup map keyed by exact
+  // document_type — they never collapsed, so Step 5 rendered duplicate tiles
+  // and the submit gate (getMissingRequiredDocs) blocked on whichever key the
+  // user hadn't uploaded against. opts is kept in the signature for back-compat
+  // with the cache + Step5 callers; both args are ignored.
+  _opts: { hasPartner?: boolean; category?: string } = {}
 ) {
-  const isMedia =
-    String(opts.category ?? "").trim().toUpperCase() === "MEDIA";
-  if (isMedia) {
-    // Return the lender-product list unchanged. No global appendage.
-    return [...requirements];
-  }
-
-  const docMap = new Map(
-    requirements.map((entry) => [entry.document_type, entry])
-  );
-  const alwaysRequired: string[] = [
-    DOCUMENT_CATEGORIES.BANK_STATEMENTS,
-    "primary_applicant_id",
-  ];
-  if (opts.hasPartner) {
-    alwaysRequired.push("partner_applicant_id");
-  }
-  alwaysRequired.forEach((docType) => {
-    const existing = docMap.get(docType);
-    docMap.set(docType, {
-      id: existing?.id ?? docType,
-      document_type: docType,
-      required: true,
-      min_amount: existing?.min_amount ?? null,
-      max_amount: existing?.max_amount ?? null,
-    });
-  });
-  return Array.from(docMap.values());
+  return [...requirements];
 }
 
 export function mergeRequirementLists(

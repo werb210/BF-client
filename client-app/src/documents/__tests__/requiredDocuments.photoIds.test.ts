@@ -1,54 +1,30 @@
-// BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — verifies the always-required
-// list reflects partner state, since partner_applicant_id is the
-// only conditional entry. Bank statements + primary photo ID are
-// always present.
+// BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1
+// ensureAlwaysRequiredDocuments is now a no-op pass-through. The server's
+// /api/portal/lender-products/required-docs is the source of truth for
+// required documents (including the always-required + photo-ID entries
+// that the portal's create-product form has the operator pick per product).
 import { describe, expect, it } from "vitest";
-import {
-  ensureAlwaysRequiredDocuments,
-} from "../requiredDocuments";
+import { ensureAlwaysRequiredDocuments } from "../requiredDocuments";
 import type { LenderProductRequirement } from "../../wizard/requirements";
 
-describe("BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — ensureAlwaysRequiredDocuments + hasPartner", () => {
-  it("includes primary_applicant_id without hasPartner; excludes partner_applicant_id", () => {
-    const out = ensureAlwaysRequiredDocuments([]);
-    const docTypes = out.map((e) => e.document_type).sort();
-    expect(docTypes).toContain("bank_statements");
-    expect(docTypes).toContain("primary_applicant_id");
-    expect(docTypes).not.toContain("partner_applicant_id");
+describe("ensureAlwaysRequiredDocuments — no-op pass-through (v156)", () => {
+  it("returns the input requirements unchanged when empty", () => {
+    expect(ensureAlwaysRequiredDocuments([])).toEqual([]);
   });
 
-  it("includes partner_applicant_id when hasPartner is true", () => {
-    const out = ensureAlwaysRequiredDocuments([], { hasPartner: true });
-    const docTypes = out.map((e) => e.document_type).sort();
-    expect(docTypes).toContain("bank_statements");
-    expect(docTypes).toContain("primary_applicant_id");
-    expect(docTypes).toContain("partner_applicant_id");
-  });
-
-  it("preserves existing requirements untouched alongside the always-required entries", () => {
-    const existing: LenderProductRequirement[] = [
-      {
-        id: "tax_returns",
-        document_type: "tax_returns",
-        required: true,
-        min_amount: null,
-        max_amount: null,
-      },
+  it("returns the input requirements unchanged regardless of hasPartner", () => {
+    const docs: LenderProductRequirement[] = [
+      { id: "x", document_type: "tax_returns", required: true, min_amount: null, max_amount: null },
     ];
-    const out = ensureAlwaysRequiredDocuments(existing, { hasPartner: false });
-    const docTypes = out.map((e) => e.document_type).sort();
-    expect(docTypes).toEqual(
-      ["bank_statements", "primary_applicant_id", "tax_returns"].sort()
-    );
+    expect(ensureAlwaysRequiredDocuments(docs, { hasPartner: true })).toEqual(docs);
+    expect(ensureAlwaysRequiredDocuments(docs, { hasPartner: false })).toEqual(docs);
   });
 
-  it("marks all always-required entries as required=true", () => {
-    const out = ensureAlwaysRequiredDocuments([], { hasPartner: true });
-    const primary = out.find((e) => e.document_type === "primary_applicant_id");
-    const partner = out.find((e) => e.document_type === "partner_applicant_id");
-    expect(primary?.required).toBe(true);
-    expect(partner?.required).toBe(true);
+  it("returns the input requirements unchanged for any category", () => {
+    const docs: LenderProductRequirement[] = [
+      { id: "x", document_type: "Budget", required: true, min_amount: null, max_amount: null },
+    ];
+    expect(ensureAlwaysRequiredDocuments(docs, { category: "MEDIA" })).toEqual(docs);
+    expect(ensureAlwaysRequiredDocuments(docs, { category: "TERM_LOAN" })).toEqual(docs);
   });
 });
-
-// BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60_TEST_ANCHOR
