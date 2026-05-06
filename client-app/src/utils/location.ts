@@ -96,6 +96,7 @@ export function formatPhoneNumber(value: string, countryCode: string) {
 }
 
 
+// BF_CLIENT_BLOCK_v158_WIZARD_LIVE_FORMAT_OWN100_DEFER_DEDUP_v1
 export function formatCurrencyOnInput(value: string | undefined | null, countryCode: string): string {
   const cleaned = sanitizeCurrencyInput(value);
   if (!cleaned) return "";
