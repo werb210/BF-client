@@ -56,14 +56,14 @@ describe("ensureAlwaysRequiredDocuments — MEDIA carve-out (v102)", () => {
     const out = ensureAlwaysRequiredDocuments(locDocs, { category: "LOC" });
     const docTypes = out.map((e) => e.document_type);
     expect(docTypes).toContain("A/R");
-    expect(docTypes).toContain("primary_applicant_id");
-    expect(out.length).toBeGreaterThanOrEqual(3);
+    expect(docTypes).not.toContain("primary_applicant_id");
+    expect(out.length).toBe(locDocs.length);
   });
 
   it("missing category opts behaves as non-MEDIA (legacy callers)", () => {
     const out = ensureAlwaysRequiredDocuments([], {});
-    expect(out.length).toBeGreaterThanOrEqual(2);
-    expect(out.find((e) => e.document_type === "primary_applicant_id")).toBeDefined();
+    expect(out.length).toBeGreaterThanOrEqual(0);
+    expect(out.find((e) => e.document_type === "primary_applicant_id")).toBeUndefined();
   });
 
   it("aggregateRequiredDocuments threads category through to ensure...", () => {

@@ -108,34 +108,7 @@ export function Step6_Review(): JSX.Element {
   const processingComplete = true;
   const ocrComplete = true;
   const creditSummaryComplete = true;
-  const idRequirements = useMemo(
-    () => [
-      {
-        key: "primary_applicant_id",
-        label: "Primary applicant photo ID",
-        required: true,
-      },
-      {
-        key: "partner_applicant_id",
-        label: "Business partner photo ID",
-        required: hasPartner,
-      },
-    ],
-    [hasPartner]
-  );
-  const missingIdDocs = useMemo(
-    () =>
-      idRequirements
-        .filter((entry) => entry.required)
-        .filter((entry) => {
-          const doc = app.documents[entry.key];
-          if (!doc) return true;
-          return doc.status === "rejected";
-        })
-        .map((entry) => entry.key),
-    [app.documents, idRequirements]
-  );
-
+  // BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1 — dead idRequirements/missingIdDocs removed.
   useEffect(() => {
     if (app.currentStep !== 6) {
       update({ currentStep: 6 });
