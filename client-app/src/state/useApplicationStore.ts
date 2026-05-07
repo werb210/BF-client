@@ -8,7 +8,7 @@ import { getSessionId, trackEvent } from "../utils/analytics";
 import { emptyApplicationDraft } from "../constants/applicationDraft";
 import { hasToken } from "@/api/auth";
 
-const emptyApp: ApplicationData = { applicationDraft: emptyApplicationDraft, kyc: {}, productCategory: null, matchPercentages: {}, eligibleProducts: [], eligibleCategories: [], eligibilityReasons: [], business: {}, applicant: {}, documents: {}, productRequirements: {}, termsAccepted: false, linkedApplicationTokens: [] };
+const emptyApp: ApplicationData = { applicationDraft: emptyApplicationDraft, kyc: {}, productCategory: null, matchPercentages: {}, eligibleProducts: [], eligibleCategories: [], eligibilityReasons: [], business: {}, /* BF_CLIENT_BLOCK_v159_OWNERSHIP_PREFILL_REAL_v1 — v158 set the default on DefaultApplicantQuestions which is dead code (never imported); the live wizard reads from this store. Saved values win because hydrateApplication merges saved over emptyApp. */ applicant: { ownership: "100" }, documents: {}, productRequirements: {}, termsAccepted: false, linkedApplicationTokens: [] };
 const APPLICATION_STATE_KEY = "application_state";
 const APPLICATION_DATA_KEY = "application_data";
 const BOREAL_DRAFT_KEY = "boreal_draft";
