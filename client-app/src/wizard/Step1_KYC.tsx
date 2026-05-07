@@ -373,6 +373,24 @@ fixedAssets:
               p.requestedAmount != null && p.requestedAmount !== ""
                 ? String(p.requestedAmount)
                 : app.kyc.requestedAmount ?? "",
+            // BF_CLIENT_BLOCK_v160_EQUIPMENT_PREFILL_PROPAGATION_v1
+            // Step 1 hides one of these based on lookingFor (WORKING_CAPITAL
+            // hides equipmentAmount; EQUIPMENT hides fundingAmount; BOTH shows
+            // both). Whichever is visible reads from kyc.fundingAmount or
+            // kyc.equipmentAmount — NOT kyc.requestedAmount. Without seeding
+            // both, Equipment-only and Capital+Equipment scenarios always
+            // require re-typing the amount on Step 1 even though the website
+            // already collected it. The website only collects ONE amount, so
+            // BOTH-intent users still need to adjust the equipment portion;
+            // this just removes the friction for the single-leg cases.
+            fundingAmount:
+              p.requestedAmount != null && p.requestedAmount !== ""
+                ? String(p.requestedAmount)
+                : app.kyc.fundingAmount ?? "",
+            equipmentAmount:
+              p.requestedAmount != null && p.requestedAmount !== ""
+                ? String(p.requestedAmount)
+                : ((app.kyc as any).equipmentAmount ?? ""),
             purposeOfFunds:
               (p.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
             // financial profile (V1 bucket strings — these are exact matches
