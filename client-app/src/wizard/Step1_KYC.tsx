@@ -68,6 +68,22 @@ const PurposeOptions = [
   "Expansion",
 ];
 
+// BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
+// When the user picks Equipment Financing, the purpose verbs shift to the
+// equipment-specific set. Capital and Both keep the general list since the
+// purpose answer for those reflects the working-capital portion.
+const EquipmentPurposeOptions = [
+  "Buy New Equipment",
+  "Replace Existing Equipment",
+  "Purchase more equipment to expand",
+  "Lease Back to access capital",
+];
+
+function purposeOptionsForIntent(intent: string | null | undefined, startupAvailable: boolean): string[] {
+  if (intent === "EQUIPMENT") return EquipmentPurposeOptions;
+  return PurposeOptions.filter((opt) => opt !== "Start up Funding" || startupAvailable);
+}
+
 const SalesHistoryOptions = [
   "Zero",
   "Under 1 Year",
@@ -218,9 +234,11 @@ export function Step1_KYC(): JSX.Element {
       return ((p as any).active ?? true) === true;
     });
   }, [lenderProducts, app.kyc.businessLocation]);
+  // BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
   const visiblePurposeOptions = useMemo(() => {
-    return PurposeOptions.filter((opt) => opt !== "Start up Funding" || startupAvailable);
-  }, [startupAvailable]);
+    const intent = normalizeFundingIntent(app.kyc.lookingFor);
+    return purposeOptionsForIntent(intent, startupAvailable);
+  }, [app.kyc.lookingFor, startupAvailable]);
   const visibleSalesHistoryOptions = useMemo(() => {
     return SalesHistoryOptions.filter((opt) => opt !== "Zero" || startupAvailable);
   }, [startupAvailable]);
@@ -846,7 +864,17 @@ fixedAssets:
                 value={normalizeFundingIntent(app.kyc.lookingFor) || ""}
                 onChange={(e: unknown) => {
                   const nextIntent = normalizeFundingIntent(e.target.value);
-                  const nextKyc = { ...app.kyc, lookingFor: nextIntent };
+                  // BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
+                  // The visible Purpose-of-funds options shift with intent —
+                  // reset prior selection if it isn't valid under the new one
+                  // (otherwise the Select renders empty against a stored value).
+                  const nextValidPurposes = purposeOptionsForIntent(nextIntent, startupAvailable);
+                  const purposeStillValid = !!app.kyc.purposeOfFunds && nextValidPurposes.includes(app.kyc.purposeOfFunds);
+                  const nextKyc = {
+                    ...app.kyc,
+                    lookingFor: nextIntent,
+                    purposeOfFunds: purposeStillValid ? app.kyc.purposeOfFunds : "",
+                  };
                   update({
                     kyc: nextKyc,
                     productCategory: null,
