@@ -31,11 +31,35 @@ export default function MiniPortalPage() {
   const { app, reset } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
   const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [percent, setPercent] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
+  // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
+  type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
+  const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
 
   useEffect(() => { if (!applicationId) return; let active = true; async function loadAll() {
     try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!active) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); const p = appData?.data?.completion_pct ?? appData?.completion_pct ?? null; if (typeof p === "number" && p >= 0 && p <= 100) setPercent(Math.round(p)); } catch {}
     try { const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []); if (!active) return; setMessages(incoming.map((item: any, idx: number) => { const dir = String(item.direction ?? "").toLowerCase(); const role: "self" | "other" = dir === "inbound" ? "self" : "other"; return { id: String(item.id || idx), authorRole: role, authorName: item.authorName ?? (role === "self" ? "You" : "Boreal"), body: String(item.body ?? item.content ?? ""), createdAt: String(item.createdAt ?? item.created_at ?? new Date().toISOString()) }; })); } catch {}
     try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!active) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
+    try {
+      const docsResp = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}/documents`).catch((): any => null);
+      if (!active) return;
+      const items: any[] = Array.isArray(docsResp) ? docsResp
+        : Array.isArray(docsResp?.items) ? docsResp.items
+        : Array.isArray(docsResp?.data) ? docsResp.data
+        : Array.isArray(docsResp?.documents) ? docsResp.documents
+        : [];
+      const rejected: RejectedDoc[] = items
+        .filter((d: any) => String(d?.status ?? "").toLowerCase() === "rejected")
+        .map((d: any) => ({
+          id: String(d.id ?? d.documentId ?? ""),
+          category: typeof d.category === "string" ? d.category : (typeof d.document_type === "string" ? d.document_type : null),
+          filename: typeof d.filename === "string" ? d.filename : (typeof d.title === "string" ? d.title : null),
+          rejection_reason: typeof d.rejection_reason === "string" ? d.rejection_reason : (typeof d.rejectionReason === "string" ? d.rejectionReason : null),
+          updated_at: typeof d.updated_at === "string" ? d.updated_at : (typeof d.updatedAt === "string" ? d.updatedAt : null),
+        }))
+        .filter((d) => d.id.length > 0);
+      setRejectedDocs(rejected);
+    } catch {}
   }
   void loadAll(); const poll = setInterval(() => void loadAll(), 5000); return () => { active = false; clearInterval(poll); }; }, [applicationId]);
 
@@ -58,6 +82,19 @@ export default function MiniPortalPage() {
 
   return (
     <div className="mp-root">
+      {/* BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1 */}
+      {rejectedDocs.length > 0 && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#7f1d1d" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>⚠ {rejectedDocs.length} document{rejectedDocs.length === 1 ? " was" : "s were"} rejected — please re-upload</div>
+          <ul style={{ margin: "6px 0 10px", paddingLeft: 20, fontSize: 13, lineHeight: 1.5 }}>
+            {rejectedDocs.map((doc) => (
+              <li key={doc.id}>
+                {doc.category || "Document"}{doc.filename ? ` (${doc.filename})` : ""}{doc.rejection_reason ? `: ${doc.rejection_reason}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <header className="mp-app-header">
         <div className="mp-app-header__left">
           <span className="mp-app-header__label">Application</span>
