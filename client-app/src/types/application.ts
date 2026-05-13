@@ -70,6 +70,11 @@ export interface ApplicationData {
   readinessLeadId?: string;
   ocrComplete?: boolean;
   creditSummaryComplete?: boolean;
+  // BF_CLIENT_BLOCK_v163_PGI_OPT_IN_PAYLOAD_v1
+  // Step 6 asks the applicant whether to add PGI (Personal Guarantee
+  // Insurance). The value lives in app state already; this declares
+  // it on the type so buildSubmissionPayload can include it.
+  pgiOptIn?: "yes" | "no";
 }
 
 export interface ApplicationPayload {

@@ -38,6 +38,11 @@ export type SubmissionPayload = {
     readiness_lead_id?: ApplicationData["readinessLeadId"];
   };
   lender_product_id: string;
+  // BF_CLIENT_BLOCK_v163_PGI_OPT_IN_PAYLOAD_v1
+  // "yes" if the applicant ticked Add PGI in Step 6; "no" if they
+  // explicitly declined; omitted if they didn't choose either way.
+  // BF-Server reads this on /submit to fire the BI handoff.
+  pgi_opt_in?: "yes" | "no";
 };
 
 export function getMissingRequiredDocs(app: ApplicationData) {
@@ -102,6 +107,8 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
       readiness_lead_id: app.readinessLeadId,
     },
     lender_product_id: app.selectedProductId,
+    // BF_CLIENT_BLOCK_v163_PGI_OPT_IN_PAYLOAD_v1 — propagate Step 6 choice.
+    pgi_opt_in: app.pgiOptIn,
   };
 }
 
