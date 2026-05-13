@@ -1,3 +1,100 @@
+// BF_CLIENT_BLOCK_v166_LANDING_HEADER_FOOTER_UNIFY_v1
+// De-minified from the prior single-line export and brought into
+// structural parity with BF-Website footer (three columns: brand,
+// Explore, Apply). Adds the Boreal Insurance cross-link under
+// Explore to match BF-Website v19 and BI-Website footer.
 export default function LandingFooter() {
-  return (<footer className="bg-[#071a2f] py-16 text-gray-300"><div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-8 md:grid-cols-3"><div><h3 className="mb-4 font-semibold text-white">Boreal Financial</h3><p>Structured non-bank financing for Canadian businesses.</p></div><div><h4 className="mb-4 text-white">Explore</h4><ul className="space-y-2"><li><a href="https://boreal.financial/products" className="block hover:text-white">Products</a></li><li><a href="https://boreal.financial/industries" className="block hover:text-white">Industries</a></li><li><a href="https://boreal.financial/faq" className="block hover:text-white">FAQ</a></li><li><a href="https://boreal.financial/privacy" className="block hover:text-white">Privacy Policy</a></li><li><a href="https://boreal.financial/terms" className="block hover:text-white">Terms of Use</a></li></ul></div><div><h4 className="mb-4 text-white">Contact</h4><ul className="space-y-2"><li><a href="#apply-otp" className="block hover:text-white">Apply Now</a></li><li><a href="https://boreal.financial/credit-readiness" className="block hover:text-white">Check Your Credit Readiness</a></li><li><a href="https://boreal.financial/contact" className="block hover:text-white">Contact</a></li></ul></div></div></footer>);
+  return (
+    <footer className="bg-[#071a2f] py-16 text-gray-300">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-8 md:grid-cols-3">
+        <div>
+          <h3 className="mb-4 font-semibold text-white">Boreal Financial</h3>
+          <p>Structured non-bank financing for Canadian businesses.</p>
+        </div>
+
+        <div>
+          <h4 className="mb-4 text-white">Explore</h4>
+          <ul className="space-y-2">
+            <li>
+              <a
+                href="https://boreal.financial/products"
+                className="block hover:text-white"
+              >
+                Products
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/industries"
+                className="block hover:text-white"
+              >
+                Industries
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/faq"
+                className="block hover:text-white"
+              >
+                FAQ
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.insure"
+                rel="noopener noreferrer"
+                className="block hover:text-white"
+                data-testid="landing-footer-link-boreal-insurance"
+              >
+                Boreal Insurance
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/privacy"
+                className="block hover:text-white"
+              >
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/terms"
+                className="block hover:text-white"
+              >
+                Terms of Use
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="mb-4 text-white">Contact</h4>
+          <ul className="space-y-2">
+            <li>
+              <a href="#apply-otp" className="block hover:text-white">
+                Apply Now
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/credit-readiness"
+                className="block hover:text-white"
+              >
+                Check Your Credit Readiness
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://boreal.financial/contact"
+                className="block hover:text-white"
+              >
+                Contact
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+  );
 }
