@@ -1,16 +1,14 @@
-// BF_CLIENT_v68_BLOCK_3_1 — shared iMessage-style thread for mini-portal.
-// Sender (current user) on the right, recipient on the left.
-// In the mini-portal, the client is "self" so client bubbles render right
-// and staff bubbles render left.
+// BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_v1
+// BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_HOTFIX_v1 — restored opening <a tag.
 import { useMemo } from "react";
-import "./MessageThread.css";
+import type { JSX } from "react";
 
 export type ThreadMessage = {
   id: string;
   authorRole: "self" | "other";
   authorName?: string;
   body: string;
-  createdAt: string; // ISO
+  createdAt: string;
 };
 
 type Props = {
@@ -19,18 +17,12 @@ type Props = {
   emptyText?: string;
 };
 
-const HASHTAG_RE = /(^|\s)#([a-zA-Z][\w-]*)/g;
+const HASHTAG_RE = /(^|\s)#([a-z0-9][a-z0-9_-]{1,40})/gi;
 
-function formatTimestamp(iso: string): string {
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString(undefined, {
-      month: "short", day: "numeric",
-      hour: "numeric", minute: "2-digit",
-    });
-  } catch { return iso; }
-}
+// http(s) URLs render as <a> tags so system messages from BF-Server
+// (notably the BI PGI completion link) are tappable. Pattern: starts
+// with http(s)://, ends at the first whitespace or trailing punctuation.
+const URL_RE = /https?:\/\/[^\s<>"]+[^\s<>".,;:!?)\]]/gi;
 
 function initials(name?: string): string {
   if (!name) return "··";
@@ -40,9 +32,37 @@ function initials(name?: string): string {
   return (a + b).toUpperCase() || name.slice(0, 2).toUpperCase();
 }
 
+function renderTextSegment(
+  segment: string,
+  keyPrefix: string,
+): Array<JSX.Element | string> {
+  const parts: Array<JSX.Element | string> = [];
+  let last = 0;
+  let urlMatch: RegExpExecArray | null;
+  URL_RE.lastIndex = 0;
+  while ((urlMatch = URL_RE.exec(segment)) !== null) {
+    if (urlMatch.index > last) parts.push(segment.slice(last, urlMatch.index));
+    const url = urlMatch[0];
+    parts.push(
+      <a
+        key={`${keyPrefix}-${urlMatch.index}`}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="msg-link"
+      >
+        {url}
+      </a>,
+    );
+    last = urlMatch.index + url.length;
+  }
+  if (last < segment.length) parts.push(segment.slice(last));
+  return parts;
+}
+
 function renderBody(
   body: string,
-  onHashtagClick?: (tag: string, label: string) => void
+  onHashtagClick?: (tag: string, label: string) => void,
 ): JSX.Element {
   const out: Array<JSX.Element | string> = [];
   let lastIdx = 0;
@@ -50,7 +70,7 @@ function renderBody(
   HASHTAG_RE.lastIndex = 0;
   while ((m = HASHTAG_RE.exec(body)) !== null) {
     const before = body.slice(lastIdx, m.index + m[1].length);
-    if (before) out.push(before);
+    if (before) out.push(...renderTextSegment(before, `t-${m.index}`));
     const tag = `#${m[2]}`;
     const label = m[2].replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     out.push(
@@ -61,46 +81,38 @@ function renderBody(
         onClick={() => onHashtagClick?.(tag, label)}
       >
         {label}
-      </button>
+      </button>,
     );
     lastIdx = m.index + m[0].length;
   }
-  if (lastIdx < body.length) out.push(body.slice(lastIdx));
+  if (lastIdx < body.length) {
+    out.push(...renderTextSegment(body.slice(lastIdx), "tail"));
+  }
   return <>{out}</>;
 }
 
 export default function MessageThread({ messages, onHashtagClick, emptyText }: Props) {
   const items = useMemo(
     () => messages.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-    [messages]
+    [messages],
   );
+
   if (items.length === 0) {
-    return <div className="msg-thread msg-thread--empty">{emptyText ?? "No messages yet."}</div>;
+    return <div className="msg-thread-empty">{emptyText ?? "No messages yet."}</div>;
   }
+
   return (
-    <div className="msg-thread" role="log" aria-live="polite">
-      {items.map((m) => {
-        const right = m.authorRole === "self";
-        return (
-          <div key={m.id} className={`msg-row ${right ? "msg-row--right" : "msg-row--left"}`}>
-            {!right && (
-              <div className="msg-avatar" aria-hidden>{initials(m.authorName)}</div>
-            )}
-            <div className="msg-bubble-wrap">
-              <div className={`msg-bubble ${right ? "msg-bubble--self" : "msg-bubble--other"}`}>
-                {renderBody(m.body, onHashtagClick)}
-              </div>
-              <div className="msg-meta">
-                {m.authorName ? <span>{m.authorName}</span> : null}
-                <span>{formatTimestamp(m.createdAt)}</span>
-              </div>
-            </div>
-            {right && (
-              <div className="msg-avatar msg-avatar--self" aria-hidden>{initials(m.authorName)}</div>
-            )}
+    <ul className="msg-thread">
+      {items.map((m) => (
+        <li key={m.id} className={`msg-row msg-row--${m.authorRole}`}>
+          <div className="msg-avatar" aria-hidden="true">{initials(m.authorName)}</div>
+          <div className="msg-bubble">
+            {m.authorName ? <div className="msg-author">{m.authorName}</div> : null}
+            <div className="msg-body">{renderBody(m.body, onHashtagClick)}</div>
+            <div className="msg-time">{new Date(m.createdAt).toLocaleTimeString()}</div>
           </div>
-        );
-      })}
-    </div>
+        </li>
+      ))}
+    </ul>
   );
 }
