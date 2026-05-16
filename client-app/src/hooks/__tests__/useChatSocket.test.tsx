@@ -92,12 +92,17 @@ describe.skip("useChatSocket", () => {
       await vi.runAllTicks();
     });
 
+    // BF_CLIENT_BLOCK_BI_ROUND6_CHAT_PROTOCOL_FIX_v1 -- the join
+    // frame now matches what BF-Server's socket handler accepts:
+    // type "join_session", userId required (falls back to
+    // sessionId when not provided), readinessToken passed through.
     const socket = MockSocket.instances[0];
     expect(socket.sent).toHaveLength(1);
     expect(JSON.parse(socket.sent[0])).toEqual(
       expect.objectContaining({
-        type: "join",
+        type: "join_session",
         sessionId: "session-1",
+        userId: "session-1",
         readinessToken: "ready-1",
       })
     );

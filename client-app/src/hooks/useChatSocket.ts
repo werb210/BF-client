@@ -10,9 +10,13 @@ type ChatSocketStatus =
   | "failed"
   | "disconnected";
 
+// BF_CLIENT_BLOCK_BI_ROUND6_CHAT_PROTOCOL_FIX_v1 -- added userId
+// (required by BF-Server socket.server.ts:203-207) and a send()
+// return so the consumer can post user messages.
 interface UseChatSocketOptions {
   enabled: boolean;
   sessionId: string | null;
+  userId?: string | null;
   readinessToken?: string | null;
   userMetadata?: Record<string, string | null | undefined>;
   onHumanActive?: () => void;
@@ -36,6 +40,7 @@ function getSocketUrl() {
 export function useChatSocket({
   enabled,
   sessionId,
+  userId,
   readinessToken,
   onHumanActive,
   onMessage,
@@ -126,10 +131,18 @@ export function useChatSocket({
             socket.send(JSON.stringify({ type: "ping", sessionId }));
           }
         }, HEARTBEAT_INTERVAL_MS);
+        // BF_CLIENT_BLOCK_BI_ROUND6_CHAT_PROTOCOL_FIX_v1
+        // Server (BF-Server src/modules/ai/socket.server.ts) accepts
+        // "join_session" or "connect" -- NOT "join". Also requires a
+        // non-empty userId; fall back to sessionId so anonymous
+        // chat sessions still register their presence.
+        const effectiveUserId =
+          (userId && userId.trim()) || sessionId || "";
         socket.send(
           JSON.stringify({
-            type: "join",
+            type: "join_session",
             sessionId,
+            userId: effectiveUserId,
             readinessToken: readinessToken || undefined,
             userMetadata: userMetadata || undefined,
           })
@@ -196,7 +209,7 @@ export function useChatSocket({
     } catch {
       setSafeStatus("reconnecting");
     }
-  }, [clearHeartbeatTimer, clearRetryTimer, readinessToken, sessionId, setSafeStatus, userMetadata]);
+  }, [clearHeartbeatTimer, clearRetryTimer, readinessToken, sessionId, setSafeStatus, userId, userMetadata]);
 
   useEffect(() => {
     if (enabled && sessionId) {
@@ -205,6 +218,32 @@ export function useChatSocket({
     return disconnect;
   }, [connect, disconnect, enabled, sessionId]);
 
+  // BF_CLIENT_BLOCK_BI_ROUND6_CHAT_PROTOCOL_FIX_v1
+  // send() emits the canonical user_message frame the server
+  // dispatches in socket.server.ts:277. Returns true iff the
+  // socket is currently OPEN and the frame was sent. The
+  // consumer (ChatSupportWidget) uses the return value to decide
+  // whether to append the message to its local thread; on false
+  // it discards the input and the user re-tries when the status
+  // chip flips back to connected.
+  const send = useCallback((content: string) => {
+    const socket = socketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    if (!sessionId) return false;
+    const trimmed = String(content ?? "").trim();
+    if (!trimmed) return false;
+    try {
+      socket.send(JSON.stringify({
+        type: "user_message",
+        sessionId,
+        content: trimmed,
+      }));
+      return true;
+    } catch {
+      return false;
+    }
+  }, [sessionId]);
+
   return useMemo(
     () => ({
       status,
@@ -212,7 +251,8 @@ export function useChatSocket({
       reconnecting: status === "reconnecting",
       failed: status === "failed",
       disconnect,
+      send,
     }),
-    [disconnect, status]
+    [disconnect, send, status]
   );
 }
