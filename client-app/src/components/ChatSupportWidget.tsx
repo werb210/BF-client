@@ -61,9 +61,14 @@ export default function ChatSupportWidget() {
     humanActiveRef.current = humanActive;
   }, [humanActive]);
 
+  // BF_CLIENT_BLOCK_BI_ROUND6_CHAT_PROTOCOL_FIX_v1 -- prefer the
+  // applicant email as the userId so it stays stable across
+  // anonymous-session reconnects within the same applicant; the
+  // hook falls back to sessionId when no email is on file.
   const { status, send } = useChatSocket({
     enabled: open,
     sessionId,
+    userId: app.applicant.email || null,
     readinessToken,
     userMetadata,
     onHumanActive: () => {
