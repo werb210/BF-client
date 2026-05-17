@@ -3,17 +3,23 @@
 import { useMemo } from "react";
 import type { JSX } from "react";
 
+// BF_CLIENT_BLOCK_44_v1 -- cta_label + cta_action surface inline
+// action buttons on staff messages (e.g. "Re-upload tax returns").
 export type ThreadMessage = {
   id: string;
   authorRole: "self" | "other";
   authorName?: string;
   body: string;
   createdAt: string;
+  ctaLabel?: string | null;
+  ctaAction?: string | null;
 };
 
 type Props = {
   messages: ThreadMessage[];
   onHashtagClick?: (tag: string, label: string) => void;
+  // BF_CLIENT_BLOCK_44_v1
+  onCtaClick?: (action: string) => void;
   emptyText?: string;
 };
 
@@ -91,11 +97,16 @@ function renderBody(
   return <>{out}</>;
 }
 
-export default function MessageThread({ messages, onHashtagClick, emptyText }: Props) {
+export default function MessageThread({ messages, onHashtagClick, onCtaClick, emptyText }: Props) {
   const items = useMemo(
     () => messages.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [messages],
   );
+
+  // BF_CLIENT_BLOCK_44_v1
+  const handleCta = (action: string) => {
+    onCtaClick?.(action);
+  };
 
   if (items.length === 0) {
     return <div className="msg-thread-empty">{emptyText ?? "No messages yet."}</div>;
@@ -108,7 +119,30 @@ export default function MessageThread({ messages, onHashtagClick, emptyText }: P
           <div className="msg-avatar" aria-hidden="true">{initials(m.authorName)}</div>
           <div className="msg-bubble">
             {m.authorName ? <div className="msg-author">{m.authorName}</div> : null}
-            <div className="msg-body">{renderBody(m.body, onHashtagClick)}</div>
+            <div className="msg-body">
+              {renderBody(m.body, onHashtagClick)}
+              {/* BF_CLIENT_BLOCK_44_v1 -- inline CTA bubble */}
+              {m.ctaLabel && m.ctaAction ? (
+                <button
+                  type="button"
+                  onClick={() => handleCta(m.ctaAction as string)}
+                  style={{
+                    display: "block",
+                    marginTop: 8,
+                    padding: "8px 14px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    background: "#2563eb",
+                    color: "#fff",
+                    border: 0,
+                    borderRadius: 16,
+                    cursor: "pointer",
+                  }}
+                >
+                  {m.ctaLabel}
+                </button>
+              ) : null}
+            </div>
             <div className="msg-time">{new Date(m.createdAt).toLocaleTimeString()}</div>
           </div>
         </li>
