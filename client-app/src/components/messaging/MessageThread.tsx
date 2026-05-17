@@ -1,6 +1,6 @@
 // BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_v1
 // BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_HOTFIX_v1 — restored opening <a tag.
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import type { JSX } from "react";
 
 // BF_CLIENT_BLOCK_44_v1 -- cta_label + cta_action surface inline
@@ -103,9 +103,14 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
     [messages],
   );
 
-  // BF_CLIENT_BLOCK_44_v1
-  const handleCta = (action: string) => {
-    onCtaClick?.(action);
+  // BF_CLIENT_BLOCK_44_v1 -- delegated CTA click via data attribute.
+  const handleThreadClick = (e: React.MouseEvent<HTMLUListElement>) => {
+    const target = e.target as HTMLElement | null;
+    const btn = target?.closest("button[data-cta-action]");
+    if (btn && onCtaClick) {
+      const action = btn.getAttribute("data-cta-action");
+      if (action) onCtaClick(action);
+    }
   };
 
   if (items.length === 0) {
@@ -113,7 +118,7 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
   }
 
   return (
-    <ul className="msg-thread">
+    <ul className="msg-thread" onClick={handleThreadClick}>
       {items.map((m) => (
         <li key={m.id} className={`msg-row msg-row--${m.authorRole}`}>
           <div className="msg-avatar" aria-hidden="true">{initials(m.authorName)}</div>
@@ -125,7 +130,8 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
               {m.ctaLabel && m.ctaAction ? (
                 <button
                   type="button"
-                  onClick={() => handleCta(m.ctaAction as string)}
+                  onClick={() => {}}
+                  data-cta-action={m.ctaAction}
                   style={{
                     display: "block",
                     marginTop: 8,
