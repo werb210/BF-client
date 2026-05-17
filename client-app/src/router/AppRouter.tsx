@@ -8,6 +8,7 @@ const LandingPage        = lazy(() => import("@/pages/LandingPage"));
 const OtpPage            = lazy(() => import("@/pages/OtpPage"));
 import Wizard from "@/wizard/Wizard";
 const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
+const Stage2Page         = lazy(() => import("@/pages/mini-portal/forms/Stage2Page"));
 const SessionExpiredPage = lazy(() => import("@/pages/SessionExpiredPage").then((m) => ({ default: m.SessionExpiredPage })));
 const SessionRevokedPage = lazy(() => import("@/pages/SessionRevokedPage").then((m) => ({ default: m.SessionRevokedPage })));
 const OfflineFallback    = lazy(() => import("@/pages/OfflineFallback").then((m) => ({ default: m.OfflineFallback })));
@@ -39,6 +40,8 @@ export default function AppRouter() {
         <Route path="/apply/step-6" element={<RequireOTP><Wizard /></RequireOTP>} />
         <Route path="/portal" element={<RequireOTP><MiniPortalPage /></RequireOTP>} />
         <Route path="/application/:id" element={<RequireOTP><MiniPortalPage /></RequireOTP>} />
+        {/* BF_CLIENT_BLOCK_TWO_STAGE_v1 */}
+        <Route path="/mini-portal/forms/:applicationId" element={<RequireOTP><Stage2Page /></RequireOTP>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
