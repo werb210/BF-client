@@ -46,3 +46,65 @@ export const apiUpload = <T = any>(path: string, formData: FormData) =>
     method: "POST",
     body: formData,
   });
+
+// BF_CLIENT_BLOCK_TWO_STAGE_v1 -- form-response helpers.
+export type FormResponse = {
+  id: string;
+  doc_type: string;
+  data: Record<string, unknown>;
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function listFormResponses(applicationId: string): Promise<FormResponse[]> {
+  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`listFormResponses ${res.status}`);
+  const json = await res.json();
+  return Array.isArray(json.items) ? json.items : [];
+}
+
+export async function getFormResponse(applicationId: string, docType: string): Promise<FormResponse | null> {
+  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}`, {
+    credentials: "include",
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`getFormResponse ${res.status}`);
+  const json = await res.json();
+  return json.item ?? null;
+}
+
+export async function saveFormResponse(
+  applicationId: string,
+  docType: string,
+  data: Record<string, unknown>,
+): Promise<FormResponse> {
+  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ data }),
+  });
+  if (!res.ok) throw new Error(`saveFormResponse ${res.status}`);
+  const json = await res.json();
+  return json.item;
+}
+
+export async function submitFormResponse(
+  applicationId: string,
+  docType: string,
+  data?: Record<string, unknown>,
+): Promise<FormResponse> {
+  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}/submit`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data ? { data } : {}),
+  });
+  if (!res.ok) throw new Error(`submitFormResponse ${res.status}`);
+  const json = await res.json();
+  return json.item;
+}
+

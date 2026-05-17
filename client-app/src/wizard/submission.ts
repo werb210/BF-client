@@ -55,7 +55,7 @@ export function getMissingRequiredDocs(app: ApplicationData) {
     (app.productRequirements?.[requirementsKey] || []) as LenderProductRequirement[];
   const filtered = filterRequirementsByAmount(requirements, app.kyc?.fundingAmount);
   return filtered
-    .filter((entry) => entry.required)
+    .filter((entry) => entry.required && entry.stage === 1)
     .filter((entry) => !app.documents[entry.document_type]);
 }
 
