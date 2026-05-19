@@ -9,6 +9,8 @@ import MessageThread, { type ThreadMessage } from "@/components/messaging/Messag
 import DocPicker from "@/components/DocPicker";
 import { Device } from "@twilio/voice-sdk";
 import "./MiniPortalPage.css";
+import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWorthForm";
+import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
 
 const STAGES = [
   { key: "received", label: "Received" },
@@ -115,10 +117,19 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_53_v1 -- "upload" opens the DocPicker modal,
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
+  // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other">(null);
+  // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — PNW + Debt
+  // open as modals (real forms); equipment/realestate/other open a
+  // "coming soon" modal. The legacy /forms/* route doesn't exist
+  // and was scrolling-to-top silently.
   const onChip = (id: string) => {
     if (id === "new") { reset(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
-    navigate(`/forms/${id}?applicationId=${encodeURIComponent(applicationId)}`);
+    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other") {
+      setOpenForm(id);
+      return;
+    }
   };
 
   // Call Us! VOIP state + handlers.
@@ -249,6 +260,86 @@ export default function MiniPortalPage() {
           </aside>
         )}
         {showOfferView && <section className="mp-offers">{offers.length === 0 ? <div className="mp-offers__empty">No offers yet.</div> : offers.map((o) => { const exp = expirationColor(o.expiresAt); return <article key={o.id} className={`mp-offer mp-offer--${exp}`}><header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>{o.lenderLogoUrl ? <img className="mp-offer__logo" src={o.lenderLogoUrl} alt={o.lenderName} /> : null}<div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "—"}</div><dl className="mp-offer__meta"><dt>Rate / Factor</dt><dd>{o.rateOrFactor ?? "—"}</dd><dt>Term</dt><dd>{o.term ?? "—"}</dd><dt>Payment</dt><dd>{o.paymentFrequency ?? "—"}</dd><dt>Expiration</dt><dd>{o.expiresAt ?? "—"}</dd></dl>{o.status === "pending_acceptance" || pendingOfferId === o.id ? <div className="mp-offer__pending">✓ Sent for staff confirmation. We'll text you when it's ready to sign.</div> : <div className="mp-offer__actions">{o.pdfUrl ? <a href={o.pdfUrl} target="_blank" rel="noopener noreferrer" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost">View PDF</a> : null}<button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button><button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button></div>}</article>; })}</section>}
+      {/* BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — form modals */}
+      {openForm !== null && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => { if (e.target === e.currentTarget) setOpenForm(null); }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              color: "#0b1320",
+              borderRadius: 12,
+              maxWidth: 720,
+              width: "100%",
+              maxHeight: "90vh",
+              overflow: "auto",
+              padding: 0,
+              boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>
+                {openForm === "networth" && "Personal Net Worth"}
+                {openForm === "debt" && "Debt Schedule"}
+                {openForm === "equipment" && "Equipment Collateral Form"}
+                {openForm === "realestate" && "Real Estate Collateral Form"}
+                {openForm === "other" && "Other Forms"}
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenForm(null)}
+                aria-label="Close"
+                style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ padding: 20 }}>
+              {openForm === "networth" && (
+                <PersonalNetWorthForm
+                  applicationId={applicationId}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "debt" && (
+                <DebtStackForm
+                  applicationId={applicationId}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {(openForm === "equipment" || openForm === "realestate" || openForm === "other") && (
+                <div style={{ textAlign: "center", padding: "32px 16px" }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming soon</div>
+                  <div style={{ fontSize: 14, color: "#64748b" }}>
+                    This form isn't built yet. If you need to submit this information now, please use the Upload Documents chip or message your contact.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenForm(null)}
+                    style={{ marginTop: 24, padding: "10px 20px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
