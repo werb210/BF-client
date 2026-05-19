@@ -1,8 +1,6 @@
 // BF_LOCAL_FIRST_v35 — Block 35: pending-submit outbox.
-// When a Step 6 submit fails for any reason (offline, server 5xx, etc.),
-// the full payload is persisted here. The wizard auto-retries on browser
-// `online` events, on a 30s interval while pending, and on next app boot.
-// Once a retry succeeds, the entry is cleared.
+// BF_CLIENT_BLOCK_v316_SUBMIT_RETRY_UX_v1 — added pubsub so the UI can
+// show retry status and auto-navigate on success without polling.
 
 import { ClientAppAPI } from "../api/clientApp";
 
@@ -14,7 +12,40 @@ type PendingEntry = {
   body: unknown;
   createdAt: number;
   attempts: number;
+  lastAttemptAt?: number;
+  lastError?: string | null;
 };
+
+export type RetryState = {
+  pending: boolean;
+  attempts: number;
+  createdAt: number | null;
+  lastAttemptAt: number | null;
+  lastError: string | null;
+  inFlight: boolean;
+};
+
+export type RetryEvent =
+  | { type: "queued"; entry: PendingEntry }
+  | { type: "attempt_started"; entry: PendingEntry }
+  | { type: "attempt_failed"; entry: PendingEntry; error: string }
+  | { type: "succeeded"; applicationToken: string }
+  | { type: "cleared" };
+
+type Listener = (e: RetryEvent) => void;
+const listeners = new Set<Listener>();
+let inFlight = false;
+
+function emit(e: RetryEvent): void {
+  for (const l of listeners) {
+    try { l(e); } catch { /* noop */ }
+  }
+}
+
+export function subscribeRetry(l: Listener): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
 
 export function savePendingSubmit(applicationToken: string, body: unknown): void {
   try {
@@ -23,8 +54,11 @@ export function savePendingSubmit(applicationToken: string, body: unknown): void
       body,
       createdAt: Date.now(),
       attempts: 0,
+      lastAttemptAt: undefined,
+      lastError: null,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+    emit({ type: "queued", entry });
   } catch {}
 }
 
@@ -41,6 +75,7 @@ export function readPendingSubmit(): PendingEntry | null {
 export function clearPendingSubmit(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    emit({ type: "cleared" });
   } catch {}
 }
 
@@ -48,20 +83,48 @@ export function hasPendingSubmit(): boolean {
   return readPendingSubmit() !== null;
 }
 
+export function getRetryState(): RetryState {
+  const entry = readPendingSubmit();
+  return {
+    pending: entry !== null,
+    attempts: entry?.attempts ?? 0,
+    createdAt: entry?.createdAt ?? null,
+    lastAttemptAt: entry?.lastAttemptAt ?? null,
+    lastError: entry?.lastError ?? null,
+    inFlight,
+  };
+}
+
 async function attemptOnce(): Promise<boolean> {
   const entry = readPendingSubmit();
   if (!entry) return false;
   if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+  if (inFlight) return false;
+  inFlight = true;
   try {
     entry.attempts += 1;
+    entry.lastAttemptAt = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
+    emit({ type: "attempt_started", entry });
     await ClientAppAPI.submit(entry.applicationToken, entry.body as any);
+    emit({ type: "succeeded", applicationToken: entry.applicationToken });
     clearPendingSubmit();
     console.info("[pending-submit] retry succeeded", { attempts: entry.attempts });
     return true;
-  } catch (err) {
+  } catch (err: any) {
+    const msg = err?.message || err?.body?.message || String(err);
+    try {
+      const current = readPendingSubmit();
+      if (current) {
+        current.lastError = msg;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+      }
+    } catch {}
+    emit({ type: "attempt_failed", entry, error: msg });
     console.debug("[pending-submit] retry failed; will try again", err);
     return false;
+  } finally {
+    inFlight = false;
   }
 }
 
@@ -72,11 +135,8 @@ export function startPendingSubmitWatcher(): void {
   if (started) return;
   if (typeof window === "undefined") return;
   started = true;
-  // Boot-time attempt.
   void attemptOnce();
-  // Retry whenever the browser regains connectivity.
   window.addEventListener("online", () => { void attemptOnce(); });
-  // Retry on an interval while a pending entry exists.
   timer = setInterval(() => {
     if (hasPendingSubmit()) void attemptOnce();
   }, RETRY_INTERVAL_MS);
@@ -85,4 +145,9 @@ export function startPendingSubmitWatcher(): void {
 export function stopPendingSubmitWatcher(): void {
   if (timer) { clearInterval(timer); timer = null; }
   started = false;
+}
+
+/** Trigger an immediate retry (used by the "Try now" UI button). */
+export function triggerImmediateRetry(): Promise<boolean> {
+  return attemptOnce();
 }

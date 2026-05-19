@@ -55,7 +55,7 @@ import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
 import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
-import { savePendingSubmit, clearPendingSubmit } from "../state/pendingSubmit";
+import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
@@ -109,6 +109,23 @@ export function Step6_Review(): JSX.Element {
   const ocrComplete = true;
   const creditSummaryComplete = true;
   // BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1 — dead idRequirements/missingIdDocs removed.
+
+  // BF_CLIENT_BLOCK_v316_SUBMIT_RETRY_UX_v1 — auto-navigate when the
+  // background retry succeeds. Without this, after submit fails the
+  // user stays on the "submitting" card forever even though the
+  // application has actually gone through.
+  useEffect(() => {
+    const unsub = subscribeRetry((evt) => {
+      if (evt.type === "succeeded") {
+        try { clearDraft(); } catch {}
+        try { clearSubmissionIdempotencyKey(); } catch {}
+        try { clearStoredReadinessSession(); } catch {}
+        try { localStorage.removeItem("creditPrefill"); } catch {}
+        navigate("/portal", { replace: true, state: { submitted: true } });
+      }
+    });
+    return unsub;
+  }, [navigate]);
   useEffect(() => {
     if (app.currentStep !== 6) {
       update({ currentStep: 6 });
@@ -477,7 +494,10 @@ export function Step6_Review(): JSX.Element {
         console.debug("[submit] outbox save failed", outboxErr);
       }
       logError(error, { stage: "submission" });
-      setSubmitError("Submission failed. Please retry.");
+      setSubmitError(
+        "We're submitting your application in the background. " +
+        "You can leave this page — we'll let you know as soon as it goes through."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -500,14 +520,14 @@ export function Step6_Review(): JSX.Element {
             gap: tokens.spacing.sm,
           }}
         >
-          <div style={components.form.eyebrow}>Submission error</div>
-          <h1 style={components.form.title}>We couldn’t submit your application</h1>
+          <div style={components.form.eyebrow}>Submitting…</div>
+          <h1 style={components.form.title}>We've got your application</h1>
           <p style={components.form.subtitle}>{submitError}</p>
           <Button
             style={{ marginTop: tokens.spacing.sm, width: "100%", maxWidth: "260px" }}
             onClick={() => setSubmitError(null)}
           >
-            Return to review
+            Continue
           </Button>
         </Card>
       </WizardLayout>

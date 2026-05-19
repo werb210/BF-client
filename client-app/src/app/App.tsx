@@ -8,10 +8,12 @@ import FatalErrorScreen from "./FatalErrorScreen";
 import MayaFloatingButton from "../components/MayaFloatingButton";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
 import UpdatePromptBanner from "@/components/UpdatePromptBanner";
+import RetryBanner from "../components/RetryBanner";
 
 export default function App() {
   return (
     <ErrorBoundary fallback={<FatalErrorScreen />}>
+      <RetryBanner />
       <UpdatePromptBanner />
       <InstallPromptBanner />
       {/* BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — see import comment */}
