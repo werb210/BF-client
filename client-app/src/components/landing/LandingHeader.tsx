@@ -14,7 +14,8 @@ const NAV_ITEMS = [
   { href: "https://boreal.financial/contact", label: "Contact" },
 ];
 
-const LOGO_URL = "/images/Header.png";
+// BF_CLIENT_BLOCK_v313_UNIFIED_HEADER_v1
+const LOGO_URL = "/images/header.png";
 
 function MenuIcon({ open }: { open: boolean }) {
   return open ? (
