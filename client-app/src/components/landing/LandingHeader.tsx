@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 ];
 
 // BF_CLIENT_BLOCK_v313_UNIFIED_HEADER_v1
-const LOGO_URL = "/images/header.png";
+const LOGO_URL = "/header.png";
 
 function MenuIcon({ open }: { open: boolean }) {
   return open ? (
