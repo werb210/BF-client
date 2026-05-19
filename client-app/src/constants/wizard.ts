@@ -5,9 +5,9 @@ export enum FundingIntent {
 }
 
 export const FUNDING_INTENT_LABELS: Record<FundingIntent, string> = {
-  [FundingIntent.WORKING_CAPITAL]: "Capital",
+  [FundingIntent.WORKING_CAPITAL]: "Working Capital",
   [FundingIntent.EQUIPMENT]: "Equipment Financing",
-  [FundingIntent.BOTH]: "Capital & Equipment",
+  [FundingIntent.BOTH]: "Working Capital & Equipment",
 };
 
 export const FUNDING_INTENT_OPTIONS = [
