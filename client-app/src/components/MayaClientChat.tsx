@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { submitIssueReport } from "@/api/issues";
 import { apiRequest } from "@/lib/api";
+import { useApplicationStore } from "@/state/useApplicationStore";
 
 type Msg = { role: "user" | "maya"; text: string; ts: number };
 const GREETING = "👋 Hi, I'm Maya. How can I help with your application?";
@@ -14,6 +15,8 @@ export default function MayaClientChat({ onClose }: { onClose?: () => void }): J
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const { app } = useApplicationStore();
+  const applicationId = app.applicationId ?? app.applicationToken;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,7 +31,7 @@ export default function MayaClientChat({ onClose }: { onClose?: () => void }): J
     try {
       const response = (await apiRequest("/api/maya/message", {
         method: "POST",
-        body: { message: text, source: "client" },
+        body: { message: text, source: "client", application_id: applicationId ?? undefined },
       })) as any;
       const reply = response?.reply ?? "I'm here — what would you like to know?";
       setMsgs((prev) => [...prev, { role: "maya", text: reply, ts: Date.now() }]);
@@ -50,7 +53,7 @@ export default function MayaClientChat({ onClose }: { onClose?: () => void }): J
     try {
       await apiRequest("/api/maya/escalate", {
         method: "POST",
-        body: { reason: "user_requested_human" },
+        body: { reason: "user_requested_human", application_id: applicationId ?? undefined },
       });
       setMsgs((prev) => [
         ...prev,
