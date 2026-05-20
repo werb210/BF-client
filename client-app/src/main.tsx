@@ -13,6 +13,8 @@ import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
 // BF_UPLOAD_QUEUE_v51 — V1 upload-later retry queue
 import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
+// BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
+import { startFormResponseQueueWatcher } from "./state/formResponseQueueWatcher";
 import { validateBootToken } from "./state/validateBootToken";
 
 try {
@@ -27,6 +29,8 @@ console.log("NEW BUILD LIVE:", new Date().toISOString());
 startPendingSubmitWatcher();
 // BF_UPLOAD_QUEUE_v51
 startUploadQueueWatcher();
+// BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
+startFormResponseQueueWatcher();
 
 void validateBootToken();
 

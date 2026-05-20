@@ -23,6 +23,27 @@ registerRoute(new NavigationRoute(navHandler, {
 }));
 
 registerRoute(
+  // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
+  // Lender-products gets its own cache: longer TTL (1h) + dedicated 50-entry
+  // pool so other /api GETs can't evict it. StaleWhileRevalidate returns the
+  // cached catalog immediately and refreshes in the background — applicants
+  // on slow / intermittent mobile data never wait for it to load.
+  ({ url, request }) =>
+    request.method === "GET" &&
+    (url.pathname === "/api/client/lender-products" ||
+      url.pathname.startsWith("/api/portal/lender-products")),
+  new StaleWhileRevalidate({
+    cacheName: "bf-client-lender-products",
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [0, 200] }),
+      new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 60 * 60 })
+    ]
+  })
+);
+
+// Generic /api/* GET — every other backend GET. NetworkFirst with a 6s
+// network timeout, 100-entry cache, 5min TTL. Existing behavior preserved.
+registerRoute(
   ({ url, request }) => request.method === "GET" && url.pathname.startsWith("/api/"),
   new NetworkFirst({
     cacheName: "bf-client-api",
