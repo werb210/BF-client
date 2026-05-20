@@ -6,6 +6,7 @@
 import { apiCall as clientApiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
+import { enqueueFormResponse } from "@/lib/formResponseQueue";
 
 type RequestOptions = Omit<RequestInit, "body" | "headers"> & {
   method?: string;
@@ -96,15 +97,65 @@ export async function saveFormResponse(
   docType: string,
   data: Record<string, unknown>,
 ): Promise<FormResponse> {
-  const res = await fetch(buildFormResponsesUrl(applicationId, `/${encodeURIComponent(docType)}`), {
-    method: "PUT",
-    credentials: "include",
-    headers: buildAuthHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ data }),
-  });
-  if (!res.ok) throw new Error(`saveFormResponse ${res.status}`);
-  const json = await res.json();
-  return json.item;
+  // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
+  // If offline, skip the network attempt entirely and enqueue. Avoids the
+  // 5-30s "spinner of death" while the browser times out the fetch.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    await enqueueFormResponse({ applicationId, docType, data });
+    return synthesizeFormResponse(applicationId, docType, data);
+  }
+  try {
+    const res = await fetch(buildFormResponsesUrl(applicationId, `/${encodeURIComponent(docType)}`), {
+      method: "PUT",
+      credentials: "include",
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ data }),
+    });
+    if (!res.ok) {
+      // 5xx → likely transient; queue for retry. 4xx → permanent; surface it.
+      if (res.status >= 500) {
+        await enqueueFormResponse({ applicationId, docType, data });
+        return synthesizeFormResponse(applicationId, docType, data);
+      }
+      throw new Error(`saveFormResponse ${res.status}`);
+    }
+    const json = await res.json();
+    return json.item;
+  } catch (err) {
+    // Network error (TypeError: fetch failed / NetworkError). Queue it.
+    // Re-throw if the error wasn't a network failure (e.g. JSON parse error
+    // on a malformed 2xx response — which we already accepted, so unlikely).
+    const isNetworkError =
+      err instanceof TypeError ||
+      (err instanceof Error && err.message.startsWith("saveFormResponse 5"));
+    if (isNetworkError) {
+      await enqueueFormResponse({ applicationId, docType, data });
+      return synthesizeFormResponse(applicationId, docType, data);
+    }
+    throw err;
+  }
+}
+
+// BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
+// Synthesizes a FormResponse-shaped object so the calling form UI can
+// navigate / close / show success without distinguishing online-success
+// from queued-for-later. The actual server-side write happens when the
+// queue drains; on next page load the GET will return the canonical row.
+function synthesizeFormResponse(
+  applicationId: string,
+  docType: string,
+  data: Record<string, unknown>,
+): FormResponse {
+  const now = new Date().toISOString();
+  return {
+    id: `pending-${applicationId}-${docType}`,
+    application_id: applicationId,
+    doc_type: docType,
+    data,
+    submitted_at: null,
+    created_at: now,
+    updated_at: now,
+  };
 }
 
 export async function submitFormResponse(
