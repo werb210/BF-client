@@ -187,8 +187,9 @@ export default function MiniPortalPage() {
     : "";
 
   return (
-    <div className="mp-root">
-      <SlimHeader />
+    <>
+      <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
+      <div className="mp-root">
       {/* BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1 */}
       {rejectedDocs.length > 0 && (
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#7f1d1d" }}>
@@ -346,6 +347,7 @@ export default function MiniPortalPage() {
         </div>
       )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
