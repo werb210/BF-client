@@ -11,6 +11,7 @@ import { Device } from "@twilio/voice-sdk";
 import "./MiniPortalPage.css";
 import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWorthForm";
 import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
+import SlimHeader from "@/components/SlimHeader";
 
 const STAGES = [
   { key: "received", label: "Received" },
@@ -95,7 +96,7 @@ export default function MiniPortalPage() {
       setRejectedDocs(rejected);
     } catch {}
   }
-  void loadAll(); const poll = setInterval(() => void loadAll(), 5000); return () => { active = false; clearInterval(poll); }; }, [applicationId]);
+  void loadAll(); const poll = setInterval(() => { if (document.visibilityState === "visible") void loadAll(); }, 20000); return () => { active = false; clearInterval(poll); }; }, [applicationId]);
 
 
   const onMessageCta = useCallback((action: string) => {
@@ -143,7 +144,10 @@ export default function MiniPortalPage() {
     setCallError(null);
     setCallState("connecting");
     try {
-      const tokenResp = await apiCall<{ token: string; identity: string }>(`/api/client/voice/token?applicationId=${encodeURIComponent(applicationId)}`);
+      const r = await fetch(`/api/client/voice/token`, { credentials: "include" });
+      if (!r.ok) throw new Error("token fetch failed");
+      const tokenResp = await r.json();
+      if (!tokenResp?.agents_available) { setCallState("idle"); alert("No advisors are available right now. We'll text you back within 30 minutes — please send us a message in the chat below describing what you need."); return; }
       if (!tokenResp?.token) throw new Error("No token");
       if (!callRefHolder.device) {
         callRefHolder.device = new Device(tokenResp.token, { logLevel: "warn" } as any);
@@ -184,6 +188,7 @@ export default function MiniPortalPage() {
 
   return (
     <div className="mp-root">
+      <SlimHeader />
       {/* BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1 */}
       {rejectedDocs.length > 0 && (
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#7f1d1d" }}>

@@ -1,4 +1,7 @@
 import { apiCall as clientApiCall } from "@/api/client";
+import { getToken } from "@/auth/token";
+
+const API_BASE = (((import.meta as any).env?.VITE_API_BASE_URL || "https://server.boreal.financial").replace(/\/$/, ""));
 
 type RequestOptions = Omit<RequestInit, "body" | "headers"> & {
   method?: string;
@@ -58,8 +61,9 @@ export type FormResponse = {
 };
 
 export async function listFormResponses(applicationId: string): Promise<FormResponse[]> {
-  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses`, {
+  const res = await fetch(`${API_BASE}/api/portal/applications/${applicationId}/form-responses`, {
     credentials: "include",
+    headers: { Authorization: `Bearer ${getToken()}` },
   });
   if (!res.ok) throw new Error(`listFormResponses ${res.status}`);
   const json = await res.json();
@@ -67,8 +71,9 @@ export async function listFormResponses(applicationId: string): Promise<FormResp
 }
 
 export async function getFormResponse(applicationId: string, docType: string): Promise<FormResponse | null> {
-  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}`, {
+  const res = await fetch(`${API_BASE}/api/portal/applications/${applicationId}/form-responses/${docType}`, {
     credentials: "include",
+    headers: { Authorization: `Bearer ${getToken()}` },
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`getFormResponse ${res.status}`);
@@ -81,10 +86,10 @@ export async function saveFormResponse(
   docType: string,
   data: Record<string, unknown>,
 ): Promise<FormResponse> {
-  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}`, {
+  const res = await fetch(`${API_BASE}/api/portal/applications/${applicationId}/form-responses/${docType}`, {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify({ data }),
   });
   if (!res.ok) throw new Error(`saveFormResponse ${res.status}`);
@@ -97,10 +102,10 @@ export async function submitFormResponse(
   docType: string,
   data?: Record<string, unknown>,
 ): Promise<FormResponse> {
-  const res = await fetch(`/api/portal/applications/${applicationId}/form-responses/${docType}/submit`, {
+  const res = await fetch(`${API_BASE}/api/portal/applications/${applicationId}/form-responses/${docType}/submit`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
     body: JSON.stringify(data ? { data } : {}),
   });
   if (!res.ok) throw new Error(`submitFormResponse ${res.status}`);

@@ -1,11 +1,11 @@
 import PhoneOTPInline from "@/components/PhoneOTPInline";
-import LandingHeader from "@/components/landing/LandingHeader";
-import LandingFooter from "@/components/landing/LandingFooter";
+import PublicHeader from "@/components/PublicHeader";
+import PublicFooter from "@/components/PublicFooter";
 
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#0B1320] text-white">
-      <LandingHeader />
+      <PublicHeader />
 
       <main className="flex-1">
         <section className="mx-auto max-w-7xl px-6 py-16 md:py-24">
@@ -31,7 +31,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <LandingFooter />
+      <PublicFooter />
     </div>
   );
 }
