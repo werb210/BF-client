@@ -73,6 +73,12 @@ export default function PhoneOTPInline() {
 
   // Guard against double-fire when auto-submit and user click race.
   const submittingRef = useRef<boolean>(false);
+  // BF_CLIENT_BLOCK_v77_OTP_PHONE_AUTOFORWARD_v1 — remember which
+  // phone digits we already sent a code to, so the phone-stage
+  // auto-fire effect does not re-send when the user returns to
+  // the phone stage without changing the number. Mirrors v325
+  // (BI-Website NewApplication.tsx + LenderLogin.tsx).
+  const sentForDigitsRef = useRef<string | null>(null);
   // BF_OTP_AUTOSUBMIT_ONCE_v32 — remember which exact code we already auto-fired
   // for. After a failed attempt the catch block restores phase=='code' while
   // `code` is still the same string, which previously re-triggered the effect
@@ -111,6 +117,13 @@ export default function PhoneOTPInline() {
       // eslint-disable-next-line no-console
       console.log('[otp] start.ok');
       autoSubmittedCodeRef.current = null; // BF_OTP_AUTOSUBMIT_ONCE_v32 — fresh code, allow auto-submit
+      // BF_CLIENT_BLOCK_v77 — record the digits we just sent to so the
+      // phone-auto-fire useEffect bails on the next render if nothing
+      // changed (handles the user clicking back to the phone stage).
+      {
+        const d = (e164 || '').replace(/\D/g, '');
+        sentForDigitsRef.current = d.length === 11 && d.startsWith('1') ? d.slice(1) : d;
+      }
       setPhase('code');
     } catch (err: any) {
       setError(err?.message || 'Failed to send code');
@@ -262,6 +275,25 @@ export default function PhoneOTPInline() {
     void verifyAndStart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, phase]);
+
+  // BF_CLIENT_BLOCK_v77_OTP_PHONE_AUTOFORWARD_v1
+  // Auto-fire sendCode the moment the applicant has typed a full NANPA
+  // phone (10 digits, or 11 with leading 1) -- matches BF-Website /
+  // BI-Website behaviour. Guarded by sentForDigitsRef so returning to
+  // the phone stage doesn't trigger a re-send (the v325 loop bug).
+  useEffect(() => {
+    if (phase !== 'phone') return;
+    if (busy) return;
+    const digits = (phoneDisplay || '').replace(/\D/g, '');
+    const normalized =
+      digits.length === 10 ? digits :
+      digits.length === 11 && digits.startsWith('1') ? digits.slice(1) :
+      '';
+    if (!normalized) return;
+    if (sentForDigitsRef.current === normalized) return;
+    void sendCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneDisplay, phase]);
 
   return (
     <div
