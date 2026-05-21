@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.56.20",
-    "@twilio/voice-sdk": "^2.13.0",
+    "@twilio/voice-sdk": "^2.18.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.0",
     "jwt-decode": "^4.0.0",
