@@ -250,6 +250,29 @@ export default function PhoneOTPInline() {
       // eslint-disable-next-line no-console
       console.log('[otp] application.minted', { appToken });
 
+      // v163: route to mini-portal if the phone already has a non-draft
+      // application. Falls through to /apply/step-1 on lookup failure so
+      // OTP success isn't blocked by an API hiccup.
+      try {
+        const lookup = await fetchWithTimeout(
+          (import.meta.env.VITE_API_BASE_URL || '') + '/api/client/applications/by-phone',
+          { method: 'GET', headers: { Authorization: 'Bearer ' + (localStorage.getItem('auth_token') ?? '') } },
+          5000,
+          'by-phone',
+        );
+        if (lookup.ok) {
+          const lb = await lookup.json().catch(() => ({} as any));
+          if (lb?.found && lb?.application?.id) {
+            // eslint-disable-next-line no-console
+            console.log('[otp] existing.application.found', { id: lb.application.id, state: lb.application.pipeline_state });
+            navigate('/portal/' + String(appToken));
+            return;
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[otp] by-phone lookup failed; falling through to wizard', e);
+      }
       navigate('/apply/step-1');
     } catch (err: any) {
       setPhase('code');
