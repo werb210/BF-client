@@ -13,10 +13,14 @@ import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWor
 import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
 import SlimHeader from "@/components/SlimHeader";
 
+// BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
+// (Received → In Review → Documents Required → Additional Steps → Off to
+// Lender → Offer). Pre-fix had Documents Required before In Review which
+// drove the wrong checkmark progression at every stage.
 const STAGES = [
   { key: "received", label: "Received" },
-  { key: "documents_required", label: "Documents Required" },
   { key: "in_review", label: "In Review" },
+  { key: "documents_required", label: "Documents Required" },
   { key: "additional_steps_required", label: "Additional Steps Required" },
   { key: "off_to_lender", label: "Off to Lender" },
   { key: "offer", label: "Offer" },
@@ -65,7 +69,9 @@ export default function MiniPortalPage() {
         return {
           id: String(item.id || idx),
           authorRole: role,
-          authorName: item.authorName ?? (role === "self" ? "You" : "Boreal"),
+          // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — prefer the staff_name
+          // returned by v636 over the generic "Boreal" fallback.
+          authorName: item.authorName ?? item.staff_name ?? item.staffName ?? (role === "self" ? "You" : "Boreal"),
           body: String(item.body ?? item.content ?? ""),
           createdAt: String(item.createdAt ?? item.created_at ?? new Date().toISOString()),
           ctaLabel: typeof item.cta_label === "string" ? item.cta_label : (typeof item.ctaLabel === "string" ? item.ctaLabel : null),
