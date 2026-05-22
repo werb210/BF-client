@@ -5,7 +5,8 @@ import AppRoutes from "./AppRoutes";
 import { SessionRefreshOverlay } from "../components/SessionRefreshOverlay";
 import ErrorBoundary from "./ErrorBoundary";
 import FatalErrorScreen from "./FatalErrorScreen";
-import MayaFloatingButton from "../components/MayaFloatingButton";
+// BF_CLIENT_BLOCK_v318_MAYA_RIP_AND_REPLACE_v1
+import MayaWidget from "../components/MayaWidget";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
 import UpdatePromptBanner from "@/components/UpdatePromptBanner";
 import RetryBanner from "../components/RetryBanner";
@@ -19,7 +20,7 @@ export default function App() {
       {/* BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — see import comment */}
       <SessionRefreshOverlay />
       <AppRoutes />
-      <MayaFloatingButton />
+      <MayaWidget />
     </ErrorBoundary>
   );
 }
