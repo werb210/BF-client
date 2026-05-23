@@ -1,5 +1,9 @@
 // BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_v1
 // BF_CLIENT_BLOCK_v164_MESSENGER_LINKIFY_HOTFIX_v1 — restored opening <a tag.
+// BF_CLIENT_BLOCK_v319_MINI_PORTAL_CSS_FIX_v1 — import the CSS so the bubbles
+// actually render as bubbles, not vertical text. Without this the mini-portal
+// looks like "Y / You / message text / 10:47 AM" stacked vertically.
+import "./MessageThread.css";
 import React, { useMemo } from "react";
 import type { JSX } from "react";
 
