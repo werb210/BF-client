@@ -4,7 +4,7 @@ import { useApplicationStore } from "@/state/useApplicationStore";
 import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
-import MessageThread, { type ThreadMessage } from "@/components/messaging/MessageThread";
+import { type ThreadMessage } from "@/components/messaging/MessageThread";
 // BF_CLIENT_BLOCK_53_v1
 import DocPicker from "@/components/DocPicker";
 import { Device } from "@twilio/voice-sdk";
@@ -31,7 +31,7 @@ const STAGE_BY_KEY: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...
 
 type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean };
 type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean };
-const normalizeOffer = (s: ServerOffer): Offer => ({ id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) });
+function normalizeOffer(s: ServerOffer): Offer { return { id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) }; }
 function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!expiresAt) return "ok"; const t = new Date(expiresAt).getTime(); if (Number.isNaN(t)) return "ok"; const diffDays = (t - Date.now()) / 86_400_000; if (diffDays <= 2) return "danger"; if (diffDays <= 4) return "warn"; return "ok"; }
 // BF_CLIENT_BLOCK_53_v1 -- final 7-pill spec. Media dropped per
 // product decision (2026-05-17). Upload Documents is the first pill
@@ -42,7 +42,6 @@ const ACTION_CHIPS = [
   { id: "networth",   label: "Personal Net Worth" },
   { id: "equipment",  label: "Equipment Collateral Form" },
   { id: "realestate", label: "Real Estate Collateral Form" },
-  { id: "debt",       label: "Debt Schedule" },
   { id: "other",      label: "Other Forms" },
 ] as const;
 
@@ -52,14 +51,14 @@ export default function MiniPortalPage() {
   const navigate = useNavigate();
   const { app, reset } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
-  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [percent, setPercent] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
 
   const loadAll = useCallback(async () => {
     if (!applicationId) return;
-    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); const p = appData?.data?.completion_pct ?? appData?.completion_pct ?? null; if (typeof p === "number" && p >= 0 && p <= 100) setPercent(Math.round(p)); } catch {}
+    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
       if (!applicationId) return;
@@ -225,7 +224,6 @@ export default function MiniPortalPage() {
     setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  const onHashtagClick = (tag: string) => { const id = tag.replace(/^#/, ""); const chip = ACTION_CHIPS.find((c) => c.id === id); if (chip) onChip(chip.id); else navigate(`/forms/${id}?applicationId=${encodeURIComponent(applicationId)}`); };
   async function acceptOffer(offerId: string) { await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" }); setPendingOfferId(offerId); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o))); }
   async function requestChanges(offerId: string) { const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : ""; if (reason === null) return; await apiCall(`/api/offers/${encodeURIComponent(offerId)}/decline`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))); }
   async function sendMessage() {
@@ -241,6 +239,14 @@ export default function MiniPortalPage() {
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
   const showOfferView = stageIndex === STAGE_BY_KEY.offer;
+  const actionByKeyword: Record<string, string> = { upload_docs: "upload", open_personal_net_worth: "networth", new_application: "new", equipment_collateral: "equipment", real_estate_collateral: "realestate", other_forms: "other" };
+  const isUrl = (v: string) => /^https?:\/\//i.test(v);
+  const handleMessageCta = (ctaAction?: string | null) => {
+    if (!ctaAction) return;
+    if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
+    if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
+    onMessageCta(ctaAction);
+  };
 
   const currentStageLabel = STAGES[stageIndex]?.label ?? "";
   const shortId = applicationId
@@ -276,12 +282,34 @@ export default function MiniPortalPage() {
           <span className="mp-app-header__stage-value">{currentStageLabel}</span>
         </div>
       </header>
-      <div className="mp-tracker" role="list" aria-label="Application progress">{stageRow.map((s, i) => <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}><div className="mp-stage__bullet">{s.completed ? "✓" : i + 1}</div><div className="mp-stage__label">{s.label}</div>{s.current && percent > 0 ? <div className="mp-stage__pct">{percent}%</div> : null}</div>)}</div>
+      <div className="mp-tracker" role="list" aria-label="Application progress">
+        {stageRow.map((s) => (
+          <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}>
+            <div className="mp-stage__bullet">{s.completed ? "✓" : ""}</div>
+            <div className="mp-stage__label">{s.label}</div>
+          </div>
+        ))}
+      </div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
-          <header className="mp-thread-card__header">Messages</header>
+          <header className="mp-thread-card__header">Client</header>
           <div className="mp-thread-card__body">
-            <MessageThread messages={messages} onHashtagClick={onHashtagClick} onCtaClick={onMessageCta} emptyText="Say hi to get started." />
+            {messages.length === 0 ? <div className="mp-thread-card__empty">Say hi to get started.</div> : messages.map((m) => {
+              const outbound = m.authorRole === "self";
+              const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
+              return (
+                <div key={m.id} className={`mp-msg-row ${outbound ? "mp-msg-row--out" : "mp-msg-row--in"}`}>
+                  {!outbound ? <div className="mp-msg-avatar">{initial}</div> : null}
+                  <div className="mp-msg-stack">
+                    <div className={`mp-msg-bubble ${outbound ? "mp-msg-bubble--out" : "mp-msg-bubble--in"}`}>
+                      <div>{m.body}</div>
+                      {m.ctaLabel && m.ctaAction ? <button className="mp-msg-cta" type="button" onClick={() => handleMessageCta(m.ctaAction)}>{m.ctaLabel}</button> : null}
+                    </div>
+                  </div>
+                  <div className="mp-msg-time">{new Date(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
+                </div>
+              );
+            })}
             {/* BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — staff typing */}
             {staffTyping && (
               <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
@@ -312,16 +340,17 @@ export default function MiniPortalPage() {
                 }}
               />
             </label>
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} style={{ flex: 1 }} />
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Send a message…" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} style={{ flex: 1 }} />
             <button onClick={() => void sendMessage()}>Send</button>
           </div>
         </section>
         {!showOfferView && (
           <aside className="mp-actions">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
-            <div className="mp-actions__chips" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <header className="mp-actions__header">What's Next?</header>
+            <div className="mp-actions__chips">
               {ACTION_CHIPS.map((c) => (
-                <button key={c.id} type="button" className="mp-chip" onClick={() => onChip(c.id)}>
+                <button key={c.id} type="button" className="mp-chip mp-chip--action" onClick={() => onChip(c.id)}>
                   {c.label}
                 </button>
               ))}
@@ -329,7 +358,7 @@ export default function MiniPortalPage() {
             {/* Twilio Voice WebRTC, no tel: link */}
             <div style={{ marginTop: 12 }}>
               {callState === "idle" && (
-                <button type="button" className="mp-callus" onClick={() => void startCall()} style={{ width: "100%", padding: 14, background: "#22c55e", color: "#fff", border: 0, borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
+                <button type="button" className="mp-callus" onClick={() => void startCall()} style={{ width: "100%" }}>
                   📞 Call Us!
                 </button>
               )}
@@ -346,7 +375,7 @@ export default function MiniPortalPage() {
                 </div>
               )}
               {callState === "ended" && (
-                <button type="button" className="mp-callus" onClick={() => setCallState("idle")} style={{ width: "100%", padding: 14, background: "#22c55e", color: "#fff", border: 0, borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
+                <button type="button" className="mp-callus" onClick={() => setCallState("idle")} style={{ width: "100%" }}>
                   📞 Call Us!
                 </button>
               )}
@@ -365,7 +394,7 @@ export default function MiniPortalPage() {
             )}
           </aside>
         )}
-        {showOfferView && <section className="mp-offers">{offers.length === 0 ? <div className="mp-offers__empty">No offers yet.</div> : offers.map((o) => { const exp = expirationColor(o.expiresAt); return <article key={o.id} className={`mp-offer mp-offer--${exp}`}><header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>{o.lenderLogoUrl ? <img className="mp-offer__logo" src={o.lenderLogoUrl} alt={o.lenderName} /> : null}<div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "—"}</div><dl className="mp-offer__meta"><dt>Rate / Factor</dt><dd>{o.rateOrFactor ?? "—"}</dd><dt>Term</dt><dd>{o.term ?? "—"}</dd><dt>Payment</dt><dd>{o.paymentFrequency ?? "—"}</dd><dt>Expiration</dt><dd>{o.expiresAt ?? "—"}</dd></dl>{o.status === "pending_acceptance" || pendingOfferId === o.id ? <div className="mp-offer__pending">✓ Sent for staff confirmation. We'll text you when it's ready to sign.</div> : <div className="mp-offer__actions">{o.pdfUrl ? <a href={o.pdfUrl} target="_blank" rel="noopener noreferrer" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost">View PDF</a> : null}<button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button><button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button></div>}</article>; })}</section>}
+        {showOfferView && <section className="mp-offers">{offers.length === 0 ? <div className="mp-offers__empty">No offers yet.</div> : offers.map((o) => { const exp = expirationColor(o.expiresAt); const expiryMs = o.expiresAt ? (new Date(o.expiresAt).getTime() - Date.now()) : 0; const safeHrs = Math.max(0, Math.floor(expiryMs / 3600000)); const days = Math.floor(safeHrs / 24); const hours = safeHrs % 24; return <article key={o.id} className={`mp-offer mp-offer--${exp}`}><header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header><div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "—"}</div><div className="mp-offer__subtitle">Offer Amount.</div><div className="mp-offer__meta"><div className="mp-offer__meta-row-main">{o.rateOrFactor?.includes("%") ? `${o.rateOrFactor} Interest rate` : `${o.rateOrFactor ?? "—"} factor`}</div><div className="mp-offer__meta-row">{o.term ?? "—"} years | Term</div><div className="mp-offer__meta-row">{o.paymentFrequency ?? "—"} payment</div></div><div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>{o.status === "pending_acceptance" || pendingOfferId === o.id ? <div className="mp-offer__pending">✓ Sent for staff confirmation. We'll text you when it's ready to sign.</div> : <div className="mp-offer__actions">{o.pdfUrl ? <a href={o.pdfUrl} target="_blank" rel="noopener noreferrer" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost">View PDF</a> : null}<button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button><button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button></div>}</article>; })}</section>}
       {/* BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — form modals */}
       {openForm !== null && (
         <div
@@ -398,7 +427,7 @@ export default function MiniPortalPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 18, fontWeight: 600 }}>
-                {openForm === "networth" && "Personal Net Worth"}
+                {openForm === "networth" && "Personal Net Worth Form"}
                 {openForm === "debt" && "Debt Schedule"}
                 {openForm === "equipment" && "Equipment Collateral Form"}
                 {openForm === "realestate" && "Real Estate Collateral Form"}
