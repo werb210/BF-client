@@ -12,6 +12,7 @@ import "./MiniPortalPage.css";
 import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWorthForm";
 import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
 import SlimHeader from "@/components/SlimHeader";
+import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -56,13 +57,12 @@ export default function MiniPortalPage() {
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
 
-
-
-  useEffect(() => { if (!applicationId) return; let active = true; async function loadAll() {
-    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!active) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); const p = appData?.data?.completion_pct ?? appData?.completion_pct ?? null; if (typeof p === "number" && p >= 0 && p <= 100) setPercent(Math.round(p)); } catch {}
+  const loadAll = useCallback(async () => {
+    if (!applicationId) return;
+    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); const p = appData?.data?.completion_pct ?? appData?.completion_pct ?? null; if (typeof p === "number" && p >= 0 && p <= 100) setPercent(Math.round(p)); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
-      if (!active) return;
+      if (!applicationId) return;
       setMessages(incoming.map((item: any, idx: number) => {
         const dir = String(item.direction ?? "").toLowerCase();
         const role: "self" | "other" = dir === "inbound" ? "self" : "other";
@@ -79,11 +79,11 @@ export default function MiniPortalPage() {
         };
       }));
     } catch {}
-    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!active) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
     // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
     try {
       const docsResp = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}/documents`).catch((): any => null);
-      if (!active) return;
+      if (!applicationId) return;
       const items: any[] = Array.isArray(docsResp) ? docsResp
         : Array.isArray(docsResp?.items) ? docsResp.items
         : Array.isArray(docsResp?.data) ? docsResp.data
@@ -101,8 +101,9 @@ export default function MiniPortalPage() {
         .filter((d) => d.id.length > 0);
       setRejectedDocs(rejected);
     } catch {}
-  }
-  void loadAll(); const poll = setInterval(() => { if (document.visibilityState === "visible") void loadAll(); }, 20000); return () => { active = false; clearInterval(poll); }; }, [applicationId]);
+  }, [applicationId]);
+
+  useVisiblePoll(loadAll, 20000);
 
 
   const onMessageCta = useCallback((action: string) => {
