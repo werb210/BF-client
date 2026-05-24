@@ -204,7 +204,11 @@ export default function MayaWidget() {
           kind: "report_issue",
           description,
           page_url: typeof window !== "undefined" ? window.location.href : null,
-          screenshot: shot ?? null,
+          // BF_CLIENT_BLOCK_v321_SCREENSHOT_FIELD_FIX_v1 — BF-Server
+          // /api/maya/escalate (v645) reads `screenshot_data_url` (with
+          // `screenshot` and `screenshot_base64` as aliases). Sending the
+          // canonical name keeps wire format obvious for log/debugging.
+          screenshot_data_url: shot ?? null,
           contact: { name: userName, phone: userPhone, email: userEmail },
           application_id: applicationId ?? undefined,
         },
