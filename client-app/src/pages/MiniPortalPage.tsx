@@ -177,10 +177,66 @@ export default function MiniPortalPage() {
     callRefHolder.call = null;
     setCallState("idle");
   }
+  // BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — typing emit + staff typing
+  // indicator + attachment support on the mini-portal composer.
+  const [attachments, setAttachments] = useState<Array<{ name: string; contentType: string; dataUrl: string }>>([]);
+  const [staffTyping, setStaffTyping] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (!applicationId) return;
+    apiCall("/api/client/messages/mark-read", { method: "POST", body: { applicationId } }).catch((): void => undefined);
+  }, [applicationId, messages.length]);
+
+  useEffect(() => {
+    if (!applicationId) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const r = await apiCall<{ typing: boolean }>(`/api/client/messages/typing?applicationId=${encodeURIComponent(applicationId)}`);
+        if (!cancelled) setStaffTyping(Boolean((r as any)?.typing));
+      } catch { /* swallow */ }
+    };
+    void tick();
+    const id = setInterval(tick, 3000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [applicationId]);
+
+  useEffect(() => {
+    if (!text || !applicationId) return;
+    apiCall("/api/client/messages/typing", { method: "POST", body: { applicationId } }).catch((): void => undefined);
+  }, [text, applicationId]);
+
+  async function stageFile(file: File): Promise<void> {
+    if (file.size > 3 * 1024 * 1024) return;
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result ?? ""));
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(file);
+    });
+    setAttachments((prev) => [...prev, { name: file.name, contentType: file.type || "application/octet-stream", dataUrl }]);
+    setStagedFiles((prev) => [...prev, file]);
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+    setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
+  }
+
   const onHashtagClick = (tag: string) => { const id = tag.replace(/^#/, ""); const chip = ACTION_CHIPS.find((c) => c.id === id); if (chip) onChip(chip.id); else navigate(`/forms/${id}?applicationId=${encodeURIComponent(applicationId)}`); };
   async function acceptOffer(offerId: string) { await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" }); setPendingOfferId(offerId); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o))); }
   async function requestChanges(offerId: string) { const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : ""; if (reason === null) return; await apiCall(`/api/offers/${encodeURIComponent(offerId)}/decline`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))); }
-  async function sendMessage() { if (!text.trim() || !applicationId) return; const next = text.trim(); setText(""); await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body: next, direction: "inbound" } }); setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString() }]); }
+  async function sendMessage() {
+    if ((!text.trim() && attachments.length === 0) || !applicationId) return;
+    const next = text.trim();
+    const attach = attachments;
+    setText("");
+    setAttachments([]);
+    setStagedFiles([]);
+    await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body: next, direction: "inbound", attachments: attach } });
+    setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString() }]);
+  }
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
   const showOfferView = stageIndex === STAGE_BY_KEY.offer;
@@ -221,7 +277,44 @@ export default function MiniPortalPage() {
       </header>
       <div className="mp-tracker" role="list" aria-label="Application progress">{stageRow.map((s, i) => <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}><div className="mp-stage__bullet">{s.completed ? "✓" : i + 1}</div><div className="mp-stage__label">{s.label}</div>{s.current && percent > 0 ? <div className="mp-stage__pct">{percent}%</div> : null}</div>)}</div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
-        <section className="mp-thread-card"><header className="mp-thread-card__header">Messages</header><div className="mp-thread-card__body"><MessageThread messages={messages} onHashtagClick={onHashtagClick} onCtaClick={onMessageCta} emptyText="Say hi to get started." /></div><div className="mp-thread-card__composer"><input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} /><button onClick={() => void sendMessage()}>Send</button></div></section>
+        <section className="mp-thread-card">
+          <header className="mp-thread-card__header">Messages</header>
+          <div className="mp-thread-card__body">
+            <MessageThread messages={messages} onHashtagClick={onHashtagClick} onCtaClick={onMessageCta} emptyText="Say hi to get started." />
+            {/* BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — staff typing */}
+            {staffTyping && (
+              <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
+                Staff is typing…
+              </div>
+            )}
+          </div>
+          {attachments.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 8px" }}>
+              {attachments.map((a, idx) => (
+                <span key={idx} style={{ fontSize: 12, padding: "2px 8px", border: "1px solid #cbd6e2", borderRadius: 12, background: "#f9fafb", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  📎 {a.name}
+                  <button onClick={() => removeAttachment(idx)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#64748b" }} aria-label={`Remove ${a.name}`}>✕</button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mp-thread-card__composer" style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <label style={{ cursor: "pointer", padding: "6px 8px", border: "1px solid #cbd6e2", borderRadius: 6, fontSize: 13, background: "#fff" }} title="Attach a file (≤3MB)">
+              📎
+              <input
+                type="file"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const fs = Array.from(e.target.files ?? []);
+                  for (const f of fs) void stageFile(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} style={{ flex: 1 }} />
+            <button onClick={() => void sendMessage()}>Send</button>
+          </div>
+        </section>
         {!showOfferView && (
           <aside className="mp-actions">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
