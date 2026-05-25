@@ -4,16 +4,20 @@ import { Device, Call } from "@twilio/voice-sdk";
 
 type State = "idle" | "requesting" | "ringing" | "connected" | "ended" | "failed";
 
-async function fetchClientVoiceToken(): Promise<{ token: string; identity: string } | null> {
+async function fetchClientVoiceToken(): Promise<{ token: string; identity: string; agentsAvailable: boolean } | null> {
   try {
-    const r = await fetch("/api/client-voice/token", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    const r = await fetch("/api/client/voice/token", {
+      method: "GET",
       credentials: "include",
     });
     if (!r.ok) return null;
     const j = await r.json();
     if (!j?.token || !j?.identity) return null;
-    return { token: j.token, identity: j.identity };
+    return {
+      token: j.token,
+      identity: j.identity,
+      agentsAvailable: j.agents_available !== false,
+    };
   } catch { return null; }
 }
 
@@ -39,6 +43,10 @@ export default function CallUsButton() {
     catch { setErr("Microphone permission denied"); setState("failed"); return; }
     const tok = await fetchClientVoiceToken();
     if (!tok) { setErr("Could not get voice token"); setState("failed"); return; }
+    if (!tok.agentsAvailable) {
+      const proceed = window.confirm("No advisors are available right now. You can leave a voicemail and we'll call you back. Continue?");
+      if (!proceed) { setState("idle"); return; }
+    }
     try {
       const d = new Device(tok.token, { logLevel: 1 } as any);
       d.on("error", (e: any) => { setErr(e?.message ?? "Device error"); setState("failed"); });
