@@ -150,11 +150,19 @@ export default function MiniPortalPage() {
     setCallError(null);
     setCallState("connecting");
     try {
-      const r = await fetch(`/api/client/voice/token`, { credentials: "include" });
-      if (!r.ok) throw new Error("token fetch failed");
+      const tokenUrl = `/api/client/voice/token?applicationId=${encodeURIComponent(applicationId)}`;
+      const r = await fetch(tokenUrl, { credentials: "include" });
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => ({}));
+        throw new Error(errBody?.error || `token fetch failed (${r.status})`);
+      }
       const tokenResp = await r.json();
-      if (!tokenResp?.agents_available) { setCallState("idle"); alert("No advisors are available right now. We'll text you back within 30 minutes — please send us a message in the chat below describing what you need."); return; }
-      if (!tokenResp?.token) throw new Error("No token");
+      if (!tokenResp?.token) throw new Error("No token returned");
+      // agents_available is informational — if false, warn the user but still allow them to leave voicemail.
+      if (tokenResp.agents_available === false) {
+        const proceed = window.confirm("No advisors are available right now. You can leave a voicemail and we'll call you back, or cancel and send us a message in the chat below. Continue to voicemail?");
+        if (!proceed) { setCallState("idle"); return; }
+      }
       if (!callRefHolder.device) {
         callRefHolder.device = new Device(tokenResp.token, { logLevel: "warn" } as any);
         await (callRefHolder.device as any).register?.();
