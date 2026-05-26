@@ -263,43 +263,63 @@ export function Step1_KYC(): JSX.Element {
 
   useEffect(() => {
     if (!readiness) return;
+    const data = readiness as Record<string, unknown>;
 
-    const nextKyc = {
-      ...app.kyc,
-      companyName: readiness.companyName ?? app.kyc.companyName,
-      industry: readiness.industry ?? app.kyc.industry,
-      salesHistory:
-        mapYearsInBusiness(readiness.yearsInBusiness) ?? app.kyc.salesHistory,
-      monthlyRevenue:
-        mapMonthlyRevenue(readiness.monthlyRevenue) ?? app.kyc.monthlyRevenue,
-      revenueLast12Months:
-        mapAnnualRevenue(readiness.annualRevenue) ?? app.kyc.revenueLast12Months,
-      accountsReceivable:
-        mapArOutstanding(readiness.arOutstanding) ?? app.kyc.accountsReceivable,
-fixedAssets:
-        readiness.collateralAvailable ?? app.kyc.fixedAssets,
-    };
-
-    const unchanged =
-      app.readinessLeadId === readiness.leadId &&
-      nextKyc.companyName === app.kyc.companyName &&
-      nextKyc.industry === app.kyc.industry &&
-      nextKyc.salesHistory === app.kyc.salesHistory &&
-      nextKyc.monthlyRevenue === app.kyc.monthlyRevenue &&
-      nextKyc.revenueLast12Months === app.kyc.revenueLast12Months &&
-      nextKyc.accountsReceivable === app.kyc.accountsReceivable &&
-      nextKyc.fixedAssets === app.kyc.fixedAssets;
-
-    if (unchanged) return;
-
+    // BF_CLIENT_BLOCK_v323_TEST2_FIX_PACK_v1 — token-based prefill now
+    // mirrors the phone-based path. Pre-fix: this hydrated 7 of 13 fields,
+    // which meant users coming back via the readiness continuation token
+    // (no phone match) had to re-type businessLocation, requestedAmount,
+    // purposeOfFunds, fullName, email, phone. With BF-Server v650, the
+    // readiness session now carries all 13 fields, so the client can map
+    // them through.
     update({
       readinessLeadId: readiness.leadId,
-      // BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
-                    kyc: {
-                      ...nextKyc,
-                      fundingAmount: nextIntent === "EQUIPMENT" ? "" : nextKyc.fundingAmount,
-                      equipmentAmount: nextIntent === "WORKING_CAPITAL" ? "" : (nextKyc as any).equipmentAmount,
-                    },
+      kyc: {
+        ...app.kyc,
+        // Business profile
+        companyName: (data.companyName as string) ?? app.kyc.companyName ?? "",
+        industry: (data.industry as string) ?? app.kyc.industry ?? "",
+        businessLocation:
+          (data.businessLocation as string) ?? app.kyc.businessLocation ?? "",
+        // Funding ask
+        fundingType: (data.purposeOfFunds as string) ?? app.kyc.fundingType ?? "",
+        requestedAmount:
+          (data.requestedAmount as string) ?? app.kyc.requestedAmount ?? "",
+        fundingAmount:
+          (data.requestedAmount as string) ?? app.kyc.fundingAmount ?? "",
+        purposeOfFunds:
+          (data.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
+        // Financial profile (range strings from website OR mapped legacy)
+        salesHistory:
+          (data.salesHistoryYears as string) ?? app.kyc.salesHistory ?? "",
+        yearsInBusiness:
+          (data.salesHistoryYears as string) ?? app.kyc.yearsInBusiness ?? "",
+        revenueLast12Months:
+          (data.annualRevenueRange as string) ?? app.kyc.revenueLast12Months ?? "",
+        annualRevenue:
+          (data.annualRevenueRange as string) ?? app.kyc.annualRevenue ?? "",
+        monthlyRevenue:
+          (data.avgMonthlyRevenueRange as string) ?? app.kyc.monthlyRevenue ?? "",
+        accountsReceivable:
+          (data.accountsReceivableRange as string) ?? app.kyc.accountsReceivable ?? "",
+        arBalance:
+          (data.accountsReceivableRange as string) ?? app.kyc.arBalance ?? "",
+        fixedAssets:
+          (data.fixedAssetsValueRange as string) ?? app.kyc.fixedAssets ?? "",
+        availableCollateral:
+          (data.fixedAssetsValueRange as string) ?? app.kyc.availableCollateral ?? "",
+      },
+      business: {
+        ...app.business,
+        companyName: (data.companyName as string) ?? app.business?.companyName ?? "",
+        industry: (data.industry as string) ?? app.business?.industry ?? "",
+      },
+      applicant: {
+        ...app.applicant,
+        fullName: (data.fullName as string) ?? app.applicant?.fullName ?? "",
+        email: (data.email as string) ?? app.applicant?.email ?? "",
+        phone: (data.phone as string) ?? app.applicant?.phone ?? "",
+      },
     });
   }, [
     app.kyc,
@@ -544,6 +564,23 @@ fixedAssets:
   }, [update]);
 
   // Block 15: removed broken creditPrefill effect that referenced an out-of-scope `prefillData`
+
+  // BF_CLIENT_BLOCK_v323_TEST2_FIX_PACK_v1 — auto-pre-select lookingFor
+  // from purposeOfFunds when the user hasn't picked one yet. Reduces a
+  // redundant click for readiness-completed applicants.
+  useEffect(() => {
+    if (app.kyc?.lookingFor) return; // already chosen
+    const purpose = String(app.kyc?.purposeOfFunds ?? "").trim().toLowerCase();
+    if (!purpose) return;
+    // Heuristic — matches the FUNDING_TYPES options on the website readiness form.
+    let derived: "Capital" | "Equipment" | "Both" | "" = "";
+    if (purpose === "equipment" || purpose.includes("equipment only")) derived = "Equipment";
+    else if (purpose.includes("equipment") && purpose.includes("capital")) derived = "Both";
+    else if (purpose.includes("capital") || purpose.includes("working capital") || purpose.includes("line of credit") || purpose.includes("term loan")) derived = "Capital";
+    if (derived) {
+      update({ kyc: { ...app.kyc, lookingFor: derived } });
+    }
+  }, [app.kyc?.purposeOfFunds, app.kyc?.lookingFor, update]);
 
   useEffect(() => {
     const normalized = normalizeFundingIntent(app.kyc.lookingFor);
