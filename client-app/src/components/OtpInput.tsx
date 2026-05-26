@@ -94,6 +94,11 @@ export function OtpInput({
     inputsRef.current[nextIndex]?.focus();
   }
 
+  // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — defensive: each
+  // cell holds exactly one digit. Pattern must match a single digit
+  // to avoid the iOS Safari pattern-mismatch pill (see OtpPage v323).
+  const effectivePattern = (pattern && pattern !== "\\d") ? "\\d" : pattern;
+
   const inputStyle = {
     ...components.inputs.base,
     width: "48px",
@@ -116,7 +121,7 @@ export function OtpInput({
           type="text"
           inputMode={inputMode}
           autoComplete={index === 0 ? autoComplete : "off"}
-          pattern={pattern}
+          pattern={effectivePattern}
           maxLength={1}
           value={values[index]}
           onChange={(event) => handleChange(index, event.target.value)}

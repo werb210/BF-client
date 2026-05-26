@@ -170,7 +170,13 @@ export default function OtpPage() {
               length={6}
               autoComplete="one-time-code"
               inputMode="numeric"
-              pattern="\\d{4,8}"
+              // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — each
+              // OTP cell holds a single digit (maxLength=1). Pre-fix
+              // pattern was "\d{4,8}" which iOS Safari evaluated
+              // against the single-char value, triggering the yellow
+              // pill "The string did not match the expected pattern.
+              // Try again" on every keystroke. Now matches one digit.
+              pattern="\\d"
               onComplete={(value) => {
                 setCode(value);
                 void handleVerify(value);

@@ -44,8 +44,9 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
       form.append("file", file);
       form.append("document_type", documentType);
       form.append("applicationId", applicationId);
+      let resp: Response | undefined;
       try {
-        const resp = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
+        resp = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
           method: "POST",
           headers: { Authorization: `Bearer ${getToken() ?? ""}` },
           body: form,
@@ -57,8 +58,20 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
           stillNeeded: cur.stillNeeded.filter((d) => d.document_type !== documentType),
           rejected: cur.rejected.filter((d) => d.document_type !== documentType),
         }));
-      } catch {
-        setError("Upload failed. Please try again.");
+      } catch (err) {
+        // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — surface the
+        // real error to the user (and console) so we can diagnose
+        // the iPhone-testing failure (screenshot 11.33.25). Common
+        // causes: 401 (token expired), 413 (file too large), 415
+        // (file type rejected), 500 (server upload pipeline broken).
+        const detail = err instanceof Error ? err.message : "";
+        console.error("[DocPicker upload] failed:", detail, resp?.status, resp?.statusText);
+        const userMessage =
+          resp?.status === 401 ? "Session expired. Please sign in again."
+          : resp?.status === 413 ? "That file is too large. Please use a smaller file (under 25 MB)."
+          : resp?.status === 415 ? "That file type isn't supported. Please upload a PDF, PNG, or JPEG."
+          : "Upload failed. Please try again.";
+        setError(userMessage);
       } finally {
         setUploading(null);
       }

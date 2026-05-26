@@ -102,7 +102,11 @@ export default function MiniPortalPage() {
     } catch {}
   }, [applicationId]);
 
-  useVisiblePoll(loadAll, 20000);
+  // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — poll the
+  // conversation every 15s so staff replies surface without the user
+  // needing to refresh. Pre-fix new messages only arrived on page
+  // reload. Pause when the tab is hidden to save battery.
+  useVisiblePoll(loadAll, 15000);
 
 
   const onMessageCta = useCallback((action: string) => {

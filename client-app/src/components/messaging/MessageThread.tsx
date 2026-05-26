@@ -102,12 +102,26 @@ function renderBody(
 }
 
 export default function MessageThread({ messages, onHashtagClick, onCtaClick, emptyText }: Props) {
+  // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — auto-scroll to the
+  // newest message on mount and whenever a new message arrives. Pre-fix
+  // the thread rendered correctly but never scrolled; on iPhone the
+  // newest message was off-screen below the input chrome and the
+  // user had to manually scroll up to see what just landed.
+  const endRef = React.useRef<HTMLLIElement | null>(null);
   const items = useMemo(
     () => messages.slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [messages],
   );
 
-  // BF_CLIENT_BLOCK_44_v1 -- delegated CTA click via data attribute.
+  React.useEffect(() => {
+    if (!endRef.current) return;
+    // "auto" not "smooth" because on first mount we want to land at
+    // the bottom instantly; on subsequent renders smooth feels nicer
+    // but auto is safer for iOS where smooth-scroll inside short
+    // containers sometimes no-ops.
+    endRef.current.scrollIntoView({ block: "end" });
+  }, [items.length]);
+
   const handleThreadClick = (e: React.MouseEvent<HTMLUListElement>) => {
     const target = e.target as HTMLElement | null;
     const btn = target?.closest("button[data-cta-action]");
@@ -123,14 +137,17 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
 
   return (
     <ul className="msg-thread" onClick={handleThreadClick}>
-      {items.map((m) => (
-        <li key={m.id} className={`msg-row msg-row--${m.authorRole}`}>
+      {items.map((m, idx) => (
+        <li
+          key={m.id}
+          className={`msg-row msg-row--${m.authorRole}`}
+          ref={idx === items.length - 1 ? endRef : undefined}
+        >
           <div className="msg-avatar" aria-hidden="true">{initials(m.authorName)}</div>
           <div className="msg-bubble">
             {m.authorName ? <div className="msg-author">{m.authorName}</div> : null}
             <div className="msg-body">
               {renderBody(m.body, onHashtagClick)}
-              {/* BF_CLIENT_BLOCK_44_v1 -- inline CTA bubble */}
               {m.ctaLabel && m.ctaAction ? (
                 <button
                   type="button"
