@@ -17,7 +17,27 @@ export function registerClientSW(): void {
 }
 
 export function applyClientSWUpdate(): void {
-  if (!wb) return;
+  // BF_CLIENT_BLOCK_v53_SW_HARD_RELOAD_FALLBACK_v1
+  // If the SW doesn't transition within 3s after we sent SKIP_WAITING,
+  // the message wasn't handled — force a hard reload so the user can
+  // get the new version anyway. Belt-and-suspenders.
+  if (!wb) {
+    window.location.reload();
+    return;
+  }
+
+  let reloaded = false;
+  const fallback = setTimeout(() => {
+    if (!reloaded) window.location.reload();
+  }, 3000);
+
+  const onControlling = () => {
+    reloaded = true;
+    clearTimeout(fallback);
+    window.location.reload();
+  };
+
+  navigator.serviceWorker.addEventListener("controllerchange", onControlling, { once: true });
   wb.messageSkipWaiting();
 }
 
