@@ -97,6 +97,14 @@ export default function PhoneOTPInline() {
     try {
       // eslint-disable-next-line no-console
       console.log('[otp] start.send.e164', { phone: e164 });
+      // BF_CLIENT_BLOCK_v51_OTP_LONGER_TIMEOUT_v1
+      // Azure App Service cold-start can take 30-45s on first hit after idle.
+      // 15s was too tight and produced "Network is taking too long" errors
+      // even though the server eventually responded. The real fix is
+      // Always-On on the BF-Server App Service; this is the client-side
+      // safety net so a cold-start never blocks an applicant.
+      const OTP_START_TIMEOUT_MS = 60000;
+
       const res = await fetchWithTimeout(
         API_BASE + '/api/auth/otp/start',
         {
@@ -105,7 +113,7 @@ export default function PhoneOTPInline() {
           credentials: 'include',
           body: JSON.stringify({ phone: e164, channel: 'sms' }),
         },
-        15000,
+        OTP_START_TIMEOUT_MS,
         'start',
       );
       if (!res.ok) {

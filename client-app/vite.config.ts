@@ -16,6 +16,10 @@ export default defineConfig({
       manifestFilename: 'manifest.webmanifest',
       manifest: false,
       includeAssets: ['icons/**/*', 'favicon.ico', 'logo.svg'],
+      workbox: {
+        skipWaiting: false,
+        clientsClaim: true
+      },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff,woff2,json}'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
