@@ -792,7 +792,14 @@ export function Step1_KYC(): JSX.Element {
       });
       persistApplicationStep({ ...app, applicationToken: token, applicationId: token }, 1, payloadBody).catch(() => {});
       track("step_completed", { step: 1 });
-      console.log("[wizard] Step 1 advancing with real applicationToken", token);
+      // BF_CLIENT_BLOCK_v325_TEST1_RUN5_v1 — gate token log to dev
+      // mode. Pre-fix the applicationToken was logged to production
+      // browser console where it survived in any user-shared
+      // devtools snapshot. JWTs are bearer credentials; never
+      // log them in prod.
+      if (import.meta.env.DEV) {
+        console.log("[wizard] Step 1 advancing with real applicationToken", token);
+      }
       navigate("/apply/step-2");
     } catch (err) {
       console.error("[wizard] Step 1 unexpected error", err);
