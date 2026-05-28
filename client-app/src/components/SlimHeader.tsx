@@ -1,10 +1,12 @@
 // BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1
 // Slim header for surfaces inside the app shell (wizard, mini-portal).
-// Public/header_white.png is the white-mountains lockup already shipped in
-// the bundle. Dark navy background (#0B1320) matches BF-Website and the
-// LandingHeader so the brand reads consistently across the entire client
+// The white-mountains SVG lockup is imported from src/assets so Vite
+// fingerprints it with the bundle. Dark navy background (#0B1320)
+// matches BF-Website and the LandingHeader so the brand reads
+// consistently across the entire client
 // journey: email → website → apply wizard → mini-portal.
 import { memo } from "react";
+import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 
 const HEADER_HEIGHT = 56; // matches BF-Website mobile header height
 
@@ -64,11 +66,9 @@ function SlimHeader({ right }: SlimHeaderProps) {
           aria-label="Boreal Financial home"
         >
           <img
-            src="/header_white.png"
+            src={logoUrl}
             alt=""
             style={styles.logo}
-            width={140}
-            height={28}
             decoding="async"
           />
         </a>

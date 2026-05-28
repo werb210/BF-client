@@ -6,6 +6,7 @@
 // Touch targets are 44x44px minimum (iOS HIG). Menu items use the
 // thumb zone (lower 2/3 of viewport).
 import { useState } from "react";
+import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 
 type NavItem = { href: string; label: string };
 
@@ -23,8 +24,8 @@ export default function MobileHeader() {
       <div className="flex h-14 items-center justify-between px-4">
         <a href="/" className="flex items-center gap-2">
           <img
-            src="/images/header_white_transparent.png"
-            alt="Boreal Financial"
+            src={logoUrl}
+            alt=""
             className="h-8 w-auto"
           />
           <span className="hidden text-base font-semibold sm:inline">Boreal Financial</span>
