@@ -7,6 +7,7 @@ import CallUsButton from "@/components/CallUsButton";
 // BF_CLIENT_BLOCK_v102_LOGO_LOCAL_v1 — local logo asset to avoid
 // cross-origin fetch from boreal.financial in production.
 import { useState } from "react";
+import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 
 const NAV_ITEMS = [
   { href: "https://boreal.financial/products", label: "Products" },
@@ -14,9 +15,6 @@ const NAV_ITEMS = [
   { href: "https://boreal.financial/credit-readiness", label: "Credit Readiness" },
   { href: "https://boreal.financial/contact", label: "Contact" },
 ];
-
-// BF_CLIENT_BLOCK_v313_UNIFIED_HEADER_v1
-const LOGO_URL = "/header.png";
 
 function MenuIcon({ open }: { open: boolean }) {
   return open ? (
@@ -66,11 +64,9 @@ export default function LandingHeader() {
           data-testid="landing-logo"
         >
           <img
-            src={LOGO_URL}
-            alt="Boreal Financial"
-            width={512}
-            height={128}
-            className="h-14 w-auto object-contain md:h-20"
+            src={logoUrl}
+            alt=""
+            className="h-10 w-auto object-contain"
             loading="lazy"
             decoding="async"
           />
