@@ -30,7 +30,7 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const GREETING = "Hi — I'm Maya. How can I help with your application today?";
+const GREETING = "Hi — I'm Maya. How can I help?";
 
 function CloseIcon() {
   return (
@@ -76,7 +76,21 @@ export default function MayaWidget() {
     typeof (user as any)?.phone === "string" ? ((user as any).phone as string) : null;
   const userEmail =
     typeof (user as any)?.email === "string" ? ((user as any).email as string) : null;
-  const sessionId = useMemo(() => uid("client"), []);
+  // BF_CLIENT_BLOCK_v55 — carry the website's Maya session across the click-through.
+  const sessionId = useMemo(() => {
+    if (typeof window === "undefined") return uid("client");
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("sessionId") || params.get("readinessSession");
+      const KEY = "boreal_maya_session_id";
+      const existing = window.localStorage.getItem(KEY);
+      const id = fromUrl || existing || uid("client");
+      window.localStorage.setItem(KEY, id);
+      return id;
+    } catch {
+      return uid("client");
+    }
+  }, []);
 
   useEffect(() => {
     if (!open || messages.length > 0) return;
