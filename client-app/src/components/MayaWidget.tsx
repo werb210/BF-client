@@ -97,6 +97,31 @@ export default function MayaWidget() {
     setMessages([{ id: uid("m"), from: "system", message: GREETING }]);
   }, [open, messages.length]);
 
+  // BF_CLIENT_BLOCK_v56 — after a human handoff, poll the shared conversation
+  // so the client sees staff replies in the same thread (two-way messenger).
+  const seenStaffIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!conversationId) return;
+    let active = true;
+    const poll = async () => {
+      try {
+        const r = (await apiRequest(`/api/public/conversation/${conversationId}/messages`, {
+          method: "GET",
+        })) as { messages?: Array<{ id: string; direction: string; body: string }>; data?: { messages?: Array<{ id: string; direction: string; body: string }> } };
+        const list = r?.messages ?? r?.data?.messages ?? [];
+        if (!active) return;
+        const fresh = list.filter((m) => m.direction === "outbound" && !seenStaffIds.current.has(m.id));
+        if (fresh.length) {
+          fresh.forEach((m) => seenStaffIds.current.add(m.id));
+          setMessages((prev) => [...prev, ...fresh.map((m) => ({ id: m.id, from: "system" as const, message: m.body }))]);
+        }
+      } catch { /* transient — next tick retries */ }
+    };
+    void poll();
+    const timer = setInterval(poll, 4000);
+    return () => { active = false; clearInterval(timer); };
+  }, [conversationId]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
@@ -109,18 +134,27 @@ export default function MayaWidget() {
     setMessages((prev) => [...prev, { id: uid("u"), from: "user", message: text }]);
     setSending(true);
     try {
-      const res = (await apiRequest("/api/maya/message", {
-        method: "POST",
-        headers: { "X-Maya-Audience": "client" },
-        body: {
-          message: text,
-          sessionId,
-          application_id: applicationId ?? undefined,
-        },
-      })) as AgentReply;
-      const reply = (res?.reply ?? "").toString().trim() ||
-        "I'm here — what would you like to know?";
-      setMessages((prev) => [...prev, { id: uid("s"), from: "system", message: reply }]);
+      // BF_CLIENT_BLOCK_v56 — once escalated, post into the shared thread;
+      // staff replies arrive via the poll effect below.
+      if (conversationId) {
+        await apiRequest(`/api/public/conversation/${conversationId}/message`, {
+          method: "POST",
+          body: { body: text },
+        });
+      } else {
+        const res = (await apiRequest("/api/maya/message", {
+          method: "POST",
+          headers: { "X-Maya-Audience": "client" },
+          body: {
+            message: text,
+            sessionId,
+            application_id: applicationId ?? undefined,
+          },
+        })) as AgentReply;
+        const reply = (res?.reply ?? "").toString().trim() ||
+          "I'm here — what would you like to know?";
+        setMessages((prev) => [...prev, { id: uid("s"), from: "system", message: reply }]);
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
