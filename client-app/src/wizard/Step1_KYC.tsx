@@ -25,6 +25,7 @@ import { loadStepData, mergeDraft, saveStepData } from "../client/autosave";
 import {
   getNextFieldKey,
   getWizardFieldId,
+  isStartupPathKyc,
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { track } from "../utils/track";
@@ -610,10 +611,13 @@ export function Step1_KYC(): JSX.Element {
       industry: !Validate.required(values.industry),
       purposeOfFunds: !Validate.required(values.purposeOfFunds),
       salesHistory: !Validate.required(values.salesHistory),
-      revenueLast12Months: !Validate.required(values.revenueLast12Months),
-      monthlyRevenue:
-        !Validate.required(values.monthlyRevenue) ||
-        values.monthlyRevenue === "Under $10,000",
+      revenueLast12Months: isStartupPathKyc(values)
+        ? false
+        : !Validate.required(values.revenueLast12Months),
+      monthlyRevenue: isStartupPathKyc(values)
+        ? false
+        : !Validate.required(values.monthlyRevenue) ||
+          values.monthlyRevenue === "Under $10,000",
       accountsReceivable: !Validate.required(values.accountsReceivable),
       fixedAssets: !Validate.required(values.fixedAssets),
     };
@@ -1219,6 +1223,8 @@ export function Step1_KYC(): JSX.Element {
                 <div style={components.form.errorText}>Select sales history.</div>
               )}
             </div>
+            {!isStartupPathKyc(app.kyc) && (
+              <>
             <div data-error={showErrors && fieldErrors.revenueLast12Months}>
               <label style={components.form.label}>Revenue last 12 months</label>
               <Select
@@ -1277,6 +1283,8 @@ export function Step1_KYC(): JSX.Element {
                 <div style={components.form.errorText}>Select monthly revenue.</div>
               )}
             </div>
+              </>
+            )}
               <div data-error={showErrors && fieldErrors.accountsReceivable}>
                 <label style={components.form.label}>Current AR balance</label>
                 <Select
