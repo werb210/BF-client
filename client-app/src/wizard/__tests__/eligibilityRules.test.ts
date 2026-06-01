@@ -11,6 +11,10 @@ describe("v92 hard stops", () => {
     expect(detectHardStop({ avgMonthly: "<10k" })?.reason).toBe("MIN_REVENUE");
     expect(computeAllowedCategories({ avgMonthly: "<10k" })).toEqual([]);
   });
+  it("does not hard-stop startup applicants on revenue", () => {
+    expect(detectHardStop({ purpose: "startup", avgMonthly: "<10k" })).toBeNull();
+    expect(computeAllowedCategories({ years: "0", avgMonthly: "<10k" })).not.toEqual([]);
+  });
 });
 
 describe("v92 lookingFor", () => {

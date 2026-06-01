@@ -14,6 +14,16 @@ export type WizardSchemaContext = {
   applicant?: Record<string, any>;
 };
 
+// BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — startup applicants skip the
+// revenue questions entirely (Todd ruling). Startup path = purpose
+// "Start up Funding" OR sales history "Zero". Exported so the field schema
+// (auto-advance/skip) and Step 1 validation stay in lockstep.
+export function isStartupPathKyc(kyc?: Record<string, any>): boolean {
+  const purpose = String(kyc?.purposeOfFunds ?? "").trim();
+  const sales = String(kyc?.salesHistory ?? kyc?.yearsInBusiness ?? "").trim();
+  return purpose === "Start up Funding" || sales === "Zero";
+}
+
 export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> = {
   step1: {
     fields: [
@@ -45,8 +55,8 @@ export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> 
       { key: "industry", required: true, autoAdvance: true },
       { key: "purposeOfFunds", required: true, autoAdvance: true },
       { key: "salesHistory", required: true, autoAdvance: true },
-      { key: "revenueLast12Months", required: true, autoAdvance: true },
-      { key: "monthlyRevenue", required: true, autoAdvance: true },
+      { key: "revenueLast12Months", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
+      { key: "monthlyRevenue", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
       {
         key: "accountsReceivable",
         required: true,

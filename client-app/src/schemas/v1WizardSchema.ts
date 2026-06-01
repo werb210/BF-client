@@ -11,12 +11,26 @@ export const step1Schema = z
     industry: nonEmptyString,
     purposeOfFunds: nonEmptyString,
     salesHistoryYears: nonEmptyString,
-    annualRevenueRange: nonEmptyString,
-    avgMonthlyRevenueRange: nonEmptyString,
+    annualRevenueRange: z.string(),
+    avgMonthlyRevenueRange: z.string(),
     accountsReceivableRange: nonEmptyString,
     fixedAssetsValueRange: nonEmptyString,
   })
-  .strict();
+  .strict()
+  // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — revenue is required for normal
+  // applicants but skipped on the startup path (purpose "Start up Funding" or
+  // "Zero" sales history); enforce it conditionally instead of unconditionally.
+  .superRefine((data, ctx) => {
+    const onStartupPath =
+      data.purposeOfFunds === "Start up Funding" || data.salesHistoryYears === "Zero";
+    if (onStartupPath) return;
+    if (!String(data.annualRevenueRange ?? "").trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["annualRevenueRange"], message: "Required" });
+    }
+    if (!String(data.avgMonthlyRevenueRange ?? "").trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["avgMonthlyRevenueRange"], message: "Required" });
+    }
+  });
 
 // Step 3 — Business Details
 export const step3Schema = z

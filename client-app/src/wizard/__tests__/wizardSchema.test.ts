@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { getStepFieldKeys } from "../wizardSchema";
 
 describe("wizardSchema", () => {
-  it("orders all 10 step 1 fields for any funding intent", () => {
+  it("orders step 1 fields for each funding intent", () => {
     const workingCapital = getStepFieldKeys("step1", {
-      kyc: { lookingFor: "Working Capital" },
+      kyc: { lookingFor: "WORKING_CAPITAL" },
     });
     expect(workingCapital).toEqual([
       "lookingFor",
@@ -20,11 +20,11 @@ describe("wizardSchema", () => {
     ]);
 
     const equipment = getStepFieldKeys("step1", {
-      kyc: { lookingFor: "Equipment" },
+      kyc: { lookingFor: "EQUIPMENT" },
     });
     expect(equipment).toEqual([
       "lookingFor",
-      "fundingAmount",
+      "equipmentAmount",
       "businessLocation",
       "industry",
       "purposeOfFunds",
@@ -36,10 +36,11 @@ describe("wizardSchema", () => {
     ]);
 
     const both = getStepFieldKeys("step1", {
-      kyc: { lookingFor: "Both" },
+      kyc: { lookingFor: "BOTH" },
     });
     expect(both).toEqual([
       "lookingFor",
+      "equipmentAmount",
       "fundingAmount",
       "businessLocation",
       "industry",
@@ -64,6 +65,25 @@ describe("wizardSchema", () => {
       "accountsReceivable",
       "fixedAssets",
     ]);
+  });
+
+  it("skips revenue fields for startup applicants", () => {
+    expect(getStepFieldKeys("step1", {
+      kyc: { lookingFor: "WORKING_CAPITAL", purposeOfFunds: "Start up Funding" },
+    })).toEqual([
+      "lookingFor",
+      "fundingAmount",
+      "businessLocation",
+      "industry",
+      "purposeOfFunds",
+      "salesHistory",
+      "accountsReceivable",
+      "fixedAssets",
+    ]);
+
+    expect(getStepFieldKeys("step1", {
+      kyc: { lookingFor: "WORKING_CAPITAL", salesHistory: "Zero" },
+    })).not.toContain("monthlyRevenue");
   });
 
   it("orders step 3 fields to match legacy structure", () => {

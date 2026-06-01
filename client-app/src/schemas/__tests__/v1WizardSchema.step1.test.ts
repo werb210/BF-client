@@ -55,3 +55,33 @@ describe("enforceV1StepSchema step1 with dual-bound keys (Block 15)", () => {
     expect(() => enforceV1StepSchema("step1", fullKyc)).not.toThrow();
   });
 });
+
+
+describe("v720 startup revenue schema", () => {
+  it("allows startup applicants to omit revenue ranges", () => {
+    const startupKyc = {
+      ...baseKyc,
+      purposeOfFunds: "Start up Funding",
+      salesHistory: "Zero",
+      revenueLast12Months: "",
+      annualRevenue: "",
+      monthlyRevenue: "",
+      accountsReceivable: "$500,000 to $1,000,000",
+      fixedAssets: "Over $500,000",
+    };
+    expect(() => enforceV1StepSchema("step1", startupKyc)).not.toThrow();
+  });
+
+  it("still requires revenue ranges for non-startup applicants", () => {
+    const normalKyc = {
+      ...baseKyc,
+      salesHistory: "Over 3 Years",
+      revenueLast12Months: "",
+      annualRevenue: "",
+      monthlyRevenue: "",
+      accountsReceivable: "$500,000 to $1,000,000",
+      fixedAssets: "Over $500,000",
+    };
+    expect(() => enforceV1StepSchema("step1", normalKyc)).toThrow();
+  });
+});

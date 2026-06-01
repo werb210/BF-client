@@ -86,11 +86,14 @@ export type HardStop =
   | { reason: "MIN_REVENUE"; message: string };
 
 export function detectHardStop(a: Step1Answers): HardStop | null {
+  // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — startup applicants are never
+  // bounced on revenue (we don't even ask). Path = startup purpose or 0 years.
+  const onStartupPath = a.purpose === "startup" || a.years === "0";
   if (a.location === "OTHER") return {
     reason: "OTHER_LOCATION",
     message: "At this time we only fund corporations registered in either Canada or the United States.",
   };
-  if (a.avgMonthly === "<10k") return {
+  if (!onStartupPath && a.avgMonthly === "<10k") return {
     reason: "MIN_REVENUE",
     message: "Your business does not currently meet our minimum monthly revenue threshold.",
   };
@@ -109,8 +112,11 @@ export function computeAllowedCategories(a: Step1Answers): Cat[] {
   if (a.location && a.location !== "OTHER") apply(locationRule[a.location] as readonly Cat[]);
   if (a.purpose) apply(purposeRule[a.purpose]);
   if (a.years) apply(yearsRule[a.years]);
-  if (a.revenue12) apply(revenue12Rule[a.revenue12]);
-  if (a.avgMonthly && a.avgMonthly !== "<10k") apply(avgMonthlyRule[a.avgMonthly] as readonly Cat[]);
+  // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — on the startup path revenue is
+  // never collected, so it must never filter the eligible category set.
+  const onStartupPath = a.purpose === "startup" || a.years === "0";
+  if (!onStartupPath && a.revenue12) apply(revenue12Rule[a.revenue12]);
+  if (!onStartupPath && a.avgMonthly && a.avgMonthly !== "<10k") apply(avgMonthlyRule[a.avgMonthly] as readonly Cat[]);
   if (a.ar) apply(arRule[a.ar]);
   if (a.fixedAssets) apply(fixedAssetsRule[a.fixedAssets]);
   return [...allowed];
