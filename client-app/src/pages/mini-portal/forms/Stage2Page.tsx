@@ -7,6 +7,8 @@ import { useParams } from "react-router-dom";
 import { listFormResponses, type FormResponse } from "@/lib/api";
 import PersonalNetWorthForm from "./forms/PersonalNetWorthForm";
 import DebtStackForm from "./forms/DebtStackForm";
+import CraAuthorizationForm from "./forms/CraAuthorizationForm";
+import RealEstateCollateralForm from "./forms/RealEstateCollateralForm";
 
 type RequiredDoc = {
   document_type: string;
@@ -16,9 +18,12 @@ type RequiredDoc = {
   max_amount?: number;
 };
 
+// BF_CLIENT_BLOCK_v304_ACCORD_FORMS_REBUILD_v1 — keys match portal DOCUMENT_TYPES / creator enum values.
 const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string; onComplete: () => void }>> = {
-  personal_net_worth_statement: PersonalNetWorthForm,
+  net_worth_statement: PersonalNetWorthForm,
   debt_stack: DebtStackForm,
+  cra_view_only_authorization: CraAuthorizationForm,
+  real_estate_collateral_disclosure: RealEstateCollateralForm,
 };
 
 function humanLabel(docType: string): string {
