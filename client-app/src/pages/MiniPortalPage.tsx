@@ -11,6 +11,8 @@ import { Device } from "@twilio/voice-sdk";
 import "./MiniPortalPage.css";
 import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWorthForm";
 import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
+// BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1
+import CraAuthorizationForm from "@/pages/mini-portal/forms/forms/CraAuthorizationForm";
 import SlimHeader from "@/components/SlimHeader";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
@@ -39,7 +41,8 @@ function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!ex
 const ACTION_CHIPS = [
   { id: "upload",     label: "Upload Documents" },
   { id: "new",        label: "New Application" },
-  { id: "networth",   label: "Personal Net Worth" },
+  { id: "networth",   label: "Personal Statement of Affairs" },
+  { id: "cra",        label: "CRA Authorization" },
   { id: "equipment",  label: "Equipment Collateral Form" },
   { id: "realestate", label: "Real Estate Collateral Form" },
   { id: "other",      label: "Other Forms" },
@@ -55,10 +58,33 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
+  // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
+  const [appDetail, setAppDetail] = useState<any>(null);
+  // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
+  const pnwPrefill = useMemo<Record<string, unknown>>(() => {
+    const md = (appDetail?.data?.metadata ?? appDetail?.metadata ?? {}) as any;
+    const a: any = (app.applicant && (app.applicant as any).firstName) ? app.applicant : (md.applicant ?? md.borrower ?? app.applicant ?? {});
+    const fullName = [a.firstName, a.lastName].filter(Boolean).join(" ");
+    const dob = String(a.dob ?? a.dateOfBirth ?? "");
+    const [by, bm, bd] = dob.includes("-") ? dob.split("-") : ["", "", ""];
+    const out: Record<string, unknown> = {};
+    if (fullName) { out.full_legal_name = fullName; out.signature_typed_name = fullName; }
+    if (a.email) out.personal_email = a.email;
+    if (a.phone) out.cell_phone = a.phone;
+    if (a.ssn || a.sin) out.sin = a.ssn ?? a.sin;
+    if (by) out.birth_year = by;
+    if (bm) out.birth_month = bm;
+    if (bd) out.birth_day = bd;
+    if (a.street) { out.mailing_address = a.street; out.physical_address = a.street; }
+    if (a.city) { out.mailing_city = a.city; out.physical_city = a.city; }
+    if (a.state) { out.mailing_province = a.state; out.physical_province = a.state; }
+    if (a.zip) { out.mailing_postal = a.zip; out.physical_postal = a.zip; }
+    return out;
+  }, [appDetail, app.applicant]);
 
   const loadAll = useCallback(async () => {
     if (!applicationId) return;
-    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
+    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; setAppDetail(appData); const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
       if (!applicationId) return;
@@ -129,7 +155,7 @@ export default function MiniPortalPage() {
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other">(null);
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other" | "cra">(null);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — PNW + Debt
   // open as modals (real forms); equipment/realestate/other open a
   // "coming soon" modal. The legacy /forms/* route doesn't exist
@@ -137,7 +163,7 @@ export default function MiniPortalPage() {
   const onChip = (id: string) => {
     if (id === "new") { reset(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
-    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other") {
+    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other" || id === "cra") {
       setOpenForm(id);
       return;
     }
@@ -439,7 +465,8 @@ export default function MiniPortalPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 18, fontWeight: 600 }}>
-                {openForm === "networth" && "Personal Net Worth Form"}
+                {openForm === "networth" && "Personal Statement of Affairs"}
+                {openForm === "cra" && "CRA View-Only Authorization"}
                 {openForm === "debt" && "Debt Schedule"}
                 {openForm === "equipment" && "Equipment Collateral Form"}
                 {openForm === "realestate" && "Real Estate Collateral Form"}
@@ -457,6 +484,13 @@ export default function MiniPortalPage() {
             <div style={{ padding: 20 }}>
               {openForm === "networth" && (
                 <PersonalNetWorthForm
+                  applicationId={applicationId}
+                  prefill={pnwPrefill}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "cra" && (
+                <CraAuthorizationForm
                   applicationId={applicationId}
                   onComplete={() => setOpenForm(null)}
                 />
