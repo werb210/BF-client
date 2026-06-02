@@ -37,6 +37,9 @@ import {
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
 import { persistApplicationStep } from "./saveStepProgress";
+// BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1
+import { bucketFor } from "./categoryAliases";
+import { parseCurrencyAmount } from "./productSelection";
 
 export function Step3_Business() {
   const { app, update, autosaveError } = useApplicationStore();
@@ -63,6 +66,69 @@ export function Step3_Business() {
     () => (countryCode === "CA" ? "CA" : "US"),
     [countryCode]
   );
+
+  // BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord LOC branch.
+  // Triggered only for Line of Credit + Canada + funding < $1,000,000
+  // (Accord is the sole lender in that band). New fields render and
+  // validate only inside this branch; all other products are untouched.
+  const accordFundingAmount = parseCurrencyAmount(app.kyc?.fundingAmount);
+  const isAccordLOC =
+    bucketFor(String(app.productCategory ?? app.selectedProductType ?? "")) ===
+      "LINE_OF_CREDIT" &&
+    countryCode === "CA" &&
+    accordFundingAmount > 0 &&
+    accordFundingAmount < 1_000_000;
+
+  const ACCORD_RISK_QUESTIONS = [
+    { key: "riskMultipleLocations", label: "Does the business operate more than one location?" },
+    { key: "riskBusinessBankruptcy", label: "Has the business ever filed for bankruptcy, CCAA, or a proposal?" },
+    { key: "riskOwnerBankruptcyPersonal", label: "Has any owner / officer / director filed personal bankruptcy or a proposal?" },
+    { key: "riskOwnerBankruptcyOtherBiz", label: "Has any owner / officer / director filed bankruptcy, CCAA, or a proposal for any other business?" },
+    { key: "riskGovtArrears", label: "Any past-due government balances (Source Deductions, GST/HST, PST, income tax, EHT)?" },
+  ] as const;
+
+  function deriveYearsInBusiness(monthValue: string): number | "" {
+    if (!monthValue) return "";
+    const [y, m] = monthValue.split("-").map((part) => Number(part));
+    if (!y || !m) return "";
+    const now = new Date();
+    let years = now.getFullYear() - y;
+    if (now.getMonth() + 1 < m) years -= 1;
+    return years < 0 ? 0 : years;
+  }
+
+  function setInBusinessSince(monthValue: string) {
+    // One input feeds both: keep the picker value, derive a concrete
+    // startDate (first of the month) so downstream consumers and the
+    // strict step3 schema stay valid, and compute yearsInBusiness.
+    const startDate = monthValue ? `${monthValue}-01` : "";
+    update({
+      business: {
+        ...values,
+        inBusinessSince: monthValue,
+        startDate,
+        yearsInBusiness: deriveYearsInBusiness(monthValue),
+      },
+    });
+  }
+
+  function accordRequirementsMet(v: Record<string, any>): boolean {
+    if (!isAccordLOC) return true;
+    if (!Validate.required(v.fiscalYearEnd)) return false;
+    if (!Validate.required(v.inBusinessSince)) return false;
+    if (v.mailingSameAsOperating === false) {
+      if (!Validate.required(v.mailingAddress)) return false;
+      if (!Validate.required(v.mailingCity)) return false;
+      if (!Validate.required(v.mailingState)) return false;
+      if (!Validate.required(v.mailingZip)) return false;
+    }
+    for (const q of ACCORD_RISK_QUESTIONS) {
+      const ans = v[q.key];
+      if (ans !== "Yes" && ans !== "No") return false;
+      if (ans === "Yes" && !Validate.required(v[`${q.key}Detail`])) return false;
+    }
+    return true;
+  }
 
   useEffect(() => {
     console.log("[wizard] Step3_Business MOUNTED effect ran", { currentStep: app.currentStep });
@@ -150,7 +216,7 @@ export function Step3_Business() {
     "startDate",
     "employees",
     "estimatedRevenue",
-  ].every((field) => Validate.required(values[field]));
+  ].every((field) => Validate.required(values[field])) && accordRequirementsMet(values);
 
   async function next() {
     saveStepData(3, values);
@@ -197,6 +263,11 @@ export function Step3_Business() {
     );
     if (missing) {
       setSaveError("Please complete all required business details.");
+      return;
+    }
+    // BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1
+    if (!accordRequirementsMet(nextValues)) {
+      setSaveError("Please complete all required Accord line-of-credit details.");
       return;
     }
 
@@ -250,7 +321,7 @@ export function Step3_Business() {
       "startDate",
       "employees",
       "estimatedRevenue",
-    ].every((field) => Validate.required(nextValues[field]));
+    ].every((field) => Validate.required(nextValues[field])) && accordRequirementsMet(nextValues);
 
   const handleAutoAdvance = (
     currentKey: string,
@@ -524,20 +595,45 @@ export function Step3_Business() {
             />
           </div>
 
-          <div>
-            <label style={components.form.label}>Business Start Date</label>
-            <Input
-              id={getWizardFieldId("step3", "startDate")}
-              type="date"
-              value={values.startDate || ""}
-              onChange={(e: unknown) => setField("startDate", e.target.value)}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("startDate", values);
-                }
-              }}
-            />
-          </div>
+          {!isAccordLOC && (
+            <div>
+              <label style={components.form.label}>Business Start Date</label>
+              <Input
+                id={getWizardFieldId("step3", "startDate")}
+                type="date"
+                value={values.startDate || ""}
+                onChange={(e: unknown) => setField("startDate", e.target.value)}
+                onKeyDown={(e: unknown) => {
+                  if (e.key === "Enter") {
+                    handleAutoAdvance("startDate", values);
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — replaces Business Start Date in the Accord branch */}
+          {isAccordLOC && (
+            <div>
+              <label style={components.form.label}>In Business Since</label>
+              <input
+                id={getWizardFieldId("step3", "startDate")}
+                type="month"
+                value={values.inBusinessSince || ""}
+                onChange={(e: any) => setInBusinessSince(e.target.value)}
+              />
+            </div>
+          )}
+          {isAccordLOC && (
+            <div>
+              <label style={components.form.label}>Fiscal Year-End</label>
+              <input
+                type="date"
+                value={values.fiscalYearEnd || ""}
+                onChange={(e: any) => setField("fiscalYearEnd", e.target.value)}
+              />
+            </div>
+          )}
 
           <div>
             <label style={components.form.label}>Number of Employees</label>
@@ -629,6 +725,119 @@ export function Step3_Business() {
               placeholder={countryCode === "CA" ? "CA$" : "$"}
             />
           </div>
+
+          {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord mailing address */}
+          {isAccordLOC && (
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
+              <label style={{ ...components.form.label, display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={values.mailingSameAsOperating !== false}
+                  onChange={(e: any) =>
+                    update({ business: { ...values, mailingSameAsOperating: e.target.checked } })
+                  }
+                />
+                Mailing address same as operating address
+              </label>
+              {values.mailingSameAsOperating === false && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr",
+                    gap: tokens.spacing.md,
+                  }}
+                >
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={components.form.label}>Mailing Address</label>
+                    <AddressAutocompleteInput
+                      country={regionCountry}
+                      value={values.mailingAddress || ""}
+                      onChange={(e: any) => setField("mailingAddress", e.target.value)}
+                      onSelect={(selection: any) => {
+                        if (!("street" in selection)) return;
+                        update({
+                          business: {
+                            ...values,
+                            mailingAddress: selection.street || values.mailingAddress,
+                            mailingCity: selection.city || values.mailingCity,
+                            mailingState: selection.state || values.mailingState,
+                            mailingZip: formatPostalCode(
+                              selection.postalCode || values.mailingZip || "",
+                              countryCode
+                            ),
+                          },
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>City</label>
+                    <Input
+                      value={values.mailingCity || ""}
+                      onChange={(e: any) => setField("mailingCity", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>{regionLabel}</label>
+                    <RegionSelect
+                      country={regionCountry}
+                      value={values.mailingState || ""}
+                      onChange={(value: string) => setField("mailingState", value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>{postalLabel}</label>
+                    <Input
+                      value={formatPostalCode(values.mailingZip || "", countryCode)}
+                      onChange={(e: any) =>
+                        setField("mailingZip", formatPostalCode(e.target.value, countryCode))
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord risk questions */}
+          {isAccordLOC && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <h2 style={{ fontSize: 16, fontWeight: 600, color: "#374151", margin: "8px 0 12px" }}>
+                Risk Profile
+              </h2>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr",
+                  gap: tokens.spacing.md,
+                }}
+              >
+                {ACCORD_RISK_QUESTIONS.map((q) => (
+                  <div key={q.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <label style={components.form.label}>{q.label}</label>
+                    <Select
+                      value={values[q.key] || ""}
+                      onChange={(e: any) => setField(q.key, e.target.value)}
+                    >
+                      <option value="">Select…</option>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
+                    </Select>
+                    {values[q.key] === "Yes" && (
+                      <Input
+                        value={values[`${q.key}Detail`] || ""}
+                        onChange={(e: any) => setField(`${q.key}Detail`, e.target.value)}
+                        placeholder="Please provide details"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
