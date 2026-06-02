@@ -13,6 +13,8 @@ import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWor
 import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
 // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1
 import CraAuthorizationForm from "@/pages/mini-portal/forms/forms/CraAuthorizationForm";
+// BF_CLIENT_BLOCK_v302_FLINKS_CONNECT_v1
+import FlinksConnectForm from "@/pages/mini-portal/forms/forms/FlinksConnectForm";
 import SlimHeader from "@/components/SlimHeader";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
@@ -43,6 +45,7 @@ const ACTION_CHIPS = [
   { id: "new",        label: "New Application" },
   { id: "networth",   label: "Personal Statement of Affairs" },
   { id: "cra",        label: "CRA Authorization" },
+  { id: "flinks",     label: "Connect Bank (View-Only)" },
   { id: "equipment",  label: "Equipment Collateral Form" },
   { id: "realestate", label: "Real Estate Collateral Form" },
   { id: "other",      label: "Other Forms" },
@@ -155,7 +158,7 @@ export default function MiniPortalPage() {
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other" | "cra">(null);
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other" | "cra" | "flinks">(null);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — PNW + Debt
   // open as modals (real forms); equipment/realestate/other open a
   // "coming soon" modal. The legacy /forms/* route doesn't exist
@@ -163,7 +166,7 @@ export default function MiniPortalPage() {
   const onChip = (id: string) => {
     if (id === "new") { reset(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
-    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other" || id === "cra") {
+    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other" || id === "cra" || id === "flinks") {
       setOpenForm(id);
       return;
     }
@@ -467,6 +470,7 @@ export default function MiniPortalPage() {
               <div style={{ fontSize: 18, fontWeight: 600 }}>
                 {openForm === "networth" && "Personal Statement of Affairs"}
                 {openForm === "cra" && "CRA View-Only Authorization"}
+                {openForm === "flinks" && "Connect Your Bank (View-Only)"}
                 {openForm === "debt" && "Debt Schedule"}
                 {openForm === "equipment" && "Equipment Collateral Form"}
                 {openForm === "realestate" && "Real Estate Collateral Form"}
@@ -491,6 +495,12 @@ export default function MiniPortalPage() {
               )}
               {openForm === "cra" && (
                 <CraAuthorizationForm
+                  applicationId={applicationId}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "flinks" && (
+                <FlinksConnectForm
                   applicationId={applicationId}
                   onComplete={() => setOpenForm(null)}
                 />
