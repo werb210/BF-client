@@ -45,7 +45,7 @@ function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!ex
 const ACTION_CHIPS = [
   { id: "upload",     label: "Upload Documents" },
   { id: "new",        label: "New Application" },
-  { id: "networth",   label: "Personal Statement of Affairs" },
+  { id: "networth",   label: "Personal Net Worth Statement" },
   { id: "cra",        label: "CRA Authorization" },
   { id: "flinks",     label: "Connect Bank (View-Only)" },
   { id: "equipment",  label: "Equipment Collateral Form" },
