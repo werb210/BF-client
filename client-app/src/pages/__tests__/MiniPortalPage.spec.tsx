@@ -18,9 +18,9 @@ describe("MiniPortalPage", () => {
     expect(labels).toEqual(["Received", "In Review", "Documents Required", "Additional Steps Required", "Off to Lender", "Offer"]);
   });
 
-  it("opens Personal Statement of Affairs modal when chip is clicked", () => {
+  it("opens the Personal Net Worth Statement modal when chip is clicked", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "Personal Statement of Affairs" }));
+    fireEvent.click(screen.getByRole("button", { name: "Personal Net Worth Statement" }));
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(screen.getAllByText("Personal Statement of Affairs").length).toBeGreaterThan(0);
   });
@@ -28,7 +28,7 @@ describe("MiniPortalPage", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
     const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
     expect(chips).toContain("Upload Documents");
-    expect(chips).toContain("Personal Statement of Affairs");
+    expect(chips).toContain("Personal Net Worth Statement");
     expect(chips).toContain("CRA Authorization");
     expect(chips).toContain("Other Forms");
   });
