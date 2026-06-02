@@ -15,6 +15,8 @@ import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
 import CraAuthorizationForm from "@/pages/mini-portal/forms/forms/CraAuthorizationForm";
 // BF_CLIENT_BLOCK_v302_FLINKS_CONNECT_v1
 import FlinksConnectForm from "@/pages/mini-portal/forms/forms/FlinksConnectForm";
+// BF_CLIENT_BLOCK_v304_ACCORD_FORMS_REBUILD_v1
+import RealEstateCollateralForm from "@/pages/mini-portal/forms/forms/RealEstateCollateralForm";
 import SlimHeader from "@/components/SlimHeader";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
@@ -511,7 +513,13 @@ export default function MiniPortalPage() {
                   onComplete={() => setOpenForm(null)}
                 />
               )}
-              {(openForm === "equipment" || openForm === "realestate" || openForm === "other") && (
+              {openForm === "realestate" && (
+                <RealEstateCollateralForm
+                  applicationId={applicationId}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {(openForm === "equipment" || openForm === "other") && (
                 <div style={{ textAlign: "center", padding: "32px 16px" }}>
                   <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
                   <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming soon</div>
