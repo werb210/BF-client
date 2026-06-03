@@ -71,9 +71,9 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1 — one canonical prefill object
   // consumed by every CMP form. Forms map these canonical keys to their fields.
   const cmpPrefill = useMemo<Record<string, unknown>>(() => {
-    const md = (appDetail?.data?.metadata ?? appDetail?.metadata ?? {}) as any;
+    const md = (appDetail?.data?.application?.metadata ?? appDetail?.data?.metadata ?? appDetail?.metadata ?? {}) as any;
     const a: any = (app.applicant && (app.applicant as any).firstName) ? app.applicant : (md.applicant ?? md.borrower ?? app.applicant ?? {});
-    const biz: any = md.business ?? appDetail?.data?.business ?? appDetail?.business ?? {};
+    const biz: any = md.business ?? appDetail?.data?.application?.business ?? appDetail?.data?.business ?? appDetail?.business ?? {};
     const fullName = [a.firstName, a.lastName].filter(Boolean).join(" ").trim();
     const out: Record<string, unknown> = {};
     if (fullName) out.fullName = fullName;
@@ -95,7 +95,7 @@ export default function MiniPortalPage() {
 
   const loadAll = useCallback(async () => {
     if (!applicationId) return;
-    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; setAppDetail(appData); const raw = String(appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
+    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; setAppDetail(appData); /* BF_CLIENT_BLOCK_v309_APPDETAIL_NESTING_v1 — GET /:id returns { data: { application } }; stage lives at data.application.pipeline_state */ const raw = String(appData?.data?.application?.pipeline_state ?? appData?.data?.application?.current_stage ?? appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
       if (!applicationId) return;
