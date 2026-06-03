@@ -59,7 +59,7 @@ const INCOME_ROWS: Array<{ key: string; label: string }> = [
 ];
 
 const DISCLOSURES: string[] = [
-  "Previous dealings with Accord Financial (any division or subsidiary)?",
+  "Previous dealings with Boreal Financial (any division or subsidiary)?",
   "Ever filed for bankruptcy, consumer proposal, or any form of insolvency?",
   "Ever convicted of a criminal offence not pardoned?",
   "Income taxes for previous year(s) fully satisfied?",
