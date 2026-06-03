@@ -116,6 +116,7 @@ export default function MiniPortalPage() {
           createdAt: String(item.createdAt ?? item.created_at ?? new Date().toISOString()),
           ctaLabel: typeof item.cta_label === "string" ? item.cta_label : (typeof item.ctaLabel === "string" ? item.ctaLabel : null),
           ctaAction: typeof item.cta_action === "string" ? item.cta_action : (typeof item.ctaAction === "string" ? item.ctaAction : null),
+          attachments: Array.isArray(item.attachments) ? item.attachments : null,
         };
       }));
     } catch {}
@@ -290,7 +291,7 @@ export default function MiniPortalPage() {
     setAttachments([]);
     setStagedFiles([]);
     await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body: next, direction: "inbound", attachments: attach } });
-    setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString() }]);
+    setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString(), attachments: attach.length ? attach : null }]);
   }
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
@@ -359,6 +360,21 @@ export default function MiniPortalPage() {
                   <div className="mp-msg-stack">
                     <div className={`mp-msg-bubble ${outbound ? "mp-msg-bubble--out" : "mp-msg-bubble--in"}`}>
                       <div>{m.body}</div>
+                      {m.attachments && m.attachments.length > 0 ? (
+                        <div style={{ marginTop: m.body ? 6 : 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                          {m.attachments.map((a, i) =>
+                            (a.contentType ?? "").startsWith("image/") ? (
+                              <a key={i} href={a.dataUrl} target="_blank" rel="noreferrer">
+                                <img src={a.dataUrl} alt={a.name} style={{ maxWidth: 200, maxHeight: 200, borderRadius: 8, display: "block" }} />
+                              </a>
+                            ) : (
+                              <a key={i} href={a.dataUrl} download={a.name} style={{ fontSize: 13, color: "inherit", textDecoration: "underline" }}>
+                                📎 {a.name}
+                              </a>
+                            ),
+                          )}
+                        </div>
+                      ) : null}
                       {m.ctaLabel && m.ctaAction ? <button className="mp-msg-cta" type="button" onClick={() => handleMessageCta(m.ctaAction)}>{m.ctaLabel}</button> : null}
                     </div>
                   </div>

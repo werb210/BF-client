@@ -17,6 +17,7 @@ export type ThreadMessage = {
   createdAt: string;
   ctaLabel?: string | null;
   ctaAction?: string | null;
+  attachments?: Array<{ name: string; contentType?: string | null; dataUrl: string }> | null;
 };
 
 type Props = {
