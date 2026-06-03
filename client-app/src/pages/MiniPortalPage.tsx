@@ -96,6 +96,10 @@ export default function MiniPortalPage() {
   const loadAll = useCallback(async () => {
     if (!applicationId) return;
     try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; setAppDetail(appData); /* BF_CLIENT_BLOCK_v309_APPDETAIL_NESTING_v1 — GET /:id returns { data: { application } }; stage lives at data.application.pipeline_state */ const raw = String(appData?.data?.application?.pipeline_state ?? appData?.data?.application?.current_stage ?? appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
+    // BF_CLIENT_BLOCK_v310_CLIENT_STAGE_v1 — /api/applications/:id is staff-gated (401 for the
+    // client mini-portal), so the read above silently fails and the tracker stuck at "Received".
+    // Read the live stage from the client-accessible endpoint.
+    try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
       if (!applicationId) return;
