@@ -99,7 +99,7 @@ export default function MiniPortalPage() {
     // BF_CLIENT_BLOCK_v310_CLIENT_STAGE_v1 — /api/applications/:id is staff-gated (401 for the
     // client mini-portal), so the read above silently fails and the tracker stuck at "Received".
     // Read the live stage from the client-accessible endpoint.
-    try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); } catch {}
+    try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); /* BF_CLIENT_BLOCK_v311_CLIENT_PREFILL_v1 — staff /:id is gated (401 for the client), so the prefill metadata never loaded and the CMP forms came up blank. Take metadata from the client endpoint. */ const md = stg?.metadata ?? stg?.data?.metadata ?? null; if (md) setAppDetail((prev: any) => ({ data: { application: { metadata: md, pipeline_state: stg?.pipeline_state ?? prev?.data?.application?.pipeline_state ?? null } } })); } catch {}
     try {
       const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
       if (!applicationId) return;
