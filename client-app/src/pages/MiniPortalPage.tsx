@@ -176,6 +176,29 @@ export default function MiniPortalPage() {
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks">(null);
+  // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
+  const [showSign, setShowSign] = useState(false);
+  const [signSession, setSignSession] = useState<{ status: string; url?: string } | null>(null);
+  const [signLoading, setSignLoading] = useState(false);
+  const fetchSigningSession = useCallback(async () => {
+    if (!applicationId) return;
+    setSignLoading(true);
+    try {
+      const r = await apiCall<any>(`/api/client/signing-session?applicationId=${encodeURIComponent(applicationId)}`);
+      setSignSession({ status: String(r?.status ?? "error"), url: typeof r?.url === "string" ? r.url : undefined });
+    } catch { setSignSession({ status: "error" }); }
+    finally { setSignLoading(false); }
+  }, [applicationId]);
+  useEffect(() => {
+    if (!showSign) return;
+    const onMsg = (ev: MessageEvent) => {
+      const d = typeof ev.data === "string" ? ev.data : (ev.data && typeof ev.data === "object" ? JSON.stringify(ev.data) : "");
+      if (/finish|complete|signed|document_signed/i.test(d)) { void fetchSigningSession(); void loadAll(); }
+    };
+    window.addEventListener("message", onMsg);
+    const t = window.setInterval(() => { void fetchSigningSession(); }, 6000);
+    return () => { window.removeEventListener("message", onMsg); window.clearInterval(t); };
+  }, [showSign, fetchSigningSession, loadAll]);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — CMP actions open
   // as modals with real forms. The legacy /forms/* route doesn't exist
   // and was scrolling-to-top silently.
@@ -186,6 +209,7 @@ export default function MiniPortalPage() {
       setOpenForm(id);
       return;
     }
+    if (id === "sign") { setShowSign(true); void fetchSigningSession(); return; }
   };
 
   // Call Us! VOIP state + handlers.
@@ -430,6 +454,11 @@ export default function MiniPortalPage() {
                   {c.label}
                 </button>
               ))}
+              {stageIndex >= STAGE_BY_KEY["off_to_lender"] && (
+                <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")}>
+                  Sign Documents
+                </button>
+              )}
             </div>
             {/* Twilio Voice WebRTC, no tel: link */}
             <div style={{ marginTop: 12 }}>
@@ -559,6 +588,27 @@ export default function MiniPortalPage() {
                   onComplete={() => setOpenForm(null)}
                 />
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {showSign && (
+        <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setShowSign(false); }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div style={{ background: "#fff", color: "#0b1320", borderRadius: 12, maxWidth: 900, width: "100%", height: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 10px 40px rgba(0,0,0,0.4)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>Sign Your Documents</div>
+              <button type="button" onClick={() => setShowSign(false)} aria-label="Close" style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ flex: 1, minHeight: 0 }}>
+              {signLoading && !signSession && <div style={{ padding: 24 }}>Loading…</div>}
+              {signSession?.status === "ready" && signSession.url && (
+                <iframe title="Sign documents" src={signSession.url} style={{ border: 0, width: "100%", height: "100%" }} />
+              )}
+              {signSession?.status === "signed" && <div style={{ padding: 24 }}>✓ Your documents are signed. Thank you!</div>}
+              {signSession?.status === "not_ready" && <div style={{ padding: 24 }}>Your documents aren’t ready to sign yet — we’ll text you the moment they are.</div>}
+              {signSession?.status === "stub" && <div style={{ padding: 24 }}>Signing isn’t enabled in this environment yet.</div>}
+              {signSession?.status === "error" && <div style={{ padding: 24 }}>We couldn’t load your signing session. Please try again shortly.</div>}
             </div>
           </div>
         </div>
