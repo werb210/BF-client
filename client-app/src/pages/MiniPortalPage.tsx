@@ -159,7 +159,11 @@ export default function MiniPortalPage() {
       return;
     }
     if (kind === "form" && rest) {
-      navigate(`/forms/${rest}?applicationId=${encodeURIComponent(applicationId)}`);
+      // BF_CLIENT_BLOCK_v324 — open the form modal (the /forms/* route doesn't
+      // exist; the pills use setOpenForm, so CTAs must too).
+      if (rest === "networth" || rest === "debt" || rest === "equipment" || rest === "realestate" || rest === "cra" || rest === "flinks") {
+        setOpenForm(rest);
+      }
       return;
     }
     if (kind === "message" && rest) {
