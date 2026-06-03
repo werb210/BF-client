@@ -2,6 +2,7 @@
 import { parseCurrencyAmount } from "./productSelection";
 
 export type LenderProductRequirement = {
+  stage?: number;
   id: string;
   document_type: string;
   required: boolean;
@@ -43,6 +44,7 @@ export function normalizeRequirementList(
         id: String(entry?.id ?? documentType),
         document_type: documentType,
         required: Boolean(entry?.required ?? true),
+        stage: entry?.stage === 2 || entry?.stage === "2" ? 2 : 1,
         min_amount:
           typeof entry?.min_amount === "number" ? entry.min_amount : null,
         max_amount:

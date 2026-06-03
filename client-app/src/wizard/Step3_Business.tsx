@@ -556,6 +556,81 @@ export function Step3_Business() {
             />
           </div>
 
+          {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord mailing address */}
+          {isAccordLOC && (
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
+              <label style={{ ...components.form.label, display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  style={{ width: "auto" }}
+                  checked={values.mailingSameAsOperating !== false}
+                  onChange={(e: any) =>
+                    update({ business: { ...values, mailingSameAsOperating: e.target.checked } })
+                  }
+                />
+                Mailing address same as operating address
+              </label>
+              {values.mailingSameAsOperating === false && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr",
+                    gap: tokens.spacing.md,
+                  }}
+                >
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={components.form.label}>Mailing Address</label>
+                    <AddressAutocompleteInput
+                      country={regionCountry}
+                      value={values.mailingAddress || ""}
+                      onChange={(e: any) => setField("mailingAddress", e.target.value)}
+                      onSelect={(selection: any) => {
+                        if (!("street" in selection)) return;
+                        update({
+                          business: {
+                            ...values,
+                            mailingAddress: selection.street || values.mailingAddress,
+                            mailingCity: selection.city || values.mailingCity,
+                            mailingState: selection.state || values.mailingState,
+                            mailingZip: formatPostalCode(
+                              selection.postalCode || values.mailingZip || "",
+                              countryCode
+                            ),
+                          },
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>City</label>
+                    <Input
+                      value={values.mailingCity || ""}
+                      onChange={(e: any) => setField("mailingCity", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>{regionLabel}</label>
+                    <RegionSelect
+                      country={regionCountry}
+                      value={values.mailingState || ""}
+                      onChange={(value: string) => setField("mailingState", value)}
+                    />
+                  </div>
+                  <div>
+                    <label style={components.form.label}>{postalLabel}</label>
+                    <Input
+                      value={formatPostalCode(values.mailingZip || "", countryCode)}
+                      onChange={(e: any) =>
+                        setField("mailingZip", formatPostalCode(e.target.value, countryCode))
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label style={components.form.label}>Business Phone</label>
             <PhoneInput
@@ -725,81 +800,6 @@ export function Step3_Business() {
               placeholder={countryCode === "CA" ? "CA$" : "$"}
             />
           </div>
-
-          {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord mailing address */}
-          {isAccordLOC && (
-            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
-              <label style={{ ...components.form.label, display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="checkbox"
-                  style={{ width: "auto" }}
-                  checked={values.mailingSameAsOperating !== false}
-                  onChange={(e: any) =>
-                    update({ business: { ...values, mailingSameAsOperating: e.target.checked } })
-                  }
-                />
-                Mailing address same as operating address
-              </label>
-              {values.mailingSameAsOperating === false && (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr",
-                    gap: tokens.spacing.md,
-                  }}
-                >
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={components.form.label}>Mailing Address</label>
-                    <AddressAutocompleteInput
-                      country={regionCountry}
-                      value={values.mailingAddress || ""}
-                      onChange={(e: any) => setField("mailingAddress", e.target.value)}
-                      onSelect={(selection: any) => {
-                        if (!("street" in selection)) return;
-                        update({
-                          business: {
-                            ...values,
-                            mailingAddress: selection.street || values.mailingAddress,
-                            mailingCity: selection.city || values.mailingCity,
-                            mailingState: selection.state || values.mailingState,
-                            mailingZip: formatPostalCode(
-                              selection.postalCode || values.mailingZip || "",
-                              countryCode
-                            ),
-                          },
-                        });
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={components.form.label}>City</label>
-                    <Input
-                      value={values.mailingCity || ""}
-                      onChange={(e: any) => setField("mailingCity", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label style={components.form.label}>{regionLabel}</label>
-                    <RegionSelect
-                      country={regionCountry}
-                      value={values.mailingState || ""}
-                      onChange={(value: string) => setField("mailingState", value)}
-                    />
-                  </div>
-                  <div>
-                    <label style={components.form.label}>{postalLabel}</label>
-                    <Input
-                      value={formatPostalCode(values.mailingZip || "", countryCode)}
-                      onChange={(e: any) =>
-                        setField("mailingZip", formatPostalCode(e.target.value, countryCode))
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord risk questions */}
           {isAccordLOC && (
