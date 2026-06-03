@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
+import { ACCORD_RISK_QUESTIONS, isAccordLOCApp } from "./accordRisk";
 import { TERMS_TEXT } from "../data/terms";
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
@@ -658,6 +659,35 @@ export function Step6_Review(): JSX.Element {
     <WizardLayout>
       <div className="wizard-step-shell">
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" />
+
+      {/* BF_CLIENT_BLOCK_v327 — Accord Risk Profile moved here from Step 3 (top of Step 6). */}
+      {isAccordLOCApp(app) && (
+        <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginBottom: tokens.spacing.lg }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Risk Profile</h2>
+          <div style={{ display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md }}>
+            {ACCORD_RISK_QUESTIONS.map((q) => {
+              const biz = (app.business ?? {}) as Record<string, any>;
+              const val = biz[q.key] ?? "";
+              const detail = biz[`${q.key}Detail`] ?? "";
+              const setVal = (v: string) => update({ business: { ...biz, [q.key]: v } as any });
+              const setDetail = (v: string) => update({ business: { ...biz, [`${q.key}Detail`]: v } as any });
+              return (
+                <div key={q.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label>{q.label}</label>
+                  <select value={val} onChange={(e) => setVal(e.target.value)}>
+                    <option value="">Select…</option>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                  </select>
+                  {val === "Yes" && (
+                    <input value={detail} onChange={(e) => setDetail(e.target.value)} placeholder="Please provide details" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
         {/* BF_CLIENT_WIZARD_STEP6_PGI_v61 — Step 6 reordered to
