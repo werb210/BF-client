@@ -101,9 +101,11 @@ export default function MiniPortalPage() {
     // Read the live stage from the client-accessible endpoint.
     try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); /* BF_CLIENT_BLOCK_v311_CLIENT_PREFILL_v1 — staff /:id is gated (401 for the client), so the prefill metadata never loaded and the CMP forms came up blank. Take metadata from the client endpoint. */ const md = stg?.metadata ?? stg?.data?.metadata ?? null; if (md) setAppDetail((prev: any) => ({ data: { application: { metadata: md, pipeline_state: stg?.pipeline_state ?? prev?.data?.application?.pipeline_state ?? null } } })); } catch {}
     try {
-      const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`).catch((): any[] => []);
+      // BF_CLIENT_BLOCK_v326 — on a failed fetch (incl. 429), throw to the outer
+      // catch and PRESERVE the thread. The old .catch(()=>[]) wiped all messages.
+      const incoming = await apiCall<any[]>(`/api/client/messages?applicationId=${encodeURIComponent(applicationId)}`);
       if (!applicationId) return;
-      setMessages(incoming.map((item: any, idx: number) => {
+      if (Array.isArray(incoming)) setMessages(incoming.map((item: any, idx: number) => {
         const dir = String(item.direction ?? "").toLowerCase();
         const role: "self" | "other" = dir === "inbound" ? "self" : "other";
         return {
@@ -277,13 +279,16 @@ export default function MiniPortalPage() {
     if (!applicationId) return;
     let cancelled = false;
     const tick = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const r = await apiCall<{ typing: boolean }>(`/api/client/messages/typing?applicationId=${encodeURIComponent(applicationId)}`);
         if (!cancelled) setStaffTyping(Boolean((r as any)?.typing));
-      } catch { /* swallow */ }
+      } catch { /* swallow — incl. 429; never affects the thread */ }
     };
     void tick();
-    const id = setInterval(tick, 3000);
+    // BF_CLIENT_BLOCK_v326 — was 3s, which (with the other polls) tripped the
+    // server read rate limit and produced a 429 storm. 10s + hidden-tab pause.
+    const id = setInterval(tick, 10000);
     return () => { cancelled = true; clearInterval(id); };
   }, [applicationId]);
 

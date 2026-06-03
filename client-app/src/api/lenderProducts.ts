@@ -19,6 +19,7 @@ type ServerItem = {
   required?: boolean;
   min_amount?: number | null;
   max_amount?: number | null;
+  stage?: number;
 };
 
 export async function fetchRequiredDocsUnion(
@@ -44,6 +45,7 @@ export async function fetchRequiredDocsUnion(
         required: e.required !== false,
         min_amount: e.min_amount ?? null,
         max_amount: e.max_amount ?? null,
+        stage: e.stage === 2 ? 2 : 1,
       }));
   } catch {
     return [];
