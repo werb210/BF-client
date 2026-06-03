@@ -34,6 +34,7 @@
 .mp-actions__chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
 .mp-chip--action{height:48px;border:none;background:#dbeafe;color:#1d4ed8;border-radius:12px;font-size:14px;font-weight:600;padding:0 10px;text-align:center}
 .mp-callus{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:56px;border:none;border-radius:28px;background:#22c55e;color:#fff;font-size:16px;font-weight:600}
+.mp-hangup{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:56px;border:none;border-radius:28px;background:#ef4444;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
 
 .mp-offers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .mp-offer__head{background:#3b82f6;color:#fff;padding:10px 12px;border-radius:16px 16px 0 0;font-size:14px;font-weight:600;position:relative}

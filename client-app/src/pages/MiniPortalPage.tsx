@@ -425,10 +425,9 @@ export default function MiniPortalPage() {
                 </div>
               )}
               {callState === "connected" && (
-                <div style={{ width: "100%", padding: 12, background: "#dcfce7", color: "#14532d", borderRadius: 10, textAlign: "center", fontSize: 14 }}>
-                  ✓ Connected
-                  <button type="button" onClick={endCall} style={{ marginLeft: 12, padding: "4px 10px", border: 0, borderRadius: 6, background: "#ef4444", color: "#fff", cursor: "pointer" }}>End</button>
-                </div>
+                <button type="button" className="mp-hangup" onClick={endCall} style={{ width: "100%" }}>
+                  📞 Hang up
+                </button>
               )}
               {callState === "ended" && (
                 <button type="button" className="mp-callus" onClick={() => setCallState("idle")} style={{ width: "100%" }}>
