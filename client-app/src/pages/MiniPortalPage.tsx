@@ -335,6 +335,13 @@ export default function MiniPortalPage() {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
+    // BF_CLIENT_BLOCK_v721 — Stage-2 buttons carry cta_action = chip id
+    // ("cra","flinks","networth",...); also accept legacy "form:<id>". Open the modal.
+    const formId = ctaAction.startsWith("form:") ? ctaAction.slice(5) : ctaAction;
+    if (["upload", "new", "networth", "cra", "flinks", "equipment", "realestate", "debt"].includes(formId)) {
+      onChip(formId);
+      return;
+    }
     onMessageCta(ctaAction);
   };
 
