@@ -190,7 +190,11 @@ export default function MiniPortalPage() {
     setCallError(null);
     setCallState("connecting");
     try {
-      const tokenUrl = `/api/client/voice/token?applicationId=${encodeURIComponent(applicationId)}`;
+      // BF_CLIENT_BLOCK_v308_CALLUS_TOKEN_URL_v1 — the token fetch was a relative
+      // URL, which on the Static Web App host resolved to index.html (SPA fallback)
+      // and made r.json() throw "Unexpected token '<'". Use the API base.
+      const voiceBase = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
+      const tokenUrl = `${voiceBase}/api/client/voice/token?applicationId=${encodeURIComponent(applicationId)}`;
       const r = await fetch(tokenUrl, { credentials: "include" });
       if (!r.ok) {
         const errBody = await r.json().catch(() => ({}));
