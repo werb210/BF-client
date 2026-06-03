@@ -30,6 +30,6 @@ describe("MiniPortalPage", () => {
     expect(chips).toContain("Upload Documents");
     expect(chips).toContain("Personal Net Worth Statement");
     expect(chips).toContain("CRA Authorization");
-    expect(chips).toContain("Other Forms");
+    expect(chips).toContain("Debt Stack");
   });
 });

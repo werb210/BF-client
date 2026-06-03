@@ -94,7 +94,21 @@ export default function PersonalNetWorthForm({
   useEffect(() => {
     void (async () => {
       const pre: Data = {};
-      if (prefill) for (const [k, v] of Object.entries(prefill)) if (typeof v === "string") pre[k] = v;
+      if (prefill) {
+        const p = prefill as Record<string, string | undefined>;
+        const mapped: Record<string, string | undefined> = {
+          primary_name: p.fullName,
+          primary_email: p.email,
+          primary_cell: p.cellPhone,
+          primary_home_phone: p.homePhone,
+          primary_work_phone: p.workPhone,
+          primary_sin: p.sin,
+          primary_dob: p.dob,
+          primary_home_address: p.street,
+          primary_physical_address: p.street,
+        };
+        for (const [k, v] of Object.entries(mapped)) if (typeof v === "string" && v) pre[k] = v;
+      }
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing?.data) {

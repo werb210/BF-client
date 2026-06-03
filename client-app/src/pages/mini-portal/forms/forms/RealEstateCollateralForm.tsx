@@ -30,8 +30,9 @@ const grid3 = { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } a
 
 export default function RealEstateCollateralForm({
   applicationId,
+  prefill,
   onComplete,
-}: { applicationId: string; onComplete: () => void }) {
+}: { applicationId: string; prefill?: Record<string, unknown>; onComplete: () => void }) {
   const [properties, setProperties] = useState<Property[]>([newProperty()]);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -39,6 +40,7 @@ export default function RealEstateCollateralForm({
 
   useEffect(() => {
     void (async () => {
+      const ownerName = String((prefill?.fullName ?? "") || "");
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing?.data) {
@@ -47,12 +49,14 @@ export default function RealEstateCollateralForm({
             setProperties(d.properties.map((p) => ({ ...newProperty(), ...p })));
           }
           setSubmitted(!!existing.submitted_at);
+          return;
         }
       } catch {
         // first open
       }
+      if (ownerName) setProperties((ps) => ps.map((p, i): Property => (i === 0 ? { ...p, owner1: p.owner1 || ownerName } : p)));
     })();
-  }, [applicationId]);
+  }, [applicationId, prefill]);
 
   const setField = (idx: number, key: string, value: string) =>
     setProperties((ps) => ps.map((p, i): Property => (i === idx ? { ...p, [key]: value } : p)));

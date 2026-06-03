@@ -1,29 +1,30 @@
-// BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1 — Debt Stack (existing-debt schedule).
-// First-draft debt schedule: each row is an existing facility/obligation the
-// business owes. Client name prefilled from application data.
-// Persists via the generic form-responses endpoint, key "debt_stack".
+// BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1 — Equipment Collateral.
+// First-draft equipment list: each row is a piece of equipment offered as
+// collateral. Business name prefilled from application data.
+// Persists via the generic form-responses endpoint, key "equipment_list".
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 
-const FORM_KEY = "debt_stack";
+const FORM_KEY = "equipment_list";
 
-type DebtRow = {
-  lender: string;
-  facility_type: string;
-  original_amount: string;
+type EquipRow = {
+  year: string;
+  make: string;
+  model: string;
+  description: string;
+  serial: string;
+  condition: string;
+  value: string;
+  lienholder: string;
   balance: string;
-  monthly_payment: string;
-  rate: string;
-  maturity: string;
-  secured_by: string;
 };
-type DebtData = { client_name: string; rows: DebtRow[]; notes: string };
+type EquipData = { business_name: string; rows: EquipRow[]; notes: string };
 
-const emptyRow = (): DebtRow => ({
-  lender: "", facility_type: "", original_amount: "", balance: "",
-  monthly_payment: "", rate: "", maturity: "", secured_by: "",
+const emptyRow = (): EquipRow => ({
+  year: "", make: "", model: "", description: "", serial: "",
+  condition: "", value: "", lienholder: "", balance: "",
 });
-const emptyData = (): DebtData => ({ client_name: "", rows: [emptyRow(), emptyRow()], notes: "" });
+const emptyData = (): EquipData => ({ business_name: "", rows: [emptyRow(), emptyRow()], notes: "" });
 
 const num = (v: string) => {
   const n = parseFloat((v ?? "").replace(/[^0-9.\-]/g, ""));
@@ -36,12 +37,12 @@ const inp = { width: "100%", padding: "6px 8px", fontSize: 13, border: "1px soli
 const th = { textAlign: "left" as const, padding: "6px 6px", fontSize: 10, fontWeight: 700, color: "#475569", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" as const } as const;
 const td = { padding: "4px 6px", borderBottom: "1px solid #f1f5f9", verticalAlign: "top" as const } as const;
 
-export default function DebtStackForm({
+export default function EquipmentCollateralForm({
   applicationId,
   prefill,
   onComplete,
 }: { applicationId: string; prefill?: Record<string, unknown>; onComplete: () => void }) {
-  const [data, setData] = useState<DebtData>(emptyData());
+  const [data, setData] = useState<EquipData>(emptyData());
   const [loaded, setLoaded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -53,9 +54,9 @@ export default function DebtStackForm({
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing?.data) {
-          const d = existing.data as Partial<DebtData>;
+          const d = existing.data as Partial<EquipData>;
           setData({
-            client_name: d.client_name || preName,
+            business_name: d.business_name || preName,
             rows: Array.isArray(d.rows) && d.rows.length ? d.rows.map((r) => ({ ...emptyRow(), ...r })) : emptyData().rows,
             notes: d.notes || "",
           });
@@ -66,20 +67,20 @@ export default function DebtStackForm({
       } catch {
         // first open
       }
-      setData((d) => ({ ...d, client_name: preName }));
+      setData((d) => ({ ...d, business_name: preName }));
       setLoaded(true);
     })();
   }, [applicationId, prefill]);
 
-  const persist = (next: DebtData) => { void saveFormResponse(applicationId, FORM_KEY, next as unknown as Record<string, unknown>).catch(() => {}); };
-  const setRow = (i: number, patch: Partial<DebtRow>) =>
-    setData((d) => ({ ...d, rows: d.rows.map((r, idx): DebtRow => (idx === i ? { ...r, ...patch } : r)) }));
+  const persist = (next: EquipData) => { void saveFormResponse(applicationId, FORM_KEY, next as unknown as Record<string, unknown>).catch(() => {}); };
+  const setRow = (i: number, patch: Partial<EquipRow>) =>
+    setData((d) => ({ ...d, rows: d.rows.map((r, idx): EquipRow => (idx === i ? { ...r, ...patch } : r)) }));
   const addRow = () => setData((d) => ({ ...d, rows: [...d.rows, emptyRow()] }));
   const removeRow = (i: number) => setData((d) => ({ ...d, rows: d.rows.length > 1 ? d.rows.filter((_, idx) => idx !== i) : d.rows }));
 
   const totals = {
+    value: data.rows.reduce((s, r) => s + num(r.value), 0),
     balance: data.rows.reduce((s, r) => s + num(r.balance), 0),
-    monthly: data.rows.reduce((s, r) => s + num(r.monthly_payment), 0),
   };
 
   const handleSubmit = async () => {
@@ -97,31 +98,32 @@ export default function DebtStackForm({
 
   if (!loaded) return <div>Loading…</div>;
 
-  const cols: Array<{ key: keyof DebtRow; label: string }> = [
-    { key: "lender", label: "Lender / creditor" },
-    { key: "facility_type", label: "Facility type" },
-    { key: "original_amount", label: "Original amount" },
-    { key: "balance", label: "Current balance" },
-    { key: "monthly_payment", label: "Monthly payment" },
-    { key: "rate", label: "Rate %" },
-    { key: "maturity", label: "Maturity" },
-    { key: "secured_by", label: "Secured by" },
+  const cols: Array<{ key: keyof EquipRow; label: string }> = [
+    { key: "year", label: "Year" },
+    { key: "make", label: "Make" },
+    { key: "model", label: "Model" },
+    { key: "description", label: "Description" },
+    { key: "serial", label: "Serial / VIN" },
+    { key: "condition", label: "Condition" },
+    { key: "value", label: "Est. value" },
+    { key: "lienholder", label: "Lienholder (if any)" },
+    { key: "balance", label: "Balance owing" },
   ];
 
   return (
     <div onBlur={() => persist(data)}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Debt Schedule</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Equipment Collateral</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 12 }}>
-        List the business's existing debts and obligations (term loans, lines of credit, leases, etc.).
+        List the equipment offered as collateral. Include any existing lien and balance owing so the net value is clear.
         {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
-      <label style={lbl}>Business / client name</label>
-      <input style={{ ...inp, maxWidth: 420 }} value={data.client_name}
-        onChange={(e) => setData((d) => ({ ...d, client_name: e.target.value }))} />
+      <label style={lbl}>Business name</label>
+      <input style={{ ...inp, maxWidth: 420 }} value={data.business_name}
+        onChange={(e) => setData((d) => ({ ...d, business_name: e.target.value }))} />
 
       <div style={{ overflowX: "auto", marginTop: 12 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
           <thead>
             <tr>{cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}<th style={th}></th></tr>
           </thead>
@@ -130,7 +132,7 @@ export default function DebtStackForm({
               <tr key={i}>
                 {cols.map((c) => (
                   <td key={c.key} style={td}>
-                    <input style={inp} value={r[c.key]} onChange={(e) => setRow(i, { [c.key]: e.target.value } as Partial<DebtRow>)} />
+                    <input style={inp} value={r[c.key]} onChange={(e) => setRow(i, { [c.key]: e.target.value } as Partial<EquipRow>)} />
                   </td>
                 ))}
                 <td style={td}>
@@ -144,11 +146,12 @@ export default function DebtStackForm({
         </table>
       </div>
 
-      <button type="button" onClick={addRow} style={{ marginTop: 8, border: "1px solid #cbd5e1", background: "#fff", padding: "6px 12px", borderRadius: 6, fontSize: 13, cursor: "pointer", color: "#0f172a" }}>+ Add debt</button>
+      <button type="button" onClick={addRow} style={{ marginTop: 8, border: "1px solid #cbd5e1", background: "#fff", padding: "6px 12px", borderRadius: 6, fontSize: 13, cursor: "pointer", color: "#0f172a" }}>+ Add equipment</button>
 
       <div style={{ marginTop: 12, padding: 12, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14 }}>
-        <div>Total balance: <strong>{money(totals.balance)}</strong></div>
-        <div>Total monthly payments: <strong>{money(totals.monthly)}</strong></div>
+        <div>Total estimated value: <strong>{money(totals.value)}</strong></div>
+        <div>Total balance owing: <strong>{money(totals.balance)}</strong></div>
+        <div style={{ marginTop: 4 }}>Net equity: <strong>{money(totals.value - totals.balance)}</strong></div>
       </div>
 
       <label style={lbl}>Notes</label>

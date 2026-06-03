@@ -17,6 +17,8 @@ import CraAuthorizationForm from "@/pages/mini-portal/forms/forms/CraAuthorizati
 import FlinksConnectForm from "@/pages/mini-portal/forms/forms/FlinksConnectForm";
 // BF_CLIENT_BLOCK_v304_ACCORD_FORMS_REBUILD_v1
 import RealEstateCollateralForm from "@/pages/mini-portal/forms/forms/RealEstateCollateralForm";
+// BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1
+import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCollateralForm";
 import SlimHeader from "@/components/SlimHeader";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
@@ -50,7 +52,7 @@ const ACTION_CHIPS = [
   { id: "flinks",     label: "Connect Bank (View-Only)" },
   { id: "equipment",  label: "Equipment Collateral Form" },
   { id: "realestate", label: "Real Estate Collateral Form" },
-  { id: "other",      label: "Other Forms" },
+  { id: "debt",       label: "Debt Stack" },
 ] as const;
 
 export default function MiniPortalPage() {
@@ -66,24 +68,28 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
-  const pnwPrefill = useMemo<Record<string, unknown>>(() => {
+  // BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1 — one canonical prefill object
+  // consumed by every CMP form. Forms map these canonical keys to their fields.
+  const cmpPrefill = useMemo<Record<string, unknown>>(() => {
     const md = (appDetail?.data?.metadata ?? appDetail?.metadata ?? {}) as any;
     const a: any = (app.applicant && (app.applicant as any).firstName) ? app.applicant : (md.applicant ?? md.borrower ?? app.applicant ?? {});
-    const fullName = [a.firstName, a.lastName].filter(Boolean).join(" ");
-    const dob = String(a.dob ?? a.dateOfBirth ?? "");
-    const [by, bm, bd] = dob.includes("-") ? dob.split("-") : ["", "", ""];
+    const biz: any = md.business ?? appDetail?.data?.business ?? appDetail?.business ?? {};
+    const fullName = [a.firstName, a.lastName].filter(Boolean).join(" ").trim();
     const out: Record<string, unknown> = {};
-    if (fullName) { out.full_legal_name = fullName; out.signature_typed_name = fullName; }
-    if (a.email) out.personal_email = a.email;
-    if (a.phone) out.cell_phone = a.phone;
-    if (a.ssn || a.sin) out.sin = a.ssn ?? a.sin;
-    if (by) out.birth_year = by;
-    if (bm) out.birth_month = bm;
-    if (bd) out.birth_day = bd;
-    if (a.street) { out.mailing_address = a.street; out.physical_address = a.street; }
-    if (a.city) { out.mailing_city = a.city; out.physical_city = a.city; }
-    if (a.state) { out.mailing_province = a.state; out.physical_province = a.state; }
-    if (a.zip) { out.mailing_postal = a.zip; out.physical_postal = a.zip; }
+    if (fullName) out.fullName = fullName;
+    if (a.email) out.email = a.email;
+    if (a.phone ?? a.cellPhone) out.cellPhone = a.phone ?? a.cellPhone;
+    if (a.homePhone) out.homePhone = a.homePhone;
+    if (a.workPhone) out.workPhone = a.workPhone;
+    if (a.ssn ?? a.sin) out.sin = a.ssn ?? a.sin;
+    const dob = String(a.dob ?? a.dateOfBirth ?? "");
+    if (dob) out.dob = dob;
+    if (a.street) out.street = a.street;
+    if (a.city) out.city = a.city;
+    if (a.state ?? a.province) out.province = a.state ?? a.province;
+    if (a.zip ?? a.postal) out.postal = a.zip ?? a.postal;
+    const bizName = biz.name ?? biz.legalName ?? biz.businessName ?? md.businessName ?? md.legalBusinessName;
+    if (bizName) out.businessName = bizName;
     return out;
   }, [appDetail, app.applicant]);
 
@@ -160,15 +166,14 @@ export default function MiniPortalPage() {
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "other" | "cra" | "flinks">(null);
-  // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — PNW + Debt
-  // open as modals (real forms); equipment/realestate/other open a
-  // "coming soon" modal. The legacy /forms/* route doesn't exist
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks">(null);
+  // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — CMP actions open
+  // as modals with real forms. The legacy /forms/* route doesn't exist
   // and was scrolling-to-top silently.
   const onChip = (id: string) => {
     if (id === "new") { reset(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
-    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "other" || id === "cra" || id === "flinks") {
+    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "cra" || id === "flinks") {
       setOpenForm(id);
       return;
     }
@@ -282,7 +287,7 @@ export default function MiniPortalPage() {
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
   const showOfferView = stageIndex === STAGE_BY_KEY.offer;
-  const actionByKeyword: Record<string, string> = { upload_docs: "upload", open_personal_net_worth: "networth", new_application: "new", equipment_collateral: "equipment", real_estate_collateral: "realestate", other_forms: "other" };
+  const actionByKeyword: Record<string, string> = { upload_docs: "upload", open_personal_net_worth: "networth", new_application: "new", equipment_collateral: "equipment", real_estate_collateral: "realestate", debt_stack: "debt", other_forms: "debt" };
   const isUrl = (v: string) => /^https?:\/\//i.test(v);
   const handleMessageCta = (ctaAction?: string | null) => {
     if (!ctaAction) return;
@@ -476,7 +481,6 @@ export default function MiniPortalPage() {
                 {openForm === "debt" && "Debt Schedule"}
                 {openForm === "equipment" && "Equipment Collateral Form"}
                 {openForm === "realestate" && "Real Estate Collateral Form"}
-                {openForm === "other" && "Other Forms"}
               </div>
               <button
                 type="button"
@@ -491,7 +495,7 @@ export default function MiniPortalPage() {
               {openForm === "networth" && (
                 <PersonalNetWorthForm
                   applicationId={applicationId}
-                  prefill={pnwPrefill}
+                  prefill={cmpPrefill}
                   onComplete={() => setOpenForm(null)}
                 />
               )}
@@ -510,30 +514,23 @@ export default function MiniPortalPage() {
               {openForm === "debt" && (
                 <DebtStackForm
                   applicationId={applicationId}
+                  prefill={cmpPrefill}
                   onComplete={() => setOpenForm(null)}
                 />
               )}
               {openForm === "realestate" && (
                 <RealEstateCollateralForm
                   applicationId={applicationId}
+                  prefill={cmpPrefill}
                   onComplete={() => setOpenForm(null)}
                 />
               )}
-              {(openForm === "equipment" || openForm === "other") && (
-                <div style={{ textAlign: "center", padding: "32px 16px" }}>
-                  <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
-                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>Coming soon</div>
-                  <div style={{ fontSize: 14, color: "#64748b" }}>
-                    This form isn't built yet. If you need to submit this information now, please use the Upload Documents chip or message your contact.
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOpenForm(null)}
-                    style={{ marginTop: 24, padding: "10px 20px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
-                  >
-                    Close
-                  </button>
-                </div>
+              {openForm === "equipment" && (
+                <EquipmentCollateralForm
+                  applicationId={applicationId}
+                  prefill={cmpPrefill}
+                  onComplete={() => setOpenForm(null)}
+                />
               )}
             </div>
           </div>
