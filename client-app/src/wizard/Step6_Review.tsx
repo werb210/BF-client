@@ -85,7 +85,10 @@ export function Step6_Review(): JSX.Element {
     const requirements =
       (app.productRequirements?.[requirementsKey] || []) as LenderProductRequirement[];
     return filterRequirementsByAmount(requirements, app.kyc?.fundingAmount)
-      .filter((entry) => entry.required)
+      // BF_CLIENT_BLOCK_v328 — submit gate requires Stage-1 docs only. Stage-2
+      // items (Flinks bank-connect, CRA auth) are forms collected later in the
+      // mini-portal and must never block submit. Matches getMissingRequiredDocs.
+      .filter((entry) => entry.required && entry.stage === 1)
       .map((entry) => entry.document_type);
   }, [app.kyc?.fundingAmount, app.productRequirements, requirementsKey]);
   const missingRequiredDocs = useMemo(() => getMissingRequiredDocs(app), [app]);

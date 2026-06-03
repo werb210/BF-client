@@ -161,8 +161,7 @@ export function Step5_Documents() {
     "";
 
   const orderedRequirements = useMemo(() => {
-    // BF_CLIENT_BLOCK_v326 — Step 5 shows Stage-1 docs only (e.g. banking
-    // statements). Stage-2 docs are prompted later in the client mini-portal.
+    // BF_CLIENT_BLOCK_v328 — Step 5 shows Stage-1 docs only; Stage-2 handled in CMP.
     return sortRequirements(requirementsRaw).filter(
       (e) => (((e as { stage?: number }).stage) ?? 1) === 1
     );

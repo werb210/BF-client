@@ -24,6 +24,7 @@ export function normalizeRequirementList(
           id: trimmed,
           document_type: trimmed,
           required: true,
+          stage: 1,
           min_amount: null,
           max_amount: null,
         } as LenderProductRequirement;

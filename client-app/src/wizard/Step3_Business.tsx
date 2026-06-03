@@ -682,7 +682,7 @@ export function Step3_Business() {
             <div>
               <label style={components.form.label}>Fiscal Year-End</label>
               <input
-                type="date"
+                type="month"
                 value={values.fiscalYearEnd || ""}
                 onChange={(e: any) => setField("fiscalYearEnd", e.target.value)}
               />
