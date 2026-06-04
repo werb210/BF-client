@@ -56,9 +56,11 @@ export function getMissingRequiredDocs(app: ApplicationData) {
   const filtered = filterRequirementsByAmount(requirements, app.kyc?.fundingAmount);
   return filtered
     .filter((entry) => entry.required && entry.stage === 1)
-    // BF_CLIENT_BLOCK_v712_SUBMIT_GATE_NO_ADVISORS_v1 — advisors is a Stage-2 CMP
-    // form; it must never block submit even if the product staged it stage 1.
-    .filter((entry) => !/professional\s*advisor/i.test(String(entry.document_type ?? "")))
+    // BF_CLIENT_BLOCK_v713_SUBMIT_GATE_NO_CMP_FORMS_v1 — CMP forms (net worth,
+    // banking/Flinks, CRA, debt, real estate, equipment, advisors) are collected
+    // post-submit in the mini-portal and must never block submit, even if a
+    // product mis-stages one as Stage 1. Mirrors BF-Server FORM_BY_KEYWORD.
+    .filter((entry) => !/net worth|flinks|banking connection|connect bank|\bcra\b|debt|real estate|equipment|professional advisor|\badvisor/i.test(String(entry.document_type ?? "")))
     .filter((entry) => !app.documents[entry.document_type]);
 }
 
