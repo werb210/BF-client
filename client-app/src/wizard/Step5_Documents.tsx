@@ -132,7 +132,18 @@ const RequirementRow = memo(function RequirementRow({
           Upload files
         </Button>
         {isUploading ? <div style={components.form.helperText}>Upload progress: {progress}%</div> : null}
-        {app.documents[docType] && <div style={components.form.helperText}>Uploaded: {app.documents[docType].name}</div>}
+        {app.documents[docType] && (() => {
+          const files = ((app.documents[docType] as any)?.files) as Array<{ name: string }> | undefined;
+          const list = files && files.length ? files : [{ name: app.documents[docType].name }];
+          return (
+            <div style={components.form.helperText}>
+              Uploaded ({list.length}):
+              {list.map((fl, i) => (
+                <div key={i}>• {fl.name}</div>
+              ))}
+            </div>
+          );
+        })()}
         {docError && <div style={components.form.errorText}>{docError}</div>}
         {!docError && docStatus === "missing" && entry.required && <div style={components.form.errorText}>This document is required.</div>}
         {docStatus === "rejected" && <div style={components.form.errorText}>{getRejectionMessage(app.documents[docType])}</div>}
@@ -559,6 +570,9 @@ export function Step5_Documents() {
         // not returning the documents map yet — see BF-Server Block 80).
         const uploadedId =
           ((uploadRes as any)?.data?.data?.id ?? (uploadRes as any)?.data?.id) || null;
+        // BF_CLIENT_BLOCK_v330_MULTIFILE_LIST — accumulate EVERY file uploaded to
+        // this requirement so Step 5 lists all of them (e.g. 6 bank statements),
+        // not just the most recent. Top-level fields stay for status/gate compat.
         update({
           documentsDeferred: false,
           documents: {
@@ -568,7 +582,11 @@ export function Step5_Documents() {
               name: file.name,
               status: "uploaded",
               uploadedAt: new Date().toISOString(),
-            },
+              files: [
+                ...((((app.documents[docType] as any)?.files) as Array<{ id: string | null; name: string; uploadedAt: string }>) ?? []),
+                { id: uploadedId, name: file.name, uploadedAt: new Date().toISOString() },
+              ],
+            } as any,
           },
         });
 
@@ -577,8 +595,15 @@ export function Step5_Documents() {
           const refreshed = await ClientAppAPI.status(app.applicationToken!);
           const hydrated = extractApplicationFromStatus(refreshed?.data || {}, app.applicationToken!);
           if (hydrated.documents && Object.keys(hydrated.documents).length > 0) {
+            // BF_CLIENT_BLOCK_v330_MULTIFILE_LIST — keep the client files[] arrays
+            // when the server status (one row per type) merges in.
+            const mergedDocs: Record<string, any> = { ...app.documents };
+            for (const [k, v] of Object.entries(hydrated.documents)) {
+              const existingFiles = (app.documents[k] as any)?.files;
+              mergedDocs[k] = { ...(v as any), files: existingFiles ?? (v as any)?.files };
+            }
             update({
-              documents: { ...app.documents, ...hydrated.documents },
+              documents: mergedDocs,
               documentReviewComplete:
                 hydrated.documentReviewComplete ?? app.documentReviewComplete,
               financialReviewComplete:
