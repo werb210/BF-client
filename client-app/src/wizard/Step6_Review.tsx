@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { ACCORD_RISK_QUESTIONS, isAccordLOCApp } from "./accordRisk";
-import { TERMS_TEXT } from "../data/terms";
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
@@ -58,6 +57,42 @@ import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
 
+// BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — full Terms & Conditions text shown in popups.
+// (Legal text supplied by Boreal; review with counsel. Province = Alberta placeholder.)
+const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string[] }> }> = [
+  {
+    title: "Electronic Communications Risk Acknowledgement",
+    blocks: [
+      { p: "I/We acknowledge and accept the risks associated with electronic communications and electronic transmission of information. I/We understand that communications transmitted by email, SMS/text message, web portals, online applications, electronic document systems, client messaging systems, mobile applications, or other electronic means may be intercepted, delayed, lost, altered, corrupted, misdirected, impersonated, or accessed by unauthorized parties." },
+      { p: "I/We understand that Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and technology providers cannot guarantee the security, confidentiality, delivery, or uninterrupted operation of electronic communications or electronic systems." },
+      { p: "To the fullest extent permitted by law, I/We release and hold harmless Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, and service providers from any loss, damage, claim, cost, liability, or expense arising from the use of electronic communications, electronic signatures, electronic document transmission, electronic storage, online portals, client messaging systems, or related technologies." },
+    ],
+  },
+  {
+    title: "Consent to Collect, Use, Verify, and Share Information",
+    blocks: [
+      { p: "I/We authorize Boreal Financial Corp., its affiliates, subsidiaries, parent companies, related entities, operating divisions, employees, contractors, representatives, lender partners, investors, insurers, credit reporting agencies, financial institutions, service providers, professional advisors, and other parties involved in evaluating, arranging, underwriting, servicing, or administering financing transactions to collect, verify, use, disclose, exchange, transmit, and retain personal information, business information, financial information, banking information, credit information, application information, supporting documents, and any other information provided in connection with this application." },
+      { p: "I/We further authorize Boreal Financial Corp. to share such information with any current or prospective lender, funding source, investor, insurer, service provider, referral partner, credit reporting agency, governmental authority, compliance provider, fraud prevention provider, or any other party reasonably required to facilitate, evaluate, arrange, administer, monitor, service, or complete a financing transaction." },
+      { p: "I/We certify that all information supplied is true, accurate, and complete to the best of my/our knowledge. I/We understand that Boreal Financial Corp. may rely upon this information and may conduct reasonable verification procedures, including identity verification, business verification, credit inquiries, banking verification, fraud prevention reviews, and related due diligence activities." },
+      { p: "I/We acknowledge that Boreal Financial Corp. may receive commissions, fees, referral compensation, lender-paid compensation, or other remuneration in connection with financing transactions and that Boreal Financial Corp. does not guarantee approval, funding, rates, terms, conditions, lender participation, or financing availability." },
+      { p: "I/We represent and warrant that the individual submitting this application is duly authorized to provide these consents and authorizations on behalf of the business and on behalf of all owners, principals, shareholders, directors, officers, and proposed guarantors identified in this application." },
+      { p: "I/We acknowledge that personal information is collected, used, retained, and disclosed in accordance with Boreal Financial Corp.'s Privacy Policy, and that such information will be retained only as long as reasonably necessary for the purposes described or as required by law." },
+      { p: "This authorization and any resulting financing relationship are governed by the laws of the Province of Alberta and the federal laws of Canada applicable therein, without regard to conflict-of-laws principles." },
+    ],
+  },
+  {
+    title: "Communication Consent (Email, SMS, Phone, Portal, and Client Messaging)",
+    blocks: [
+      { p: "I/We expressly authorize Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and authorized third parties to communicate with me/us regarding this application, any related financing transaction, account administration, document requests, underwriting matters, servicing matters, marketing opportunities, and other business-related communications." },
+      { p: "This authorization includes communication through:" },
+      { ul: ["Email", "SMS/Text Messages", "Telephone Calls", "Voicemail Messages", "Automated Calling Systems", "Client Portal Notifications", "In-Application Messaging", "Boreal Financial Client-to-Staff Messaging Systems", "Secure Document Portals", "Electronic Signature Platforms", "Other electronic communication methods provided now or in the future"] },
+      { p: "This consent applies to all email addresses, telephone numbers, messaging accounts, portal accounts, and contact information provided now or in the future. I/We understand that message and data rates may apply and that electronic communications may not always be secure." },
+      { p: "I/We agree that electronic records, electronic communications, electronic acknowledgements, and electronic signatures shall have the same legal force and effect as original written documents and handwritten signatures." },
+      { p: "I/We may withdraw consent for commercial electronic messages or marketing communications at any time by using the unsubscribe mechanism provided in those messages or by contacting Boreal Financial Corp. directly. Withdrawing marketing consent will not affect communications reasonably necessary to administer or service an active application or financing transaction." },
+    ],
+  },
+];
+
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -72,6 +107,8 @@ export function Step6_Review(): JSX.Element {
   const isOnline = !isOffline;
   const [idempotencyKey] = useState(() => getOrCreateSubmissionIdempotencyKey());
   const [lenderCount, setLenderCount] = useState<number | null>(null);
+  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — which consent popup is open
+  const [openClause, setOpenClause] = useState<number | null>(null);
   const firstDocStartTime = useRef<number>(Date.now());
   const hasTrackedFirstDocumentUpload = useRef(false);
   const hasTrackedUnderwritingPackageReady = useRef(false);
@@ -195,6 +232,13 @@ export function Step6_Review(): JSX.Element {
   function toggleShareAuthorization() {
     update({ shareAuthorization: !app.shareAuthorization });
   }
+
+  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — clause N -> gate key (all three required to submit)
+  const tcConsents = [
+    { get: () => Boolean(app.termsAccepted), toggle: toggleTerms },
+    { get: () => Boolean(app.shareAuthorization), toggle: toggleShareAuthorization },
+    { get: () => Boolean(app.infoConfirmed), toggle: toggleInfoConfirmed },
+  ];
 
   function resolveSubmissionId(data: unknown) {
     if (!data || typeof data !== "object") return null;
@@ -742,79 +786,59 @@ export function Step6_Review(): JSX.Element {
 
         <div>
           <h2 style={components.form.sectionTitle}>Terms & Conditions</h2>
-          <div
-            style={{
-              background: tokens.colors.background,
-              padding: tokens.spacing.md,
-              border: `1px solid ${tokens.colors.border}`,
-              borderRadius: tokens.radii.lg,
-              fontSize: tokens.typography.body.fontSize,
-              color: tokens.colors.textSecondary,
-              whiteSpace: "pre-line",
-              marginTop: tokens.spacing.xs,
-            }}
-          >
-            {TERMS_TEXT}
-          </div>
+          <p style={{ fontSize: tokens.typography.body.fontSize, color: tokens.colors.textSecondary, marginTop: tokens.spacing.xs }}>
+            Please review and accept each of the following. Select "View full terms" to read the complete text of each.
+          </p>
         </div>
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={Boolean(app.infoConfirmed)} onChange={toggleInfoConfirmed} />
-          <span>I confirm the information is accurate</span>
-        </label>
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={Boolean(app.shareAuthorization)} onChange={toggleShareAuthorization} />
-          <span>I authorize Boreal Financial to share my application with lenders</span>
-        </label>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox checked={app.termsAccepted} onChange={toggleTerms} />
-          <span>I agree to the Terms & Conditions</span>
-        </label>
-
-        {/* BF_CLIENT_BLOCK_v720_CEM_CONSENT_STEP6_v1 — CEM consent moved here from Steps 3/4 */}
-        {isAccordLOCApp(app) && (
+        {/* BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — three required consents, each with a popup */}
+        {TC_CLAUSES.map((clause, i) => (
           <label
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: tokens.spacing.xs,
-              fontSize: tokens.typography.label.fontSize,
-              fontWeight: tokens.typography.label.fontWeight,
-              color: tokens.colors.textPrimary,
-            }}
+            key={clause.title}
+            style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, fontWeight: tokens.typography.label.fontWeight, color: tokens.colors.textPrimary }}
           >
-            <Checkbox checked={Boolean(app.cemConsent)} onChange={() => update({ cemConsent: !app.cemConsent })} />
-            {/* CEM_CONSENT_TEXT_v720 — placeholder; replace with final approved wording */}
-            <span>I/we consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
+            <Checkbox checked={tcConsents[i].get()} onChange={tcConsents[i].toggle} />
+            <span>
+              {clause.title}{" "}
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); setOpenClause(i); }}
+                style={{ background: "none", border: "none", padding: 0, color: tokens.colors.primary, textDecoration: "underline", cursor: "pointer", fontSize: "inherit" }}
+              >
+                View full terms
+              </button>
+            </span>
           </label>
+        ))}
+
+        {openClause !== null && (
+          <div
+            onClick={() => setOpenClause(null)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 1000 }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{ background: "#ffffff", color: "#111827", borderRadius: 12, maxWidth: 640, width: "100%", maxHeight: "80vh", overflowY: "auto", padding: 24, boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}
+            >
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 0, marginBottom: 12 }}>{TC_CLAUSES[openClause].title}</h3>
+              {TC_CLAUSES[openClause].blocks.map((b, j) =>
+                b.ul ? (
+                  <ul key={j} style={{ color: "#111827", fontSize: 14, lineHeight: 1.6, paddingLeft: 20, margin: "0 0 12px" }}>
+                    {b.ul.map((it) => (<li key={it}>{it}</li>))}
+                  </ul>
+                ) : (
+                  <p key={j} style={{ color: "#111827", fontSize: 14, lineHeight: 1.6, margin: "0 0 12px" }}>{b.p}</p>
+                )
+              )}
+              <button
+                type="button"
+                onClick={() => setOpenClause(null)}
+                style={{ marginTop: 8, padding: "10px 20px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         )}
 
         <div
