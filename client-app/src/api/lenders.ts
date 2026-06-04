@@ -30,8 +30,11 @@ export async function getClientLenders(): Promise<ClientLender[]> {
   return Array.isArray(data) ? data : [];
 }
 
-export async function getClientLenderProducts(): Promise<ClientLenderProduct[]> {
-  const res = await api.get<ClientLenderProduct[]>("/api/client/lender-products");
+export async function getClientLenderProducts(country?: string): Promise<ClientLenderProduct[]> {
+  // BF_CLIENT_BLOCK_v329 — pass applicant country so the server gates products by
+  // geography (Canadian applicants no longer see US-only lenders).
+  const qs = country && country.trim() ? `?country=${encodeURIComponent(country.trim())}` : "";
+  const res = await api.get<ClientLenderProduct[]>(`/api/client/lender-products${qs}`);
 
   const { data } = res;
   return Array.isArray(data) ? data : [];
