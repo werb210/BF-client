@@ -89,6 +89,8 @@ export function Step6_Review(): JSX.Element {
       // items (Flinks bank-connect, CRA auth) are forms collected later in the
       // mini-portal and must never block submit. Matches getMissingRequiredDocs.
       .filter((entry) => entry.required && entry.stage === 1)
+      // BF_CLIENT_BLOCK_v712_SUBMIT_GATE_NO_ADVISORS_v1 — exclude advisors (Stage-2 CMP form).
+      .filter((entry) => !/professional\s*advisor/i.test(String(entry.document_type ?? "")))
       .map((entry) => entry.document_type);
   }, [app.kyc?.fundingAmount, app.productRequirements, requirementsKey]);
   const missingRequiredDocs = useMemo(() => getMissingRequiredDocs(app), [app]);
