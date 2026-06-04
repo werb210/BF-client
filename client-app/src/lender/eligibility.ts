@@ -12,6 +12,8 @@ export type NormalizedLenderProduct = {
   applicantQuestions?: string[];
   // BF_CREDIT_BAND_v36 — Block 36
   minCreditScore?: number | null;
+  // BF_CLIENT_BLOCK_v705_ACCORD_MATCH_GATE_v1 — true when product's lender is Accord.
+  isAccord?: boolean;
 };
 
 export type EligibilityInput = {

@@ -13,6 +13,7 @@ export type ClientLenderProduct = {
   required_documents?: unknown[];
   lender_id: string;
   lender_name?: string;
+  is_accord?: boolean;
   status?: string;
 };
 

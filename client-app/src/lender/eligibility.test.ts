@@ -52,6 +52,26 @@ describe("lender product eligibility", () => {
     expect(result.categories[0].name).toBe("Line of Credit");
   });
 
+  it("preserves the Accord lender flag on eligible products", () => {
+    const accordProduct: NormalizedLenderProduct = {
+      productId: "accord_loc",
+      category: "Line of Credit",
+      minAmount: 50000,
+      maxAmount: 1000000,
+      supportedCountries: ["CA"],
+      isAccord: true,
+    };
+
+    const result = getEligibilityResult([accordProduct], {
+      fundingIntent: FundingIntent.WORKING_CAPITAL,
+      amountRequested: 250000,
+      businessLocation: "Canada",
+    });
+
+    expect(result.eligibleProducts).toEqual([accordProduct]);
+    expect(result.eligibleProducts[0].isAccord).toBe(true);
+  });
+
   it("counts overlapping lender ranges within a category", () => {
     const result = getEligibilityResult(products, {
       fundingIntent: FundingIntent.BOTH,
