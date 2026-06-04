@@ -9,6 +9,8 @@ import PersonalNetWorthForm from "./forms/PersonalNetWorthForm";
 import DebtStackForm from "./forms/DebtStackForm";
 import CraAuthorizationForm from "./forms/CraAuthorizationForm";
 import RealEstateCollateralForm from "./forms/RealEstateCollateralForm";
+// BF_CLIENT_BLOCK_v700_ADVISORS_FORM_v1
+import AdvisorsForm from "./forms/AdvisorsForm";
 
 type RequiredDoc = {
   document_type: string;
@@ -24,6 +26,8 @@ const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string
   debt_stack: DebtStackForm,
   cra_view_only_authorization: CraAuthorizationForm,
   real_estate_collateral_disclosure: RealEstateCollateralForm,
+  // BF_CLIENT_BLOCK_v700_ADVISORS_FORM_v1
+  professional_advisors: AdvisorsForm,
 };
 
 function humanLabel(docType: string): string {
