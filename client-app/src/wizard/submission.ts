@@ -56,6 +56,9 @@ export function getMissingRequiredDocs(app: ApplicationData) {
   const filtered = filterRequirementsByAmount(requirements, app.kyc?.fundingAmount);
   return filtered
     .filter((entry) => entry.required && entry.stage === 1)
+    // BF_CLIENT_BLOCK_v712_SUBMIT_GATE_NO_ADVISORS_v1 — advisors is a Stage-2 CMP
+    // form; it must never block submit even if the product staged it stage 1.
+    .filter((entry) => !/professional\s*advisor/i.test(String(entry.document_type ?? "")))
     .filter((entry) => !app.documents[entry.document_type]);
 }
 
