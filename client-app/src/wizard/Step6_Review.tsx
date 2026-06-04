@@ -799,6 +799,24 @@ export function Step6_Review(): JSX.Element {
           <span>I agree to the Terms & Conditions</span>
         </label>
 
+        {/* BF_CLIENT_BLOCK_v720_CEM_CONSENT_STEP6_v1 — CEM consent moved here from Steps 3/4 */}
+        {isAccordLOCApp(app) && (
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: tokens.spacing.xs,
+              fontSize: tokens.typography.label.fontSize,
+              fontWeight: tokens.typography.label.fontWeight,
+              color: tokens.colors.textPrimary,
+            }}
+          >
+            <Checkbox checked={Boolean(app.cemConsent)} onChange={() => update({ cemConsent: !app.cemConsent })} />
+            {/* CEM_CONSENT_TEXT_v720 — placeholder; replace with final approved wording */}
+            <span>I/we consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
+          </label>
+        )}
+
         <div
           style={{
             display: "grid",

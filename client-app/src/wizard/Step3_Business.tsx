@@ -707,16 +707,6 @@ export function Step3_Business() {
               </div>
             </div>
           )}
-          {/* BF_CLIENT_BLOCK_v710_ACCORD_STEP3_v1 — business CEM consent */}
-          {isAccordLOC && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ ...components.form.label, display: "flex", alignItems: "flex-start", gap: 8, fontWeight: 400 }}>
-                <input type="checkbox" style={{ width: "auto", marginTop: 3 }} checked={values.cemConsentBusiness === true} onChange={(e: any) => setField("cemConsentBusiness", e.target.checked)} />
-                {/* CEM_CONSENT_TEXT_v710 — placeholder; replace with final approved wording */}
-                <span>I/we consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
-              </label>
-            </div>
-          )}
 
           <div>
             <label style={components.form.label}>Number of Employees</label>

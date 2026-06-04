@@ -52,64 +52,99 @@ function toTitleCaseV66(input: string): string {
 
 
 // BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1 — per-owner Accord LOC fields (applicant + partner). All optional.
-function AccordOwnerFields({ data, set }) {
+// BF_CLIENT_BLOCK_v720_STEP4_REORDER_v1 — unified per-owner fields in the exact
+// requested order (applicant + partner). Base fields always render; the Accord
+// LOC extras render only when isAccordLOC. All fields formatted. No Work Phone,
+// no CEM here (CEM consent lives in Step 6 with the T&C).
+function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, countryCode, regionCountry, regionLabel, postalLabel, identityLabel }) {
   const L = components.form.label;
+  const grid = { display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md };
+  const fmtMoney = (v) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
   const yn = (key) => (
-    <select value={data[key] || ""} onChange={(e) => set(key, e.target.value)}>
-      <option value="">—</option>
-      <option value="Yes">Yes</option>
-      <option value="No">No</option>
+    <select value={data[key] || ""} onChange={(e) => setField(key, e.target.value)}>
+      <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
     </select>
   );
+  const setName = (field, v) => {
+    if (deriveFullName) {
+      const fn = field === "firstName" ? v : (data.firstName || "");
+      const ln = field === "lastName" ? v : (data.lastName || "");
+      setMany({ [field]: v, fullName: `${fn} ${ln}`.trim() });
+    } else setField(field, v);
+  };
   return (
-    <div style={{ gridColumn: "1 / -1", marginTop: tokens.spacing.md, paddingTop: tokens.spacing.md, borderTop: `1px solid ${tokens.colors.border}` }}>
-      <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.15em", color: tokens.colors.textSecondary, marginBottom: tokens.spacing.sm }}>
-        Accord — additional owner details (optional)
+    <div style={grid}>
+      <div><label style={L}>First Name</label><Input value={data.firstName || ""} onChange={(e) => setName("firstName", e.target.value)} /></div>
+      <div><label style={L}>Last Name</label><Input value={data.lastName || ""} onChange={(e) => setName("lastName", e.target.value)} /></div>
+      <div><label style={L}>Email</label><Input type="email" value={data.email || ""} onChange={(e) => setField("email", e.target.value)} /></div>
+      <div><label style={L}>Mobile Phone</label><PhoneInput value={formatPhoneNumber(data.phone || "", countryCode)} onChange={(e) => setField("phone", formatPhoneNumber(e.target.value, countryCode))} /></div>
+      {isAccordLOC && (
+        <div><label style={L}>Home Phone</label><PhoneInput value={formatPhoneNumber(data.homePhone || "", countryCode)} onChange={(e) => setField("homePhone", formatPhoneNumber(e.target.value, countryCode))} /></div>
+      )}
+      <div><label style={L}>Date of Birth</label><Input type="date" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} /></div>
+      <div><label style={L}>{identityLabel}</label><Input inputMode="numeric" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} /></div>
+      <div style={{ gridColumn: "1 / -1" }}><label style={L}>Street Address</label>
+        <AddressAutocompleteInput country={regionCountry} value={data.street || ""}
+          onChange={(e) => setField("street", e.target.value)}
+          onSelect={(sel) => { if (!("street" in sel)) return; setMany({ street: sel.street || data.street, city: sel.city || data.city, state: sel.state || data.state, zip: formatPostalCode(sel.postalCode || data.zip || "", countryCode) }); }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md }}>
-        <div><label style={L}>Own or Rent</label>
-          <select value={data.ownRent || ""} onChange={(e) => set("ownRent", e.target.value)}>
-            <option value="">—</option><option value="Own">Own</option><option value="Rent">Rent</option>
-          </select>
-        </div>
-        <div><label style={L}>Property Value</label><input value={data.propertyValue || ""} onChange={(e) => set("propertyValue", e.target.value)} placeholder="$" /></div>
-        <div><label style={L}>Mortgage Balance</label><input value={data.mortgageBalance || ""} onChange={(e) => set("mortgageBalance", e.target.value)} placeholder="$" /></div>
-        <div><label style={L}>At this address since</label><input type="month" value={data.addressSince || ""} onChange={(e) => set("addressSince", e.target.value)} /></div>
-        <div><label style={L}>Home Phone</label><input value={data.homePhone || ""} onChange={(e) => set("homePhone", e.target.value)} /></div>
-        <div><label style={L}>Work Phone</label><input value={data.workPhone || ""} onChange={(e) => set("workPhone", e.target.value)} /></div>
-        <div><label style={L}>Director?</label>{yn("director")}</div>
-        <div><label style={L}>Officer?</label>{yn("officer")}</div>
-        <div><label style={L}>Ever filed bankruptcy / proposal?</label>{yn("bankruptcyFiled")}</div>
-        {data.bankruptcyFiled === "Yes" && (
-          <div><label style={L}>If yes, when?</label><input value={data.bankruptcyWhen || ""} onChange={(e) => set("bankruptcyWhen", e.target.value)} placeholder="Month / Year" /></div>
-        )}
+      <div><label style={L}>City</label><Input value={data.city || ""} onChange={(e) => setField("city", e.target.value)} /></div>
+      <div><label style={L}>{regionLabel}</label><RegionSelect country={regionCountry} value={data.state || ""} onChange={(v) => setField("state", v)} /></div>
+      <div><label style={L}>{postalLabel}</label><Input value={formatPostalCode(data.zip || "", countryCode)} onChange={(e) => setField("zip", formatPostalCode(e.target.value, countryCode))} /></div>
+      {isAccordLOC && (
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ ...L, display: "flex", alignItems: "center", gap: 8, fontWeight: 400 }}>
-            <input type="checkbox" style={{ width: "auto" }} checked={data.mailingSameAsPhysical !== false} onChange={(e) => set("mailingSameAsPhysical", e.target.checked)} />
+            <input type="checkbox" style={{ width: "auto" }} checked={data.mailingSameAsPhysical !== false} onChange={(e) => setField("mailingSameAsPhysical", e.target.checked)} />
             Mailing address same as physical
           </label>
         </div>
-        {data.mailingSameAsPhysical === false && (
-          <>
-            <div style={{ gridColumn: "1 / -1" }}><label style={L}>Mailing Address</label><input value={data.mailingStreet || ""} onChange={(e) => set("mailingStreet", e.target.value)} /></div>
-            <div><label style={L}>City</label><input value={data.mailingCity || ""} onChange={(e) => set("mailingCity", e.target.value)} /></div>
-            <div><label style={L}>Province / State</label><input value={data.mailingState || ""} onChange={(e) => set("mailingState", e.target.value)} /></div>
-            <div><label style={L}>Postal / ZIP</label><input value={data.mailingZip || ""} onChange={(e) => set("mailingZip", e.target.value)} /></div>
-          </>
-        )}
-        <div style={{ gridColumn: "1 / -1" }}>
-          <label style={{ ...L, display: "flex", alignItems: "flex-start", gap: 8, fontWeight: 400 }}>
-            <input type="checkbox" style={{ width: "auto", marginTop: 3 }} checked={data.cemConsent === true} onChange={(e) => set("cemConsent", e.target.checked)} />
-            {/* CEM_CONSENT_TEXT_v710 — placeholder; replace with final approved wording */}
-            <span>I consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
-          </label>
+      )}
+      {isAccordLOC && data.mailingSameAsPhysical === false && (
+        <>
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Mailing Address</label><Input value={data.mailingStreet || ""} onChange={(e) => setField("mailingStreet", e.target.value)} /></div>
+          <div><label style={L}>Mailing City</label><Input value={data.mailingCity || ""} onChange={(e) => setField("mailingCity", e.target.value)} /></div>
+          <div><label style={L}>Mailing {regionLabel}</label><Input value={data.mailingState || ""} onChange={(e) => setField("mailingState", e.target.value)} /></div>
+          <div><label style={L}>Mailing {postalLabel}</label><Input value={data.mailingZip || ""} onChange={(e) => setField("mailingZip", e.target.value)} /></div>
+        </>
+      )}
+      {isAccordLOC && (
+        <div><label style={L}>At this address since</label><input type="month" value={data.addressSince || ""} onChange={(e) => setField("addressSince", e.target.value)} /></div>
+      )}
+      {isAccordLOC && (
+        <div><label style={L}>Own or Rent</label>
+          <select value={data.ownRent || ""} onChange={(e) => setField("ownRent", e.target.value)}>
+            <option value="">—</option><option value="Own">Own</option><option value="Rent">Rent</option>
+          </select>
         </div>
+      )}
+      {isAccordLOC && data.ownRent === "Own" && (
+        <>
+          <div><label style={L}>Property Value</label><Input value={data.propertyValue || ""} onChange={(e) => setField("propertyValue", fmtMoney(e.target.value))} placeholder="$" /></div>
+          <div><label style={L}>Mortgage Value</label><Input value={data.mortgageBalance || ""} onChange={(e) => setField("mortgageBalance", fmtMoney(e.target.value))} placeholder="$" /></div>
+        </>
+      )}
+      <div><label style={L}>Credit Score Range <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
+        <select value={data.creditScoreRange || ""} onChange={(e) => setField("creditScoreRange", e.target.value)}>
+          <option value="">Prefer not to say</option>
+          {CREDIT_SCORE_BANDS.map((b) => (<option key={b.label} value={b.label}>{b.label}</option>))}
+        </select>
       </div>
+      {isAccordLOC && (
+        <>
+          <div><label style={L}>Director?</label>{yn("director")}</div>
+          <div><label style={L}>Officer?</label>{yn("officer")}</div>
+          <div><label style={L}>Ever filed bankruptcy / proposal?</label>{yn("bankruptcyFiled")}</div>
+          {data.bankruptcyFiled === "Yes" && (
+            <div><label style={L}>If yes, when?</label><Input value={data.bankruptcyWhen || ""} onChange={(e) => setField("bankruptcyWhen", e.target.value)} placeholder="Month / Year" /></div>
+          )}
+        </>
+      )}
+      <div><label style={L}>Ownership %</label><Input type="number" min="1" max="100" value={data.ownership || ""} onChange={(e) => setField("ownership", e.target.value)} placeholder="%" /></div>
     </div>
   );
 }
 
-// BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1 — additional shareholders (3rd+), lighter Accord page-2 set.
+// BF_CLIENT_BLOCK_v720_STEP4_REORDER_v1 — additional shareholders (3rd+).
 function AccordAdditionalShareholders({ list, onChange }) {
   const L = components.form.label;
   const rows = Array.isArray(list) ? list : [];
@@ -120,23 +155,22 @@ function AccordAdditionalShareholders({ list, onChange }) {
     <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
       {rows.map((r, i) => (
         <div key={i} style={{ border: `1px solid ${tokens.colors.border}`, borderRadius: 8, padding: tokens.spacing.md, display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.sm }}>
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Name</label><input value={r.name || ""} onChange={(e) => setRow(i, "name", e.target.value)} /></div>
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Home Address</label><input value={r.address || ""} onChange={(e) => setRow(i, "address", e.target.value)} /></div>
-          <div><label style={L}>Office #</label><input value={r.office || ""} onChange={(e) => setRow(i, "office", e.target.value)} /></div>
-          <div><label style={L}>Mobile #</label><input value={r.mobile || ""} onChange={(e) => setRow(i, "mobile", e.target.value)} /></div>
-          <div><label style={L}>Email</label><input value={r.email || ""} onChange={(e) => setRow(i, "email", e.target.value)} /></div>
-          <div><label style={L}>Ownership %</label><input type="number" min="0" max="100" value={r.ownership || ""} onChange={(e) => setRow(i, "ownership", e.target.value)} /></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Name</label><Input value={r.name || ""} onChange={(e) => setRow(i, "name", e.target.value)} /></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Home Address</label><Input value={r.address || ""} onChange={(e) => setRow(i, "address", e.target.value)} /></div>
+          <div><label style={L}>Office #</label><Input value={r.office || ""} onChange={(e) => setRow(i, "office", e.target.value)} /></div>
+          <div><label style={L}>Mobile #</label><Input value={r.mobile || ""} onChange={(e) => setRow(i, "mobile", e.target.value)} /></div>
+          <div><label style={L}>Email</label><Input value={r.email || ""} onChange={(e) => setRow(i, "email", e.target.value)} /></div>
+          <div><label style={L}>Ownership %</label><Input type="number" min="0" max="100" value={r.ownership || ""} onChange={(e) => setRow(i, "ownership", e.target.value)} /></div>
           <div><label style={L}>Director?</label><select value={r.director || ""} onChange={(e) => setRow(i, "director", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
           <div><label style={L}>Officer?</label><select value={r.officer || ""} onChange={(e) => setRow(i, "officer", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-          <div style={{ gridColumn: "1 / -1" }}>
-            <button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button>
-          </div>
+          <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button></div>
         </div>
       ))}
       <button type="button" onClick={add} style={{ background: "transparent", border: `1px dashed ${tokens.colors.border}`, borderRadius: 8, padding: "10px", color: tokens.colors.textPrimary, cursor: "pointer", fontSize: 14 }}>+ Add shareholder</button>
     </div>
   );
 }
+
 
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
@@ -485,677 +519,75 @@ export function Step4_Applicant() {
         <h1 style={{ color: "#2563eb", fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>Step 4: Applicant Information</h1>
         <p style={{ color: "#6b7280", textAlign: "center", marginBottom: 32, fontSize: 15 }}>Enter applicant and ownership information.</p>
         <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
-    <WizardLayout>
-      <div className="wizard-step-shell">
-      <StepHeader step={4} title="Applicant Information" />
-      {saveError && (
-        <Card variant="muted" data-error={true}>
-          <div style={components.form.errorText}>{saveError}</div>
-        </Card>
-      )}
-      {autosaveError && (
-        <Card
-          variant="muted"
-          style={{
-            background: "rgba(245, 158, 11, 0.12)",
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          {autosaveError}
-        </Card>
-      )}
+        <WizardLayout>
+          <div className="wizard-step-shell">
+            <StepHeader step={4} title="Applicant Information" />
+            {saveError && (
+              <Card variant="muted" data-error={true}>
+                <div style={components.form.errorText}>{saveError}</div>
+              </Card>
+            )}
+            {autosaveError && (
+              <Card variant="muted" style={{ background: "rgba(245, 158, 11, 0.12)", color: tokens.colors.textPrimary }}>
+                {autosaveError}
+              </Card>
+            )}
 
-      <Card
-        style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}
-        onBlurCapture={() => saveStepData(4, values)}
-      >
-        <div style={components.form.eyebrow}>Primary applicant</div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              typeof window !== "undefined" && window.innerWidth < 600
-                ? "1fr"
-                : "1fr 1fr",
-            gap: tokens.spacing.md,
-          }}
-        >
-          {/* BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — removed redundant
-            Full Name field. fullName is auto-derived from First Name
-            and Last Name onChange handlers below, and submission code
-            that depends on applicant.fullName still receives it. */}
-
-          <div>
-            <label style={components.form.label}>First Name</label>
-            <Input
-              id={getWizardFieldId("step4", "firstName")}
-              autoComplete="given-name"
-              value={values.firstName || ""}
-              onChange={(e: unknown) => {
-                const firstName = e.target.value;
-                const nextValues = {
-                  ...values,
-                  firstName,
-                  fullName: `${firstName} ${values.lastName || ""}`.trim(),
-                };
-                update({ applicant: nextValues });
-              }}
-              onBlur={() => {
-                // BF_CLIENT_v66_STEP4_CAPITALIZE
-                const cased = toTitleCaseV66(values.firstName || "");
-                if (cased !== (values.firstName || "")) {
-                  const nextValues = {
-                    ...values,
-                    firstName: cased,
-                    fullName: `${cased} ${values.lastName || ""}`.trim(),
-                  };
-                  update({ applicant: nextValues });
-                }
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("firstName", values);
-                }
-              }}
-            />
-          </div>
-          <div>
-            <label style={components.form.label}>Last Name</label>
-            <Input
-              id={getWizardFieldId("step4", "lastName")}
-              autoComplete="family-name"
-              value={values.lastName || ""}
-              onChange={(e: unknown) => {
-                const lastName = e.target.value;
-                const nextValues = {
-                  ...values,
-                  lastName,
-                  fullName: `${values.firstName || ""} ${lastName}`.trim(),
-                };
-                update({ applicant: nextValues });
-              }}
-              onBlur={() => {
-                // BF_CLIENT_v66_STEP4_CAPITALIZE
-                const cased = toTitleCaseV66(values.lastName || "");
-                if (cased !== (values.lastName || "")) {
-                  const nextValues = {
-                    ...values,
-                    lastName: cased,
-                    fullName: `${values.firstName || ""} ${cased}`.trim(),
-                  };
-                  update({ applicant: nextValues });
-                }
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("lastName", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>Email</label>
-            <Input
-              type="email"
-              id={getWizardFieldId("step4", "email")}
-              autoComplete="email"
-              value={values.email || ""}
-              onChange={(e: unknown) => {
-                const nextValues = { ...values, email: e.target.value };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("email", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>Phone</label>
-            <PhoneInput
-              id={getWizardFieldId("step4", "phone")}
-              value={formatPhoneNumber(values.phone || "", countryCode)}
-              onChange={(e: unknown) => {
-                const nextValues = {
-                  ...values,
-                  phone: formatPhoneNumber(e.target.value, countryCode),
-                };
-                update({ applicant: nextValues });
-              }}
-              onBlur={() => handleAutoAdvance("phone", values)}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("phone", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>Street Address</label>
-            <AddressAutocompleteInput
-              id={getWizardFieldId("step4", "street")}
-              country={regionCountry}
-              value={values.street || ""}
-              onChange={(e: unknown) => setField("street", e.target.value)}
-              onSelect={(selection) => {
-                if (!("street" in selection)) return;
-                const nextValues = {
-                  ...values,
-                  street: selection.street || values.street,
-                  city: selection.city || values.city,
-                  state: selection.state || values.state,
-                  zip: formatPostalCode(
-                    selection.postalCode || values.zip || "",
-                    countryCode
-                  ),
-                };
-                update({ applicant: nextValues });
-                if (shouldAutoAdvance("street", nextValues.street)) {
-                  handleAutoAdvance("street", nextValues, true);
-                }
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("street", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>City</label>
-            <Input
-              id={getWizardFieldId("step4", "city")}
-              autoComplete="address-level2"
-              value={values.city || ""}
-              onChange={(e: unknown) => {
-                const nextValues = { ...values, city: e.target.value };
-                update({ applicant: nextValues });
-              }}
-              onBlur={() => {
-                // BF_CLIENT_v66_STEP4_CAPITALIZE
-                const cased = toTitleCaseV66(values.city || "");
-                if (cased !== (values.city || "")) {
-                  update({ applicant: { ...values, city: cased } });
-                }
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("city", values);
-                }
-              }}
-            />
-          </div>
-          <div>
-            <label style={components.form.label}>{regionLabel}</label>
-            <RegionSelect
-              country={regionCountry}
-              value={values.state || ""}
-              id={getWizardFieldId("step4", "state")}
-              autoComplete="address-level1"
-              onChange={(value) => {
-                const nextValues = { ...values, state: value };
-                update({ applicant: nextValues });
-                handleAutoAdvance("state", nextValues);
-              }}
-            />
-          </div>
-          <div>
-            <label style={components.form.label}>{postalLabel}</label>
-            <Input
-              id={getWizardFieldId("step4", "zip")}
-              autoComplete="postal-code"
-              value={formatPostalCode(values.zip || "", countryCode)}
-              onChange={(e: unknown) => {
-                const nextValues = {
-                  ...values,
-                  zip: formatPostalCode(e.target.value, countryCode),
-                };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("zip", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>Date of Birth</label>
-            <Input
-              type="date"
-              id={getWizardFieldId("step4", "dob")}
-              autoComplete="bday"
-              value={values.dob || ""}
-              onChange={(e: unknown) => {
-                const nextValues = { ...values, dob: e.target.value };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("dob", values);
-                }
-              }}
-            />
-          </div>
-          <div>
-            <label style={components.form.label}>{identityLabel}</label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              id={getWizardFieldId("step4", "ssn")}
-              value={formatIdentityNumber(values.ssn || "", countryCode)}
-              onChange={(e: unknown) => {
-                const nextValues = {
-                  ...values,
-                  ssn: formatIdentityNumber(e.target.value, countryCode),
-                };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("ssn", values);
-                }
-              }}
-            />
-          </div>
-
-          <div>
-            <label style={components.form.label}>Ownership %</label>
-            <Input
-              id={getWizardFieldId("step4", "ownership")}
-              type="number"
-              min="1"
-              max="100"
-              value={values.ownership || ""}
-              onChange={(e: unknown) => {
-                const nextValues = { ...values, ownership: e.target.value };
-                update({ applicant: nextValues });
-              }}
-              onKeyDown={(e: unknown) => {
-                if (e.key === "Enter") {
-                  handleAutoAdvance("ownership", values);
-                }
-              }}
-              placeholder="%"
-            />
-          </div>
-
-          {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — Credit Score
-            Range now lives inside the Ownership two-column row so the
-            applicant card stays in 2 columns. */}
-          <div>
-            <label style={components.form.label}>
-              Credit Score Range{" "}
-              <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>
-                (optional)
-              </span>
-            </label>
-            <select
-              value={(values as any).creditScoreRange || ""}
-              onChange={(e) => {
-                const next = { ...values, creditScoreRange: e.target.value };
-                update({ applicant: next });
-              }}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                border: `1px solid ${tokens.colors.border}`,
-                borderRadius: 8,
-                fontSize: 14,
-                background: tokens.colors.surface,
-                color: tokens.colors.textPrimary,
-              }}
-            >
-              <option value="">Prefer not to say</option>
-              {CREDIT_SCORE_BANDS.map((b) => (
-                <option key={b.label} value={b.label}>{b.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {isAccordLOC && <AccordOwnerFields data={values} set={setField} />}
-
-        {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — old standalone
-          full-width Credit Score block was here; removed because the
-          field is now part of the Ownership row above. */}
-
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: tokens.spacing.xs,
-            fontSize: tokens.typography.label.fontSize,
-            fontWeight: tokens.typography.label.fontWeight,
-            color: tokens.colors.textPrimary,
-          }}
-        >
-          <Checkbox
-            checked={values.hasMultipleOwners || false}
-            onChange={(e) =>
-              setField("hasMultipleOwners", (e.target as HTMLInputElement).checked)
-            }
-          />
-          This business has multiple owners/partners
-        </label>
-
-        {values.hasMultipleOwners && (
-          <div
-            style={{
-              marginTop: tokens.spacing.md,
-              paddingTop: tokens.spacing.md,
-              borderTop: `1px solid ${tokens.colors.border}`,
-            }}
-          >
-            <div
-              style={{
-                fontSize: "12px",
-                textTransform: "uppercase",
-                letterSpacing: "0.2em",
-                color: tokens.colors.textSecondary,
-                marginBottom: tokens.spacing.sm,
-              }}
-            >
-              Partner Information
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  typeof window !== "undefined" && window.innerWidth < 600
-                    ? "1fr"
-                    : "1fr 1fr",
-                gap: tokens.spacing.md,
-              }}
-            >
-              <div>
-                <label style={components.form.label}>Partner First Name</label>
-                <Input
-                  id={getWizardFieldId("step4", "partner.firstName")}
-                  value={partner.firstName || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("firstName", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.firstName", values);
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <label style={components.form.label}>Partner Last Name</label>
-                <Input
-                  id={getWizardFieldId("step4", "partner.lastName")}
-                  value={partner.lastName || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("lastName", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.lastName", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner Email</label>
-                <Input
-                  type="email"
-                  id={getWizardFieldId("step4", "partner.email")}
-                  value={partner.email || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("email", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.email", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner Phone</label>
-                <PhoneInput
-                  id={getWizardFieldId("step4", "partner.phone")}
-                  value={formatPhoneNumber(partner.phone || "", countryCode)}
-                  onChange={(e: unknown) =>
-                    setPartnerField(
-                      "phone",
-                      formatPhoneNumber(e.target.value, countryCode)
-                    )
-                  }
-                  onBlur={() => handleAutoAdvance("partner.phone", values)}
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.phone", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner Address</label>
-                <AddressAutocompleteInput
-                  id={getWizardFieldId("step4", "partner.street")}
-                  country={regionCountry}
-                  value={partner.street || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("street", e.target.value)
-                  }
-                  onSelect={(selection) => {
-                    if (!("street" in selection)) return;
-                    const nextValues = {
-                      ...values,
-                      partner: {
-                        ...partner,
-                        street: selection.street || partner.street,
-                        city: selection.city || partner.city,
-                        state: selection.state || partner.state,
-                        zip: formatPostalCode(
-                          selection.postalCode || partner.zip || "",
-                          countryCode
-                        ),
-                      },
-                    };
-                    update({ applicant: nextValues });
-                    if (shouldAutoAdvance("street", nextValues.partner?.street)) {
-                      handleAutoAdvance("partner.street", nextValues, true);
-                    }
-                  }}
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.street", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner City</label>
-                <Input
-                  id={getWizardFieldId("step4", "partner.city")}
-                  value={partner.city || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("city", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.city", values);
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <label style={components.form.label}>Partner {regionLabel}</label>
-                <RegionSelect
-                  country={regionCountry}
-                  value={partner.state || ""}
-                  id={getWizardFieldId("step4", "partner.state")}
-                  onChange={(value) => {
-                    const nextValues = {
-                      ...values,
-                      partner: { ...partner, state: value },
-                    };
-                    update({ applicant: nextValues });
-                    handleAutoAdvance("partner.state", nextValues);
-                  }}
-                />
-              </div>
-              <div>
-                <label style={components.form.label}>Partner {postalLabel}</label>
-                <Input
-                  id={getWizardFieldId("step4", "partner.zip")}
-                  value={formatPostalCode(partner.zip || "", countryCode)}
-                  onChange={(e: unknown) =>
-                    setPartnerField(
-                      "zip",
-                      formatPostalCode(e.target.value, countryCode)
-                    )
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.zip", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner DOB</label>
-                <Input
-                  type="date"
-                  id={getWizardFieldId("step4", "partner.dob")}
-                  value={partner.dob || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("dob", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.dob", values);
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <label style={components.form.label}>Partner {identityLabel}</label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  id={getWizardFieldId("step4", "partner.ssn")}
-                  value={formatIdentityNumber(partner.ssn || "", countryCode)}
-                  onChange={(e: unknown) =>
-                    setPartnerField(
-                      "ssn",
-                      formatIdentityNumber(e.target.value, countryCode)
-                    )
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.ssn", values);
-                    }
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={components.form.label}>Partner Ownership %</label>
-                <Input
-                  id={getWizardFieldId("step4", "partner.ownership")}
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={partner.ownership || ""}
-                  onChange={(e: unknown) =>
-                    setPartnerField("ownership", e.target.value)
-                  }
-                  onKeyDown={(e: unknown) => {
-                    if (e.key === "Enter") {
-                      handleAutoAdvance("partner.ownership", values);
-                    }
-                  }}
-                  placeholder="%"
-                />
-              </div>
-
-              {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — partner
-                credit score band, beside Partner Ownership %. */}
-              <div>
-                <label style={components.form.label}>
-                  Partner Credit Score Range{" "}
-                  <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>
-                    (optional)
-                  </span>
+            <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
+              <div style={components.form.eyebrow}>Primary applicant</div>
+              <OwnerFields
+                data={values}
+                setField={setField}
+                setMany={(o) => update({ applicant: { ...values, ...o } })}
+                deriveFullName
+                isAccordLOC={isAccordLOC}
+                countryCode={countryCode}
+                regionCountry={regionCountry}
+                regionLabel={regionLabel}
+                postalLabel={postalLabel}
+                identityLabel={identityLabel}
+              />
+              {Number(values.ownership || 0) < 100 && (
+                <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, fontWeight: tokens.typography.label.fontWeight, color: tokens.colors.textPrimary }}>
+                  <Checkbox checked={values.hasMultipleOwners || false} onChange={(e) => setField("hasMultipleOwners", (e.target as HTMLInputElement).checked)} />
+                  This business has multiple owners/partners
                 </label>
-                <select
-                  value={(partner as any).creditScoreRange || ""}
-                  onChange={(e) =>
-                    setPartnerField("creditScoreRange", e.target.value)
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    border: `1px solid ${tokens.colors.border}`,
-                    borderRadius: 8,
-                    fontSize: 14,
-                    background: tokens.colors.surface,
-                    color: tokens.colors.textPrimary,
-                  }}
-                >
-                  <option value="">Prefer not to say</option>
-                  {CREDIT_SCORE_BANDS.map((b) => (
-                    <option key={b.label} value={b.label}>{b.label}</option>
-                  ))}
-                </select>
+              )}
+            </Card>
+
+            {values.hasMultipleOwners && (
+              <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg, marginTop: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
+                <div style={components.form.eyebrow}>Partner / second owner</div>
+                <OwnerFields
+                  data={partner}
+                  setField={setPartnerField}
+                  setMany={(o) => update({ applicant: { ...values, partner: { ...partner, ...o } } })}
+                  isAccordLOC={isAccordLOC}
+                  countryCode={countryCode}
+                  regionCountry={regionCountry}
+                  regionLabel={regionLabel}
+                  postalLabel={postalLabel}
+                  identityLabel={identityLabel}
+                />
+              </Card>
+            )}
+
+            {values.hasMultipleOwners && (
+              <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginTop: tokens.spacing.lg }}>
+                <div style={components.form.eyebrow}>Additional shareholders (optional)</div>
+                <AccordAdditionalShareholders list={values.additionalShareholders || []} onChange={(next) => setField("additionalShareholders", next)} />
+              </Card>
+            )}
+
+            <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
+                <Button variant="secondary" style={{ width: "100%", maxWidth: "160px" }} onClick={() => navigate("/apply/step-3")}>← Back</Button>
+                <Button style={{ width: "100%", maxWidth: "260px" }} onClick={next} disabled={!isValid}>Continue to Documents →</Button>
               </div>
-              {isAccordLOC && <AccordOwnerFields data={partner} set={setPartnerField} />}
             </div>
           </div>
-        )}
-      </Card>
-
-      {isAccordLOC && (
-        <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginTop: tokens.spacing.lg }}>
-          <div style={components.form.eyebrow}>Additional shareholders (optional)</div>
-          <AccordAdditionalShareholders
-            list={values.additionalShareholders || []}
-            onChange={(next) => setField("additionalShareholders", next)}
-          />
-        </Card>
-      )}
-
-      <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
-          <Button
-            variant="secondary"
-            style={{ width: "100%", maxWidth: "160px" }}
-            onClick={() => navigate("/apply/step-3")}
-          >
-            ← Back
-          </Button>
-          <Button
-            style={{ width: "100%", maxWidth: "260px" }}
-            onClick={next}
-            disabled={!isValid}
-          >
-            Continue to Documents →
-          </Button>
-        </div>
+        </WizardLayout>
       </div>
-      </div>
-    </WizardLayout>
-    </div>
     </div>
   );
 }
