@@ -19,6 +19,8 @@ import FlinksConnectForm from "@/pages/mini-portal/forms/forms/FlinksConnectForm
 import RealEstateCollateralForm from "@/pages/mini-portal/forms/forms/RealEstateCollateralForm";
 // BF_CLIENT_BLOCK_v307_DEBT_EQUIP_PREFILL_v1
 import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCollateralForm";
+// BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
+import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
 import SlimHeader from "@/components/SlimHeader";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
@@ -53,6 +55,8 @@ const ACTION_CHIPS = [
   { id: "equipment",  label: "Equipment Collateral Form" },
   { id: "realestate", label: "Real Estate Collateral Form" },
   { id: "debt",       label: "Debt Stack" },
+  // BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
+  { id: "advisors",   label: "Professional Advisors" },
 ] as const;
 
 export default function MiniPortalPage() {
@@ -163,7 +167,7 @@ export default function MiniPortalPage() {
     if (kind === "form" && rest) {
       // BF_CLIENT_BLOCK_v324 — open the form modal (the /forms/* route doesn't
       // exist; the pills use setOpenForm, so CTAs must too).
-      if (rest === "networth" || rest === "debt" || rest === "equipment" || rest === "realestate" || rest === "cra" || rest === "flinks") {
+      if (rest === "networth" || rest === "debt" || rest === "equipment" || rest === "realestate" || rest === "cra" || rest === "flinks" || rest === "advisors") {
         setOpenForm(rest);
       }
       return;
@@ -177,7 +181,7 @@ export default function MiniPortalPage() {
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks">(null);
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors">(null);
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
   const [signSession, setSignSession] = useState<{ status: string; url?: string } | null>(null);
@@ -207,7 +211,7 @@ export default function MiniPortalPage() {
   const onChip = (id: string) => {
     if (id === "new") { reset(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
-    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "cra" || id === "flinks") {
+    if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "cra" || id === "flinks" || id === "advisors") {
       setOpenForm(id);
       return;
     }
@@ -338,7 +342,7 @@ export default function MiniPortalPage() {
     // BF_CLIENT_BLOCK_v721 — Stage-2 buttons carry cta_action = chip id
     // ("cra","flinks","networth",...); also accept legacy "form:<id>". Open the modal.
     const formId = ctaAction.startsWith("form:") ? ctaAction.slice(5) : ctaAction;
-    if (["upload", "new", "networth", "cra", "flinks", "equipment", "realestate", "debt"].includes(formId)) {
+    if (["upload", "new", "networth", "cra", "flinks", "equipment", "realestate", "debt", "advisors"].includes(formId)) {
       onChip(formId);
       return;
     }
@@ -549,6 +553,7 @@ export default function MiniPortalPage() {
                 {openForm === "debt" && "Debt Schedule"}
                 {openForm === "equipment" && "Equipment Collateral Form"}
                 {openForm === "realestate" && "Real Estate Collateral Form"}
+                {openForm === "advisors" && "Professional Advisors"}
               </div>
               <button
                 type="button"
@@ -597,6 +602,12 @@ export default function MiniPortalPage() {
                 <EquipmentCollateralForm
                   applicationId={applicationId}
                   prefill={cmpPrefill}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "advisors" && (
+                <AdvisorsForm
+                  applicationId={applicationId}
                   onComplete={() => setOpenForm(null)}
                 />
               )}
