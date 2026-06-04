@@ -246,7 +246,7 @@ export function Step2_Product() {
       setLoadError(null);
 
       try {
-        const rows = await getClientLenderProducts();
+        const rows = await getClientLenderProducts(((app?.kyc as any)?.country || (app?.kyc as any)?.businessLocation) as string | undefined);
         const activeProducts = filterActiveProducts(
           rows as ActiveProduct[]
         ).sort((a, b) => a.name.localeCompare(b.name));
