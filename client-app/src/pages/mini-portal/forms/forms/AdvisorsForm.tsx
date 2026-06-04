@@ -33,6 +33,8 @@ export default function AdvisorsForm({
     ar_credit_insurance: { ...EMPTY_ROW },
   });
   const [authorized, setAuthorized] = useState(false);
+  // BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1
+  const [monitoring, setMonitoring] = useState({ accountingSoftware: "", accountingRemoteView: "", primaryBank: "", bankRemoteView: "", craMyBusiness: "" });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +59,7 @@ export default function AdvisorsForm({
             });
           }
           setAuthorized(!!d.financial_advisor?.authorized);
+          if ((d as any).monitoring) setMonitoring((prev) => ({ ...prev, ...(d as any).monitoring }));
           setSubmitted(!!existing.submitted_at);
         }
       } catch {
@@ -68,11 +71,14 @@ export default function AdvisorsForm({
   const buildPayload = (auth: boolean) => ({
     advisors,
     financial_advisor: { firm: FINANCIAL_ADVISOR_FIRM, authorized: auth },
+    monitoring,
   });
 
   const setField = (key: AdvisorKey, field: keyof AdvisorRow, value: string) => {
     setAdvisors((prev) => ({ ...prev, [key]: { ...prev[key], [field]: value } }));
   };
+  // BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1
+  const setMon = (k: string, v: string) => setMonitoring((prev) => ({ ...prev, [k]: v }));
 
   const persist = () => {
     void saveFormResponse(applicationId, FORM_KEY, buildPayload(authorized)).catch(() => {});
@@ -139,6 +145,16 @@ export default function AdvisorsForm({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1 */}
+      <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 6 }}>Ongoing Monitoring</h3>
+      <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div><div style={cellLabel}>Accounting software used</div><input style={inputStyle} value={monitoring.accountingSoftware} onChange={(e) => setMon("accountingSoftware", e.target.value)} onBlur={persist} /></div>
+        <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.accountingRemoteView} onChange={(e) => setMon("accountingRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        <div><div style={cellLabel}>Primary bank</div><input style={inputStyle} value={monitoring.primaryBank} onChange={(e) => setMon("primaryBank", e.target.value)} onBlur={persist} /></div>
+        <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.bankRemoteView} onChange={(e) => setMon("bankRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        <div style={{ gridColumn: "1 / -1" }}><div style={cellLabel}>Do you have CRA "My Business" set up?</div><select style={inputStyle} value={monitoring.craMyBusiness} onChange={(e) => setMon("craMyBusiness", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
       </div>
 
       <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 6 }}>Financial Advisor / Consultant</h3>

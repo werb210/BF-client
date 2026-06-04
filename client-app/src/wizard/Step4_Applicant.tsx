@@ -38,6 +38,7 @@ import { persistApplicationStep } from "./saveStepProgress";
 import { useReadiness } from "../state/readinessStore";
 import { useAuth } from "@/auth/useAuth";
 import { CREDIT_SCORE_BANDS } from "./creditScoreBands";
+import { isAccordLOCApp } from "./accordRisk";
 
 // BF_CLIENT_v66_STEP4_CAPITALIZE — title-case helper (Unicode-aware
 // for the basic Latin alphabet; preserves embedded punctuation like
@@ -49,6 +50,94 @@ function toTitleCaseV66(input: string): string {
     .replace(/(^|[\s\-'])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
 }
 
+
+// BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1 — per-owner Accord LOC fields (applicant + partner). All optional.
+function AccordOwnerFields({ data, set }) {
+  const L = components.form.label;
+  const yn = (key) => (
+    <select value={data[key] || ""} onChange={(e) => set(key, e.target.value)}>
+      <option value="">—</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </select>
+  );
+  return (
+    <div style={{ gridColumn: "1 / -1", marginTop: tokens.spacing.md, paddingTop: tokens.spacing.md, borderTop: `1px solid ${tokens.colors.border}` }}>
+      <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.15em", color: tokens.colors.textSecondary, marginBottom: tokens.spacing.sm }}>
+        Accord — additional owner details (optional)
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md }}>
+        <div><label style={L}>Own or Rent</label>
+          <select value={data.ownRent || ""} onChange={(e) => set("ownRent", e.target.value)}>
+            <option value="">—</option><option value="Own">Own</option><option value="Rent">Rent</option>
+          </select>
+        </div>
+        <div><label style={L}>Property Value</label><input value={data.propertyValue || ""} onChange={(e) => set("propertyValue", e.target.value)} placeholder="$" /></div>
+        <div><label style={L}>Mortgage Balance</label><input value={data.mortgageBalance || ""} onChange={(e) => set("mortgageBalance", e.target.value)} placeholder="$" /></div>
+        <div><label style={L}>At this address since</label><input type="month" value={data.addressSince || ""} onChange={(e) => set("addressSince", e.target.value)} /></div>
+        <div><label style={L}>Home Phone</label><input value={data.homePhone || ""} onChange={(e) => set("homePhone", e.target.value)} /></div>
+        <div><label style={L}>Work Phone</label><input value={data.workPhone || ""} onChange={(e) => set("workPhone", e.target.value)} /></div>
+        <div><label style={L}>Director?</label>{yn("director")}</div>
+        <div><label style={L}>Officer?</label>{yn("officer")}</div>
+        <div><label style={L}>Ever filed bankruptcy / proposal?</label>{yn("bankruptcyFiled")}</div>
+        {data.bankruptcyFiled === "Yes" && (
+          <div><label style={L}>If yes, when?</label><input value={data.bankruptcyWhen || ""} onChange={(e) => set("bankruptcyWhen", e.target.value)} placeholder="Month / Year" /></div>
+        )}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={{ ...L, display: "flex", alignItems: "center", gap: 8, fontWeight: 400 }}>
+            <input type="checkbox" style={{ width: "auto" }} checked={data.mailingSameAsPhysical !== false} onChange={(e) => set("mailingSameAsPhysical", e.target.checked)} />
+            Mailing address same as physical
+          </label>
+        </div>
+        {data.mailingSameAsPhysical === false && (
+          <>
+            <div style={{ gridColumn: "1 / -1" }}><label style={L}>Mailing Address</label><input value={data.mailingStreet || ""} onChange={(e) => set("mailingStreet", e.target.value)} /></div>
+            <div><label style={L}>City</label><input value={data.mailingCity || ""} onChange={(e) => set("mailingCity", e.target.value)} /></div>
+            <div><label style={L}>Province / State</label><input value={data.mailingState || ""} onChange={(e) => set("mailingState", e.target.value)} /></div>
+            <div><label style={L}>Postal / ZIP</label><input value={data.mailingZip || ""} onChange={(e) => set("mailingZip", e.target.value)} /></div>
+          </>
+        )}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label style={{ ...L, display: "flex", alignItems: "flex-start", gap: 8, fontWeight: 400 }}>
+            <input type="checkbox" style={{ width: "auto", marginTop: 3 }} checked={data.cemConsent === true} onChange={(e) => set("cemConsent", e.target.checked)} />
+            {/* CEM_CONSENT_TEXT_v710 — placeholder; replace with final approved wording */}
+            <span>I consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1 — additional shareholders (3rd+), lighter Accord page-2 set.
+function AccordAdditionalShareholders({ list, onChange }) {
+  const L = components.form.label;
+  const rows = Array.isArray(list) ? list : [];
+  const setRow = (i, k, v) => onChange(rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+  const add = () => onChange([...rows, { name: "", address: "", office: "", mobile: "", email: "", ownership: "", director: "", officer: "" }]);
+  const remove = (i) => onChange(rows.filter((_, idx) => idx !== i));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
+      {rows.map((r, i) => (
+        <div key={i} style={{ border: `1px solid ${tokens.colors.border}`, borderRadius: 8, padding: tokens.spacing.md, display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.sm }}>
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Name</label><input value={r.name || ""} onChange={(e) => setRow(i, "name", e.target.value)} /></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Home Address</label><input value={r.address || ""} onChange={(e) => setRow(i, "address", e.target.value)} /></div>
+          <div><label style={L}>Office #</label><input value={r.office || ""} onChange={(e) => setRow(i, "office", e.target.value)} /></div>
+          <div><label style={L}>Mobile #</label><input value={r.mobile || ""} onChange={(e) => setRow(i, "mobile", e.target.value)} /></div>
+          <div><label style={L}>Email</label><input value={r.email || ""} onChange={(e) => setRow(i, "email", e.target.value)} /></div>
+          <div><label style={L}>Ownership %</label><input type="number" min="0" max="100" value={r.ownership || ""} onChange={(e) => setRow(i, "ownership", e.target.value)} /></div>
+          <div><label style={L}>Director?</label><select value={r.director || ""} onChange={(e) => setRow(i, "director", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div><label style={L}>Officer?</label><select value={r.officer || ""} onChange={(e) => setRow(i, "officer", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button>
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={add} style={{ background: "transparent", border: `1px dashed ${tokens.colors.border}`, borderRadius: 8, padding: "10px", color: tokens.colors.textPrimary, cursor: "pointer", fontSize: 14 }}>+ Add shareholder</button>
+    </div>
+  );
+}
+
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
@@ -58,6 +147,7 @@ export function Step4_Applicant() {
 
   const values = { ...app.applicant };
   const partner = values.partner || {};
+  const isAccordLOC = isAccordLOCApp(app); // BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1
   const countryCode = useMemo(
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
@@ -732,6 +822,8 @@ export function Step4_Applicant() {
           </div>
         </div>
 
+        {isAccordLOC && <AccordOwnerFields data={values} set={setField} />}
+
         {/* BF_CLIENT_WIZARD_STEP4_CREDITSCORE_v60 — old standalone
           full-width Credit Score block was here; removed because the
           field is now part of the Ownership row above. */}
@@ -1027,10 +1119,21 @@ export function Step4_Applicant() {
                   ))}
                 </select>
               </div>
+              {isAccordLOC && <AccordOwnerFields data={partner} set={setPartnerField} />}
             </div>
           </div>
         )}
       </Card>
+
+      {isAccordLOC && (
+        <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginTop: tokens.spacing.lg }}>
+          <div style={components.form.eyebrow}>Additional shareholders (optional)</div>
+          <AccordAdditionalShareholders
+            list={values.additionalShareholders || []}
+            onChange={(next) => setField("additionalShareholders", next)}
+          />
+        </Card>
+      )}
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>

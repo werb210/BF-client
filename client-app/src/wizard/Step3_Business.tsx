@@ -689,6 +689,34 @@ export function Step3_Business() {
               />
             </div>
           )}
+          {/* BF_CLIENT_BLOCK_v710_ACCORD_STEP3_v1 — CRA business number (optional) */}
+          {isAccordLOC && (
+            <div>
+              <label style={components.form.label}>CRA Business Number <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
+              <Input value={values.craBusinessNumber || ""} onChange={(e: any) => setField("craBusinessNumber", e.target.value)} placeholder="e.g. 123456789 RC0001" />
+            </div>
+          )}
+          {/* BF_CLIENT_BLOCK_v710_ACCORD_STEP3_v1 — economic impact (optional) */}
+          {isAccordLOC && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={components.form.label}>As a result of this loan, the business expects to <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
+              <div style={{ display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr 1fr", gap: tokens.spacing.md }}>
+                <div><label style={components.form.label}>Rehire laid-off (#)</label><Input type="number" min="0" value={values.econRehire || ""} onChange={(e: any) => setField("econRehire", e.target.value)} /></div>
+                <div><label style={components.form.label}>Retain at-risk (#)</label><Input type="number" min="0" value={values.econRetain || ""} onChange={(e: any) => setField("econRetain", e.target.value)} /></div>
+                <div><label style={components.form.label}>Hire new (#)</label><Input type="number" min="0" value={values.econHireNew || ""} onChange={(e: any) => setField("econHireNew", e.target.value)} /></div>
+              </div>
+            </div>
+          )}
+          {/* BF_CLIENT_BLOCK_v710_ACCORD_STEP3_v1 — business CEM consent */}
+          {isAccordLOC && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ ...components.form.label, display: "flex", alignItems: "flex-start", gap: 8, fontWeight: 400 }}>
+                <input type="checkbox" style={{ width: "auto", marginTop: 3 }} checked={values.cemConsentBusiness === true} onChange={(e: any) => setField("cemConsentBusiness", e.target.checked)} />
+                {/* CEM_CONSENT_TEXT_v710 — placeholder; replace with final approved wording */}
+                <span>I/we consent to receive commercial electronic messages (email and SMS) from Boreal Financial and its lender partners.</span>
+              </label>
+            </div>
+          )}
 
           <div>
             <label style={components.form.label}>Number of Employees</label>
