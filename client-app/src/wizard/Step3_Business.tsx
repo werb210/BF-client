@@ -395,6 +395,7 @@ export function Step3_Business() {
             <label style={components.form.label}>Business Name (DBA)</label>
             <Input
               id={getWizardFieldId("step3", "businessName")}
+              autoComplete="organization"
               value={values.businessName || ""}
               onChange={(e: unknown) => {
                 const businessName = e.target.value;

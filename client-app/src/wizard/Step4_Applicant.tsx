@@ -440,6 +440,7 @@ export function Step4_Applicant() {
             <label style={components.form.label}>First Name</label>
             <Input
               id={getWizardFieldId("step4", "firstName")}
+              autoComplete="given-name"
               value={values.firstName || ""}
               onChange={(e: unknown) => {
                 const firstName = e.target.value;
@@ -473,6 +474,7 @@ export function Step4_Applicant() {
             <label style={components.form.label}>Last Name</label>
             <Input
               id={getWizardFieldId("step4", "lastName")}
+              autoComplete="family-name"
               value={values.lastName || ""}
               onChange={(e: unknown) => {
                 const lastName = e.target.value;
@@ -508,6 +510,7 @@ export function Step4_Applicant() {
             <Input
               type="email"
               id={getWizardFieldId("step4", "email")}
+              autoComplete="email"
               value={values.email || ""}
               onChange={(e: unknown) => {
                 const nextValues = { ...values, email: e.target.value };
@@ -578,6 +581,7 @@ export function Step4_Applicant() {
             <label style={components.form.label}>City</label>
             <Input
               id={getWizardFieldId("step4", "city")}
+              autoComplete="address-level2"
               value={values.city || ""}
               onChange={(e: unknown) => {
                 const nextValues = { ...values, city: e.target.value };
@@ -603,6 +607,7 @@ export function Step4_Applicant() {
               country={regionCountry}
               value={values.state || ""}
               id={getWizardFieldId("step4", "state")}
+              autoComplete="address-level1"
               onChange={(value) => {
                 const nextValues = { ...values, state: value };
                 update({ applicant: nextValues });
@@ -614,6 +619,7 @@ export function Step4_Applicant() {
             <label style={components.form.label}>{postalLabel}</label>
             <Input
               id={getWizardFieldId("step4", "zip")}
+              autoComplete="postal-code"
               value={formatPostalCode(values.zip || "", countryCode)}
               onChange={(e: unknown) => {
                 const nextValues = {
@@ -635,6 +641,7 @@ export function Step4_Applicant() {
             <Input
               type="date"
               id={getWizardFieldId("step4", "dob")}
+              autoComplete="bday"
               value={values.dob || ""}
               onChange={(e: unknown) => {
                 const nextValues = { ...values, dob: e.target.value };
