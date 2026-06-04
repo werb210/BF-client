@@ -174,7 +174,11 @@ export function Step5_Documents() {
   const orderedRequirements = useMemo(() => {
     // BF_CLIENT_BLOCK_v328 — Step 5 shows Stage-1 docs only; Stage-2 handled in CMP.
     return sortRequirements(requirementsRaw).filter(
-      (e) => (((e as { stage?: number }).stage) ?? 1) === 1
+      (e) =>
+        (((e as { stage?: number }).stage) ?? 1) === 1 &&
+        // BF_CLIENT_BLOCK_v711_STEP5_NO_ADVISORS_v1 — Professional Advisors is a
+        // Stage-2 CMP form, never a Step-5 upload; exclude regardless of staging.
+        !/professional\s*advisor/i.test(String((e as { document_type?: string }).document_type ?? ""))
     );
   }, [requirementsRaw]);
   const requiredDocs = useMemo(
