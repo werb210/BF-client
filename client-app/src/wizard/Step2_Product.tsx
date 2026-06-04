@@ -170,6 +170,9 @@ export function Step2_Product() {
             ? Number(product.minCreditScore)
             : null,
       supportedCountries: product.country ? [product.country] : [],
+      // BF_CLIENT_BLOCK_v705_ACCORD_MATCH_GATE_v1 — preserve the server's
+      // lender match flag on the eligible product set used by later steps.
+      isAccord: product.is_accord === true,
       requiredDocs: normalizeRequirementList(
         product.required_documents ?? []
       ).map((entry) => entry.document_type),
