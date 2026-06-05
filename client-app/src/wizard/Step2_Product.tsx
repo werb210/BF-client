@@ -761,6 +761,13 @@ export function Step2_Product() {
               equipment deposits. Both applications stay connected in your
               client portal.
             </p>
+            {/* BF_CLIENT_CLOSING_COSTS_EXPLAINER_v1 */}
+            <p style={components.form.subtitle}>
+              Most equipment finance companies require 10&ndash;15% down,
+              and/or first and last payments, before they&rsquo;ll fund. Adding
+              a linked closing-costs application lets us help you source those
+              upfront funds so the deal can proceed.
+            </p>
             {closingError && (
               <div style={components.form.errorText}>{closingError}</div>
             )}
