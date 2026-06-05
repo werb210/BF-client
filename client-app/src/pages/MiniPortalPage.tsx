@@ -66,6 +66,19 @@ export default function MiniPortalPage() {
   const { app, reset } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
   const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
+  // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — the caller's applications for the switcher
+  const [myApps, setMyApps] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await apiCall<any>(`/api/client/applications/by-phone`);
+        const list = Array.isArray(r?.applications) ? r.applications : r?.application ? [r.application] : [];
+        if (!cancelled) setMyApps(list);
+      } catch { /* switcher is best-effort */ }
+    })();
+    return () => { cancelled = true; };
+  }, [applicationId]);
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
@@ -350,6 +363,14 @@ export default function MiniPortalPage() {
   };
 
   const currentStageLabel = STAGES[stageIndex]?.label ?? "";
+  // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — "category · $amount — stage"
+  const fmtApp = (a: any) => {
+    const cat = String(a?.product_category ?? "").trim();
+    const amt = Number(a?.requested_amount ?? 0);
+    const amtStr = Number.isFinite(amt) && amt > 0 ? ` \u00b7 $${amt.toLocaleString()}` : "";
+    const stage = String(a?.pipeline_state ?? "").trim();
+    return `${cat || "Application"}${amtStr}${stage ? ` \u2014 ${stage}` : ""}`;
+  };
   const shortId = applicationId
     ? applicationId.length > 8
       ? applicationId.slice(-8).toUpperCase()
@@ -360,6 +381,22 @@ export default function MiniPortalPage() {
     <>
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
+      {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
+      {myApps.length > 1 && (
+        <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <label htmlFor="mp-app-switch" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>Your applications</label>
+          <select
+            id="mp-app-switch"
+            value={applicationId}
+            onChange={(e) => { const id = e.target.value; if (id && id !== applicationId) navigate(`/application/${encodeURIComponent(id)}`); }}
+            style={{ flex: 1, minWidth: 240, maxWidth: 520, padding: "8px 10px", fontSize: 13, color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
+          >
+            {myApps.map((a) => (
+              <option key={String(a.id)} value={String(a.id)}>{fmtApp(a)}</option>
+            ))}
+          </select>
+        </div>
+      )}
       {/* BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1 */}
       {rejectedDocs.length > 0 && (
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#7f1d1d" }}>
