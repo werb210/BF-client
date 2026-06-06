@@ -379,12 +379,15 @@ export default function PhoneOTPInline() {
           <label style={{ display: 'block', fontSize: 14, color: '#334155', marginBottom: 6 }}>
             Enter the code we sent to {phoneDisplay}
           </label>
-          {/* BF_OTP_PORTAL_PARITY_v40 — Block 40-A — match portal Verify.tsx
-              markup exactly. Removed input attributes and the
-              fancy letterSpacing because they were suppressing the iCloud
-              Keychain SMS-autofill bubble on macOS Chrome. */}
+          {/* BF_OTP_AUTOFILL_v341 — autoComplete="one-time-code" + inputMode="numeric"
+              are REQUIRED for the iOS / Chrome SMS-autofill bubble to fire. A prior change
+              removed them (mistaking them for the cause); their ABSENCE is what suppressed
+              the bubble. Do not remove these attributes. */}
           <input
             type="text"
+            name="otp"
+            autoComplete="one-time-code"
+            inputMode="numeric"
             placeholder="Enter code"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D+/g, '').slice(0, 6))}
