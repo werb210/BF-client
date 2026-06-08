@@ -82,6 +82,9 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
+  // BF_CLIENT_BLOCK_v768_DOCS_STILL_NEEDED — surface skipped/required docs
+  // immediately on the CMP, not only after opening the uploader.
+  const [stillNeeded, setStillNeeded] = useState<{ document_type: string; label?: string }[]>([]);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
@@ -160,6 +163,15 @@ export default function MiniPortalPage() {
         }))
         .filter((d) => d.id.length > 0);
       setRejectedDocs(rejected);
+      // BF_CLIENT_BLOCK_v768_DOCS_STILL_NEEDED — also pull the still-needed list
+      // (server already computes it) so the CMP can prompt for skipped docs.
+      try {
+        const nd = await apiCall<any>(`/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`).catch((): any => null);
+        const sn = Array.isArray(nd?.stillNeeded) ? nd.stillNeeded : [];
+        setStillNeeded(sn
+          .map((d: any) => ({ document_type: String(d?.document_type ?? d?.label ?? ""), label: typeof d?.label === "string" ? d.label : undefined }))
+          .filter((x: any) => x.document_type));
+      } catch {}
     } catch {}
   }, [applicationId]);
 
@@ -422,6 +434,16 @@ export default function MiniPortalPage() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+      {/* BF_CLIENT_BLOCK_v768_DOCS_STILL_NEEDED — prompt for skipped/required docs */}
+      {stillNeeded.length > 0 && (
+        <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#1e3a8a" }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>📄 {stillNeeded.length} document{stillNeeded.length === 1 ? "" : "s"} still needed</div>
+          <ul style={{ margin: "6px 0 10px", paddingLeft: 20, fontSize: 13, lineHeight: 1.5 }}>
+            {stillNeeded.map((d, i) => (<li key={i}>{d.label || d.document_type}</li>))}
+          </ul>
+          <button type="button" onClick={() => setShowDocPicker(true)} style={{ background: "#2563eb", color: "#fff", border: 0, borderRadius: 6, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Upload now</button>
         </div>
       )}
       <header className="mp-app-header">
