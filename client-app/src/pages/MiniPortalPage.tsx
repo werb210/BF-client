@@ -170,10 +170,9 @@ export default function MiniPortalPage() {
   useVisiblePoll(loadAll, 15000);
 
   // BF_CLIENT_BLOCK_v771_SWITCH_REFETCH — useVisiblePoll only re-runs on its
-  // interval (every 15s), not when loadAll's applicationId changes, so
-  // switching applications via the switcher showed the previous app's stage and
-  // requirements until the next poll tick or a manual refresh. Re-fetch now on
-  // every app switch (loadAll is memoized on [applicationId]).
+  // interval (every 15s), not when loadAll's applicationId changes, so switching
+  // applications showed the previous app's stage/requirements until the next
+  // poll tick or a manual refresh. Re-fetch now on every app switch.
   useEffect(() => { void loadAll(); }, [loadAll]);
 
 
