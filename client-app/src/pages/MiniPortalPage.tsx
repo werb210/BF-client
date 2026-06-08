@@ -63,7 +63,7 @@ export default function MiniPortalPage() {
   const { id: routeId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { app, reset } = useApplicationStore();
+  const { app, startNewApplication } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
   const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — the caller's applications for the switcher
@@ -72,7 +72,7 @@ export default function MiniPortalPage() {
     let cancelled = false;
     (async () => {
       try {
-        const r = await apiCall<any>(`/api/client/applications/by-phone`);
+        const r = await apiCall<any>(`/api/client/applications/by-phone?includeDrafts=true`);
         const list = Array.isArray(r?.applications) ? r.applications : r?.application ? [r.application] : [];
         if (!cancelled) setMyApps(list);
       } catch { /* switcher is best-effort */ }
@@ -222,7 +222,7 @@ export default function MiniPortalPage() {
   // as modals with real forms. The legacy /forms/* route doesn't exist
   // and was scrolling-to-top silently.
   const onChip = (id: string) => {
-    if (id === "new") { reset(); navigate("/apply/step-1"); return; }
+    if (id === "new") { startNewApplication(); navigate("/apply/step-1"); return; }
     if (id === "upload") { setShowDocPicker(true); return; }
     if (id === "networth" || id === "debt" || id === "equipment" || id === "realestate" || id === "cra" || id === "flinks" || id === "advisors") {
       setOpenForm(id);
@@ -364,12 +364,26 @@ export default function MiniPortalPage() {
 
   const currentStageLabel = STAGES[stageIndex]?.label ?? "";
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — "category · $amount — stage"
+  const PRODUCT_LABELS: Record<string, string> = {
+    EQUIPMENT_FINANCING: "Equipment", EQUIPMENT_FINANCE: "Equipment", EQUIPMENT: "Equipment",
+    LINE_OF_CREDIT: "LOC", LOC: "LOC",
+    TERM_LOAN: "Term Loan",
+    WORKING_CAPITAL: "Working Capital",
+    INVOICE_FACTORING: "Factoring", FACTORING: "Factoring",
+    STARTUP: "Startup",
+  };
+  const prettyCategory = (raw: string) => {
+    const key = raw.toUpperCase().replace(/[\s-]+/g, "_");
+    if (PRODUCT_LABELS[key]) return PRODUCT_LABELS[key];
+    return raw.replace(/[_-]+/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase());
+  };
   const fmtApp = (a: any) => {
     const cat = String(a?.product_category ?? "").trim();
     const amt = Number(a?.requested_amount ?? 0);
     const amtStr = Number.isFinite(amt) && amt > 0 ? ` \u00b7 $${amt.toLocaleString()}` : "";
-    const stage = String(a?.pipeline_state ?? "").trim();
-    return `${cat || "Application"}${amtStr}${stage ? ` \u2014 ${stage}` : ""}`;
+    const stageRaw = String(a?.pipeline_state ?? "").trim();
+    const stage = /^draft$/i.test(stageRaw) ? "Draft" : stageRaw;
+    return `${cat ? prettyCategory(cat) : "Application"}${amtStr}${stage ? ` \u2014 ${stage}` : ""}`;
   };
   const shortId = applicationId
     ? applicationId.length > 8
