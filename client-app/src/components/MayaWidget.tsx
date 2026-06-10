@@ -149,6 +149,13 @@ export default function MayaWidget() {
             message: text,
             sessionId,
             application_id: applicationId ?? undefined,
+            // BF_CLIENT_BLOCK_v826_MAYA_KNOWS_CMP_USER — the CMP user is OTP-authenticated, so
+            // pass their identity. Maya's prompt only asks for name/email/phone when it has none
+            // on file; sending the logged-in phone/email (and contact) stops it interrogating a
+            // signed-in client and lets it resolve them by phone.
+            phone: userPhone ?? undefined,
+            lookupIdentifier: userPhone ?? userEmail ?? undefined,
+            contact: { name: userName, phone: userPhone, email: userEmail },
           },
         })) as AgentReply;
         const reply = (res?.reply ?? "").toString().trim() ||
