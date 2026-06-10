@@ -5,7 +5,9 @@ export default function UpdatePromptBanner() {
   if (!updateAvailable) return null;
   return (
     <div role="alert" style={{
-      position: "fixed", top: 16, left: 16, right: 16, zIndex: 50,
+      // BF_CLIENT_BLOCK_v828_UPDATE_BANNER_ABOVE_HEADER — was hidden behind the fixed dark
+      // header on iPad/iPhone (header z-index > 50). Lift above everything and clear the notch.
+      position: "fixed", top: "calc(env(safe-area-inset-top, 0px) + 8px)", left: 16, right: 16, zIndex: 2147483000,
       background: "#F5C443", color: "#020C1C", padding: "10px 14px",
       borderRadius: 10, display: "flex", gap: 12, alignItems: "center",
       maxWidth: 480, margin: "0 auto", fontWeight: 600
