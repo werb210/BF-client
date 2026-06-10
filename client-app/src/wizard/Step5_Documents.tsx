@@ -822,6 +822,22 @@ export function Step5_Documents() {
               })}
             </div>
           ))}
+          {/* BF_CLIENT_BLOCK_v819_STEP5_OTHER — optional catch-all upload. Never required (does not
+              gate Continue) and never OCR'd server-side; flows to the lender package once staff accept it. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>
+            <div style={{ fontWeight: 600, color: tokens.colors.textSecondary }}>Other (optional)</div>
+            <RequirementRow
+              key="other"
+              entry={{ id: "other", document_type: "other", required: false } as any}
+              app={app}
+              isUploading={Boolean(uploadingDocs["other"])}
+              progress={uploadProgress["other"] || 0}
+              docError={docErrors["other"]}
+              docStatus={getDocStatus("other")}
+              onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
+              onDrop={handleFile}
+            />
+          </div>
         </div>
       </Card>
 
