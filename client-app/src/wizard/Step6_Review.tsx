@@ -56,7 +56,7 @@ import { logError } from "@/lib/logger";
 import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
-import { sendSubmitAttempt } from "../utils/submitAttempt";
+import { sendSubmitAttempt } from "../utils/submitAttempt"; // BF_CLIENT_BLOCK_v872
 
 // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — full Terms & Conditions text shown in popups.
 // (Legal text supplied by Boreal; review with counsel. Province = Alberta placeholder.)
@@ -274,6 +274,7 @@ export function Step6_Review(): JSX.Element {
     if (submitting) return;
     setSubmitting(true);
     setSubmitError(null);
+    sendSubmitAttempt(app, "attempted"); // BF_CLIENT_BLOCK_v872
 
     const blockSubmit = (message: string) => {
       setSubmitError(message);
@@ -342,10 +343,6 @@ export function Step6_Review(): JSX.Element {
     // payload is sent in the ClientAppAPI.submit() call below. Keeping a
     // separate PATCH here was the source of the stale-token 500/410 flood.
     try {
-      // BF_CLIENT_BLOCK_v870_SUBMIT_ATTEMPT_BEACON — record the attempt the
-      // instant submit runs, before any fragile work, so a failure that never
-      // reaches the server is still visible to staff. Fire-and-forget.
-      sendSubmitAttempt(app, "attempted");
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const normalizedPayload = normalizeForSubmit(app);
@@ -463,6 +460,7 @@ export function Step6_Review(): JSX.Element {
       }
       try { localStorage.removeItem("creditSessionToken"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
+      sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872
       // BF_CLIENT_v63_SUBMIT_HYDRATE_GUARD
       // Server has GET /api/client/application/:id/status (singular, with
       // /status suffix). The client's ClientAppAPI.status hits
@@ -494,7 +492,6 @@ export function Step6_Review(): JSX.Element {
       }
       void submissionResponse;
       trackEvent("client_submission_completed");
-      sendSubmitAttempt(app, "completed");
       update({
         applicationId: hydrated.applicationId || app.applicationId,
         documents: hydrated.documents || app.documents,
@@ -539,10 +536,11 @@ export function Step6_Review(): JSX.Element {
       const status = response?.status;
       const data = response?.data;
       if (status === 409 && resolveSubmissionId(data)) {
+        sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872 — duplicate = already submitted
         clearDraft();
         clearSubmissionIdempotencyKey();
         clearStoredReadinessSession();
-      localStorage.removeItem("creditPrefill");
+        try { localStorage.removeItem("creditPrefill"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
         setTimeout(() => {
           if (resolveSubmissionId(data)) {
             navigate(`/application/${resolveSubmissionId(data)}`, { replace: true, state: { submitted: true, duplicate: true } });
@@ -565,9 +563,14 @@ export function Step6_Review(): JSX.Element {
         console.debug("[submit] outbox save failed", outboxErr);
       }
       logError(error, { stage: "submission" });
+      sendSubmitAttempt(app, "failed", error instanceof Error ? error.message : String(error)); // BF_CLIENT_BLOCK_v872
+      // BF_CLIENT_BLOCK_v872_NO_FALSE_SUCCESS — never claim success on a failed
+      // submit. A failure that looks successful makes the applicant leave, and
+      // the retry outbox is local to this device only, so the application can be
+      // lost. Be honest and give a real retry.
       setSubmitError(
-        "We're submitting your application in the background. " +
-        "You can leave this page — we'll let you know as soon as it goes through."
+        "We couldn't finish submitting your application. Please tap Try Again. " +
+        "Your information is saved on this device, so you won't lose anything."
       );
     } finally {
       setSubmitting(false);
@@ -591,14 +594,14 @@ export function Step6_Review(): JSX.Element {
             gap: tokens.spacing.sm,
           }}
         >
-          <div style={components.form.eyebrow}>Submitting…</div>
-          <h1 style={components.form.title}>We've got your application</h1>
+          <div style={components.form.eyebrow}>Submission incomplete</div>
+          <h1 style={components.form.title}>We couldn't submit your application</h1>
           <p style={components.form.subtitle}>{submitError}</p>
           <Button
             style={{ marginTop: tokens.spacing.sm, width: "100%", maxWidth: "260px" }}
-            onClick={() => setSubmitError(null)}
+            onClick={() => { setSubmitError(null); void submit(); }}
           >
-            Continue
+            Try Again
           </Button>
         </Card>
       </WizardLayout>
