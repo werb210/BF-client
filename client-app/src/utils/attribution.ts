@@ -23,7 +23,11 @@ export const persistAttributionFromUrl = () => {
   ATTR_KEYS.forEach((key) => {
     const value = url.searchParams.get(key);
     if (value) {
-      localStorage.setItem(key, value);
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE — localStorage blocked; non-essential */
+      }
     }
   });
 };
@@ -31,8 +35,14 @@ export const persistAttributionFromUrl = () => {
 export const getPersistedAttribution = (): PersistedAttribution => {
   const attribution = {} as PersistedAttribution;
 
+  // BF_CLIENT_BLOCK_v865_STORAGE_SAFE — never throw when localStorage is
+  // blocked; attribution is non-essential and must not break the submit path.
   ATTR_KEYS.forEach((key) => {
-    attribution[key] = localStorage.getItem(key);
+    try {
+      attribution[key] = localStorage.getItem(key);
+    } catch {
+      attribution[key] = null;
+    }
   });
 
   return attribution;

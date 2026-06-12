@@ -17,7 +17,11 @@ const CONSENT_KEY = "boreal_cookie_consent";
 
 const hasTrackingConsent = (): boolean => {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(CONSENT_KEY) === "accepted";
+  try {
+    return localStorage.getItem(CONSENT_KEY) === "accepted";
+  } catch {
+    return false;
+  }
 };
 
 // ---- Session Intelligence ----
@@ -31,15 +35,25 @@ const generateSessionId = () => {
   return `session_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 };
 
+// BF_CLIENT_BLOCK_v865_STORAGE_SAFE — in-memory fallback when localStorage is
+// blocked (private mode / corporate policy / partitioned storage). Never throw
+// into callers such as the submit critical path.
+let inMemorySessionId: string | null = null;
+
 export const getSessionId = () => {
   if (typeof window === "undefined") return "server";
 
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = generateSessionId();
-    localStorage.setItem(SESSION_KEY, id);
+  try {
+    let id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = generateSessionId();
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    if (!inMemorySessionId) inMemorySessionId = generateSessionId();
+    return inMemorySessionId;
   }
-  return id;
 };
 
 export const getLeadFingerprint = () => {
