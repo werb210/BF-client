@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Select } from "../components/ui/Select";
 
-// BF_CLIENT_BLOCK_v866_SAFARI_MONTH_PICKER
+// BF_CLIENT_BLOCK_v867_SAFARI_MONTH_PICKER
 // <input type="month"> is unsupported in Safari / iOS — it renders as a blank
 // text box with no picker, so Accord LOC applicants could not enter "In Business
 // Since" / "Fiscal Year-End" in the required YYYY-MM format and were blocked at
-// Step 3 (Continue never advanced). Two native <select>s work in every browser,
+// Step 3/4 (Continue never advanced). Two native <select>s work in every browser,
 // require no typing, and always emit a valid YYYY-MM string (or "" until both
 // parts are chosen) — preserving the exact data contract of the old control.
 
