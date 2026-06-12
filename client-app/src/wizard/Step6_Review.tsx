@@ -448,13 +448,15 @@ export function Step6_Review(): JSX.Element {
           mintJson?.data?.applicationId ?? mintJson?.applicationId ?? ""
         );
         if (!fresh) throw submitErr;
-        if (typeof localStorage !== "undefined") {
+        try {
           localStorage.setItem("bf_application_token", fresh);
+        } catch {
+          /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */
         }
         update({ applicationToken: fresh, applicationId: fresh });
         submissionResponse = await ClientAppAPI.submit(fresh, submitBody);
       }
-      localStorage.removeItem("creditSessionToken");
+      try { localStorage.removeItem("creditSessionToken"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
       // BF_CLIENT_v63_SUBMIT_HYDRATE_GUARD
       // Server has GET /api/client/application/:id/status (singular, with

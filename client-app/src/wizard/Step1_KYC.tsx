@@ -762,9 +762,11 @@ export function Step1_KYC(): JSX.Element {
             console.error('[wizard] startApplication response missing token', __body);
             throw new Error('startApplication response missing token');
           }
-          if (typeof localStorage !== 'undefined') {
+          try {
             localStorage.setItem('bf_application_token', String(__token));
             localStorage.removeItem('bf_application_pending_submit');
+          } catch {
+            /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */
           }
           startRes = {
             ok: true,

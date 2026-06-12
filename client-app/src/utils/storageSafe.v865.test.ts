@@ -5,6 +5,7 @@ import {
   getLeadFingerprint,
 } from "@/utils/analytics";
 import { getPersistedAttribution } from "@/utils/attribution";
+import { getToken, setToken, clearToken } from "@/auth/token";
 
 // BF_CLIENT_BLOCK_v865 — Reproduces the Wayne Beamish (Powerhouse) submit
 // failure: a corporate/private browser where localStorage access THROWS. The
@@ -67,5 +68,49 @@ describe("BF_CLIENT_BLOCK_v865 — analytics survive blocked localStorage", () =
       fp = getLeadFingerprint();
     }).not.toThrow();
     expect(fp.session_id).toBeTruthy();
+  });
+});
+
+describe("BF_CLIENT_BLOCK_v865 — auth token (submit POST header) survives blocked localStorage", () => {
+  const throwingStorage = {
+    getItem: () => {
+      throw new Error("localStorage access is denied");
+    },
+    setItem: () => {
+      throw new Error("localStorage access is denied");
+    },
+    removeItem: () => {
+      throw new Error("localStorage access is denied");
+    },
+    clear: () => {
+      throw new Error("localStorage access is denied");
+    },
+    key: () => {
+      throw new Error("localStorage access is denied");
+    },
+    length: 0,
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", throwingStorage);
+    clearToken();
+  });
+
+  afterEach(() => {
+    clearToken();
+    vi.unstubAllGlobals();
+  });
+
+  it("getToken does not throw when storage is blocked", () => {
+    expect(() => getToken()).not.toThrow();
+  });
+
+  it("setToken keeps the token in memory even when the storage write throws", () => {
+    expect(() => setToken("jwt-abc")).not.toThrow();
+    expect(getToken()).toBe("jwt-abc");
+  });
+
+  it("clearToken does not throw when storage is blocked", () => {
+    expect(() => clearToken()).not.toThrow();
   });
 });
