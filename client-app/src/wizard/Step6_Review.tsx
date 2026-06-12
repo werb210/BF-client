@@ -56,6 +56,7 @@ import { logError } from "@/lib/logger";
 import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
+import { sendSubmitAttempt } from "../utils/submitAttempt";
 
 // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — full Terms & Conditions text shown in popups.
 // (Legal text supplied by Boreal; review with counsel. Province = Alberta placeholder.)
@@ -341,6 +342,10 @@ export function Step6_Review(): JSX.Element {
     // payload is sent in the ClientAppAPI.submit() call below. Keeping a
     // separate PATCH here was the source of the stale-token 500/410 flood.
     try {
+      // BF_CLIENT_BLOCK_v870_SUBMIT_ATTEMPT_BEACON — record the attempt the
+      // instant submit runs, before any fragile work, so a failure that never
+      // reaches the server is still visible to staff. Fire-and-forget.
+      sendSubmitAttempt(app, "attempted");
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const normalizedPayload = normalizeForSubmit(app);
@@ -489,6 +494,7 @@ export function Step6_Review(): JSX.Element {
       }
       void submissionResponse;
       trackEvent("client_submission_completed");
+      sendSubmitAttempt(app, "completed");
       update({
         applicationId: hydrated.applicationId || app.applicationId,
         documents: hydrated.documents || app.documents,
