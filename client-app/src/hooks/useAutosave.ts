@@ -2,6 +2,10 @@ import { useEffect } from "react";
 
 export function useAutosave(key: string, data: unknown) {
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(data));
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch {
+      /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE — non-essential autosave */
+    }
   }, [key, data]);
 }
