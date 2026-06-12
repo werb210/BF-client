@@ -567,7 +567,7 @@ export default function MiniPortalPage() {
               <DocPicker
                 applicationId={applicationId}
                 onClose={() => setShowDocPicker(false)}
-                onUploaded={() => { /* polling will refresh rejected banner */ }}
+                onUploaded={() => { void loadAll(); }}
               />
             )}
           </aside>
