@@ -122,13 +122,16 @@ export function assertSubmissionReady(app: ApplicationData) {
     throw new Error("APPLICATION_INCOMPLETE");
   }
 
-  if (!app.selectedProductId || !app.selectedProduct) {
-    throw new Error("PRODUCT_REQUIRED");
-  }
-
-  if (!app.documentsDeferred && Object.keys(app.documents || {}).length === 0) {
-    throw new Error("DOCUMENTS_REQUIRED");
-  }
+  // BF_CLIENT_BLOCK_v871_SUBMIT_UNBLOCK
+  // A missing lender product (or deferred/absent documents) must NOT block
+  // submission. Step 5's doc-union sets selectedProductId="aggregated" but never
+  // sets the selectedProduct object, so the old PRODUCT_REQUIRED check threw and
+  // dead-ended applicants on the false "we've got your application" screen with
+  // nothing sent. The real lender match and document collection happen staff-side
+  // after the application lands; the client product is only preliminary. We let
+  // every complete-enough application reach the server. (canSubmitApplication
+  // still requires terms + signature + a clear docs pathway, so this removes only
+  // the product/doc DEAD-END, not basic validation.)
 }
 
 export function getPostSubmitRedirect({

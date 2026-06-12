@@ -204,13 +204,14 @@ describe("submission payload", () => {
     expect(can).toBe(true);
   });
 
-  it("blocks submission if required data missing", () => {
+  it("does not client-block submission on a missing product or absent docs (v871)", () => {
     expect(() =>
       assertSubmissionReadiness({
         ...baseApp,
+        selectedProduct: undefined,
         selectedProductId: undefined,
       } as ApplicationData)
-    ).toThrow("PRODUCT_REQUIRED");
+    ).not.toThrow();
 
     expect(() =>
       assertSubmissionReadiness({
@@ -218,6 +219,10 @@ describe("submission payload", () => {
         documents: {},
         documentsDeferred: false,
       } as ApplicationData)
-    ).toThrow("DOCUMENTS_REQUIRED");
+    ).not.toThrow();
+
+    expect(() =>
+      assertSubmissionReadiness(null as unknown as ApplicationData)
+    ).toThrow("APPLICATION_INCOMPLETE");
   });
 });
