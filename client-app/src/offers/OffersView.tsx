@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useMemo } from "react";
+import { safeParseDate } from "@/utils/safeDate";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { components, layout, tokens } from "@/styles";
@@ -33,7 +34,7 @@ function formatCurrency(value?: number | null) {
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
-  const parsed = new Date(value);
+  const parsed = safeParseDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString("en-US", {
     month: "short",
@@ -44,7 +45,7 @@ function formatDate(value?: string | null) {
 
 function getDaysUntil(value?: string | null) {
   if (!value) return null;
-  const parsed = new Date(value);
+  const parsed = safeParseDate(value);
   if (Number.isNaN(parsed.getTime())) return null;
   const diffMs = parsed.getTime() - Date.now();
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));

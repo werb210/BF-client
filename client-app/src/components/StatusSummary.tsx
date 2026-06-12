@@ -1,4 +1,5 @@
 import { Card } from "./ui/Card";
+import { safeParseDate } from "@/utils/safeDate";
 import { Spinner } from "./ui/Spinner";
 import { components, layout, tokens } from "@/styles";
 import { useProcessingStatus } from "@/hooks/useProcessingStatus";
@@ -10,7 +11,7 @@ type StatusSummaryProps = {
 
 function formatTimestamp(value: string | null) {
   if (!value) return null;
-  const parsed = new Date(value);
+  const parsed = safeParseDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
 }

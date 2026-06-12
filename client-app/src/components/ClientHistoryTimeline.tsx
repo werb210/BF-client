@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { safeParseDate } from "@/utils/safeDate";
 import { components, tokens } from "@/styles";
 import type { ClientHistoryEvent } from "@/portal/clientHistory";
 
@@ -7,7 +8,7 @@ type ClientHistoryTimelineProps = {
 };
 
 function formatTimestamp(value: string) {
-  const parsed = new Date(value);
+  const parsed = safeParseDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
 }
