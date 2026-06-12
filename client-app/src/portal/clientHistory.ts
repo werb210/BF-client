@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { formatDocumentLabel } from "@/wizard/requirements";
 
+import { safeParseDate } from "@/utils/safeDate";
 export type ClientHistoryEvent = {
   id: string;
   type: "stage" | "document" | "offer";
@@ -17,7 +18,7 @@ type HistoryInput = {
 
 function formatTimestamp(value: string | null | undefined) {
   if (!value) return new Date().toISOString();
-  const parsed = new Date(value);
+  const parsed = safeParseDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toISOString();
 }
@@ -150,8 +151,8 @@ export function buildClientHistoryEvents({
   });
 
   const ordered = [...events].sort((a, b) => {
-    const timeA = new Date(a.occurredAt).getTime();
-    const timeB = new Date(b.occurredAt).getTime();
+    const timeA = safeParseDate(a.occurredAt).getTime();
+    const timeB = safeParseDate(b.occurredAt).getTime();
     return timeA - timeB;
   });
 
