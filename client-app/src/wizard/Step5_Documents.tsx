@@ -291,10 +291,6 @@ export function Step5_Documents() {
       // its own required-doc set; we union and dedupe.
       const lookingFor = (app.kyc as any)?.lookingFor as
         | "capital" | "equipment" | "capital_and_equipment" | undefined;
-      const closingCostsChecked = Boolean(
-        (app as any).requires_closing_cost_funding ??
-        (app as any).requiresClosingCostFunding
-      );
       const equipmentAmount = parseCurrencyAmount(
         (app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount
       );
@@ -319,14 +315,15 @@ export function Step5_Documents() {
         lookingForUpper === "BOTH" ||
         lookingForUpper === "CAPITAL_AND_EQUIPMENT";
       if (isEquipmentOnly) {
+        // BF_CLIENT_BLOCK_v861_EQUIP_PARENT_LEG_ONLY — the parent equipment
+        // application aggregates ONLY its own equipment leg. The closing-cost
+        // portion is a SEPARATE linked application (created in Step 2 via
+        // createLinkedApplication with product_category EQUIPMENT_FINANCE) and
+        // collects its own documents on its own card. Previously this branch
+        // pushed a phantom companion leg (TERM/LOC by amount) whose lender
+        // products dragged the Accord CMP forms (Flinks / CRA / Professional
+        // advisors) onto the EQUIPMENT app's required-document set.
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
-        if (closingCostsChecked && equipmentAmount > 0) {
-          const companion = Math.round(equipmentAmount * 0.2);
-          legs.push({
-            category: companion <= 50_000 ? "TERM" : "LOC",
-            amount: companion,
-          });
-        }
       } else if (isCapitalAndEquipment) {
         if (selectedCategory) legs.push({ category: selectedCategory, amount: capitalAmount });
         legs.push({ category: "EQUIPMENT", amount: equipmentAmount });
