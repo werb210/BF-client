@@ -10,6 +10,7 @@ import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
 import { RegionSelect } from "../components/RegionSelect";
+import { MonthYearSelect } from "./MonthYearSelect";
 import { Validate } from "../utils/validate";
 import {
   formatCurrencyValue,
@@ -671,21 +672,23 @@ export function Step3_Business() {
           {isAccordLOC && (
             <div>
               <label style={components.form.label}>In Business Since</label>
-              <input
+              <MonthYearSelect
                 id={getWizardFieldId("step3", "startDate")}
-                type="month"
+                ariaLabel="In Business Since"
                 value={values.inBusinessSince || ""}
-                onChange={(e: any) => setInBusinessSince(e.target.value)}
+                onChange={(v) => setInBusinessSince(v)}
               />
             </div>
           )}
           {isAccordLOC && (
             <div>
               <label style={components.form.label}>Fiscal Year-End</label>
-              <input
-                type="month"
+              <MonthYearSelect
+                ariaLabel="Fiscal Year-End"
                 value={values.fiscalYearEnd || ""}
-                onChange={(e: any) => setField("fiscalYearEnd", e.target.value)}
+                onChange={(v) => setField("fiscalYearEnd", v)}
+                yearsBack={5}
+                yearsForward={5}
               />
             </div>
           )}
