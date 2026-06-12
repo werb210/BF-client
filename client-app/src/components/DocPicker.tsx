@@ -42,6 +42,8 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
       setError(null);
       const form = new FormData();
       form.append("file", file);
+      // BF_CLIENT_BLOCK_v874 -- server /upload reads `category`; send both names.
+      form.append("category", documentType);
       form.append("document_type", documentType);
       form.append("applicationId", applicationId);
       let resp: Response | undefined;
