@@ -15,6 +15,20 @@ export const ACCORD_RISK_QUESTIONS = [
 // is_accord flag is set server-side and carried through Step 2's matched set
 // onto app.eligibleProducts.
 export function isAccordLOCApp(app: any): boolean {
+  // BF_CLIENT_BLOCK_v863_ACCORD_GATE_SELECTED_LOC — Accord's extended LOC
+  // questions (Step 3 fiscal/CRA/economic-impact + risk questions; Step 4 owner
+  // detail) apply ONLY when the applicant SELECTED a Line-of-Credit product.
+  // eligibleProducts is the full cross-category match set (it feeds Step 2's
+  // category list), so for any CA applicant under $1M it routinely contains an
+  // Accord LOC product even when they chose TERM / EQUIPMENT. Gating on the
+  // eligible set alone (the prior v705 behaviour) leaked these questions onto
+  // non-LOC applications.
+  const selected = String(app?.productCategory ?? app?.selectedProductType ?? "").toUpperCase();
+  const selectedIsLOC =
+    selected === "LOC" ||
+    selected === "LINE_OF_CREDIT" ||
+    selected.includes("LINE OF CREDIT");
+  if (!selectedIsLOC) return false;
   const products = Array.isArray(app?.eligibleProducts) ? app.eligibleProducts : [];
   return products.some((product: any) => product?.isAccord === true);
 }
