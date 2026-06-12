@@ -10,6 +10,7 @@ import { Button } from "../components/ui/Button";
 import { Validate } from "../utils/validate";
 import { WizardLayout } from "../components/WizardLayout";
 import { RegionSelect } from "../components/RegionSelect";
+import { MonthYearSelect } from "./MonthYearSelect";
 import {
   formatIdentityNumber,
   formatPhoneNumber,
@@ -108,7 +109,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
         </>
       )}
       {isAccordLOC && (
-        <div><label style={L}>At this address since</label><input type="month" value={data.addressSince || ""} onChange={(e) => setField("addressSince", e.target.value)} /></div>
+        <div><label style={L}>At this address since</label><MonthYearSelect ariaLabel="At this address since" value={data.addressSince || ""} onChange={(v) => setField("addressSince", v)} /></div>
       )}
       {isAccordLOC && (
         <div><label style={L}>Own or Rent</label>
