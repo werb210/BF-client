@@ -344,58 +344,71 @@ export function Step6_Review(): JSX.Element {
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const normalizedPayload = normalizeForSubmit(app);
-      const attribution = getClientAttribution();
-      trackEvent("client_submission_started");
-      trackEvent("client_application_submitted", { step: 6 });
-      track("Application Submitted");
-      const requestedAmount = parseCurrencyAmount(app.kyc?.fundingAmount);
-      const estimatedCommission = estimateClientCommission(requestedAmount);
-      const revenueTier =
-        estimatedCommission > 15000
-          ? "high"
-          : estimatedCommission > 5000
-            ? "medium"
-            : "low";
-      trackEvent("application_priority", {
-        revenue_tier: revenueTier,
-        session_id: getSessionId(),
-      });
-      const revenue = parseCurrencyAmount(
-        app.kyc?.annualRevenue || app.kyc?.revenueLast12Months || app.business?.estimatedRevenue
-      );
-      const timeInBusiness = (() => {
-        const startDate = app.business?.startDate;
-        if (!startDate) return 0;
-        const start = new Date(startDate);
-        if (Number.isNaN(start.getTime())) return 0;
-        const now = new Date();
-        return Math.max(
-          0,
-          (now.getFullYear() - start.getFullYear()) * 12 +
-            (now.getMonth() - start.getMonth())
+      // BF_CLIENT_BLOCK_v865_ANALYTICS_NEVER_BLOCK_SUBMIT — attribution and
+      // analytics are non-essential and must NEVER abort submission. A throw
+      // here (e.g. blocked localStorage in a corporate/private browser) used to
+      // land the client on the false "we've got it" screen with the POST never
+      // sent. Capture attribution defensively and isolate all tracking.
+      let attribution: Record<string, any> = {};
+      try {
+        attribution = getClientAttribution() || {};
+        trackEvent("client_submission_started");
+        trackEvent("client_application_submitted", { step: 6 });
+        track("Application Submitted");
+        const requestedAmount = parseCurrencyAmount(app.kyc?.fundingAmount);
+        const estimatedCommission = estimateClientCommission(requestedAmount);
+        const revenueTier =
+          estimatedCommission > 15000
+            ? "high"
+            : estimatedCommission > 5000
+              ? "medium"
+              : "low";
+        trackEvent("application_priority", {
+          revenue_tier: revenueTier,
+          session_id: getSessionId(),
+        });
+        const revenue = parseCurrencyAmount(
+          app.kyc?.annualRevenue ||
+            app.kyc?.revenueLast12Months ||
+            app.business?.estimatedRevenue
         );
-      })();
-      const creditScore = Number.parseInt(
-        String(app.kyc?.creditScore ?? app.applicant?.creditScore ?? ""),
-        10
-      );
-      const qualityTier = calculateApplicationQuality({
-        revenue,
-        timeInBusiness,
-        creditScore: Number.isNaN(creditScore) ? undefined : creditScore,
-      });
-      const readinessLevel = classifyReadiness();
-      trackConversion("application_submitted", {
-        requested_amount: requestedAmount,
-        estimated_commission_value: estimatedCommission,
-        quality_tier: qualityTier,
-        underwriting_readiness: readinessLevel,
-        estimated_amount: app.kyc?.fundingAmount,
-        product_type: app.selectedProductType || app.selectedProduct?.product_type,
-        lead_strength: app.readinessScore,
-        ...attribution,
-      });
-      track("submit");
+        const timeInBusiness = (() => {
+          const startDate = app.business?.startDate;
+          if (!startDate) return 0;
+          const start = new Date(startDate);
+          if (Number.isNaN(start.getTime())) return 0;
+          const now = new Date();
+          return Math.max(
+            0,
+            (now.getFullYear() - start.getFullYear()) * 12 +
+              (now.getMonth() - start.getMonth())
+          );
+        })();
+        const creditScore = Number.parseInt(
+          String(app.kyc?.creditScore ?? app.applicant?.creditScore ?? ""),
+          10
+        );
+        const qualityTier = calculateApplicationQuality({
+          revenue,
+          timeInBusiness,
+          creditScore: Number.isNaN(creditScore) ? undefined : creditScore,
+        });
+        const readinessLevel = classifyReadiness();
+        trackConversion("application_submitted", {
+          requested_amount: requestedAmount,
+          estimated_commission_value: estimatedCommission,
+          quality_tier: qualityTier,
+          underwriting_readiness: readinessLevel,
+          estimated_amount: app.kyc?.fundingAmount,
+          product_type: app.selectedProductType || app.selectedProduct?.product_type,
+          lead_strength: app.readinessScore,
+          ...attribution,
+        });
+        track("submit");
+      } catch (analyticsErr) {
+        // eslint-disable-next-line no-console
+        console.warn("[submit] non-essential analytics skipped:", analyticsErr);
+      }
       // BF_LOCAL_FIRST_v35 — Block 35: stale-token-resilient submit.
       // If the local applicationToken no longer exists server-side
       // (404 / application_not_found), mint a fresh one and retry once.
