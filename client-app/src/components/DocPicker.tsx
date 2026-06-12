@@ -42,6 +42,11 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
       setError(null);
       const form = new FormData();
       form.append("file", file);
+      // BF_CLIENT_BLOCK_v873_UPLOAD_FIELD — the live server /upload reads the
+      // `category` field; this picker historically sent only `document_type`,
+      // so category came back null and every CMP upload 400'd. Send both names
+      // so it works against the current server and any future build.
+      form.append("category", documentType);
       form.append("document_type", documentType);
       form.append("applicationId", applicationId);
       let resp: Response | undefined;
