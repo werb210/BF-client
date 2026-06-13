@@ -83,6 +83,7 @@ describe("V1 wizard schema locks", () => {
   it("locks step field order and names for step1/3/4", () => {
     expect(getStepFieldKeys("step1", { kyc: { lookingFor: "Both" } })).toEqual([
       "lookingFor",
+      "equipmentAmount",
       "fundingAmount",
       "businessLocation",
       "industry",

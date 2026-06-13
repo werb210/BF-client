@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applyClientSWUpdate, registerClientSW } from "../registerSW";
 
 vi.mock("workbox-window", () => {
@@ -21,6 +21,10 @@ describe("BF_CLIENT_BLOCK_v53_SW_HARD_RELOAD_FALLBACK_v1", () => {
       configurable: true,
     });
     Object.defineProperty(import.meta, "env", { value: { DEV: false }, configurable: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("reloads within 3.1s even if controllerchange never fires", async () => {

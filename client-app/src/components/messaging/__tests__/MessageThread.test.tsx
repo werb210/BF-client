@@ -12,8 +12,8 @@ describe("MessageThread (mini-portal)", () => {
     render(<MessageThread messages={messages} />);
     const rows = document.querySelectorAll(".msg-row");
     expect(rows.length).toBe(2);
-    expect(rows[0].classList.contains("msg-row--left")).toBe(true);   // staff
-    expect(rows[1].classList.contains("msg-row--right")).toBe(true);  // client
+    expect(rows[0].classList.contains("msg-row--other")).toBe(true);  // staff (left)
+    expect(rows[1].classList.contains("msg-row--self")).toBe(true);   // client (right)
   });
 
   it("renders #hashtag as a tappable button", () => {

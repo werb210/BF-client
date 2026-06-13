@@ -121,7 +121,7 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
     // the bottom instantly; on subsequent renders smooth feels nicer
     // but auto is safer for iOS where smooth-scroll inside short
     // containers sometimes no-ops.
-    endRef.current.scrollIntoView({ block: "end" });
+    endRef.current.scrollIntoView?.({ block: "end" });
   }, [items.length]);
 
   const handleThreadClick = (e: React.MouseEvent<HTMLUListElement>) => {

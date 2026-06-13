@@ -2,7 +2,7 @@
   {
     "surface": "Status Portal",
     "route": "/status",
-    "file": "src/pages/StatusPage.tsx",
+    "file": "src/pages/MiniPortalPage.tsx",
     "fields": [
       "status.applicationId",
       "status.stage",
@@ -31,7 +31,7 @@
   {
     "surface": "Offers",
     "route": "/application/:id/offers",
-    "file": "src/pages/ApplicationOffersPage.tsx",
+    "file": "src/pages/MiniPortalPage.tsx",
     "fields": [
       "offers.id",
       "offers.lender_name",

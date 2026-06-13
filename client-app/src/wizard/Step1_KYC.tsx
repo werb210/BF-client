@@ -804,7 +804,8 @@ export function Step1_KYC(): JSX.Element {
       // devtools snapshot. JWTs are bearer credentials; never
       // log them in prod.
       if (import.meta.env.DEV) {
-        console.log("[wizard] Step 1 advancing with real applicationToken", token);
+        // applicationToken is a bearer credential — keep this log dev-only
+        console.log("[wizard] Step 1 advancing with real token", token);
       }
       navigate("/apply/step-2");
     } catch (err) {
@@ -1367,7 +1368,6 @@ export function Step1_KYC(): JSX.Element {
                 fieldErrors,
                 kycSnapshot: app.kyc,
                 inFlight: startInFlightRef.current,
-                applicationToken: app.applicationToken ?? null,
               });
               setShowErrors(true);
               if (!isValid) {
