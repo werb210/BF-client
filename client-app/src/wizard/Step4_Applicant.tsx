@@ -334,6 +334,10 @@ export function Step4_Applicant() {
       setSaveError("Please complete all required applicant details.");
       return;
     }
+    if (!Validate.phone(values.phone)) {
+      setSaveError("Please enter a valid 10-digit mobile phone number.");
+      return;
+    }
 
     if (values.hasMultipleOwners) {
       const partnerMissing = partnerRequiredFields.find(
@@ -341,6 +345,10 @@ export function Step4_Applicant() {
       );
       if (partnerMissing) {
         setSaveError("Please complete all required partner details.");
+        return;
+      }
+      if (!Validate.phone(partner.phone)) {
+        setSaveError("Please enter a valid 10-digit phone number for the partner.");
         return;
       }
     }

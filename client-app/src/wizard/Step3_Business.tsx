@@ -245,6 +245,10 @@ export function Step3_Business() {
       setSaveError("Please complete all required business details.");
       return;
     }
+    if (!Validate.phone(nextValues.phone)) {
+      setSaveError("Please enter a valid 10-digit phone number for the business.");
+      return;
+    }
     // BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1
     if (!accordRequirementsMet(nextValues)) {
       setSaveError("Please complete all required Accord line-of-credit details.");

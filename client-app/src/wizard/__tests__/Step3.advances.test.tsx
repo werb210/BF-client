@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { updateMock, navigateMock, persistMock, apiUpdateMock } = vi.hoisted(() => ({ updateMock: vi.fn(), navigateMock: vi.fn(), persistMock: vi.fn(async()=>undefined), apiUpdateMock: vi.fn() }));
 vi.mock("react-router-dom", async () => ({ ...(await vi.importActual("react-router-dom")), useNavigate: () => navigateMock }));
-vi.mock("../../state/useApplicationStore",()=>({useApplicationStore:()=>({app:{currentStep:3,applicationToken:"t",business:{businessName:"Acme",businessStructure:"LLC",address:"1 Main St",city:"Calgary",state:"AB",zip:"T2P 1A1",phone:"5551234567",startDate:"2020-01",employees:"5",estimatedRevenue:"100000"},kyc:{}},update:updateMock,autosaveError:null as string | null})}));
+vi.mock("../../state/useApplicationStore",()=>({useApplicationStore:()=>({app:{currentStep:3,applicationToken:"t",business:{businessName:"Acme",businessStructure:"LLC",address:"1 Main St",city:"Calgary",state:"AB",zip:"T2P 1A1",phone:"4035551234",startDate:"2020-01",employees:"5",estimatedRevenue:"100000"},kyc:{}},update:updateMock,autosaveError:null as string | null})}));
 vi.mock("../../api/clientApp",()=>({ClientAppAPI:{update:apiUpdateMock,start:vi.fn()}}));
 vi.mock("../saveStepProgress",()=>({persistApplicationStep:persistMock}));
 vi.mock("../../utils/track",()=>({track:vi.fn()}));
