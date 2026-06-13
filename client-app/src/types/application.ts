@@ -43,6 +43,7 @@ export interface ApplicationData {
       id: string;
       document_type: string;
       required: boolean;
+      stage?: number | null;
       min_amount?: number | null;
       max_amount?: number | null;
     }[]

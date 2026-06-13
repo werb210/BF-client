@@ -20,18 +20,19 @@ describe("BF_CLIENT_WIZARD_STEP6_PGI_v61 — Step 6 section order", () => {
   });
 
   it("renders sections in canonical order: PGI → T&C → checkboxes → signature → submit", () => {
+    // BF_CLIENT_BLOCK_v877_STEP6_ORDER_MARKERS_v1 — v721 rewrote T&C into
+    // clause popups; the old checkbox-label markers no longer exist. Assert
+    // the durable section order: PGI -> Terms heading -> signature -> submit.
     const pgi = src.indexOf("Personal Guarantee Insurance (PGI)");
-    const terms = src.indexOf("{TERMS_TEXT}");
-    const infoCk = src.indexOf("I confirm the information is accurate");
-    const authCk = src.indexOf("I authorize Boreal Financial to share");
-    const agreeCk = src.indexOf("I agree to the Terms & Conditions");
+    const terms = src.indexOf("Terms & Conditions</h2>");
     const sig = src.indexOf("Typed signature");
     const submit = src.indexOf("Submit Application");
+    expect(pgi).toBeGreaterThan(-1);
+    expect(terms).toBeGreaterThan(-1);
+    expect(sig).toBeGreaterThan(-1);
+    expect(submit).toBeGreaterThan(-1);
     expect(pgi).toBeLessThan(terms);
-    expect(terms).toBeLessThan(infoCk);
-    expect(infoCk).toBeLessThan(authCk);
-    expect(authCk).toBeLessThan(agreeCk);
-    expect(agreeCk).toBeLessThan(sig);
+    expect(terms).toBeLessThan(sig);
     expect(sig).toBeLessThan(submit);
   });
 });

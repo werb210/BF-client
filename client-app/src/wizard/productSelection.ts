@@ -51,8 +51,20 @@ export function isAmountWithinRange(
   // on Step 2's visibleCategoryBuckets had nothing to filter on (MCA
   // still showed for $300k etc.). Coerce string -> number at entry,
   // then range-check with finite-number guards.
-  const min = typeof minAmount === "string" ? Number(minAmount) : minAmount;
-  const max = typeof maxAmount === "string" ? Number(maxAmount) : maxAmount;
+  // BF_CLIENT_BLOCK_v877_AMOUNT_BLANK_UNBOUNDED_v1 — Number("") === 0, which
+  // made an empty-string max reject every amount > 0. Treat blank/whitespace
+  // (and non-finite) bounds as undefined = unbounded.
+  const toBound = (v: number | string | null | undefined): number | undefined => {
+    if (typeof v === "string") {
+      const t = v.trim();
+      if (t === "") return undefined;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : undefined;
+    }
+    return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+  };
+  const min = toBound(minAmount);
+  const max = toBound(maxAmount);
   if (typeof min === "number" && Number.isFinite(min) && amount < min) return false;
   if (typeof max === "number" && Number.isFinite(max) && amount > max) return false;
   return true;

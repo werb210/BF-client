@@ -37,7 +37,7 @@ describe("submission payload", () => {
     },
     productRequirements: {
       "prod-1": [
-        { id: "req-1", document_type: "bank_statements", required: true },
+        { id: "req-1", document_type: "bank_statements", required: true, stage: 1 },
       ],
     },
     documentsDeferred: false,
