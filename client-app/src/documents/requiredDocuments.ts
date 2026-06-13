@@ -3,6 +3,7 @@ import { DOCUMENT_CATEGORIES } from "@/constants/documentCategories";
 import type { NormalizedLenderProduct } from "../lender/eligibility";
 import type { LenderProductRequirement } from "../wizard/requirements";
 import { filterRequirementsByAmount, normalizeRequirementList } from "../wizard/requirements";
+import { bucketIdToCat } from "../wizard/eligibilityRules";
 
 type RequirementSource =
   | NormalizedLenderProduct
@@ -20,7 +21,15 @@ export function aggregateRequiredDocuments(
   amountRequested?: string | number | null
 ) {
   const docMap = new Map<string, LenderProductRequirement>();
-  const categoryNormalized = selectedCategory?.trim();
+  // BF_CLIENT_BLOCK_v877_AGGREGATE_CATEGORY_NORMALIZE_v1 — the client fallback
+  // compared wizard long codes (TERM_LOAN) against DB short codes (TERM)
+  // verbatim, filtering out every product. Normalize both sides via the same
+  // bucket->cat map the eligibility engine uses.
+  const normCat = (c: unknown): string => {
+    const t = (c == null ? "" : String(c)).trim();
+    return ((bucketIdToCat(t) as unknown) as string | null) ?? t;
+  };
+  const categoryNormalized = normCat(selectedCategory);
 
   const filtered = categoryNormalized
     ? products.filter((product) => {
@@ -29,7 +38,7 @@ export function aggregateRequiredDocuments(
           (product as unknown).product_type ||
           (product as unknown).name ||
           "";
-        return category === categoryNormalized;
+        return normCat(category) === categoryNormalized;
       })
     : products;
 

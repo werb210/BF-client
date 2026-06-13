@@ -19,15 +19,12 @@ describe("aggregateRequiredDocuments", () => {
       50000
     );
     const docTypes = requirements.map((entry) => entry.document_type);
-    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — primary_applicant_id is
-    // an always-required entry now that photo IDs live on Step 5.
+    // BF_CLIENT_BLOCK_v877_NO_APPENDAGE_v1 — v156/v158 made the server the
+    // single source of truth; the client no longer appends snake_case
+    // always-required docs (they collided with the server's canonical
+    // strings and broke the submit gate).
     expect(docTypes.sort()).toEqual(
-      [
-        "bank_statements",
-        "equipment_quote",
-        "ownership_info",
-        "primary_applicant_id",
-      ].sort()
+      ["bank_statements", "equipment_quote", "ownership_info"].sort()
     );
   });
 
@@ -51,10 +48,8 @@ describe("aggregateRequiredDocuments", () => {
       75000
     );
     const docTypes = requirements.map((entry) => entry.document_type);
-    // BF_CLIENT_WIZARD_STEP5_PHOTOIDS_v60 — primary_applicant_id is
-    // an always-required entry now that photo IDs live on Step 5.
-    expect(docTypes.sort()).toEqual(
-      ["bank_statements", "primary_applicant_id", "tax_returns"].sort()
-    );
+    // BF_CLIENT_BLOCK_v877_NO_APPENDAGE_v1 — server is the source of truth;
+    // only the matched per-product doc remains (no client appendage).
+    expect(docTypes.sort()).toEqual(["tax_returns"].sort());
   });
 });
