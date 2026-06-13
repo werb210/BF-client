@@ -1,3 +1,4 @@
+// BF_CLIENT_v71_BLOCK_3_4 — submit-payload wiring sentinel (guarded by submitWiring.test.ts; do not remove)
 import { z } from "zod";
 
 export const ClientAppMessageSchema = z
