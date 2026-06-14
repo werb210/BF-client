@@ -18,6 +18,38 @@ import { apiRequest } from "@/lib/api";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { useAuth } from "@/auth/useAuth";
 
+// BF_CLIENT_MAYA_SCREEN_CONTEXT_v1 — tell Maya which page/step the signed-in
+// client is on, so it stops being page-blind. Pairs with the agent foundation
+// block that applies screen_context for the client audience (not only staff).
+const WIZARD_STEP_LABELS: Record<string, string> = {
+  "1": "Financial Profile",
+  "2": "Product Selection",
+  "3": "Business Details",
+  "4": "Applicant Information",
+  "5": "Documents",
+  "6": "Review & Sign",
+};
+function buildClientScreenContext(applicationId: string | null): Record<string, unknown> {
+  if (typeof window === "undefined") return { surface: "client" };
+  const path = window.location.pathname;
+  const m = path.match(/step-(\d+)/i);
+  const step = m ? m[1] : null;
+  const label = step ? WIZARD_STEP_LABELS[step] : null;
+  const page = step
+    ? `Application wizard \u2014 Step ${step} of 6${label ? ` (${label})` : ""}`
+    : path === "/"
+      ? "Client landing page"
+      : `Client app page: ${path}`;
+  return {
+    surface: "client",
+    path,
+    page_url: window.location.href,
+    page,
+    wizard_step: step ? Number(step) : undefined,
+    application_id: applicationId ?? undefined,
+  };
+}
+
 type ChatMessage = {
   id: string;
   message: string;
@@ -149,6 +181,7 @@ export default function MayaWidget() {
             message: text,
             sessionId,
             application_id: applicationId ?? undefined,
+            screen_context: buildClientScreenContext(applicationId),
             // BF_CLIENT_BLOCK_v826_MAYA_KNOWS_CMP_USER — the CMP user is OTP-authenticated, so
             // pass their identity. Maya's prompt only asks for name/email/phone when it has none
             // on file; sending the logged-in phone/email (and contact) stops it interrogating a
