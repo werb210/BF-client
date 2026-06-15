@@ -25,10 +25,10 @@
   "dependencies": {
     "@boreal/shared-contract": "file:../shared-contract",
     "@capacitor/android": "^8.4.0",
-    "@capacitor/app": "^8.4.0",
+    "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
-    "@capacitor/preferences": "^8.4.0",
+    "@capacitor/preferences": "^8.0.1",
     "@tanstack/react-query": "^5.56.20",
     "@twilio/voice-sdk": "^2.18.1",
     "classnames": "^2.5.1",
