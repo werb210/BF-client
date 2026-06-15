@@ -12,18 +12,23 @@
     "typecheck": "tsc --noEmit",
     "prune": "find dist -name '*.map' -delete && [ -f dist/sw.js ] && printf '\n// __WB_MANIFEST\n' >> dist/sw.js",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/logo.svg",
-    "test:ci": "vitest run --reporter=verbose"
+    "test:ci": "vitest run --reporter=verbose",
+    "assets:generate": "capacitor-assets generate --assetPath assets",
+    "cap:copy": "cap copy",
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android"
   },
   "engines": {
     "node": ">=20.10 <23"
   },
   "dependencies": {
     "@boreal/shared-contract": "file:../shared-contract",
-    "@capacitor/android": "^6.0.0",
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/ios": "^6.0.0",
-    "@capacitor/preferences": "^6.0.0",
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/app": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
+    "@capacitor/ios": "^8.4.0",
+    "@capacitor/preferences": "^8.4.0",
     "@tanstack/react-query": "^5.56.20",
     "@twilio/voice-sdk": "^2.18.1",
     "classnames": "^2.5.1",
@@ -36,7 +41,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0",
+    "@capacitor/cli": "^8.4.0",
     "@eslint/js": "^9.39.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.3.1",
@@ -70,7 +75,8 @@
     "vite": "^4.5.14",
     "vite-plugin-pwa": "^0.20.0",
     "vite-tsconfig-paths": "file:../vite-tsconfig-paths-shim",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.1",
+    "@capacitor/assets": "^3.0.5"
   },
   "engineStrict": true
 }

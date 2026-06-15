@@ -2,11 +2,14 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.boreal.client',
-  appName: 'Boreal Client',
+  appName: 'Boreal Financial',
   webDir: 'dist',
-  bundledWebRuntime: false,
+  server: {
+    androidScheme: 'https'
+  },
   ios: {
-    scheme: "BorealClient"
+    scheme: 'BorealClient',
+    contentInset: 'always'
   },
   android: {
     allowMixedContent: true
