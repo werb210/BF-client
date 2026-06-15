@@ -13,6 +13,7 @@ import Step3 from "@/wizard/Step3_BusinessDetails";
 import Step4 from "@/wizard/Step4_ApplicantInformation";
 import Step5 from "@/wizard/Step5_Documents";
 import Step6 from "@/wizard/Step6_TermsSignature";
+import { trackEvent } from "@/utils/analytics";
 
 const STEP_COMPONENTS = [Step1, Step2, Step3, Step4, Step5, Step6];
 const STEP_PATTERN = /\/apply\/step-(\d+)\b/i;
@@ -50,6 +51,12 @@ export default function Wizard() {
 
   let safeStep = effectiveStep;
   if (safeStep > 1 && !hasAppToken) safeStep = 1;
+
+  // BF_CLIENT_GA4_STEP_TRACK_v1 — labeled funnel event per wizard step.
+  useEffect(() => {
+    const names = ["Financial Profile", "Product Category", "Business Details", "Applicant Information", "Documents", "Terms & Signature"];
+    trackEvent("wizard_step", { step_number: safeStep, step_name: names[safeStep - 1] ?? `Step ${safeStep}` });
+  }, [safeStep]);
 
   const StepComponent = STEP_COMPONENTS[safeStep - 1] ?? Step1;
 
