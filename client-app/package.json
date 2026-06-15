@@ -13,7 +13,6 @@
     "prune": "find dist -name '*.map' -delete && [ -f dist/sw.js ] && printf '\n// __WB_MANIFEST\n' >> dist/sw.js",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/logo.svg",
     "test:ci": "vitest run --reporter=verbose",
-    "assets:generate": "capacitor-assets generate --assetPath assets",
     "cap:copy": "cap copy",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
@@ -75,8 +74,7 @@
     "vite": "^4.5.14",
     "vite-plugin-pwa": "^0.20.0",
     "vite-tsconfig-paths": "file:../vite-tsconfig-paths-shim",
-    "vitest": "^2.1.1",
-    "@capacitor/assets": "^3.0.5"
+    "vitest": "^2.1.1"
   },
   "engineStrict": true
 }
