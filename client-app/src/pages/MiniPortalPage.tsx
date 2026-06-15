@@ -23,6 +23,7 @@ import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCo
 // BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
 import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
 import SlimHeader from "@/components/SlimHeader";
+import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
@@ -402,6 +403,7 @@ export default function MiniPortalPage() {
     <>
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
+      <InstallAppPrompt />
       {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
       {myApps.length > 1 && (
         <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
