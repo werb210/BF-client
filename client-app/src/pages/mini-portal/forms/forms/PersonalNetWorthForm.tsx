@@ -152,12 +152,53 @@ export default function PersonalNetWorthForm({
     }
   };
 
-  const f = (key: string, label: string) => (
-    <div key={key}>
-      <label style={lbl}>{label}</label>
-      <input style={inp} value={data[key] ?? ""} onChange={(e) => set(key, e.target.value)} onBlur={persist} />
-    </div>
-  );
+  const MARITAL_OPTIONS = ["Single", "Married", "Common-law", "Separated", "Divorced", "Widowed"];
+
+  const formatSin = (raw: string) => {
+    const d = raw.replace(/[^0-9]/g, "").slice(0, 9);
+    return d.replace(/(\d{3})(\d{0,3})(\d{0,3})/, (_m: string, a: string, b: string, c: string) =>
+      [a, b, c].filter(Boolean).join("-")
+    );
+  };
+
+  const fieldAttrs = (key: string): { type?: string; inputMode?: "numeric" | "tel" | "email" } => {
+    const k = key.toLowerCase();
+    if (k.includes("dob") || k.includes("date_of_birth") || k.endsWith("_dob")) return { type: "date" };
+    if (k.includes("email")) return { type: "email", inputMode: "email" };
+    if (k.includes("phone") || k.includes("cell")) return { type: "tel", inputMode: "tel" };
+    if (k.includes("sin") || k.includes("dependents")) return { inputMode: "numeric" };
+    return {};
+  };
+
+  const f = (key: string, label: string) => {
+    const k = key.toLowerCase();
+    if (k.includes("marital")) {
+      return (
+        <div key={key}>
+          <label style={lbl}>{label}</label>
+          <select style={inp} value={data[key] ?? ""} onChange={(e) => set(key, e.target.value)} onBlur={persist}>
+            <option value="">—</option>
+            {MARITAL_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+      );
+    }
+    const isSin = k.includes("sin");
+    const { type, inputMode } = fieldAttrs(key);
+    return (
+      <div key={key}>
+        <label style={lbl}>{label}</label>
+        <input
+          style={inp}
+          type={type}
+          inputMode={inputMode}
+          value={data[key] ?? ""}
+          onChange={(e) => set(key, isSin ? formatSin(e.target.value) : e.target.value)}
+          onBlur={persist}
+        />
+      </div>
+    );
+  };
 
   return (
     <div onBlur={persist}>
