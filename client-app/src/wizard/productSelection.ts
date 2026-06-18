@@ -84,7 +84,11 @@ export function matchesCountry(
   if (!productCountry) return true;
   const normalizedProduct = normalizeCountryCode(productCountry);
   if (!normalizedProduct) return true;
-  return normalizedProduct === normalizeCountryCode(applicantCountry);
+  const normalizedApplicant = normalizeCountryCode(applicantCountry);
+  // Step-2-never-empty: an unresolved applicant country must not filter out
+  // country-tagged products — show everything until country is known.
+  if (!normalizedApplicant) return true;
+  return normalizedProduct === normalizedApplicant;
 }
 
 export function filterProductsForApplicant(
@@ -92,7 +96,7 @@ export function filterProductsForApplicant(
   applicantCountry: string,
   amountRequested: number
 ) {
-  return products.filter((product) => {
+  const filtered = products.filter((product) => {
     const matchesLocation = matchesCountry(product.country, applicantCountry);
     const matchesAmount = isAmountWithinRange(
       amountRequested,
@@ -101,6 +105,14 @@ export function filterProductsForApplicant(
     );
     return matchesLocation && matchesAmount;
   });
+  // Floor: Step 2 must never render empty when products exist. Degrade from
+  // country+amount -> amount-only -> full set rather than show nothing.
+  if (filtered.length > 0) return filtered;
+  const amountOnly = products.filter((product) =>
+    isAmountWithinRange(amountRequested, product.amount_min, product.amount_max)
+  );
+  if (amountOnly.length > 0) return amountOnly;
+  return products;
 }
 
 export function getMatchingProducts(
