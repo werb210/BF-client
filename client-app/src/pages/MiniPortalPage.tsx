@@ -216,6 +216,8 @@ export default function MiniPortalPage() {
     } catch { setSignSession({ status: "error" }); }
     finally { setSignLoading(false); }
   }, [applicationId]);
+  // Block 6 — learn signing readiness on load so the Sign chip gates on it, not stage.
+  useEffect(() => { if (applicationId) void fetchSigningSession(); }, [applicationId, fetchSigningSession]);
   useEffect(() => {
     if (!showSign) return;
     const onMsg = (ev: MessageEvent) => {
@@ -530,7 +532,7 @@ export default function MiniPortalPage() {
                   {c.label}
                 </button>
               ))}
-              {stageIndex >= STAGE_BY_KEY["off_to_lender"] && (
+              {signSession?.status === "ready" && (
                 <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")}>
                   Sign Documents
                 </button>
