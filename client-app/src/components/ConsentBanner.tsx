@@ -1,4 +1,4 @@
-import { type JSX, useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 
 const KEY = "boreal_consent_v1";
 
@@ -17,7 +17,7 @@ function applyConsent(granted: boolean) {
   ]);
 }
 
-export default function ConsentBanner(): JSX.Element | null {
+export default function ConsentBanner(): ReactElement | null {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
