@@ -2,6 +2,8 @@ import "./bootStorageSafe"; // BF_CLIENT_BLOCK_v867_STORAGE_SHIM — must be fir
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import RouteTracker from "./components/RouteTracker";
+import ConsentBanner from "./components/ConsentBanner";
 // BF_CLIENT_BLOCK_v103_TAILWIND_PIPELINE_FIX_v1
 // theme/global.css carries @tailwind base/components/utilities and the
 // Boreal CSS variables. styles/global.css is the legacy reset-only file
@@ -38,6 +40,8 @@ void validateBootToken();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
+      <RouteTracker />
+      <ConsentBanner />
       <App />
     </BrowserRouter>
   </React.StrictMode>
