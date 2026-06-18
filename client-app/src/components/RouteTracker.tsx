@@ -1,8 +1,8 @@
-import { type JSX, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 // #62 — fire a GTM page_view on every SPA route change.
-export default function RouteTracker(): JSX.Element | null {
+export default function RouteTracker(): null {
   const location = useLocation();
   useEffect(() => {
     const w = window as unknown as { dataLayer?: unknown[] };
