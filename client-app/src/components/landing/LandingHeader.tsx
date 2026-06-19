@@ -1,4 +1,3 @@
-import CallUsButton from "@/components/CallUsButton";
 // BF_CLIENT_BLOCK_v166_LANDING_HEADER_FOOTER_UNIFY_v1
 // De-minified from the prior single-line export and aligned with
 // BF-Website nav labels (cross-link reads "Boreal Risk Management" to
@@ -54,8 +53,6 @@ export default function LandingHeader() {
 
   return (
     <header className="site-header w-full border-b border-white/10 bg-[#0B1320]/95 backdrop-blur">
-      <CallUsButton />
-
       <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <a
           href="https://boreal.financial"
