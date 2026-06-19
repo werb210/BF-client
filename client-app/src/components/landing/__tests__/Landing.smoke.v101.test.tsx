@@ -21,7 +21,7 @@ describe("LandingFooter (v101)", () => {
     const { container, getByText, getAllByText } = render(<LandingFooter />);
     expect(getByText("Boreal Financial")).toBeTruthy();
     expect(getByText("Explore")).toBeTruthy();
-    expect(getAllByText("Contact").length).toBeGreaterThan(0);
+    expect(getAllByText("Contact Us").length).toBeGreaterThan(0);
     expect(container.querySelector('a[href="#apply-otp"]')).not.toBeNull();
   });
 });
