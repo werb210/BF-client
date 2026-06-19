@@ -12,7 +12,7 @@ describe("BF_CLIENT_BLOCK_v166 — LandingHeader cross-links", () => {
       "landing-link-boreal-insurance",
     ) as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("https://boreal.insure");
-    expect(link.textContent?.trim()).toBe("Boreal Insurance");
+    expect(link.textContent?.trim()).toBe("Visit Boreal Risk Management");
   });
 
   it("Apply Now CTA is a hash link to #apply-otp", () => {
@@ -28,7 +28,7 @@ describe("BF_CLIENT_BLOCK_v166 — LandingHeader cross-links", () => {
       "landing-mobile-link-boreal-insurance",
     ) as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("https://boreal.insure");
-    expect(link.textContent?.trim()).toBe("Boreal Insurance");
+    expect(link.textContent?.trim()).toBe("Visit Boreal Risk Management");
   });
 
   it("clicking a mobile nav item closes the drawer", () => {
@@ -50,12 +50,12 @@ describe("BF_CLIENT_BLOCK_v166 — LandingFooter cross-links", () => {
       "landing-footer-link-boreal-insurance",
     ) as HTMLAnchorElement;
     expect(link.getAttribute("href")).toBe("https://boreal.insure");
-    expect(link.textContent?.trim()).toBe("Boreal Insurance");
+    expect(link.textContent?.trim()).toBe("Boreal Risk Management");
   });
 
   it("Apply Now anchor stays as #apply-otp", () => {
     render(<LandingFooter />);
-    const apply = screen.getByText("Apply Now") as HTMLAnchorElement;
+    const apply = screen.getByTestId("landing-footer-apply") as HTMLAnchorElement;
     expect(apply.getAttribute("href")).toBe("#apply-otp");
   });
 });

@@ -1,7 +1,7 @@
 import CallUsButton from "@/components/CallUsButton";
 // BF_CLIENT_BLOCK_v166_LANDING_HEADER_FOOTER_UNIFY_v1
 // De-minified from the prior single-line export and aligned with
-// BF-Website nav labels (cross-link reads "Boreal Insurance" to
+// BF-Website nav labels (cross-link reads "Boreal Risk Management" to
 // match BF-Website v19). No visual change — same dark navy
 // (#0B1320) backdrop-blur header, same mobile drawer.
 // BF_CLIENT_BLOCK_v102_LOGO_LOCAL_v1 — local logo asset to avoid
@@ -91,7 +91,7 @@ export default function LandingHeader() {
             className="ml-4 text-sm font-semibold text-white"
             data-testid="landing-link-boreal-insurance"
           >
-            Boreal Insurance
+            Visit Boreal Risk Management
           </a>
           <a
             href="#apply-otp"
@@ -158,7 +158,7 @@ export default function LandingHeader() {
                 onClick={() => setOpen(false)}
                 data-testid="landing-mobile-link-boreal-insurance"
               >
-                Boreal Insurance
+                Visit Boreal Risk Management
               </a>
             </nav>
           </div>
