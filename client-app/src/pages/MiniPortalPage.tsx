@@ -84,8 +84,9 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
-  // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — true only when the application still owes documents.
+  // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — outstanding-docs gating + received confirmation.
   const [hasOutstandingDocs, setHasOutstandingDocs] = useState(false);
+  const [docsChecked, setDocsChecked] = useState(false);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
@@ -172,7 +173,7 @@ export default function MiniPortalPage() {
       if (!applicationId) return;
       const outstanding = (Array.isArray(needed?.stillNeeded) ? needed!.stillNeeded.length : 0) + (Array.isArray(needed?.rejected) ? needed!.rejected.length : 0);
       setHasOutstandingDocs(outstanding > 0);
-    } catch {}
+    } catch {} finally { setDocsChecked(true); }
   }, [applicationId]);
 
   // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — poll the
@@ -473,6 +474,12 @@ export default function MiniPortalPage() {
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Client</header>
           <div className="mp-thread-card__body">
+            {/* BF_CLIENT_ALL_RECEIVED_NOTE_v1 — positive confirmation once nothing is outstanding. */}
+            {docsChecked && !hasOutstandingDocs ? (
+              <div data-testid="all-received-note" style={{ margin: "0 0 10px", padding: "10px 12px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: 13, fontWeight: 600 }}>
+                ✓ All required tasks and documents received — nothing outstanding right now.
+              </div>
+            ) : null}
             {messages.length === 0 ? <div className="mp-thread-card__empty">Say hi to get started.</div> : messages.map((m) => {
               if (!hasOutstandingDocs && isDocUploadPrompt(m.ctaAction)) return null;
               const outbound = m.authorRole === "self";
