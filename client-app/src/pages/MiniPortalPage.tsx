@@ -84,6 +84,8 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
+  // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — true only when the application still owes documents.
+  const [hasOutstandingDocs, setHasOutstandingDocs] = useState(false);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
@@ -162,6 +164,14 @@ export default function MiniPortalPage() {
         }))
         .filter((d) => d.id.length > 0);
       setRejectedDocs(rejected);
+    } catch {}
+    // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — same outstanding-docs signal the DocPicker uses, so the
+    // upload prompt + Upload Documents chip disappear once the client has uploaded everything.
+    try {
+      const needed = await apiCall<{ stillNeeded?: any[]; rejected?: any[] }>(`/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`).catch((): any => null);
+      if (!applicationId) return;
+      const outstanding = (Array.isArray(needed?.stillNeeded) ? needed!.stillNeeded.length : 0) + (Array.isArray(needed?.rejected) ? needed!.rejected.length : 0);
+      setHasOutstandingDocs(outstanding > 0);
     } catch {}
   }, [applicationId]);
 
@@ -358,6 +368,12 @@ export default function MiniPortalPage() {
   const showOfferView = stageIndex === STAGE_BY_KEY.offer;
   const actionByKeyword: Record<string, string> = { upload_docs: "upload", open_personal_net_worth: "networth", new_application: "new", equipment_collateral: "equipment", real_estate_collateral: "realestate", debt_stack: "debt", other_forms: "debt" };
   const isUrl = (v: string) => /^https?:\/\//i.test(v);
+  // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — identify document-upload prompt messages so the bubble can
+  // be hidden once the application has no outstanding documents.
+  const isDocUploadPrompt = (cta?: string | null) => {
+    const k = String(cta ?? "");
+    return k === "upload_docs" || k === "upload" || k.startsWith("upload:");
+  };
   const handleMessageCta = (ctaAction?: string | null) => {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
@@ -458,6 +474,7 @@ export default function MiniPortalPage() {
           <header className="mp-thread-card__header">Client</header>
           <div className="mp-thread-card__body">
             {messages.length === 0 ? <div className="mp-thread-card__empty">Say hi to get started.</div> : messages.map((m) => {
+              if (!hasOutstandingDocs && isDocUploadPrompt(m.ctaAction)) return null;
               const outbound = m.authorRole === "self";
               const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
               return (
@@ -527,7 +544,7 @@ export default function MiniPortalPage() {
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
-              {ACTION_CHIPS.map((c) => (
+              {ACTION_CHIPS.filter((c) => c.id !== "upload" || hasOutstandingDocs).map((c) => (
                 <button key={c.id} type="button" className="mp-chip mp-chip--action" onClick={() => onChip(c.id)}>
                   {c.label}
                 </button>

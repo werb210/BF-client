@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 vi.mock("@/api/client", () => ({ apiCall: vi.fn(async () => ({ items: [] })) }));
@@ -9,9 +9,15 @@ vi.mock("@/state/useApplicationStore", () => ({
   useApplicationStore: () => ({ app: { applicationId: "app-1", applicationToken: "t" }, reset: vi.fn() }),
 }));
 
+import { apiCall } from "@/api/client";
 import MiniPortalPage from "../MiniPortalPage";
 
 describe("MiniPortalPage", () => {
+  beforeEach(() => {
+    (apiCall as any).mockReset();
+    (apiCall as any).mockImplementation(async () => ({ items: [] as any[] }));
+  });
+
   it("renders the 6-stage tracker in locked order", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
     const labels = Array.from(document.querySelectorAll(".mp-stage__label")).map((n) => n.textContent);
@@ -27,9 +33,25 @@ describe("MiniPortalPage", () => {
   it("renders the action chips", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
     const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
-    expect(chips).toContain("Upload Documents");
+    // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — Upload Documents chip is gated on outstanding docs;
+    // with none outstanding (default mock) it is hidden.
+    expect(chips).not.toContain("Upload Documents");
     expect(chips).toContain("Personal Net Worth Statement");
     expect(chips).toContain("CRA Authorization");
     expect(chips).toContain("Debt Stack");
+  });
+
+  it("shows the Upload Documents chip only when documents are outstanding", async () => {
+    (apiCall as any).mockImplementation(async (url: string) => {
+      if (typeof url === "string" && url.includes("/documents-needed/needed")) {
+        return { stillNeeded: [{ document_type: "bank_statements", label: "Bank statements" }], rejected: [] as any[] };
+      }
+      return { items: [] as any[] };
+    });
+    render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
+    await waitFor(() => {
+      const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
+      expect(chips).toContain("Upload Documents");
+    });
   });
 });
