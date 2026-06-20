@@ -216,14 +216,14 @@ export default function MiniPortalPage() {
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors">(null);
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
-  const [signSession, setSignSession] = useState<{ status: string; url?: string } | null>(null);
+  const [signSession, setSignSession] = useState<{ status: string; url?: string; reason?: string } | null>(null);
   const [signLoading, setSignLoading] = useState(false);
   const fetchSigningSession = useCallback(async () => {
     if (!applicationId) return;
     setSignLoading(true);
     try {
       const r = await apiCall<any>(`/api/client/signing-session?applicationId=${encodeURIComponent(applicationId)}`);
-      setSignSession({ status: String(r?.status ?? "error"), url: typeof r?.url === "string" ? r.url : undefined });
+      setSignSession({ status: String(r?.status ?? "error"), url: typeof r?.url === "string" ? r.url : undefined, reason: typeof r?.reason === "string" ? r.reason : undefined });
     } catch { setSignSession({ status: "error" }); }
     finally { setSignLoading(false); }
   }, [applicationId]);
@@ -560,6 +560,11 @@ export default function MiniPortalPage() {
                 <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")}>
                   Sign Documents
                 </button>
+              )}
+              {signSession && signSession.status !== "ready" && signSession.status !== "signed" && (
+                <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#b91c1c", padding: "6px 8px", wordBreak: "break-word" }}>
+                  Signing not ready: {signSession.status}{signSession.reason ? ` \u2014 ${signSession.reason}` : ""}
+                </div>
               )}
             </div>
             {/* Twilio Voice WebRTC, no tel: link */}
