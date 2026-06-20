@@ -10,6 +10,7 @@
 //      verifyAndStart() automatically — no second button press.
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setToken } from '@/auth/token';
 
 const API_BASE =
   ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
@@ -180,8 +181,13 @@ export default function PhoneOTPInline() {
         (verifyBody as any)?.token ??
         (verifyBody as any)?.jwt ??
         (verifyBody as any)?.data?.token;
-      if (jwt && typeof localStorage !== 'undefined') {
-        localStorage.setItem('bf_jwt_token', String(jwt));
+      // BF_CLIENT_OTP_INLINE_STORAGE_SAFE_v1 — store the OTP JWT via setToken(), which
+      // sets the in-memory token FIRST and then tries localStorage in a try/catch. Writing
+      // localStorage directly meant a storage-blocking browser lost the token entirely, so
+      // the very next guarded route (RequireOTP -> hasToken()) bounced the just-authenticated
+      // client back to /otp — the login loop.
+      if (jwt) {
+        setToken(String(jwt));
       }
       // eslint-disable-next-line no-console
       console.log('[otp] verify.ok', { hasJwt: !!jwt });
@@ -194,10 +200,10 @@ export default function PhoneOTPInline() {
         (verifyBody as any)?.data?.submittedApplicationId ??
         null;
       if (hasSubmitted && typeof submittedApplicationId === 'string' && submittedApplicationId.length > 0) {
-        if (typeof localStorage !== 'undefined') {
+        try {
           localStorage.setItem('bf_application_token', submittedApplicationId);
           localStorage.removeItem('bf_application_pending_submit');
-        }
+        } catch { /* storage blocked — token already in memory via setToken */ }
         // eslint-disable-next-line no-console
         console.log('[otp] route.miniportal', { submittedApplicationId });
         navigate('/application/' + submittedApplicationId);
@@ -246,10 +252,10 @@ export default function PhoneOTPInline() {
       if (!appToken) {
         throw new Error('Application start response missing token');
       }
-      if (typeof localStorage !== 'undefined') {
+      try {
         localStorage.setItem('bf_application_token', String(appToken));
         localStorage.removeItem('bf_application_pending_submit');
-      }
+      } catch { /* storage blocked — token already in memory via setToken */ }
       try {
         const { reconcileWithBootToken } = await import("../state/useApplicationStore");
         reconcileWithBootToken();
