@@ -366,7 +366,10 @@ export default function MiniPortalPage() {
   }
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
-  const showOfferView = stageIndex === STAGE_BY_KEY.offer;
+  // Show the offer view whenever the app actually has an offer, not only when
+  // the stage read says "offer" — a lagging/stale pipeline_state must never hide
+  // a real offer (and its Accept button) from the client.
+  const showOfferView = offers.length > 0 || stageIndex === STAGE_BY_KEY.offer;
   const actionByKeyword: Record<string, string> = { upload_docs: "upload", open_personal_net_worth: "networth", new_application: "new", equipment_collateral: "equipment", real_estate_collateral: "realestate", debt_stack: "debt", other_forms: "debt" };
   const isUrl = (v: string) => /^https?:\/\//i.test(v);
   // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — identify document-upload prompt messages so the bubble can
