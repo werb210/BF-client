@@ -26,6 +26,6 @@ describe("BF_MINI_PORTAL_FIX_v48 MiniPortalPage", () => {
   });
   it("hits the new server endpoints", () => {
     expect(file).toContain("/api/offers/${encodeURIComponent(offerId)}/accept");
-    expect(file).toContain("/api/offers/${encodeURIComponent(offerId)}/decline");
+    expect(file).toContain("/api/offers/${encodeURIComponent(offerId)}/request-changes");
   });
 });
