@@ -474,8 +474,18 @@ export default function MiniPortalPage() {
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Client</header>
           <div className="mp-thread-card__body">
+            {signSession?.status === "ready" ? (
+              <div data-testid="sign-prompt-note" style={{ margin: "0 0 10px", padding: "12px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, color: "#1e3a8a", fontSize: 13 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>
+                  Your application package is now complete and ready to be sent to the Lender partner(s). The last step is for you to sign your application documents. Click the button below to do so now.
+                </div>
+                <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")} style={{ fontWeight: 600 }}>
+                  Sign Documents
+                </button>
+              </div>
+            ) : null}
             {/* BF_CLIENT_ALL_RECEIVED_NOTE_v1 — positive confirmation once nothing is outstanding. */}
-            {docsChecked && !hasOutstandingDocs ? (
+            {docsChecked && !hasOutstandingDocs && signSession?.status !== "ready" ? (
               <div data-testid="all-received-note" style={{ margin: "0 0 10px", padding: "10px 12px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: 13, fontWeight: 600 }}>
                 ✓ All required tasks and documents received — nothing outstanding right now.
               </div>
