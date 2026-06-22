@@ -227,18 +227,30 @@ export default function MiniPortalPage() {
     } catch { setSignSession({ status: "error" }); }
     finally { setSignLoading(false); }
   }, [applicationId]);
+  // BF_CLIENT_BLOCK_v_SIGNING_COMPLETE_v1 — the SignNow webhook does not reliably
+  // fire, so the server never learns the app was signed. When the iframe completes
+  // / the modal closes / the client returns, tell the server; it verifies with
+  // SignNow before marking signed + firing the lender package. Replaces the old
+  // 6s signing-session poll that only re-read a status the server never updated.
+  const markSigningComplete = useCallback(async () => {
+    if (!applicationId) return;
+    try {
+      const r = await apiCall<any>(`/api/client/signing-complete?applicationId=${encodeURIComponent(applicationId)}`, { method: "POST" });
+      if (r?.signed) { setShowSign(false); void fetchSigningSession(); void loadAll(); }
+    } catch { /* transient; a later trigger will retry */ }
+  }, [applicationId, fetchSigningSession, loadAll]);
   // Block 6 — learn signing readiness on load so the Sign chip gates on it, not stage.
-  useEffect(() => { if (applicationId) void fetchSigningSession(); }, [applicationId, fetchSigningSession]);
+  useEffect(() => { if (applicationId) { void fetchSigningSession(); void markSigningComplete(); } }, [applicationId, fetchSigningSession, markSigningComplete]);
   useEffect(() => {
     if (!showSign) return;
     const onMsg = (ev: MessageEvent) => {
       const d = typeof ev.data === "string" ? ev.data : (ev.data && typeof ev.data === "object" ? JSON.stringify(ev.data) : "");
-      if (/finish|complete|signed|document_signed/i.test(d)) { void fetchSigningSession(); void loadAll(); }
+      if (/finish|complete|signed|document_signed/i.test(d)) { void markSigningComplete(); }
     };
     window.addEventListener("message", onMsg);
-    const t = window.setInterval(() => { void fetchSigningSession(); }, 6000);
+    const t = window.setInterval(() => { void markSigningComplete(); }, 8000);
     return () => { window.removeEventListener("message", onMsg); window.clearInterval(t); };
-  }, [showSign, fetchSigningSession, loadAll]);
+  }, [showSign, markSigningComplete]);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — CMP actions open
   // as modals with real forms. The legacy /forms/* route doesn't exist
   // and was scrolling-to-top silently.
@@ -720,12 +732,12 @@ export default function MiniPortalPage() {
         </div>
       )}
       {showSign && (
-        <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) setShowSign(false); }}
+        <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) { setShowSign(false); void markSigningComplete(); } }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
           <div style={{ background: "#fff", color: "#0b1320", borderRadius: 12, maxWidth: 900, width: "100%", height: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 10px 40px rgba(0,0,0,0.4)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 18, fontWeight: 600 }}>Sign Your Documents</div>
-              <button type="button" onClick={() => setShowSign(false)} aria-label="Close" style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}>×</button>
+              <button type="button" onClick={() => { setShowSign(false); void markSigningComplete(); }} aria-label="Close" style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}>×</button>
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
               {signLoading && !signSession && <div style={{ padding: 24 }}>Loading…</div>}
