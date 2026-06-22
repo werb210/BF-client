@@ -488,9 +488,15 @@ export function Step1_KYC(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // BF_CLIENT_BLOCK_v_STEP_DRAFT_HYDRATE_ONCE_v1 — hydrate the saved draft a
+  // SINGLE time (was re-running on every app.kyc change and refilling cleared
+  // fields from the stale draft). Mirrors the run-once pattern from Step 3.
+  const draftMergedRef = useRef(false);
   useEffect(() => {
+    if (draftMergedRef.current) return;
     const draft = loadStepData(1);
     if (!draft) return;
+    draftMergedRef.current = true;
     const merged = mergeDraft(app.kyc, draft);
     const changed = Object.keys(merged).some(
       (key) => merged[key] !== app.kyc[key]
@@ -498,7 +504,8 @@ export function Step1_KYC(): JSX.Element {
     if (changed) {
       update({ kyc: merged });
     }
-  }, [app.kyc, update]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   useEffect(() => {

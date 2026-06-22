@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { ClientAppAPI } from "../api/clientApp";
@@ -213,9 +213,17 @@ export function Step4_Applicant() {
 
   // [removed] resolveStepGuard effect (was racing transitions)
 
+  // BF_CLIENT_BLOCK_v_STEP_DRAFT_HYDRATE_ONCE_v1 — hydrate the saved draft a
+  // SINGLE time. Previously this ran on every `values` change and mergeDraft
+  // refilled any empty field from the draft, so clearing a field (e.g.
+  // Ownership %) to retype it snapped it back to the stale draft value before
+  // the user could type. Mirrors the run-once pattern already used in Step 3.
+  const draftMergedRef = useRef(false);
   useEffect(() => {
+    if (draftMergedRef.current) return;
     const draft = loadStepData(4);
     if (!draft) return;
+    draftMergedRef.current = true;
     const merged = mergeDraft(values, draft);
     const changed = Object.keys(merged).some(
       (key) => merged[key] !== values[key]
@@ -223,7 +231,8 @@ export function Step4_Applicant() {
     if (changed) {
       update({ applicant: merged });
     }
-  }, [update, values]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!readiness) return;
