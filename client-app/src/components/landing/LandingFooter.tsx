@@ -25,7 +25,7 @@ export default function LandingFooter() {
               <li><a href="https://www.boreal.financial/how-it-works" className="text-white/75 no-underline hover:text-white">How It Works</a></li>
               <li><a href="https://www.boreal.financial/products" className="text-white/75 no-underline hover:text-white">Products</a></li>
               <li><a href="https://www.boreal.financial/industries" className="text-white/75 no-underline hover:text-white">Industries</a></li>
-              <li><a href="https://boreal.insure" rel="noopener noreferrer" className="text-white/75 no-underline hover:text-white" data-testid="landing-footer-link-boreal-insurance">Boreal Risk Management</a></li>
+              <li><a href="https://www.boreal.insure/" rel="noopener noreferrer" className="text-white/75 no-underline hover:text-white" data-testid="landing-footer-link-boreal-insurance">Boreal Risk Management</a></li>
             </ul>
           </div>
           <div>

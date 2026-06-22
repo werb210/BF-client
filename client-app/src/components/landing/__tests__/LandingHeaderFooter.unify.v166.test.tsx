@@ -12,7 +12,7 @@ describe("BF_CLIENT_BLOCK_v166 — LandingHeader cross-links", () => {
     const link = screen.getByTestId(
       "landing-link-boreal-insurance",
     ) as HTMLAnchorElement;
-    expect(link.getAttribute("href")).toBe("https://boreal.insure");
+    expect(link.getAttribute("href")).toBe("https://www.boreal.insure/");
     expect(link.textContent?.trim()).toBe("Visit Boreal Risk Management");
   });
 
@@ -28,7 +28,7 @@ describe("BF_CLIENT_BLOCK_v166 — LandingHeader cross-links", () => {
     const link = screen.getByTestId(
       "landing-mobile-link-boreal-insurance",
     ) as HTMLAnchorElement;
-    expect(link.getAttribute("href")).toBe("https://boreal.insure");
+    expect(link.getAttribute("href")).toBe("https://www.boreal.insure/");
     expect(link.textContent?.trim()).toBe("Visit Boreal Risk Management");
   });
 
@@ -50,7 +50,7 @@ describe("BF_CLIENT_BLOCK_v166 — LandingFooter cross-links", () => {
     const link = screen.getByTestId(
       "landing-footer-link-boreal-insurance",
     ) as HTMLAnchorElement;
-    expect(link.getAttribute("href")).toBe("https://boreal.insure");
+    expect(link.getAttribute("href")).toBe("https://www.boreal.insure/");
     expect(link.textContent?.trim()).toBe("Boreal Risk Management");
   });
 
