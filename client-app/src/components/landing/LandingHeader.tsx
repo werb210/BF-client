@@ -83,7 +83,7 @@ export default function LandingHeader() {
             </a>
           ))}
           <a
-            href="https://boreal.insure"
+            href="https://www.boreal.insure/"
             rel="noopener noreferrer"
             className="ml-4 text-sm font-semibold text-white"
             data-testid="landing-link-boreal-insurance"
@@ -149,7 +149,7 @@ export default function LandingHeader() {
                 Apply Now
               </a>
               <a
-                href="https://boreal.insure"
+                href="https://www.boreal.insure/"
                 rel="noopener noreferrer"
                 className="mt-2 inline-flex justify-center rounded-full border border-white px-5 py-3 font-medium text-white"
                 onClick={() => setOpen(false)}

@@ -12,7 +12,7 @@ describe("LandingHeader (v101)", () => {
 
   it("links to the BI cross-site", () => {
     const { container } = render(<LandingHeader />);
-    expect(container.querySelector('a[href="https://boreal.insure"]')).not.toBeNull();
+    expect(container.querySelector('a[href="https://www.boreal.insure/"]')).not.toBeNull();
   });
 });
 
