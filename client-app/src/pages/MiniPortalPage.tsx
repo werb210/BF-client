@@ -574,11 +574,11 @@ export default function MiniPortalPage() {
                   Sign Documents
                 </button>
               )}
-              {signSession && signSession.status !== "ready" && signSession.status !== "signed" && (
-                <div style={{ gridColumn: "1 / -1", fontSize: 12, color: "#b91c1c", padding: "6px 8px", wordBreak: "break-word" }}>
-                  Signing not ready: {signSession.status}{signSession.reason ? ` \u2014 ${signSession.reason}` : ""}
-                </div>
-              )}
+              {/* BF_CLIENT_BLOCK_v_HIDE_SIGNING_REASON_v1 — never surface the raw
+                  signing-readiness status/reason (e.g. "lender_not_finalized") to the
+                  client. Those are internal staff-workflow gates, not errors, and the
+                  client has no action to take on them. The "Sign Documents" pill above
+                  appears on its own once status === "ready". */}
             </div>
             {/* Twilio Voice WebRTC, no tel: link */}
             <div style={{ marginTop: 12 }}>
