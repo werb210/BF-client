@@ -22,9 +22,9 @@ export default function LandingFooter() {
           <div>
             <div className="font-semibold text-white mb-3">Explore</div>
             <ul className="list-none p-0 m-0 text-sm leading-loose">
-              <li><a href="https://boreal.financial/how-it-works" className="text-white/75 no-underline hover:text-white">How It Works</a></li>
-              <li><a href="https://boreal.financial/products" className="text-white/75 no-underline hover:text-white">Products</a></li>
-              <li><a href="https://boreal.financial/industries" className="text-white/75 no-underline hover:text-white">Industries</a></li>
+              <li><a href="https://www.boreal.financial/how-it-works" className="text-white/75 no-underline hover:text-white">How It Works</a></li>
+              <li><a href="https://www.boreal.financial/products" className="text-white/75 no-underline hover:text-white">Products</a></li>
+              <li><a href="https://www.boreal.financial/industries" className="text-white/75 no-underline hover:text-white">Industries</a></li>
               <li><a href="https://boreal.insure" rel="noopener noreferrer" className="text-white/75 no-underline hover:text-white" data-testid="landing-footer-link-boreal-insurance">Boreal Risk Management</a></li>
             </ul>
           </div>
@@ -33,15 +33,15 @@ export default function LandingFooter() {
             <a href="#apply-otp" data-testid="landing-footer-apply" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium no-underline mb-3">
               Apply Now
             </a>
-            <a href="https://boreal.financial/credit-readiness" className="block text-white/75 no-underline text-sm mb-2 hover:text-white">Check your Credit Readiness</a>
-            <a href="https://boreal.financial/contact" className="block text-white/75 no-underline text-sm mb-2 hover:text-white">Contact Us</a>
-            <a href="https://boreal.financial/product-comparison" className="block text-white/75 no-underline text-sm hover:text-white">Product Comparison</a>
+            <a href="https://www.boreal.financial/credit-readiness" className="block text-white/75 no-underline text-sm mb-2 hover:text-white">Check your Credit Readiness</a>
+            <a href="https://www.boreal.financial/contact" className="block text-white/75 no-underline text-sm mb-2 hover:text-white">Contact Us</a>
+            <a href="https://www.boreal.financial/product-comparison" className="block text-white/75 no-underline text-sm hover:text-white">Product Comparison</a>
           </div>
         </div>
         <div className="border-t border-[#1c2538] pt-4 flex justify-between text-xs text-white/55">
           <div className="flex gap-4">
-            <a href="https://boreal.financial/privacy" className="text-inherit no-underline hover:text-white">Privacy Policy</a>
-            <a href="https://boreal.financial/terms" className="text-inherit no-underline hover:text-white">Terms of Service</a>
+            <a href="https://www.boreal.financial/privacy" className="text-inherit no-underline hover:text-white">Privacy Policy</a>
+            <a href="https://www.boreal.financial/terms" className="text-inherit no-underline hover:text-white">Terms of Service</a>
           </div>
           <div>© {new Date().getFullYear()} Boreal Financial</div>
         </div>

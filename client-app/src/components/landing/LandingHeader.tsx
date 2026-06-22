@@ -9,10 +9,10 @@ import { useState } from "react";
 import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 
 const NAV_ITEMS = [
-  { href: "https://boreal.financial/products", label: "Products" },
-  { href: "https://boreal.financial/industries", label: "Industries" },
-  { href: "https://boreal.financial/credit-readiness", label: "Credit Readiness" },
-  { href: "https://boreal.financial/contact", label: "Contact" },
+  { href: "https://www.boreal.financial/products", label: "Products" },
+  { href: "https://www.boreal.financial/industries", label: "Industries" },
+  { href: "https://www.boreal.financial/credit-readiness", label: "Credit Readiness" },
+  { href: "https://www.boreal.financial/contact", label: "Contact" },
 ];
 
 function MenuIcon({ open }: { open: boolean }) {
@@ -55,7 +55,7 @@ export default function LandingHeader() {
     <header className="site-header w-full border-b border-white/10 bg-[#0B1320]/95 backdrop-blur">
       <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-6 py-3">
         <a
-          href="https://boreal.financial"
+          href="https://www.boreal.financial"
           className="flex items-center gap-3 sm:gap-4"
           onClick={() => setOpen(false)}
           data-testid="landing-logo"

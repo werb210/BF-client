@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import LandingHeader from "@/components/landing/LandingHeader";
 import LandingFooter from "@/components/landing/LandingFooter";
+import SlimHeader from "@/components/SlimHeader";
 
 describe("BF_CLIENT_BLOCK_v166 — LandingHeader cross-links", () => {
   it("desktop nav links to boreal.insure with the unified label", () => {
@@ -57,5 +58,27 @@ describe("BF_CLIENT_BLOCK_v166 — LandingFooter cross-links", () => {
     render(<LandingFooter />);
     const apply = screen.getByTestId("landing-footer-apply") as HTMLAnchorElement;
     expect(apply.getAttribute("href")).toBe("#apply-otp");
+  });
+});
+
+describe("BF_CLIENT_BLOCK_v_HEADER_FOOTER_WWW_v1 — financial links use www (not the bare apex)", () => {
+  it("LandingHeader points every boreal.financial link at www", () => {
+    const { container } = render(<LandingHeader />);
+    const links = Array.from(container.querySelectorAll('a[href*="boreal.financial"]')) as HTMLAnchorElement[];
+    expect(links.length).toBeGreaterThan(0);
+    for (const a of links) expect(a.getAttribute("href")).toMatch(/^https:\/\/www\.boreal\.financial/);
+  });
+  it("LandingFooter points every boreal.financial link at www", () => {
+    const { container } = render(<LandingFooter />);
+    const links = Array.from(container.querySelectorAll('a[href*="boreal.financial"]')) as HTMLAnchorElement[];
+    expect(links.length).toBeGreaterThan(0);
+    for (const a of links) expect(a.getAttribute("href")).toMatch(/^https:\/\/www\.boreal\.financial/);
+  });
+
+  it("SlimHeader points every boreal.financial link at www", () => {
+    const { container } = render(<SlimHeader />);
+    const links = Array.from(container.querySelectorAll('a[href*="boreal.financial"]')) as HTMLAnchorElement[];
+    expect(links.length).toBeGreaterThan(0);
+    for (const a of links) expect(a.getAttribute("href")).toMatch(/^https:\/\/www\.boreal\.financial/);
   });
 });
