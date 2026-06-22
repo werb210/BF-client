@@ -61,7 +61,7 @@ function SlimHeader({ right }: SlimHeaderProps) {
     <header style={styles.outer} role="banner" data-bf-slim-header>
       <div style={styles.inner}>
         <a
-          href="https://boreal.financial/"
+          href="https://www.boreal.financial/"
           style={styles.brandLink}
           aria-label="Boreal Financial home"
         >
