@@ -6,6 +6,7 @@
 // Persists via the generic form-responses endpoint, key "professional_advisors".
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
+import { formatPhoneNumber } from "@/utils/location"; // v_ADVISOR_PHONE_FMT_v1
 
 const FORM_KEY = "professional_advisors";
 const FINANCIAL_ADVISOR_FIRM = "Boreal Financial";
@@ -136,7 +137,7 @@ export default function AdvisorsForm({
               </div>
               <div>
                 <div style={cellLabel}>Phone</div>
-                <input style={inputStyle} value={advisors[key].phone} onChange={(e) => setField(key, "phone", e.target.value)} onBlur={persist} aria-label={`${label} phone`} />
+                <input style={inputStyle} value={advisors[key].phone} onChange={(e) => setField(key, "phone", formatPhoneNumber(e.target.value, "CA"))} onBlur={persist} aria-label={`${label} phone`} inputMode="tel" />
               </div>
               <div>
                 <div style={cellLabel}>Email</div>
