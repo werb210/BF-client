@@ -34,7 +34,7 @@ export default function AdvisorsForm({
   });
   const [authorized, setAuthorized] = useState(false);
   // BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1
-  const [monitoring, setMonitoring] = useState({ accountingSoftware: "", accountingRemoteView: "", primaryBank: "", bankRemoteView: "", craMyBusiness: "" });
+  const [monitoring, setMonitoring] = useState({ accountingSoftware: "", accountingRemoteView: "", primaryBank: "", bankRemoteView: "", craMyBusiness: "", balanceOutstanding: "", authorizedLimit: "" }); // BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +154,9 @@ export default function AdvisorsForm({
         <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.accountingRemoteView} onChange={(e) => setMon("accountingRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
         <div><div style={cellLabel}>Primary bank</div><input style={inputStyle} value={monitoring.primaryBank} onChange={(e) => setMon("primaryBank", e.target.value)} onBlur={persist} /></div>
         <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.bankRemoteView} onChange={(e) => setMon("bankRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 — existing senior lender/bank (Accord page 1) */}
+        <div><div style={cellLabel}>Balance outstanding (existing facility)</div><input style={inputStyle} value={monitoring.balanceOutstanding} onChange={(e) => setMon("balanceOutstanding", e.target.value)} onBlur={persist} /></div>
+        <div><div style={cellLabel}>Authorized limit (existing facility)</div><input style={inputStyle} value={monitoring.authorizedLimit} onChange={(e) => setMon("authorizedLimit", e.target.value)} onBlur={persist} /></div>
         <div style={{ gridColumn: "1 / -1" }}><div style={cellLabel}>Do you have CRA "My Business" set up?</div><select style={inputStyle} value={monitoring.craMyBusiness} onChange={(e) => setMon("craMyBusiness", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
       </div>
 

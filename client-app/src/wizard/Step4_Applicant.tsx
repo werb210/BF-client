@@ -84,6 +84,14 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
       )}
       <div><label style={L}>Date of Birth</label><Input type="date" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} /></div>
       <div><label style={L}>{identityLabel}</label><Input inputMode="numeric" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} /></div>
+      {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 — Title/Role (Accord senior leadership). Shared component → applicant + partner. */}
+      {isAccordLOC && (
+        <div><label style={L}>Title / Role</label>
+          <select value={data.title || ""} onChange={(e) => setField("title", e.target.value)}>
+            <option value="">—</option><option value="Owner/Operator">Owner/Operator</option><option value="Partner">Partner</option><option value="President">President</option><option value="Director">Director</option><option value="Officer">Officer</option><option value="CEO">CEO</option><option value="CFO">CFO</option><option value="Secretary">Secretary</option><option value="Treasurer">Treasurer</option><option value="Other">Other</option>
+          </select>
+        </div>
+      )}
       <div style={{ gridColumn: "1 / -1" }}><label style={L}>Street Address</label>
         <AddressAutocompleteInput country={regionCountry} value={data.street || ""}
           onChange={(e) => setField("street", e.target.value)}
