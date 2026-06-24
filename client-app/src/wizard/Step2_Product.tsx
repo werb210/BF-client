@@ -641,8 +641,19 @@ export function Step2_Product() {
               }}
             >
               <div>
-                <div style={{ fontWeight: 600, fontSize: 16, color: "#111827" }}>
-                  {bucket.label}
+                {/* BF_CLIENT_BLOCK_v_PRODUCT_COUNT_BADGE_v1 — count badge next to the
+                    product type (mockup "Term Loan ⟨7⟩"). */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 16, color: "#111827" }}>
+                  <span>{bucket.label}</span>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    minWidth: 22, height: 22, padding: "0 7px", borderRadius: 999,
+                    background: isSelected ? tokens.colors.primary : tokens.colors.primaryLight,
+                    color: isSelected ? "#fff" : tokens.colors.primary,
+                    fontSize: 12, fontWeight: 700, lineHeight: 1,
+                  }}>
+                    {bucket.products.length}
+                  </span>
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
                   {bucket.products.length} product{bucket.products.length !== 1 ? "s" : ""} available
