@@ -542,7 +542,7 @@ export function Step4_Applicant() {
       <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
         <WizardLayout>
           <div className="wizard-step-shell">
-            <StepHeader step={4} title="Applicant Information" />
+            <StepHeader step={4} title="Applicant Information" subtitle="List everyone with 25%+ ownership. Each partner signs their own copy." />
             {saveError && (
               <Card variant="muted" data-error={true}>
                 <div style={components.form.errorText}>{saveError}</div>

@@ -865,7 +865,7 @@ export function Step1_KYC(): JSX.Element {
       <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
       <div className="wizard-step-shell">
-        <StepHeader step={1} title="Financial Profile" />
+        <StepHeader step={1} title="Financial Profile" subtitle="Tell us what you need so we can match you to the right lenders." />
         {submitError && (
           <Card variant="muted" data-error={true}>
             <div style={components.form.errorText}>{submitError}</div>
