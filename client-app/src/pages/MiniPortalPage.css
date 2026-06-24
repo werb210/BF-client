@@ -32,8 +32,12 @@
 
 .mp-actions{padding-bottom:16px}
 .mp-actions__chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
-.mp-chip--action{height:48px;border:none;background:#dbeafe;color:#1d4ed8;border-radius:12px;font-size:14px;font-weight:600;padding:0 10px;text-align:center}
-.mp-callus{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:56px;border:none;border-radius:28px;background:#22c55e;color:#fff;font-size:16px;font-weight:600}
+/* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — cleaner bordered chips (mockup look). */
+.mp-chip--action{min-height:46px;border:1px solid #c7d2e8;background:#fff;color:#1E3A8A;border-radius:10px;font-size:14px;font-weight:600;padding:8px 12px;text-align:center;transition:border-color .15s,background .15s}
+.mp-chip--action:hover{border-color:#1E3A8A;background:#f5f8ff}
+/* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — was a 56px solid-green slab that dominated the panel; mockup de-emphasizes it to a small outline button. */
+.mp-callus{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:42px;border:1px solid #16a34a;border-radius:10px;background:#fff;color:#16a34a;font-size:14px;font-weight:600;cursor:pointer}
+.mp-callus:hover{background:#f0fdf4}
 .mp-hangup{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:56px;border:none;border-radius:28px;background:#ef4444;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
 
 .mp-offers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
