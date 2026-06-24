@@ -4,6 +4,7 @@
 // place; everything else falls through to an upload row.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import DocPicker from "@/components/DocPicker";
 import { listFormResponses, type FormResponse } from "@/lib/api";
 import PersonalNetWorthForm from "./forms/PersonalNetWorthForm";
 import DebtStackForm from "./forms/DebtStackForm";
@@ -39,6 +40,8 @@ export default function Stage2Page() {
   const [requiredDocs, setRequiredDocs] = useState<RequiredDoc[]>([]);
   const [responses, setResponses] = useState<Record<string, FormResponse>>({});
   const [activeForm, setActiveForm] = useState<string | null>(null);
+  // BF_CLIENT_BLOCK_v_STAGE2_UPLOAD_v1 — upload rows now open the real DocPicker.
+  const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,14 +193,30 @@ export default function Stage2Page() {
                   {isComplete ? "Review / edit" : isDraft ? "Continue" : "Start form"}
                 </button>
               ) : (
-                <span style={{ fontSize: 12, color: "#6b7280", fontStyle: "italic" }}>
-                  Upload (coming soon)
-                </span>
+                <button
+                  onClick={() => setShowUpload(true)}
+                  style={{
+                    padding: "8px 14px", fontSize: 13, fontWeight: 600,
+                    background: isComplete ? "#fff" : "#1E3A8A",
+                    color: isComplete ? "#1E3A8A" : "#fff",
+                    border: "1px solid #1E3A8A",
+                    borderRadius: 4, cursor: "pointer",
+                  }}
+                >
+                  {isComplete ? "Uploaded" : "Upload"}
+                </button>
               )}
             </li>
           );
         })}
       </ul>
+      {showUpload && applicationId && (
+        <DocPicker
+          applicationId={applicationId}
+          onClose={() => setShowUpload(false)}
+          onUploaded={() => { setShowUpload(false); void load(); }}
+        />
+      )}
     </div>
   );
 }
