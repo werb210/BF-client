@@ -181,9 +181,9 @@ export default function Stage2Page() {
                   onClick={() => setActiveForm(doc.document_type)}
                   style={{
                     padding: "8px 14px", fontSize: 13, fontWeight: 600,
-                    background: isComplete ? "#fff" : "#2563eb",
-                    color: isComplete ? "#2563eb" : "#fff",
-                    border: "1px solid #2563eb",
+                    background: isComplete ? "#fff" : "#1E3A8A",
+                    color: isComplete ? "#1E3A8A" : "#fff",
+                    border: "1px solid #1E3A8A",
                     borderRadius: 4, cursor: "pointer",
                   }}
                 >

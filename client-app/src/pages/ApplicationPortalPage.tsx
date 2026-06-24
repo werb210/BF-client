@@ -321,7 +321,7 @@ export function ApplicationPortalPage(): JSX.Element {
     <div style={layout.page}>
       <div style={layout.portalColumn}>
         {submittedBanner}
-        <button onClick={() => void startCall()} style={{ border: "none", background: "#2563eb", color: "#fff", borderRadius: 8, padding: "10px 14px", cursor: "pointer" }}>Call Us!</button>
+        <button onClick={() => void startCall()} style={{ border: "none", background: "#1E3A8A", color: "#fff", borderRadius: 8, padding: "10px 14px", cursor: "pointer" }}>Call Us!</button>
       </div>
       {/* BF_CLIENT_BLOCK_1_37_POST_SUBMIT_INSTALL_PROMPT — show install banner on first arrival after submit. */}
       {submissionState?.submitted ? <InstallAppPrompt /> : null}

@@ -43,7 +43,7 @@ export default function ConsentBanner(): ReactElement | null {
       </p>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => choose(false)} style={{ background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "8px 16px", fontSize: 13, cursor: "pointer" }}>Decline</button>
-        <button onClick={() => choose(true)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Accept</button>
+        <button onClick={() => choose(true)} style={{ background: "#1E3A8A", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Accept</button>
       </div>
     </div>
   );
