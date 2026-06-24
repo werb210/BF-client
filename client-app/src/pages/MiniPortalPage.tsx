@@ -180,7 +180,7 @@ export default function MiniPortalPage() {
   // conversation every 15s so staff replies surface without the user
   // needing to refresh. Pre-fix new messages only arrived on page
   // reload. Pause when the tab is hidden to save battery.
-  useVisiblePoll(loadAll, 15000);
+  useVisiblePoll(loadAll, 30000); // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — was 15000; halves loadAll's 6-call fan-out
 
   // BF_CLIENT_BLOCK_v771_SWITCH_REFETCH — useVisiblePoll only re-runs on its
   // interval (every 15s), not when loadAll's applicationId changes, so switching
@@ -224,7 +224,12 @@ export default function MiniPortalPage() {
     try {
       const r = await apiCall<any>(`/api/client/signing-session?applicationId=${encodeURIComponent(applicationId)}`);
       setSignSession({ status: String(r?.status ?? "error"), url: typeof r?.url === "string" ? r.url : undefined, reason: typeof r?.reason === "string" ? r.reason : undefined });
-    } catch { setSignSession({ status: "error" }); }
+    } catch {
+      // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — a transient /signing-session failure
+      // (e.g. a rate-limit blip) must NOT hide the Sign button. Keep the last
+      // known state if we already had one; only show error if we never loaded.
+      setSignSession((prev) => prev ?? { status: "error" });
+    }
     finally { setSignLoading(false); }
   }, [applicationId]);
   // BF_CLIENT_BLOCK_v_SIGNING_COMPLETE_v1 — the SignNow webhook does not reliably
@@ -248,7 +253,7 @@ export default function MiniPortalPage() {
       if (/finish|complete|signed|document_signed/i.test(d)) { void markSigningComplete(); }
     };
     window.addEventListener("message", onMsg);
-    const t = window.setInterval(() => { void markSigningComplete(); }, 8000);
+    const t = window.setInterval(() => { void markSigningComplete(); }, 15000); // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — was 8000
     return () => { window.removeEventListener("message", onMsg); window.clearInterval(t); };
   }, [showSign, markSigningComplete]);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — CMP actions open
@@ -338,7 +343,7 @@ export default function MiniPortalPage() {
     void tick();
     // BF_CLIENT_BLOCK_v326 — was 3s, which (with the other polls) tripped the
     // server read rate limit and produced a 429 storm. 10s + hidden-tab pause.
-    const id = setInterval(tick, 10000);
+    const id = setInterval(tick, 20000); // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — was 10000
     return () => { cancelled = true; clearInterval(id); };
   }, [applicationId]);
 
