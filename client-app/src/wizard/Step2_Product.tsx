@@ -628,7 +628,7 @@ export function Step2_Product() {
               key={bucket.bucket}
               onClick={() => selectCategory(category, bucket.products.map((product) => product.id))}
               style={{
-                border: `1px solid ${isSelected ? "#2563eb" : "#e5e7eb"}`,
+                border: `1px solid ${isSelected ? tokens.colors.primary : tokens.colors.border}`,
                 borderRadius: 8,
                 padding: "16px 20px",
                 display: "flex",
@@ -663,8 +663,8 @@ export function Step2_Product() {
                 style={{
                   padding: "6px 18px",
                   borderRadius: 6,
-                  border: `1px solid ${isSelected ? "#2563eb" : "#d1d5db"}`,
-                  background: isSelected ? "#2563eb" : "#fff",
+                  border: `1px solid ${isSelected ? tokens.colors.primary : tokens.colors.border}`,
+                  background: isSelected ? tokens.colors.primary : tokens.colors.surface,
                   color: isSelected ? "#fff" : "#374151",
                   fontWeight: 600,
                   fontSize: 14,
