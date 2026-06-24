@@ -53,7 +53,8 @@ function reqAsPromise<T>(req: IDBRequest<T>): Promise<T> {
 
 function buildUrl(applicationId: string, docType: string): string {
   const base = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
-  return `${base}/api/portal/applications/${encodeURIComponent(applicationId)}/form-responses/${encodeURIComponent(docType)}`;
+  // BF_CLIENT_BLOCK_v_FORM_RESPONSES_CLIENT_ROUTE_v1 — client-authed route.
+  return `${base}/api/client/applications/${encodeURIComponent(applicationId)}/form-responses/${encodeURIComponent(docType)}?applicationId=${encodeURIComponent(applicationId)}`;
 }
 
 function buildAuthHeaders(): Record<string, string> {
