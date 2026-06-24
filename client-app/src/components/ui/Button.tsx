@@ -1,4 +1,5 @@
 import * as React from "react";
+import { components } from "@/styles"; // BF_CLIENT_BLOCK_v_BUTTON_HIERARCHY_v1
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost";
@@ -9,21 +10,19 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 // as bare browser buttons (weak/outline) and disabled buttons had no affordance.
 // Real styles are applied here; any caller-supplied `style` still wins (spread
 // last), so buttons with custom inline styling are unaffected.
+// BF_CLIENT_BLOCK_v_BUTTON_HIERARCHY_v1 — consume the canonical tokenized button
+// hierarchy (brand blue primary via components.buttons) instead of the old
+// hardcoded #2563eb, so every wizard button matches the Direction A inputs/stepper.
 const BASE_STYLE: React.CSSProperties = {
-  fontWeight: 600,
-  fontSize: 16,
-  lineHeight: 1.2,
-  borderRadius: 10,
-  padding: "12px 20px",
-  minHeight: 48,
+  ...components.buttons.base,
   cursor: "pointer",
   transition: "opacity 120ms ease",
 };
 
 const VARIANT_STYLES: Record<NonNullable<ButtonProps["variant"]>, React.CSSProperties> = {
-  primary: { background: "#2563eb", color: "#ffffff", border: "none" },
-  secondary: { background: "#ffffff", color: "#2563eb", border: "1px solid #2563eb" },
-  ghost: { background: "transparent", color: "#2563eb", border: "none" },
+  primary: components.buttons.primary,
+  secondary: components.buttons.secondary,
+  ghost: components.buttons.ghost,
 };
 
 export const Button = ({
