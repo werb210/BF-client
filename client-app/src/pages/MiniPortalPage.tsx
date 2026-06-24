@@ -582,7 +582,14 @@ export default function MiniPortalPage() {
               </div>
             ) : null}
             {/* BF_CLIENT_ALL_RECEIVED_NOTE_v1 — positive confirmation once nothing is outstanding. */}
-            {docsChecked && !hasOutstandingDocs && signSession?.status !== "ready" ? (
+            {docsChecked && !hasOutstandingDocs && signSession?.status !== "ready"
+              // BF_CLIENT_BLOCK_v_CMP_REQUIRED_BANNER_v1 — hasOutstandingDocs covers
+              // DOCS only, not the required form steps (CRA/Connect Bank/Advisors).
+              // During the documents/additional-steps stages those forms may still be
+              // pending, so the "nothing outstanding" reassurance is misleading there.
+              // Only show it once staff have advanced the app past those stages.
+              && stageIndex !== STAGE_BY_KEY.documents_required
+              && stageIndex !== STAGE_BY_KEY.additional_steps_required ? (
               <div data-testid="all-received-note" style={{ margin: "0 0 10px", padding: "10px 12px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: 13, fontWeight: 600 }}>
                 ✓ All required tasks and documents received — nothing outstanding right now.
               </div>
