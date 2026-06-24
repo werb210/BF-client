@@ -367,8 +367,9 @@ export default function PhoneOTPInline() {
             disabled={busy}
             onClick={sendCode}
             style={{
+              /* BF_CLIENT_BLOCK_v_LANDING_BUTTON_BRAND_BLUE_v1 — was amber #f59e0b */
               width: '100%', padding: '14px 20px', fontSize: 17, fontWeight: 700,
-              background: '#f59e0b', color: '#fff', border: 0, borderRadius: 8,
+              background: '#1E3A8A', color: '#fff', border: 0, borderRadius: 8,
               cursor: busy ? 'wait' : 'pointer',
             }}
           >
@@ -411,8 +412,9 @@ export default function PhoneOTPInline() {
             disabled={busy}
             onClick={verifyAndStart}
             style={{
+              /* BF_CLIENT_BLOCK_v_LANDING_BUTTON_BRAND_BLUE_v1 — was amber #f59e0b */
               width: '100%', padding: '14px 20px', fontSize: 17, fontWeight: 700,
-              background: '#f59e0b', color: '#fff', border: 0, borderRadius: 8,
+              background: '#1E3A8A', color: '#fff', border: 0, borderRadius: 8,
               cursor: busy ? 'wait' : 'pointer',
             }}
           >
