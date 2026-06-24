@@ -721,6 +721,42 @@ export function Step6_Review(): JSX.Element {
       <div className="wizard-step-shell">
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" subtitle="Check everything is right. You can edit any section before submitting." />
 
+      {/* BF_CLIENT_BLOCK_v_REVIEW_SUMMARY_v1 — read-only "what you entered" summary
+          at the top of Step 6 (Direction A mockup). Display only; does not touch the
+          T&C / signature / submit logic below. */}
+      {(() => {
+        const kyc: any = app.kyc ?? {};
+        const biz: any = app.business ?? {};
+        const appl: any = app.applicant ?? {};
+        const productLabel = app.selectedProductType || app.selectedProduct?.product_type || "—";
+        const amount = kyc.fundingAmount ? String(kyc.fundingAmount) : "—";
+        const ownerCount = appl.hasMultipleOwners ? "You + partner(s)" : "You";
+        const rows: Array<[string, string]> = [
+          ["Looking for", kyc.lookingFor || "—"],
+          ["Amount", amount],
+          ["Product", productLabel],
+          ["Business", biz.businessName || "—"],
+          ["Industry", kyc.industry || "—"],
+          ["Owners", ownerCount],
+        ];
+        return (
+          <Card style={{ marginBottom: tokens.spacing.lg }}>
+            <h2 style={{ ...components.form.sectionTitle, marginBottom: tokens.spacing.md }}>Application summary</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+              {rows.map(([label, value], i) => (
+                <div key={label} style={{
+                  padding: "10px 0",
+                  borderTop: i >= 2 ? `1px solid ${tokens.colors.border}` : "none",
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: tokens.colors.textSecondary }}>{label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: tokens.colors.textPrimary, marginTop: 2 }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* BF_CLIENT_BLOCK_v327 — Accord Risk Profile moved here from Step 3 (top of Step 6). */}
       {isAccordLOCApp(app) && (
         <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginBottom: tokens.spacing.lg }}>
