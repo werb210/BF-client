@@ -25,7 +25,8 @@ const inputBase: CSSProperties = {
   minHeight: "44px",
   padding: `0 ${tokens.spacing.md}`,
   borderRadius: tokens.radii.md,
-  border: `1px solid ${tokens.colors.border}`,
+  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_v1 — stronger resting border so fields read as editable.
+  border: `1.5px solid ${tokens.colors.textSecondary}`,
   background: tokens.colors.surface,
   color: tokens.colors.textPrimary,
   fontFamily: tokens.typography.fontFamily,
