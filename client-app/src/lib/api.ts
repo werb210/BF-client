@@ -51,7 +51,11 @@ export const apiUpload = <T = unknown>(path: string, formData: FormData) =>
 // absolute URLs and Bearer auth.
 function buildFormResponsesUrl(applicationId: string, suffix = ""): string {
   const base = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
-  return `${base}/api/portal/applications/${encodeURIComponent(applicationId)}/form-responses${suffix}`;
+  // BF_CLIENT_BLOCK_v_FORM_RESPONSES_CLIENT_ROUTE_v1 — use the client-authed route
+  // (the portal route is staff-gated). applicationId in the query lets the client
+  // router's ownership middleware authorize the request.
+  const sep = suffix.includes("?") ? "&" : "?";
+  return `${base}/api/client/applications/${encodeURIComponent(applicationId)}/form-responses${suffix}${sep}applicationId=${encodeURIComponent(applicationId)}`;
 }
 
 function buildAuthHeaders(extra?: Record<string, string>): Record<string, string> {
