@@ -1,18 +1,40 @@
 import { components, tokens } from "@/styles";
 
-// BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_v1 — short labels that fit the 6-dot stepper.
+// BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_DESIGN_v1 — Direction A "Refined Cards":
+// dark header band with a blue progress fill, labeled 6-dot stepper, blue
+// "STEP X OF 6" eyebrow, title, and an optional descriptive subtitle.
 const STEP_LABELS = ["Profile", "Product", "Business", "Owners", "Docs", "Review"];
 
 type StepHeaderProps = {
   step: number;
   title: string;
+  subtitle?: string;
   totalSteps?: number;
 };
 
-export function StepHeader({ step, title, totalSteps = 6 }: StepHeaderProps) {
+export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeaderProps) {
+  const pct = Math.max(0, Math.min(1, (step - 1) / (totalSteps - 1))) * 100;
   return (
-    <div style={{ marginBottom: tokens.spacing.lg }}>
-      <div style={{ display: "flex", alignItems: "flex-start", marginBottom: tokens.spacing.md }}>
+    <div>
+      <div
+        style={{
+          margin: "-24px -24px 20px",
+          background: "#0b1220",
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          padding: "14px 24px 16px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <span aria-hidden style={{ color: "#fff", fontSize: 16, lineHeight: 1 }}>&#9650;</span>
+          <span style={{ color: "#fff", fontSize: 14, fontWeight: 700, letterSpacing: 0.2 }}>Boreal</span>
+        </div>
+        <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${pct}%`, background: tokens.colors.primary, transition: "width .3s ease" }} />
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "flex-start", marginBottom: tokens.spacing.lg }}>
         {STEP_LABELS.slice(0, totalSteps).map((label, i) => {
           const n = i + 1;
           const done = n < step;
@@ -36,8 +58,12 @@ export function StepHeader({ step, title, totalSteps = 6 }: StepHeaderProps) {
           );
         })}
       </div>
+
       <div style={{ ...components.form.eyebrow, marginBottom: tokens.spacing.xs }}>Step {step} of {totalSteps}</div>
-      <h1 style={components.form.title}>{title}</h1>
+      <h1 style={{ ...components.form.title, marginBottom: subtitle ? 6 : 0 }}>{title}</h1>
+      {subtitle && (
+        <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 1.5 }}>{subtitle}</p>
+      )}
     </div>
   );
 }
