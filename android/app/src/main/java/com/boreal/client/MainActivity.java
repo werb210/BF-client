@@ -1,4 +1,4 @@
-package com.werb210.client;
+package com.boreal.client;
 
 import com.getcapacitor.BridgeActivity;
 
