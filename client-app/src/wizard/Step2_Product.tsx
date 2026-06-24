@@ -590,7 +590,7 @@ export function Step2_Product() {
   // progress bar + outer wrapper; shared StepHeader (with stepper) is the only chrome.
   return (
     <WizardLayout>
-      <StepHeader step={2} title="Choose Product Category" />
+      <StepHeader step={2} title="Choose Product Category" subtitle="Based on your profile, these fit best. You can change this later." />
       {saveError && (
         <Card variant="muted" data-error={true}>
           <div style={components.form.errorText}>{saveError}</div>

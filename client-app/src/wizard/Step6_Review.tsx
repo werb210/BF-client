@@ -719,7 +719,7 @@ export function Step6_Review(): JSX.Element {
         <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
       <div className="wizard-step-shell">
-      <StepHeader step={6} title="Terms & Conditions + Typed Signature" />
+      <StepHeader step={6} title="Terms & Conditions + Typed Signature" subtitle="Check everything is right. You can edit any section before submitting." />
 
       {/* BF_CLIENT_BLOCK_v327 — Accord Risk Profile moved here from Step 3 (top of Step 6). */}
       {isAccordLOCApp(app) && (

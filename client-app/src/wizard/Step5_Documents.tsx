@@ -735,7 +735,7 @@ export function Step5_Documents() {
   // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 — removed duplicate shell/heading.
   return (
     <WizardLayout>
-      <StepHeader step={5} title="Required Documents" />
+      <StepHeader step={5} title="Required Documents" subtitle="Add the files below. You can also finish these later from your portal." />
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
         {isLoading && (
