@@ -216,6 +216,9 @@ export default function MiniPortalPage() {
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors">(null);
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
+  // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
+  const [deleteStep, setDeleteStep] = useState(0);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [signSession, setSignSession] = useState<{ status: string; url?: string; reason?: string } | null>(null);
   const [signLoading, setSignLoading] = useState(false);
   const fetchSigningSession = useCallback(async () => {
@@ -382,6 +385,21 @@ export default function MiniPortalPage() {
     setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString(), attachments: attach.length ? attach : null }]);
   }
 
+  // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — immediate hard delete (staff-side cascade),
+  // gated by two warnings. Clears the local session and returns to OTP on success.
+  const confirmDeleteAccount = useCallback(async () => {
+    setDeleteErr(null);
+    setDeleteStep(3);
+    try {
+      await apiCall("/api/client/account/delete", { method: "POST", body: { applicationId } });
+      try { window.localStorage.removeItem("client_session"); } catch { /* ignore */ }
+      navigate("/otp", { replace: true });
+    } catch {
+      setDeleteErr("We couldn't delete your account just now. Please try again, or call us for help.");
+      setDeleteStep(2);
+    }
+  }, [applicationId, navigate]);
+
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
   // Show the offer view whenever the app actually has an offer, not only when
   // the stage read says "offer" — a lagging/stale pipeline_state must never hide
@@ -493,8 +511,54 @@ export default function MiniPortalPage() {
         <div className="mp-app-header__right">
           <span className="mp-app-header__stage-label">Stage</span>
           <span className="mp-app-header__stage-value">{currentStageLabel}</span>
+          {/* BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — store-required account/data deletion */}
+          <button
+            type="button"
+            className="mp-account-delete-link"
+            onClick={() => { setDeleteErr(null); setDeleteStep(1); }}
+            style={{ marginLeft: 16, background: "transparent", border: "none", color: "#6b7280", fontSize: 12, textDecoration: "underline", cursor: "pointer", padding: 0 }}
+          >
+            Delete account
+          </button>
         </div>
       </header>
+      {deleteStep > 0 && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: 20 }}
+        >
+          <div style={{ background: "var(--color-surface, #fff)", borderRadius: 14, maxWidth: 440, width: "100%", padding: 24, boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
+            <h2 style={{ margin: "0 0 12px", fontSize: 19, color: "#0f172a" }}>Delete your account?</h2>
+            {deleteStep === 1 && (
+              <>
+                <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                  If you delete your account, any active applications will also be deleted. This cannot be undone.
+                </p>
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Keep my account</button>
+                  <button type="button" onClick={() => setDeleteStep(2)} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Continue</button>
+                </div>
+              </>
+            )}
+            {deleteStep === 2 && (
+              <>
+                <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                  Once deleted, Boreal Financial will not be allowed to communicate with you regarding lender communications, offers to finance, or to assist you with completing your funding.
+                </p>
+                {deleteErr && <p style={{ margin: "0 0 12px", fontSize: 13, color: "#dc2626" }}>{deleteErr}</p>}
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                  <button type="button" onClick={() => void confirmDeleteAccount()} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Delete my account</button>
+                </div>
+              </>
+            )}
+            {deleteStep === 3 && (
+              <p style={{ margin: 0, fontSize: 14, color: "#374151" }}>Deleting your account…</p>
+            )}
+          </div>
+        </div>
+      )}
       <div className="mp-tracker" role="list" aria-label="Application progress">
         {stageRow.map((s) => (
           <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}>
