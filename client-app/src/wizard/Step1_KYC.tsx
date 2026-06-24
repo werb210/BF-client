@@ -859,27 +859,10 @@ export function Step1_KYC(): JSX.Element {
     }
   };
 
+  // BF_CLIENT_BLOCK_v_WIZARD_STEP1_DIRECTION_A_v1 — removed duplicate shell/heading.
   return (
     <>
-      <div
-        style={{
-          minHeight: "100vh",
-          background: "#f3f4f6",
-          padding: "0 0 48px",
-        }}
-      >
-        <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
-          <div
-            style={{
-              height: 4,
-              background: "#2563eb",
-              width: `${(1 / 6) * 100}%`,
-              transition: "width 0.3s ease",
-            }}
-          />
-        </div>
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
-          <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+      <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
       <div className="wizard-step-shell">
         <StepHeader step={1} title="Financial Profile" />
@@ -1391,8 +1374,6 @@ export function Step1_KYC(): JSX.Element {
         </div>
       </div>
       </WizardLayout>
-      </div>
-      </div>
 
       {showLocationModal && (
         <div className="wizard-modal-backdrop" role="dialog" aria-modal="true">
