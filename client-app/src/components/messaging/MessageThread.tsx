@@ -153,7 +153,8 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
               {m.ctaLabel && m.ctaAction ? (
                 <button
                   type="button"
-                  onClick={() => {}}
+                  /* BF_CLIENT_BLOCK_v_MESSAGE_CTA_WIRE_v1 — was a dead no-op; call onCtaClick directly. */
+                  onClick={() => { if (m.ctaAction) onCtaClick?.(m.ctaAction); }}
                   data-cta-action={m.ctaAction}
                   style={{
                     display: "block",
