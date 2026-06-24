@@ -395,6 +395,19 @@ export default function MiniPortalPage() {
     const k = String(cta ?? "");
     return k === "upload_docs" || k === "upload" || k.startsWith("upload:");
   };
+  // BF_CLIENT_BLOCK_v_CMP_CONSOLIDATE_STEP_PROMPTS_v1 — a step-prompt bubble is
+  // redundant when its CTA already appears as a What's Next chip. Resolve the CTA
+  // the same way handleMessageCta does (keyword map, "form:" prefix, or bare id),
+  // then suppress the bubble if that id is a panel chip. Fails safe: a CTA that is
+  // NOT a panel chip (or a real staff message with no CTA) always renders.
+  const PANEL_CHIP_IDS = new Set(ACTION_CHIPS.map((c) => c.id as string));
+  const isRedundantStepPrompt = (cta?: string | null): boolean => {
+    if (!cta) return false;
+    if (isUrl(cta)) return false;
+    let id = cta in actionByKeyword ? actionByKeyword[cta] : cta;
+    if (id.startsWith("form:")) id = id.slice(5);
+    return PANEL_CHIP_IDS.has(id);
+  };
   const handleMessageCta = (ctaAction?: string | null) => {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
@@ -512,6 +525,10 @@ export default function MiniPortalPage() {
             ) : null}
             {messages.length === 0 ? <div className="mp-thread-card__empty">Say hi to get started.</div> : messages.map((m) => {
               if (!hasOutstandingDocs && isDocUploadPrompt(m.ctaAction)) return null;
+              // BF_CLIENT_BLOCK_v_CMP_CONSOLIDATE_STEP_PROMPTS_v1 — collapse the
+              // repeated "Complete the X step" bubbles; the action lives in the
+              // What's Next panel, so showing it again in chat is noise.
+              if (isRedundantStepPrompt(m.ctaAction)) return null;
               const outbound = m.authorRole === "self";
               const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
               return (
