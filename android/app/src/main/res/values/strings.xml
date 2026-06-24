@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">client-app</string>
-    <string name="title_activity_main">client-app</string>
-    <string name="package_name">com.werb210.client</string>
-    <string name="custom_url_scheme">com.werb210.client</string>
+    <string name="app_name">Boreal Financial</string>
+    <string name="title_activity_main">Boreal Financial</string>
+    <string name="package_name">com.boreal.client</string>
+    <string name="custom_url_scheme">com.boreal.client</string>
 </resources>
