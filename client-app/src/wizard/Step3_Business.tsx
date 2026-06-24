@@ -328,32 +328,12 @@ export function Step3_Business() {
     }
   };
 
+  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_v1 — removed duplicate centered heading + own
+  // progress bar + outer full-bleed wrapper; StepHeader is the single chrome. The
+  // wizard-step-shell <style> is preserved.
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f3f4f6",
-        padding: "0 0 48px",
-      }}
-    >
-      <div style={{ height: 4, background: "#e5e7eb", width: "100%" }}>
-        <div
-          style={{
-            height: 4,
-            background: "#2563eb",
-            width: `${(3 / 6) * 100}%`,
-            transition: "width 0.3s ease",
-          }}
-        />
-      </div>
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
-        <h1 style={{ color: "#2563eb", fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
-          Step 3: Business Details
-        </h1>
-        <p style={{ color: "#6b7280", textAlign: "center", marginBottom: 32, fontSize: 15 }}>
-          Provide your core business details.
-        </p>
-        <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+    <>
+      <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
       <div className="wizard-step-shell">
       <StepHeader step={3} title="Business Details" />
@@ -829,8 +809,7 @@ export function Step3_Business() {
       </div>
       </div>
     </WizardLayout>
-    </div>
-    </div>
+    </>
   );
 }
 
