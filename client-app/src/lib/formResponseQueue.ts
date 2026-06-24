@@ -1,5 +1,5 @@
 // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
-// Offline + retry queue for PUT /api/portal/applications/:id/form-responses/:docType.
+// Offline + retry queue for PUT /api/client/applications/:id/form-responses/:docType?applicationId=:id.
 // Structurally identical to uploadQueue.ts (the upload-later queue for documents);
 // the form-response payload is plain JSON so this version stores it directly
 // rather than base64-encoding bytes. Drained by formResponseQueueWatcher on
