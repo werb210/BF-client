@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Boreal Financial',
   webDir: 'dist',
   server: { androidScheme: 'https' },
-  ios: { scheme: 'BorealClient', contentInset: 'always' },
-  android: { allowMixedContent: true }
+  ios: { path: '../ios', scheme: 'BorealClient', contentInset: 'always' },
+  android: { path: '../android', allowMixedContent: true }
 };
 
 export default config;
