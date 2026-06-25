@@ -413,6 +413,18 @@ export default function MiniPortalPage() {
     const k = String(cta ?? "");
     return k === "upload_docs" || k === "upload" || k.startsWith("upload:");
   };
+  // BF_CLIENT_BLOCK_v_STALE_TASK_PROMPT_GATE_v1 — identify step/task prompts (CRA,
+  // Connect Bank, Net Worth, etc.) so they can be hidden once the app has advanced
+  // past the additional-steps stage (see pastAdditionalSteps below).
+  const isTaskPrompt = (cta?: string | null) => {
+    let k = String(cta ?? "");
+    if (k.startsWith("form:")) k = k.slice(5);
+    return ["cra", "flinks", "networth", "equipment", "realestate", "debt", "advisors"].includes(k);
+  };
+  // Once staff move the app to Off to Lender / Offer, the "few quick steps" prompt and
+  // its task buttons are stale and contradict the green all-clear banner (gated on the
+  // same stage). Hide them so the client is never told to do work no longer outstanding.
+  const pastAdditionalSteps = stageIndex > STAGE_BY_KEY.additional_steps_required;
   const handleMessageCta = (ctaAction?: string | null) => {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
@@ -583,6 +595,9 @@ export default function MiniPortalPage() {
             ) : null}
             {messages.length === 0 ? <div className="mp-thread-card__empty">Say hi to get started.</div> : messages.map((m) => {
               if (!hasOutstandingDocs && isDocUploadPrompt(m.ctaAction)) return null;
+              // BF_CLIENT_BLOCK_v_STALE_TASK_PROMPT_GATE_v1
+              if (pastAdditionalSteps && typeof m.body === "string" && /few quick steps to finish/i.test(m.body)) return null;
+              if (pastAdditionalSteps && isTaskPrompt(m.ctaAction)) return null;
               const outbound = m.authorRole === "self";
               const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
               return (
