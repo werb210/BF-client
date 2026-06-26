@@ -10,6 +10,9 @@ export type Attribution = {
   utm_campaign?: string;
   referrer?: string;
   landing_page?: string;
+  gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
 };
 
 export function captureAttribution(): void {
@@ -24,6 +27,12 @@ export function captureAttribution(): void {
     if (src) a.utm_source = src;
     if (med) a.utm_medium = med;
     if (camp) a.utm_campaign = camp;
+    const gclid = (p.get("gclid") || "").trim();
+    const gbraid = (p.get("gbraid") || "").trim();
+    const wbraid = (p.get("wbraid") || "").trim();
+    if (gclid) a.gclid = gclid;
+    if (gbraid) a.gbraid = gbraid;
+    if (wbraid) a.wbraid = wbraid;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
     if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
