@@ -1,0 +1,40 @@
+// BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch marketing attribution. Captured
+// once at app load (UTM params + referrer + landing page) and attached to the
+// /api/public/application/start call so staff can see which source produced
+// submitted applications.
+const KEY = "bf_attribution";
+
+export type Attribution = {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  referrer?: string;
+  landing_page?: string;
+};
+
+export function captureAttribution(): void {
+  try {
+    const existing = sessionStorage.getItem(KEY);
+    if (existing) return; // first-touch wins
+    const p = new URLSearchParams(window.location.search);
+    const a: Attribution = {};
+    const src = (p.get("utm_source") || "").trim();
+    const med = (p.get("utm_medium") || "").trim();
+    const camp = (p.get("utm_campaign") || "").trim();
+    if (src) a.utm_source = src;
+    if (med) a.utm_medium = med;
+    if (camp) a.utm_campaign = camp;
+    try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
+    a.landing_page = window.location.pathname + window.location.search;
+    if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
+  } catch { /* sessionStorage unavailable - skip */ }
+}
+
+export function getAttribution(): Attribution {
+  try {
+    const raw = sessionStorage.getItem(KEY);
+    if (!raw) return {};
+    const a = JSON.parse(raw) as Attribution;
+    return a && typeof a === "object" ? a : {};
+  } catch { return {}; }
+}
