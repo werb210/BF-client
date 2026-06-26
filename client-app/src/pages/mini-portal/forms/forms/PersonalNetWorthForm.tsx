@@ -89,6 +89,7 @@ export default function PersonalNetWorthForm({
   const [data, setData] = useState<Data>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [signingUrl, setSigningUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -137,13 +138,15 @@ export default function PersonalNetWorthForm({
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await submitFormResponse(applicationId, FORM_KEY, {
+      const resp = await submitFormResponse(applicationId, FORM_KEY, {
         joint,
         fields: data,
         totals,
         submitted_at: new Date().toISOString(),
       });
       setSubmitted(true);
+      // v_PNW_SIGNING_v1 — sign the PNW immediately on submit, in an embedded frame.
+      if (resp?.signing_url) setSigningUrl(resp.signing_url);
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
@@ -199,6 +202,18 @@ export default function PersonalNetWorthForm({
       </div>
     );
   };
+
+  if (signingUrl) {
+    return (
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Sign your Personal Net Worth statement</h2>
+        <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>
+          Please review and sign below. Your statement is saved.
+        </p>
+        <iframe title="Sign Personal Net Worth" src={signingUrl} style={{ width: "100%", height: 620, border: "1px solid #e5e7eb", borderRadius: 8 }} />
+      </div>
+    );
+  }
 
   return (
     <div onBlur={persist}>
