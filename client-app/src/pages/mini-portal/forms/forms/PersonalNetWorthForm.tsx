@@ -245,12 +245,10 @@ export default function PersonalNetWorthForm({
         <>
           <div style={sectionH}>Spouse / Common-law Partner</div>
           <div style={grid2}>
-            {f("spouse_name", "Spouse name")}
             {f("spouse_sin", "SIN")}
             {f("spouse_alt_names", "Alternate name(s)")}
             {f("spouse_prior_names", "Prior name(s)")}
             {f("spouse_dob", "Date of birth")}
-            {f("spouse_employer", "Employer")}
             {f("spouse_employer_phone", "Employer phone #")}
             {f("spouse_home_phone", "Home #")}
             {f("spouse_cell", "Cell phone")}
@@ -280,6 +278,16 @@ export default function PersonalNetWorthForm({
           ))}
         </tbody>
       </table>
+
+      <div style={sectionH}>Spouse / Other Family Income (Monthly)</div>
+      <div style={grid2}>
+        {f("spouse_name", "Spouse legal name")}
+        {f("spouse_monthly_income", "Spouse monthly income")}
+        {f("spouse_employer", "Spouse employer")}
+        {f("spouse_employer_how_long", "How long at employer")}
+        {f("other_family_income_source", "Other family income (source)")}
+        {f("other_family_income_monthly", "Other family monthly income")}
+      </div>
 
       <div style={sectionH}>Disclosures</div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
