@@ -33,6 +33,7 @@ import { trackEvent } from "../utils/analytics";
 import { setReadiness, useReadiness } from "../state/readinessStore";
 import { persistApplicationStep } from "./saveStepProgress";
 import { fetchCreditPrefill } from "../services/creditPrefill";
+import { getAttribution } from "../lib/attribution";
 import { fetchReadinessPrefill } from "@/api/readiness";
 
 const MatchCategories = [
@@ -735,6 +736,9 @@ export function Step1_KYC(): JSX.Element {
             // sessionStorage unavailable — continue without claim.
           }
           const __startBody: Record<string, unknown> = { source: 'client_direct' };
+          // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - attach first-touch marketing source.
+          const __attr = getAttribution();
+          if (__attr && Object.keys(__attr).length) __startBody.attribution = __attr;
           if (__readinessPhone && __readinessPhone.trim()) {
             __startBody.readiness_phone = __readinessPhone.trim();
           }

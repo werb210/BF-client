@@ -11,6 +11,7 @@ import ConsentBanner from "./components/ConsentBanner";
 import "./theme/global.css";
 import "./styles/global.css";
 import App from "./App";
+import { captureAttribution } from "./lib/attribution";
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
@@ -25,6 +26,8 @@ try {
 } catch (err) {
   console.error("ENV ERROR IGNORED:", err);
 }
+
+captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
 
 console.log("NEW BUILD LIVE:", new Date().toISOString());
 
