@@ -73,6 +73,7 @@ export type FormResponse = {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+  signing_url?: string;
 };
 
 export async function listFormResponses(applicationId: string): Promise<FormResponse[]> {
@@ -175,5 +176,7 @@ export async function submitFormResponse(
   });
   if (!res.ok) throw new Error(`submitFormResponse ${res.status}`);
   const json = await res.json();
-  return json.item;
+  // v_PNW_SIGNING_v1 — the server may return an embedded signing link for forms
+  // that are signed individually on submit (Personal Net Worth).
+  return { ...(json.item ?? {}), ...(json.signing_url ? { signing_url: json.signing_url } : {}) } as FormResponse;
 }
