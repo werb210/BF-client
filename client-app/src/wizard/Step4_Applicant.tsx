@@ -368,6 +368,17 @@ export function Step4_Applicant() {
         setSaveError("Please enter a valid 10-digit phone number for the partner.");
         return;
       }
+      // v_PNW_FORM: each owner needs their own login identity. Partner cannot
+      // reuse the applicant's email or phone (the CMP resolves users by these).
+      const last10 = (v: string) => (v || "").replace(/[^0-9]/g, "").slice(-10);
+      const sameEmail = !!partner.email && !!values.email &&
+        partner.email.trim().toLowerCase() === values.email.trim().toLowerCase();
+      const samePhone = last10(partner.phone).length === 10 &&
+        last10(partner.phone) === last10(values.phone);
+      if (sameEmail || samePhone) {
+        setSaveError("Each owner must use their own email and phone number — the partner cannot reuse the applicant's contact details.");
+        return;
+      }
     }
 
     const { ownershipValid } = getOwnershipValidity(values);
