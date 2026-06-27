@@ -22,6 +22,7 @@ import RealEstateCollateralForm from "@/pages/mini-portal/forms/forms/RealEstate
 import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCollateralForm";
 // BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
 import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
+import LenderQaForm from "@/pages/mini-portal/forms/forms/LenderQaForm"; // BF_CLIENT_LENDER_QA_v1
 import SlimHeader from "@/components/SlimHeader";
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
@@ -213,7 +214,7 @@ export default function MiniPortalPage() {
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors">(null);
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa">(null);
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
@@ -435,6 +436,7 @@ export default function MiniPortalPage() {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
+    if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
     // BF_CLIENT_BLOCK_v721 — Stage-2 buttons carry cta_action = chip id
     // ("cra","flinks","networth",...); also accept legacy "form:<id>". Open the modal.
     const formId = ctaAction.startsWith("form:") ? ctaAction.slice(5) : ctaAction;
@@ -814,6 +816,12 @@ export default function MiniPortalPage() {
               )}
               {openForm === "advisors" && (
                 <AdvisorsForm
+                  applicationId={applicationId}
+                  onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "lender_qa" && (
+                <LenderQaForm
                   applicationId={applicationId}
                   onComplete={() => setOpenForm(null)}
                 />
