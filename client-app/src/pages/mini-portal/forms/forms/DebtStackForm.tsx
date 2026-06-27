@@ -121,7 +121,7 @@ export default function DebtStackForm({
         onChange={(e) => setData((d) => ({ ...d, client_name: e.target.value }))} />
 
       <div style={{ overflowX: "auto", marginTop: 12 }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
+        <table className="resp-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 760 }}>
           <thead>
             <tr>{cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}<th style={th}></th></tr>
           </thead>
@@ -129,11 +129,11 @@ export default function DebtStackForm({
             {data.rows.map((r, i) => (
               <tr key={i}>
                 {cols.map((c) => (
-                  <td key={c.key} style={td}>
+                  <td key={c.key} data-label={c.label} style={td}>
                     <input style={inp} value={r[c.key]} onChange={(e) => setRow(i, { [c.key]: e.target.value } as Partial<DebtRow>)} />
                   </td>
                 ))}
-                <td style={td}>
+                <td data-label="" style={td}>
                   {data.rows.length > 1 && (
                     <button type="button" onClick={() => removeRow(i)} style={{ border: 0, background: "transparent", color: "#b91c1c", cursor: "pointer", fontSize: 16 }}>×</button>
                   )}
