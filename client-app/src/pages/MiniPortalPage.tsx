@@ -727,6 +727,7 @@ export default function MiniPortalPage() {
         <div
           role="dialog"
           aria-modal="true"
+          aria-label="Application form"
           onClick={(e) => { if (e.target === e.currentTarget) setOpenForm(null); }}
           style={{
             position: "fixed",
@@ -753,15 +754,8 @@ export default function MiniPortalPage() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>
-                {openForm === "networth" && "Personal Statement of Affairs"}
-                {openForm === "cra" && "CRA View-Only Authorization"}
-                {openForm === "flinks" && "Connect Your Bank (View-Only)"}
-                {openForm === "debt" && "Debt Schedule"}
-                {openForm === "equipment" && "Equipment Collateral Form"}
-                {openForm === "realestate" && "Real Estate Collateral Form"}
-                {openForm === "advisors" && "Professional Advisors"}
-              </div>
+              {/* BF_CLIENT_AUDIT_FIX_v1 -- title removed; form renders its own heading */}
+              <div aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => setOpenForm(null)}

@@ -21,6 +21,9 @@ import { FileUploadCard } from "../components/FileUploadCard";
 import { Checkbox } from "../components/ui/Checkbox";
 import { extractApplicationFromStatus } from "../applications/resume";
 import { filterRequirementsByAmount, type LenderProductRequirement } from "./requirements";
+// BF_CLIENT_AUDIT_FIX_v1 -- humanize review summary labels
+import { getFundingIntentLabel } from "../constants/wizard";
+import { bucketFor, CATEGORY_BUCKETS } from "./categoryAliases";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
 import { clearDraft } from "../client/autosave";
@@ -728,11 +731,13 @@ export function Step6_Review(): JSX.Element {
         const kyc: any = app.kyc ?? {};
         const biz: any = app.business ?? {};
         const appl: any = app.applicant ?? {};
-        const productLabel = app.selectedProductType || app.selectedProduct?.product_type || "—";
+        const __reviewCat = app.productCategory ? bucketFor(String(app.productCategory)) : null;
+        const __reviewCatLabel = __reviewCat ? (CATEGORY_BUCKETS.find((b) => b.id === __reviewCat)?.label ?? null) : null;
+        const productLabel = __reviewCatLabel || app.selectedProductType || app.selectedProduct?.product_type || "—";
         const amount = kyc.fundingAmount ? String(kyc.fundingAmount) : "—";
         const ownerCount = appl.hasMultipleOwners ? "You + partner(s)" : "You";
         const rows: Array<[string, string]> = [
-          ["Looking for", kyc.lookingFor || "—"],
+          ["Looking for", getFundingIntentLabel(kyc.lookingFor) || kyc.lookingFor || "—"],
           ["Amount", amount],
           ["Product", productLabel],
           ["Business", biz.businessName || "—"],
