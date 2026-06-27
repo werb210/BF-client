@@ -25,3 +25,10 @@ select:-webkit-autofill {
     transform: rotate(360deg);
   }
 }
+
+/* BF_CLIENT_AUDIT_FIX_v4 -- responsive form grids: collapse to single column on phones */
+.cmp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cmp-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+@media (max-width: 640px) {
+  .cmp-grid-2, .cmp-grid-3 { grid-template-columns: 1fr; }
+}

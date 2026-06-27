@@ -25,8 +25,6 @@ const newProperty = (): Property => ({
 const lbl = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", margin: "8px 0 2px" } as const;
 const inp = { width: "100%", padding: "7px 9px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 5, boxSizing: "border-box" as const } as const;
 const sectionH = { fontSize: 13, fontWeight: 700, color: "#0f172a", margin: "16px 0 4px" } as const;
-const grid2 = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } as const;
-const grid3 = { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } as const;
 
 export default function RealEstateCollateralForm({
   applicationId,
@@ -102,7 +100,7 @@ export default function RealEstateCollateralForm({
   const mortgage = (idx: number, n: 1 | 2 | 3) => (
     <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{n === 1 ? "1st" : n === 2 ? "2nd" : "3rd"} Mortgage</div>
-      <div style={grid3}>
+      <div className="cmp-grid-3">
         {field(idx, `m${n}_lender`, "Lender")}
         {field(idx, `m${n}_type`, "Type")}
         {field(idx, `m${n}_balance`, "Balance")}
@@ -130,13 +128,13 @@ export default function RealEstateCollateralForm({
           </div>
 
           {field(idx, "street", "Number & Street")}
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {field(idx, "city_province", "City / Province")}
             {field(idx, "legal_address", "Legal address (if known)")}
           </div>
 
           <div style={sectionH}>Owners</div>
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {field(idx, "owner1", "Owner 1 — full legal name")}
             {field(idx, "owner1_marital", "Owner 1 — marital status")}
             {field(idx, "owner2", "Owner 2 — full legal name")}
@@ -144,18 +142,18 @@ export default function RealEstateCollateralForm({
             {field(idx, "owner3", "Owner 3 — full legal name")}
             {field(idx, "owner3_marital", "Owner 3 — marital status")}
           </div>
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {yesNo(idx, "matrimonial", "Family / matrimonial home?")}
             {field(idx, "matrimonial_which", "If yes, which owner(s)?")}
           </div>
 
           <div style={sectionH}>Occupancy & Value</div>
-          <div style={grid3}>
+          <div className="cmp-grid-3">
             {yesNo(idx, "rented", "Rented?")}
             {field(idx, "rental_income_monthly", "Rental income (monthly)")}
             {field(idx, "renter_names", "Renter name(s)")}
           </div>
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {field(idx, "property_type", "Property type")}
             {field(idx, "purchase_price", "Purchase price")}
             {field(idx, "purchase_when", "Purchased when")}
@@ -169,7 +167,7 @@ export default function RealEstateCollateralForm({
           {mortgage(idx, 3)}
 
           <div style={sectionH}>Disclosures</div>
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {yesNo(idx, "taxes_current", "Property taxes current?")}
             {yesNo(idx, "other_charges", "Other charges on title?")}
           </div>

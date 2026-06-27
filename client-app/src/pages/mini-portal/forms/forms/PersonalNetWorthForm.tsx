@@ -76,7 +76,6 @@ const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 const lbl = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", margin: "8px 0 2px" } as const;
 const inp = { width: "100%", padding: "7px 9px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 5, boxSizing: "border-box" as const } as const;
 const sectionH = { fontSize: 15, fontWeight: 700, color: "#0f172a", margin: "20px 0 6px" } as const;
-const grid2 = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } as const;
 const th = { textAlign: "left" as const, padding: "6px 8px", fontSize: 11, fontWeight: 600, color: "#475569", borderBottom: "1px solid #e5e7eb" } as const;
 const td = { padding: "4px 8px", borderBottom: "1px solid #f1f5f9" } as const;
 
@@ -229,7 +228,7 @@ export default function PersonalNetWorthForm({
       </label>
 
       <div style={sectionH}>Primary Party</div>
-      <div style={grid2}>
+      <div className="cmp-grid-2">
         {f("primary_name", "Full legal name")}
         {f("primary_sin", "SIN")}
         {f("primary_alt_names", "Alternate name(s)")}
@@ -248,7 +247,7 @@ export default function PersonalNetWorthForm({
 
       <div style={sectionH}>Personal References</div>
       {[1, 2, 3].map((n) => (
-        <div key={n} style={grid2}>
+        <div key={n} className="cmp-grid-2">
           {f(`ref${n}_name`, `Reference ${n} — name`)}
           {f(`ref${n}_rel`, "Relationship")}
           {f(`ref${n}_address`, "Address")}
@@ -259,7 +258,7 @@ export default function PersonalNetWorthForm({
       {joint && (
         <>
           <div style={sectionH}>Spouse / Common-law Partner</div>
-          <div style={grid2}>
+          <div className="cmp-grid-2">
             {f("spouse_sin", "SIN")}
             {f("spouse_alt_names", "Alternate name(s)")}
             {f("spouse_prior_names", "Prior name(s)")}
@@ -295,7 +294,7 @@ export default function PersonalNetWorthForm({
       </table>
 
       <div style={sectionH}>Spouse / Other Family Income (Monthly)</div>
-      <div style={grid2}>
+      <div className="cmp-grid-2">
         {f("spouse_name", "Spouse legal name")}
         {f("spouse_monthly_income", "Spouse monthly income")}
         {f("spouse_employer", "Spouse employer")}
@@ -336,7 +335,7 @@ export default function PersonalNetWorthForm({
       {f("disclosure_details", "Additional disclosure / details")}
 
       <div style={sectionH}>Assets &amp; Liabilities</div>
-      <div style={grid2}>
+      <div className="cmp-grid-2">
         <div>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>Assets</div>
           {ASSET_ROWS.map((r) => f(r.key, r.label))}
