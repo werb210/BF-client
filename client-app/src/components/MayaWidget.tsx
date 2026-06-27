@@ -327,7 +327,7 @@ export default function MayaWidget() {
           <div className="chat-header flex items-center justify-between border-b border-white/10 px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Maya</p>
-              <p className="text-xs text-slate-300">Boreal Support</p>
+              <p className="text-xs text-slate-300">Boreal Financial Support</p>
             </div>
             <button
               aria-label="Close chat"

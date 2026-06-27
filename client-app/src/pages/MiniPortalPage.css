@@ -62,4 +62,9 @@
   .mp-stage:not(:last-child)::after{top:11px;left:calc(50% + 12px);width:calc(100% - 24px)}
   .mp-grid{grid-template-columns:1fr}
   .mp-offers{grid-template-columns:1fr}
+  /* BF_CLIENT_AUDIT_FIX_v2 -- mobile header wrap + floating-button clearance */
+  .mp-app-header{flex-wrap:wrap;gap:4px 12px}
+  .mp-app-header__right{flex-wrap:wrap;gap:6px}
+  .mp-root{padding-bottom:84px}
+  .mp-thread-card__composer{padding-right:64px}
 }
