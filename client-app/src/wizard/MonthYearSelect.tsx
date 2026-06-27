@@ -35,6 +35,7 @@ type MonthYearSelectProps = {
   yearsBack?: number;
   yearsForward?: number;
   id?: string;
+  monthOnly?: boolean;
 };
 
 function parseYearMonth(value: string): { year: string; month: string } {
@@ -50,6 +51,7 @@ export function MonthYearSelect({
   yearsBack = 60,
   yearsForward = 0,
   id,
+  monthOnly,
 }: MonthYearSelectProps) {
   const parsedValue = parseYearMonth(value);
   const [year, setYear] = useState(parsedValue.year);
@@ -69,6 +71,18 @@ export function MonthYearSelect({
     }
     return options;
   }, [yearsBack, yearsForward]);
+
+  if (monthOnly) {
+    // BF_CLIENT_AUDIT_FIX_v8 -- fiscal year-end is a recurring month; no year component
+    return (
+      <Select id={id ? `${id}-month` : undefined} aria-label={ariaLabel} value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Month</option>
+        {MONTHS.map(([, label]) => (
+          <option key={label} value={label}>{label}</option>
+        ))}
+      </Select>
+    );
+  }
 
   return (
     <div style={{ display: "flex", gap: 8 }}>

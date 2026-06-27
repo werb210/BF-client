@@ -50,9 +50,18 @@ export function formatCurrencyValue(value: string | undefined | null, countryCod
 export function formatPostalCode(value: string, countryCode: string) {
   const cleaned = value.replace(/[^0-9a-zA-Z]/g, "").toUpperCase();
   if (countryCode === "CA") {
-    const trimmed = cleaned.slice(0, 6);
-    if (trimmed.length <= 3) return trimmed;
-    return `${trimmed.slice(0, 3)} ${trimmed.slice(3)}`;
+    // BF_CLIENT_AUDIT_FIX_v8 -- enforce A9A 9A9 by position; drop letters not used in
+    // Canadian postal codes (D, F, I, O, Q, U) and mismatched digit/letter slots.
+    const CA_LETTERS = "ABCEGHJKLMNPRSTVWXYZ";
+    let out = "";
+    for (const ch of cleaned) {
+      if (out.length >= 6) break;
+      const wantLetter = out.length % 2 === 0;
+      if (wantLetter) { if (CA_LETTERS.includes(ch)) out += ch; }
+      else if (ch >= "0" && ch <= "9") out += ch;
+    }
+    if (out.length <= 3) return out;
+    return `${out.slice(0, 3)} ${out.slice(3)}`;
   }
 
   const digits = cleaned.replace(/\D/g, "").slice(0, 9);
