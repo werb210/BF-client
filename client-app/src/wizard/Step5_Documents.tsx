@@ -71,7 +71,7 @@ const RequirementRow = memo(function RequirementRow({
     <FileUploadCard
       key={entry.id}
       title={formatDocumentLabel(docType)}
-      status={isUploading ? `Uploading ${progress}%` : docStatus}
+      status={isUploading ? `Uploading ${progress}%` : (entry.required ? docStatus : (docStatus === "missing" ? "Optional" : docStatus))}
       data-error={Boolean(docError) || docStatus === "missing" || docStatus === "rejected"}
       onDragOver={(event) => event.preventDefault()}
       onDrop={async (event) => {
@@ -111,9 +111,9 @@ const RequirementRow = memo(function RequirementRow({
         }}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.xs }}>
-        <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs }}>
+        {/* BF_CLIENT_AUDIT_FIX_v6 -- removed duplicate doc title; FileUploadCard already shows it */}
+        <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs }} aria-label={formatDocumentLabel(docType)}>
           <Checkbox checked={docStatus !== "missing"} readOnly />
-          <span style={{ fontWeight: 600, color: tokens.colors.primary }}>{formatDocumentLabel(docType)}</span>
         </label>
         <div style={{ ...components.form.helperText, fontSize: 12 }}>
           {entry.required ? "Required" : "Optional"} · {docStatus === "missing" ? "Missing" : "Uploaded"}

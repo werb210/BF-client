@@ -55,7 +55,7 @@ const INCOME_ROWS: Array<{ key: string; label: string }> = [
   { key: "rental", label: "Rental income" },
   { key: "investment", label: "Investment income" },
   { key: "other_1", label: "Other" },
-  { key: "other_2", label: "Other" },
+  { key: "other_2", label: "Other (additional)" },
 ];
 
 const DISCLOSURES: string[] = [
