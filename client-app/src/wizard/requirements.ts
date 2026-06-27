@@ -96,5 +96,7 @@ export function formatDocumentLabel(value: string) {
   if (overrides[value]) return overrides[value];
   const withSpaces = value.replace(/[_-]+/g, " ").trim();
   if (!withSpaces) return value;
-  return withSpaces.replace(/\b\w/g, (char) => char.toUpperCase());
+  const titled = withSpaces.replace(/\b\w/g, (char) => char.toUpperCase());
+  // BF_CLIENT_AUDIT_FIX_v8 -- display "P&L" while the doc-type key stays "PnL"
+  return titled.replace(/PnL/g, "P&L");
 }

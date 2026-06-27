@@ -668,6 +668,7 @@ export function Step3_Business() {
             <div>
               <label style={components.form.label}>Fiscal Year-End</label>
               <MonthYearSelect
+                monthOnly
                 ariaLabel="Fiscal Year-End"
                 value={values.fiscalYearEnd || ""}
                 onChange={(v) => setField("fiscalYearEnd", v)}
