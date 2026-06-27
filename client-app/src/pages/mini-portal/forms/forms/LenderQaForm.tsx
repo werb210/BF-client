@@ -4,6 +4,7 @@
 // redo), autosaves each answer as they type, and submits them all at once.
 import { useEffect, useState } from "react";
 import { apiCall } from "@/api/client";
+import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_QA_UPLOAD_v1
 
 type Question = {
   id: string;
@@ -11,6 +12,7 @@ type Question = {
   prompt: string;
   request_document: boolean;
   answer_text: string | null;
+  answer_document_id: string | null;
   review_status: string;
   reject_reason: string | null;
 };
@@ -22,6 +24,10 @@ const styles = {
   prompt: { fontWeight: 600, fontSize: 15, marginBottom: 4 } as const,
   returned: { fontSize: 13, color: "#b45309", marginBottom: 8 } as const,
   docNote: { fontSize: 12, color: "#6b7280", marginTop: 8 } as const,
+  upRow: { display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" as const } as const,
+  upLabel: { fontSize: 13, fontWeight: 600, color: "#374151", padding: "6px 12px", border: "1px solid #d1d5db", borderRadius: 6, background: "#f9fafb", cursor: "pointer" } as const,
+  upName: { fontSize: 12, color: "#065f46", wordBreak: "break-all" as const } as const,
+  upErr: { fontSize: 12, color: "#b91c1c", marginTop: 6 } as const,
   textarea: {
     width: "100%",
     minHeight: 84,
@@ -70,6 +76,16 @@ export default function LenderQaForm({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [docNames, setDocNames] = useState<Record<string, string>>({});
+  const [uploadingDoc, setUploadingDoc] = useState<Record<string, boolean>>({});
+  const [docErr, setDocErr] = useState<Record<string, string>>({});
+
+  const QA_UPLOAD_ACCEPT =
+    ".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.heic,.heif,.webp," +
+    "application/pdf,application/msword,application/vnd.ms-excel," +
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document," +
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet," +
+    "image/png,image/jpeg,image/heic,image/heif,image/webp,text/csv,text/plain";
 
   const base = `/api/portal/applications/${encodeURIComponent(applicationId)}/qa`;
 
@@ -83,6 +99,11 @@ export default function LenderQaForm({
         const qs = r?.questions ?? [];
         setQuestions(qs);
         setAnswers(Object.fromEntries(qs.map((q) => [q.id, q.answer_text ?? ""])));
+        setDocNames(
+          Object.fromEntries(
+            qs.filter((q) => q.answer_document_id).map((q) => [q.id, "Document attached"]),
+          ),
+        );
       } catch {
         if (alive) setErr("Could not load the questions. Please try again.");
       } finally {
@@ -100,6 +121,34 @@ export default function LenderQaForm({
       method: "PATCH",
       body: { answer_text: text },
     }).catch(() => {});
+  };
+
+  const uploadDoc = async (qid: string, file: File | null | undefined) => {
+    if (!file) return;
+    setDocErr((p) => ({ ...p, [qid]: "" }));
+    setUploadingDoc((p) => ({ ...p, [qid]: true }));
+    try {
+      const r: unknown = await ClientAppAPI.uploadDocument({
+        applicationId,
+        documentType: "lender_qa",
+        file,
+      });
+      const data = (r as { data?: { data?: { id?: string }; id?: string }; id?: string } | null) ?? null;
+      const docId = data?.data?.data?.id ?? data?.data?.id ?? data?.id ?? null;
+      if (!docId) throw new Error("no id");
+      await apiCall(`${base}/questions/${qid}/answer`, {
+        method: "PATCH",
+        body: { answer_document_id: docId },
+      });
+      setDocNames((p) => ({ ...p, [qid]: file.name }));
+    } catch {
+      setDocErr((p) => ({
+        ...p,
+        [qid]: "Upload failed. Allowed: PDF, Word, Excel, or image (max 25MB).",
+      }));
+    } finally {
+      setUploadingDoc((p) => ({ ...p, [qid]: false }));
+    }
   };
 
   const submit = async () => {
@@ -173,7 +222,25 @@ export default function LenderQaForm({
           />
           {q.request_document ? (
             <div style={styles.docNote}>
-              A supporting document is also requested for this question. Please upload it in your Documents list.
+              A supporting document is also requested. Attach a PDF, Word, Excel, or image file (max 25MB).
+              <div style={styles.upRow}>
+                <label style={styles.upLabel}>
+                  {uploadingDoc[q.id] ? "Uploading..." : docNames[q.id] ? "Replace file" : "Choose file"}
+                  <input
+                    type="file"
+                    accept={QA_UPLOAD_ACCEPT}
+                    style={{ display: "none" }}
+                    disabled={Boolean(uploadingDoc[q.id])}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      void uploadDoc(q.id, f);
+                    }}
+                  />
+                </label>
+                {docNames[q.id] ? <span style={styles.upName}>{docNames[q.id]}</span> : null}
+              </div>
+              {docErr[q.id] ? <div style={styles.upErr}>{docErr[q.id]}</div> : null}
             </div>
           ) : null}
         </div>
