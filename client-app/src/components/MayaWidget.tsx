@@ -425,13 +425,14 @@ export default function MayaWidget() {
           )}
         </div>
       ) : null}
+      {/* BF_CLIENT_UI_CLUSTER_v1 — the floating button now toggles open AND close. */}
       <button
         type="button"
-        aria-label="Open chat"
-        onClick={() => setOpen(true)}
+        aria-label={open ? "Close chat" : "Open chat"}
+        onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
       >
-        <ChatIcon />
+        {open ? <CloseIcon /> : <ChatIcon />}
       </button>
     </>
   );

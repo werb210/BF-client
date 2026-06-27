@@ -1,12 +1,11 @@
 // BF_CLIENT_WIZARD_URL_SOT_v56_WIZARD_ANCHOR
-// BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 — adds SlimHeader to wizard.
+// BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 — legacy SlimHeader block superseded.
 // De-minified for legibility. Behavior unchanged: same URL-driven step routing,
 // same OfflineStore token fallback, same Step1 redirect when no token.
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { OfflineStore } from "@/state/offline";
-import SlimHeader from "@/components/SlimHeader";
 import Step1 from "@/wizard/Step1_FinancialProfile";
 import Step2 from "@/wizard/Step2_ProductCategory";
 import Step3 from "@/wizard/Step3_BusinessDetails";
@@ -61,15 +60,9 @@ export default function Wizard() {
   const StepComponent = STEP_COMPONENTS[safeStep - 1] ?? Step1;
 
   return (
-    <>
-      <SlimHeader
-        right={
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
-            Step {safeStep} of 6
-          </div>
-        }
-      />
-      <StepComponent />
-    </>
+    // BF_CLIENT_UI_CLUSTER_v1 — removed the redundant SlimHeader (mountain logo +
+    // "Step X of 6"); StepHeader already provides branding, the step count, and the
+    // progress stepper, so the two stacked bars were duplicates.
+    <StepComponent />
   );
 }
