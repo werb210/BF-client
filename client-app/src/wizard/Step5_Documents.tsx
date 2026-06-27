@@ -65,6 +65,7 @@ const RequirementRow = memo(function RequirementRow({
   onPick,
   onDrop,
   docStatus,
+  submitAttempted,
 }) {
   const docType = entry.document_type;
   return (
@@ -145,7 +146,7 @@ const RequirementRow = memo(function RequirementRow({
           );
         })()}
         {docError && <div style={components.form.errorText}>{docError}</div>}
-        {!docError && docStatus === "missing" && entry.required && <div style={components.form.errorText}>This document is required.</div>}
+        {!docError && submitAttempted && docStatus === "missing" && entry.required && <div style={components.form.errorText}>This document is required.</div>}
         {docStatus === "rejected" && <div style={components.form.errorText}>{getRejectionMessage(app.documents[docType])}</div>}
       </div>
     </FileUploadCard>
@@ -164,6 +165,7 @@ export function Step5_Documents() {
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
   const [uploadingDocs, setUploadingDocs] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false); // BF_CLIENT_AUDIT_FIX_v7
   const selectedCategory =
     app.productCategory ||
     app.selectedProductType ||
@@ -650,6 +652,7 @@ export function Step5_Documents() {
 
 
   function next() {
+    setSubmitAttempted(true);
     if (missingRequiredDocs.length > 0 || hasBlockingUploadErrors) {
       setDocError("Please upload all required documents.");
       // BF_CLIENT_BLOCK_v130b_STEP5_SCROLL_AND_OTP_PHONE_CLAIM_v1 — (A)
@@ -806,6 +809,7 @@ export function Step5_Documents() {
                     progress={uploadProgress[docType] || 0}
                     docError={docErrors[docType]}
                     docStatus={getDocStatus(docType)}
+                    submitAttempted={submitAttempted}
                     onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
                     onDrop={handleFile}
                   />
