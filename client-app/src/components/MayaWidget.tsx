@@ -372,7 +372,7 @@ export default function MayaWidget() {
                 <button
                   type="button"
                   onClick={() => { setMode("chat"); setIssueShot(null); }}
-                  className="flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
                 >
                   Cancel
                 </button>
@@ -391,21 +391,21 @@ export default function MayaWidget() {
                 <button
                   type="button"
                   onClick={() => void requestHumanSupport()}
-                  className="flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
                 >
                   Talk to a Human
                 </button>
                 <button
                   type="button"
                   onClick={() => void openReport()}
-                  className="flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
                 >
                   Report an Issue
                 </button>
               </div>
               <form onSubmit={handleSend} className="flex gap-2 border-t border-white/10 px-3 py-2 md:px-4">
                 <input
-                  className="flex-1 rounded border border-white/20 bg-[#0f1d3a] px-3 py-2 text-sm text-white placeholder:text-slate-400"
+                  className="min-w-0 flex-1 rounded border border-white/20 bg-[#0f1d3a] px-3 py-2 text-sm text-white placeholder:text-slate-400"
                   placeholder="Type a message…"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -414,7 +414,7 @@ export default function MayaWidget() {
                 <button
                   type="submit"
                   disabled={sending || !input.trim()}
-                  className="rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                  className="shrink-0 rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
                 >
                   Send
                 </button>
