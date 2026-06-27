@@ -92,7 +92,8 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
           </select>
         </div>
       )}
-      <div style={{ gridColumn: "1 / -1" }}><label style={L}>Street Address</label>
+      {/* BF_CLIENT_UI_CLUSTER_2 — single column so Street pairs with City (true 2-col). */}
+      <div><label style={L}>Street Address</label>
         <AddressAutocompleteInput country={regionCountry} value={data.street || ""}
           onChange={(e) => setField("street", e.target.value)}
           onSelect={(sel) => { if (!("street" in sel)) return; setMany({ street: sel.street || data.street, city: sel.city || data.city, state: sel.state || data.state, zip: formatPostalCode(sel.postalCode || data.zip || "", countryCode) }); }} />

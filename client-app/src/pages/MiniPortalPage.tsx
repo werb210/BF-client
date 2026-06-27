@@ -703,7 +703,8 @@ export default function MiniPortalPage() {
                   appears on its own once status === "ready". */}
             </div>
             {/* Twilio Voice WebRTC, no tel: link */}
-            <div style={{ marginTop: 12 }}>
+            {/* BF_CLIENT_UI_CLUSTER_2 — inset 16px so Call Us lines up with the chips above. */}
+            <div style={{ marginTop: 12, padding: "0 16px" }}>
               {callState === "idle" && (
                 <button type="button" className="mp-callus" onClick={() => void startCall()} style={{ width: "100%" }}>
                   📞 Call Us!
