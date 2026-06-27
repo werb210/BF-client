@@ -14,6 +14,7 @@
 //     staff is server-side and unchanged.
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "react-router-dom";
 import { apiRequest } from "@/lib/api";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { useAuth } from "@/auth/useAuth";
@@ -82,6 +83,7 @@ function ChatIcon() {
 }
 
 export default function MayaWidget() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"chat" | "report">("chat");
   const [input, setInput] = useState("");
@@ -427,13 +429,18 @@ export default function MayaWidget() {
         type="button"
         aria-label="Open chat"
         onClick={() => setOpen(true)}
-        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
       >
         <ChatIcon />
       </button>
     </>
   );
 
+  // BF_CLIENT_AUDIT_FIX_v9 -- Maya is redundant on the mini-portal thread (own composer +
+  // Talk to a Human + Call Us); hide it there so the floating button never
+  // overlaps those controls on mobile.
+  const __mayaPath = location.pathname;
+  if (__mayaPath === "/portal" || __mayaPath.startsWith("/application/")) return null;
   if (typeof document === "undefined") return null;
   return createPortal(chatUi, document.body);
 }
