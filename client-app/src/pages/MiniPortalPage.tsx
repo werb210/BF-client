@@ -146,6 +146,14 @@ export default function MiniPortalPage() {
       }));
     } catch {}
     try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    // BF_CLIENT_QA_CHIP_GATE_v1 — learn whether lender questions are still outstanding
+    // so the "Answer lender questions" chip hides once everything is answered.
+    try {
+      const qaOpen = await apiCall<{ questions?: unknown[] }>(`/api/portal/applications/${encodeURIComponent(applicationId)}/qa/open`).catch((): null => null);
+      if (!applicationId) return;
+      setHasOpenQa(Array.isArray((qaOpen as any)?.questions) && (qaOpen as any).questions.length > 0);
+      setQaChecked(true);
+    } catch {}
     // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
     try {
       const docsResp = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}/documents`).catch((): any => null);
@@ -215,6 +223,8 @@ export default function MiniPortalPage() {
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa">(null);
+  const [hasOpenQa, setHasOpenQa] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
+  const [qaChecked, setQaChecked] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
@@ -606,6 +616,7 @@ export default function MiniPortalPage() {
               // BF_CLIENT_BLOCK_v_STALE_TASK_PROMPT_GATE_v1
               if (pastAdditionalSteps && typeof m.body === "string" && /few quick steps to finish/i.test(m.body)) return null;
               if (pastAdditionalSteps && isTaskPrompt(m.ctaAction)) return null;
+              if (m.ctaAction === "lender_qa" && qaChecked && !hasOpenQa) return null; // BF_CLIENT_QA_CHIP_GATE_v1
               const outbound = m.authorRole === "self";
               const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
               return (
@@ -823,7 +834,16 @@ export default function MiniPortalPage() {
               {openForm === "lender_qa" && (
                 <LenderQaForm
                   applicationId={applicationId}
-                  onComplete={() => setOpenForm(null)}
+                  onComplete={() => {
+                    setOpenForm(null);
+                    void (async () => {
+                      try {
+                        const r = await apiCall<{ questions?: unknown[] }>(`/api/portal/applications/${encodeURIComponent(applicationId)}/qa/open`).catch((): null => null);
+                        setHasOpenQa(Array.isArray((r as any)?.questions) && (r as any).questions.length > 0);
+                        setQaChecked(true);
+                      } catch {}
+                    })();
+                  }}
                 />
               )}
             </div>

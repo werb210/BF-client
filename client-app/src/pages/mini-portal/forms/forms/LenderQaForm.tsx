@@ -153,7 +153,13 @@ export default function LenderQaForm({
 
   const submit = async () => {
     if (!setId) return;
-    const missing = questions.some((q) => !(answers[q.id] ?? "").trim());
+    // BF_CLIENT_QA_CHIP_GATE_v1 — a document-request question is satisfied by an
+    // attached document even when no text answer is typed.
+    const missing = questions.some((q) => {
+      const hasText = Boolean((answers[q.id] ?? "").trim());
+      const hasDoc = q.request_document && (Boolean(docNames[q.id]) || Boolean(q.answer_document_id));
+      return !hasText && !hasDoc;
+    });
     if (missing) {
       setErr("Please answer every question before submitting.");
       return;
