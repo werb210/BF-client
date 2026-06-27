@@ -18,7 +18,7 @@ const CORPORATE_STEPS: string[] = [
   "Scroll to Authorized representatives, then click Manage authorized representatives.",
   "Click Authorize a representative.",
   `In the box labelled “RepID, GroupID, or BN (required)”, enter Accord's business number ${ACCORD_BN} (no spaces), then click Next.`,
-  `Confirm the firm name shows as ${ACCORD_FIRM}. If a different name appears, you entered the wrong business number.`,
+  `Confirm the firm name shows as ${ACCORD_FIRM} If a different name appears, you entered the wrong business number.`,
   "For Level of authorization, select View Only (level 1).",
   "Leave the Expiry Date blank.",
   "Under accounts this representative can access, tick the first option (All accounts), then click Next.",
