@@ -134,16 +134,25 @@ export function isStartupAvailable(products: NormalizedLenderProduct[], country:
   });
 }
 
-export function computeCompanion(equipmentAmount: number): { amount: number; category: "TERM" | "LOC" } {
+export function computeCompanion(equipmentAmount: number): { amount: number; category: "TERM" | "LOC"; matchCategories: ("TERM" | "LOC")[] } {
+  // BF_CLIENT_CLOSING_COST_DUAL_v1 — locked rule: <=$50k TERM only; $50,001-$250k
+  // matches BOTH TERM and LOC; above that, LOC. Mirrors the server companion.
   const amount = Math.round(equipmentAmount * 0.2);
-  return { amount, category: amount <= 50_000 ? "TERM" : "LOC" };
+  const matchCategories: ("TERM" | "LOC")[] =
+    amount <= 50_000 ? ["TERM"] : amount <= 250_000 ? ["TERM", "LOC"] : ["LOC"];
+  return { amount, category: matchCategories[0], matchCategories };
 }
 
 export function canOfferClosingCosts(products: NormalizedLenderProduct[], equipmentAmount: number, country: "CA" | "US" | "" | null | undefined): boolean {
-  const { amount, category } = computeCompanion(equipmentAmount);
+  const { amount, matchCategories } = computeCompanion(equipmentAmount);
+  const wanted = new Set<string>();
+  for (const c of matchCategories) {
+    wanted.add(c);
+    wanted.add(c === "TERM" ? "TERM_LOAN" : "LINE_OF_CREDIT");
+  }
   return products.some((p: any) => {
     const cat = String(p.category ?? "").toUpperCase();
-    if (cat !== category && cat !== (category === "TERM" ? "TERM_LOAN" : "LINE_OF_CREDIT")) return false;
+    if (!wanted.has(cat)) return false;
     const c = String(p.country ?? "").toUpperCase();
     if (country && c !== country && c !== "BOTH" && c !== "") return false;
     const min = Number(p.amount_min ?? p.amountMin ?? 0);
@@ -153,7 +162,7 @@ export function canOfferClosingCosts(products: NormalizedLenderProduct[], equipm
   });
 }
 
-export type Leg = { category: Cat; amount: number; isCompanion?: boolean; parentCategory?: Cat };
+export type Leg = { category: Cat; amount: number; isCompanion?: boolean; parentCategory?: Cat; matchCategories?: Cat[] }; // BF_CLIENT_CLOSING_COST_DUAL_v1
 
 export function buildLegs(input: {
   lookingFor: LookingFor | undefined;
@@ -166,7 +175,7 @@ export function buildLegs(input: {
     legs.push({ category: "EQUIPMENT", amount: input.equipmentAmount });
     if (input.closingCostsChecked && input.equipmentAmount > 0) {
       const c = computeCompanion(input.equipmentAmount);
-      legs.push({ category: c.category, amount: c.amount, isCompanion: true, parentCategory: "EQUIPMENT" });
+      legs.push({ category: c.category, amount: c.amount, isCompanion: true, parentCategory: "EQUIPMENT", matchCategories: c.matchCategories as Cat[] });
     }
     return legs;
   }
