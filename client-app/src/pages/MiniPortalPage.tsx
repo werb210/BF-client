@@ -401,6 +401,12 @@ export default function MiniPortalPage() {
   }, [applicationId, navigate]);
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
+  // BF_CLIENT_AUDIT_FIX_v2 -- center the current stage in the horizontally-scrollable tracker (mobile)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.querySelector(".mp-tracker .mp-stage--current") as HTMLElement | null;
+    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [stageIndex]);
   // Show the offer view whenever the app actually has an offer, not only when
   // the stage read says "offer" — a lagging/stale pipeline_state must never hide
   // a real offer (and its Accept button) from the client.
