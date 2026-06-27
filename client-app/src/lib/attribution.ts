@@ -13,6 +13,7 @@ export type Attribution = {
   gclid?: string;
   gbraid?: string;
   wbraid?: string;
+  li_fat_id?: string; // BF_CLIENT_LI_FAT_ID_v1
 };
 
 export function captureAttribution(): void {
@@ -33,6 +34,8 @@ export function captureAttribution(): void {
     if (gclid) a.gclid = gclid;
     if (gbraid) a.gbraid = gbraid;
     if (wbraid) a.wbraid = wbraid;
+    const liFatId = (p.get("li_fat_id") || "").trim();
+    if (liFatId) a.li_fat_id = liFatId;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
     if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
