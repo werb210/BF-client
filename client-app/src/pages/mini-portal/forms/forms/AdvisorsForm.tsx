@@ -126,7 +126,7 @@ export default function AdvisorsForm({
         {ADVISOR_ROWS.map(({ key, label }) => (
           <div key={key} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 8 }}>{label}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div className="cmp-grid-2">
               <div>
                 <div style={cellLabel}>Firm</div>
                 <input style={inputStyle} value={advisors[key].firm} onChange={(e) => setField(key, "firm", e.target.value)} onBlur={persist} aria-label={`${label} firm`} />
@@ -150,7 +150,7 @@ export default function AdvisorsForm({
 
       {/* BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1 */}
       <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 6 }}>Ongoing Monitoring</h3>
-      <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div className="cmp-grid-2" style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>
         <div><div style={cellLabel}>Accounting software used</div><input style={inputStyle} value={monitoring.accountingSoftware} onChange={(e) => setMon("accountingSoftware", e.target.value)} onBlur={persist} /></div>
         <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.accountingRemoteView} onChange={(e) => setMon("accountingRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
         <div><div style={cellLabel}>Primary bank</div><input style={inputStyle} value={monitoring.primaryBank} onChange={(e) => setMon("primaryBank", e.target.value)} onBlur={persist} /></div>
