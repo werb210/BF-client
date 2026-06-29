@@ -41,6 +41,7 @@ export function normalizeForSubmit(app: ApplicationDraft) {
     dob: applicantData.dob || null,
     ssn: applicantData.ssn || null,
     ownership_percent: applicantData.ownership ? Number(applicantData.ownership) : null,
+    title: applicantData.title || null,
     role: "applicant" as const,
     is_primary_applicant: true,
   };
@@ -62,6 +63,7 @@ export function normalizeForSubmit(app: ApplicationDraft) {
           ? Number(applicantData.partnerOwnership)
           : null,
         role: "partner" as const,
+        title: applicantData.partnerTitle || null,
         is_primary_applicant: false,
       }
     : null;
