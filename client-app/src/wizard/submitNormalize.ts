@@ -29,6 +29,11 @@ export function normalizeForSubmit(app: ApplicationDraft) {
   };
 
   const applicant = {
+    // v_CRM_PANEL_PASSTHROUGH: keep the raw wizard fields (camelCase Step-4: homePhone,
+    // mailing*, ownRent, propertyValue, mortgageBalance, director, officer, addressSince,
+    // bankruptcyFiled/When, additionalShareholders, creditScoreRange, nested partner) so the
+    // staff CRM contact panels render them. The snake_case keys below still feed the server.
+    ...applicantData,
     first_name: applicantData.firstName || "",
     last_name: applicantData.lastName || "",
     email: applicantData.email || null,
