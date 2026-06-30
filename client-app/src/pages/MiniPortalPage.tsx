@@ -865,7 +865,9 @@ export default function MiniPortalPage() {
                 <iframe title="Sign documents" src={signSession.url} style={{ border: 0, width: "100%", height: "100%" }} />
               )}
               {signSession?.status === "signed" && <div style={{ padding: 24 }}>✓ Your documents are signed. Thank you!</div>}
-              {signSession?.status === "not_ready" && <div style={{ padding: 24 }}>Your documents aren’t ready to sign yet — we’ll text you the moment they are.</div>}
+              {/* BF_CLIENT_BLOCK_PNW_ORDER_GATE_v1 - PNW must be signed before app signing */}
+              {signSession?.status === "not_ready" && signSession?.reason === "pnw_not_signed" && <div style={{ padding: 24 }}>Please sign your Personal Net worth Statement</div>}
+              {signSession?.status === "not_ready" && signSession?.reason !== "pnw_not_signed" && <div style={{ padding: 24 }}>Your documents aren’t ready to sign yet — we’ll text you the moment they are.</div>}
               {signSession?.status === "stub" && <div style={{ padding: 24 }}>Signing isn’t enabled in this environment yet.</div>}
               {signSession?.status === "error" && <div style={{ padding: 24 }}>We couldn’t load your signing session. Please try again shortly.</div>}
             </div>
