@@ -45,12 +45,12 @@ import {
   trackEvent,
 } from "../utils/analytics";
 import { apiCall } from "../api/client";
-// BF_CLIENT_WIZARD_STEP6_IMPORT_v59 — Step 6 references
+// BF_CLIENT_WIZARD_STEP6_IMPORT_v59 - Step 6 references
 // API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT at runtime but the import
 // was missing. In production this threw ReferenceError on Step 6 mount,
 // blocking the user with "Application Error / A fatal error occurred."
 // after Step 5. The lender-count fetch is wrapped in .catch() so even
-// when the endpoint 404s the page still renders — but only if the
+// when the endpoint 404s the page still renders - but only if the
 // symbol is at least defined.
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { clearStoredReadinessSession } from "@/api/website";
@@ -61,7 +61,7 @@ import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
 import { sendSubmitAttempt } from "../utils/submitAttempt"; // BF_CLIENT_BLOCK_v872
 
-// BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — full Terms & Conditions text shown in popups.
+// BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - full Terms & Conditions text shown in popups.
 // (Legal text supplied by Boreal; review with counsel. Province = Alberta placeholder.)
 const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string[] }> }> = [
   {
@@ -111,7 +111,7 @@ export function Step6_Review(): JSX.Element {
   const isOnline = !isOffline;
   const [idempotencyKey] = useState(() => getOrCreateSubmissionIdempotencyKey());
   const [lenderCount, setLenderCount] = useState<number | null>(null);
-  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — which consent popup is open
+  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - which consent popup is open
   const [openClause, setOpenClause] = useState<number | null>(null);
   const firstDocStartTime = useRef<number>(Date.now());
   const hasTrackedFirstDocumentUpload = useRef(false);
@@ -126,19 +126,19 @@ export function Step6_Review(): JSX.Element {
     const requirements =
       (app.productRequirements?.[requirementsKey] || []) as LenderProductRequirement[];
     return filterRequirementsByAmount(requirements, app.kyc?.fundingAmount)
-      // BF_CLIENT_BLOCK_v328 — submit gate requires Stage-1 docs only. Stage-2
+      // BF_CLIENT_BLOCK_v328 - submit gate requires Stage-1 docs only. Stage-2
       // items (Flinks bank-connect, CRA auth) are forms collected later in the
       // mini-portal and must never block submit. Matches getMissingRequiredDocs.
       .filter((entry) => entry.required && entry.stage === 1)
-      // BF_CLIENT_BLOCK_v713_SUBMIT_GATE_NO_CMP_FORMS_v1 — exclude all CMP forms (see submission.ts).
+      // BF_CLIENT_BLOCK_v713_SUBMIT_GATE_NO_CMP_FORMS_v1 - exclude all CMP forms (see submission.ts).
       .filter((entry) => !/net worth|flinks|banking connection|connect bank|\bcra\b|debt|real estate|equipment|professional advisor|\badvisor/i.test(String(entry.document_type ?? "")))
       .map((entry) => entry.document_type);
   }, [app.kyc?.fundingAmount, app.productRequirements, requirementsKey]);
   const missingRequiredDocs = useMemo(() => getMissingRequiredDocs(app), [app]);
-  // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX — the previous gate required
+  // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX - the previous gate required
   // staff to have already clicked "Accept" on every document AND for the
   // server-side OCR + banking + credit summary workers to have completed
-  // before Submit was enabled. That's not the workflow — those steps
+  // before Submit was enabled. That's not the workflow - those steps
   // happen post-submit, on the staff side. The applicant submits when
   // they've uploaded their docs and signed.
   const docsPresent = useMemo(() => {
@@ -155,9 +155,9 @@ export function Step6_Review(): JSX.Element {
   const processingComplete = true;
   const ocrComplete = true;
   const creditSummaryComplete = true;
-  // BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1 — dead idRequirements/missingIdDocs removed.
+  // BF_CLIENT_BLOCK_v156_DOC_SOURCE_OF_TRUTH_v1 - dead idRequirements/missingIdDocs removed.
 
-  // BF_CLIENT_BLOCK_v316_SUBMIT_RETRY_UX_v1 — auto-navigate when the
+  // BF_CLIENT_BLOCK_v316_SUBMIT_RETRY_UX_v1 - auto-navigate when the
   // background retry succeeds. Without this, after submit fails the
   // user stays on the "submitting" card forever even though the
   // application has actually gone through.
@@ -177,7 +177,7 @@ export function Step6_Review(): JSX.Element {
     if (app.currentStep !== 6) {
       update({ currentStep: 6 });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) - running on every currentStep change caused unmounting step to reset back, fighting next step's mount effect
 
   useEffect(() => {
     trackEvent("client_step_viewed", { step: 6 });
@@ -209,7 +209,7 @@ export function Step6_Review(): JSX.Element {
       .catch(() => undefined);
   }, []);
 
-  // BF_CLIENT_v66_STATUS_NO_LOOP — see Step5_Documents for full rationale.
+  // BF_CLIENT_v66_STATUS_NO_LOOP - see Step5_Documents for full rationale.
   // The server's /status endpoint does not currently return these fields;
   // writing the extractApplicationFromStatus defaults back into app state
   // was producing dozens of /status calls per visit to Step 6.
@@ -237,7 +237,7 @@ export function Step6_Review(): JSX.Element {
     update({ shareAuthorization: !app.shareAuthorization });
   }
 
-  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — clause N -> gate key (all three required to submit)
+  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - clause N -> gate key (all three required to submit)
   const tcConsents = [
     { get: () => Boolean(app.termsAccepted), toggle: toggleTerms },
     { get: () => Boolean(app.shareAuthorization), toggle: toggleShareAuthorization },
@@ -268,7 +268,7 @@ export function Step6_Review(): JSX.Element {
   }
 
   async function submit() {
-    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — visible click ack + outer guard
+    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 - visible click ack + outer guard
     console.info("[wizard] Step6 submit() invoked", {
       applicationToken: app.applicationToken,
       hasSig: Boolean(app.typedSignature?.trim()),
@@ -310,7 +310,7 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
-    // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX — only block on actual user
+    // BF_CLIENT_BLOCK_v82_SUBMIT_GATE_RELAX - only block on actual user
     // input gaps; do not block on staff-side acceptance or async workers.
     if (shouldBlockForMissingDocuments(app)) {
       blockSubmit("Please upload all required documents, or choose 'I will supply documents later'.");
@@ -331,7 +331,7 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
-    // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — applicant photo IDs moved to
+    // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 - applicant photo IDs moved to
     // Step 5, where they participate in the existing "Supply Documents
     // Later" deferral flow. Step 6 no longer blocks submission on
     // missing photo IDs; the missingIdDocs check that lived here was
@@ -342,14 +342,14 @@ export function Step6_Review(): JSX.Element {
       return;
     }
 
-    // BF_LOCAL_FIRST_v35 — Block 35: pre-submit PATCH removed. The full
+    // BF_LOCAL_FIRST_v35 - Block 35: pre-submit PATCH removed. The full
     // payload is sent in the ClientAppAPI.submit() call below. Keeping a
     // separate PATCH here was the source of the stale-token 500/410 flood.
     try {
       assertSubmissionReady(app);
       const payload = buildSubmissionPayload(app);
       const normalizedPayload = normalizeForSubmit(app);
-      // BF_CLIENT_BLOCK_v865_ANALYTICS_NEVER_BLOCK_SUBMIT — attribution and
+      // BF_CLIENT_BLOCK_v865_ANALYTICS_NEVER_BLOCK_SUBMIT - attribution and
       // analytics are non-essential and must NEVER abort submission. A throw
       // here (e.g. blocked localStorage in a corporate/private browser) used to
       // land the client on the false "we've got it" screen with the POST never
@@ -414,12 +414,12 @@ export function Step6_Review(): JSX.Element {
         // eslint-disable-next-line no-console
         console.warn("[submit] non-essential analytics skipped:", analyticsErr);
       }
-      // BF_LOCAL_FIRST_v35 — Block 35: stale-token-resilient submit.
+      // BF_LOCAL_FIRST_v35 - Block 35: stale-token-resilient submit.
       // If the local applicationToken no longer exists server-side
       // (404 / application_not_found), mint a fresh one and retry once.
       // The full payload lives in the submit() body so server-side state
       // doesn't need to have anything pre-populated.
-      // BF_CLIENT_v71_BLOCK_3_4 — ensure wizard submit always flows through buildSubmitBody normalizers.
+      // BF_CLIENT_v71_BLOCK_3_4 - ensure wizard submit always flows through buildSubmitBody normalizers.
       const submitBody = buildSubmitBody({
         app: {
           ...app,
@@ -464,6 +464,18 @@ export function Step6_Review(): JSX.Element {
       try { localStorage.removeItem("creditSessionToken"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
       sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872
+      // BF_CLIENT_GA4_GENERATE_LEAD_v1 - fire a real lead event on successful
+      // submit so Google Ads/GA4 can optimize toward applications, not clicks.
+      // Fired via dataLayer (GTM) and gtag (Google tag) so it lands regardless
+      // of how GA4 is wired. Never allowed to block the submit flow.
+      try {
+        const w = window as any;
+        w.dataLayer = w.dataLayer || [];
+        w.dataLayer.push({ event: "generate_lead", currency: "CAD", value: 100, application_token: app.applicationToken ?? null });
+        if (typeof w.gtag === "function") {
+          w.gtag("event", "generate_lead", { currency: "CAD", value: 100 });
+        }
+      } catch { /* analytics must never block submit */ }
       // BF_CLIENT_v63_SUBMIT_HYDRATE_GUARD
       // Server has GET /api/client/application/:id/status (singular, with
       // /status suffix). The client's ClientAppAPI.status hits
@@ -507,7 +519,7 @@ export function Step6_Review(): JSX.Element {
         financialReviewComplete:
           hydrated.financialReviewComplete ?? app.financialReviewComplete,
       });
-      // BF_CLIENT_v66_SUBMIT_PHONE_FALLBACK — app.kyc.phone is only
+      // BF_CLIENT_v66_SUBMIT_PHONE_FALLBACK - app.kyc.phone is only
       // populated when the wizard prefilled from a readiness check or
       // creditPrefill. For users who started fresh, the phone lives at
       // app.applicant.phone (Step 4). Without this fallback, getBootRoute
@@ -530,7 +542,7 @@ export function Step6_Review(): JSX.Element {
         navigate("/portal", { replace: true });
       }, 1200);
     } catch (error: unknown) {
-      // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 — surface real submit errors.
+      // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 - surface real submit errors.
       console.error("[wizard] Step6 submit() failed", error);
       const response =
         typeof error === "object" && error !== null && "response" in error
@@ -539,7 +551,7 @@ export function Step6_Review(): JSX.Element {
       const status = response?.status;
       const data = response?.data;
       if (status === 409 && resolveSubmissionId(data)) {
-        sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872 — duplicate = already submitted
+        sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872 - duplicate = already submitted
         clearDraft();
         clearSubmissionIdempotencyKey();
         clearStoredReadinessSession();
@@ -553,7 +565,7 @@ export function Step6_Review(): JSX.Element {
         }, 1200);
         return;
       }
-      // BF_LOCAL_FIRST_v35 — outbox: persist the full submit payload so
+      // BF_LOCAL_FIRST_v35 - outbox: persist the full submit payload so
       // the auto-retry watcher can re-attempt on online/interval/boot.
       try {
         if (app?.applicationToken) {
@@ -567,7 +579,7 @@ export function Step6_Review(): JSX.Element {
       }
       logError(error, { stage: "submission" });
       sendSubmitAttempt(app, "failed", error instanceof Error ? error.message : String(error)); // BF_CLIENT_BLOCK_v872
-      // BF_CLIENT_BLOCK_v872_NO_FALSE_SUCCESS — never claim success on a failed
+      // BF_CLIENT_BLOCK_v872_NO_FALSE_SUCCESS - never claim success on a failed
       // submit. A failure that looks successful makes the applicant leave, and
       // the retry outbox is local to this device only, so the application can be
       // lost. Be honest and give a real retry.
@@ -716,7 +728,7 @@ export function Step6_Review(): JSX.Element {
     }
   }
 
-  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 — removed duplicate shell/heading.
+  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 - removed duplicate shell/heading.
   return (
     <>
         <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
@@ -724,7 +736,7 @@ export function Step6_Review(): JSX.Element {
       <div className="wizard-step-shell">
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" subtitle="Check everything is right. You can edit any section before submitting." />
 
-      {/* BF_CLIENT_BLOCK_v_REVIEW_SUMMARY_v1 — read-only "what you entered" summary
+      {/* BF_CLIENT_BLOCK_v_REVIEW_SUMMARY_v1 - read-only "what you entered" summary
           at the top of Step 6 (Direction A mockup). Display only; does not touch the
           T&C / signature / submit logic below. */}
       {(() => {
@@ -733,15 +745,15 @@ export function Step6_Review(): JSX.Element {
         const appl: any = app.applicant ?? {};
         const __reviewCat = app.productCategory ? bucketFor(String(app.productCategory)) : null;
         const __reviewCatLabel = __reviewCat ? (CATEGORY_BUCKETS.find((b) => b.id === __reviewCat)?.label ?? null) : null;
-        const productLabel = __reviewCatLabel || app.selectedProductType || app.selectedProduct?.product_type || "—";
-        const amount = kyc.fundingAmount ? String(kyc.fundingAmount) : "—";
+        const productLabel = __reviewCatLabel || app.selectedProductType || app.selectedProduct?.product_type || "-";
+        const amount = kyc.fundingAmount ? String(kyc.fundingAmount) : "-";
         const ownerCount = appl.hasMultipleOwners ? "You + partner(s)" : "You";
         const rows: Array<[string, string]> = [
-          ["Looking for", getFundingIntentLabel(kyc.lookingFor) || kyc.lookingFor || "—"],
+          ["Looking for", getFundingIntentLabel(kyc.lookingFor) || kyc.lookingFor || "-"],
           ["Amount", amount],
           ["Product", productLabel],
-          ["Business", biz.businessName || "—"],
-          ["Industry", kyc.industry || "—"],
+          ["Business", biz.businessName || "-"],
+          ["Industry", kyc.industry || "-"],
           ["Owners", ownerCount],
         ];
         return (
@@ -762,7 +774,7 @@ export function Step6_Review(): JSX.Element {
         );
       })()}
 
-      {/* BF_CLIENT_BLOCK_v327 — Accord Risk Profile moved here from Step 3 (top of Step 6). */}
+      {/* BF_CLIENT_BLOCK_v327 - Accord Risk Profile moved here from Step 3 (top of Step 6). */}
       {isAccordLOCApp(app) && (
         <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginBottom: tokens.spacing.lg }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: "#111827", margin: 0 }}>Risk Profile</h2>
@@ -777,7 +789,7 @@ export function Step6_Review(): JSX.Element {
                 <div key={q.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <label>{q.label}</label>
                   <select value={val} onChange={(e) => setVal(e.target.value)}>
-                    <option value="">Select…</option>
+                    <option value="">Select...</option>
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
                   </select>
@@ -792,8 +804,8 @@ export function Step6_Review(): JSX.Element {
       )}
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
-        {/* BF_CLIENT_WIZARD_STEP6_PGI_v61 — Step 6 reordered to
-          PGI → T&C → consent checkboxes → signature → submit.
+        {/* BF_CLIENT_WIZARD_STEP6_PGI_v61 - Step 6 reordered to
+          PGI -> T&C -> consent checkboxes -> signature -> submit.
           Personal Guarantee Insurance is captured as an optional
           preference (app.pgiOptIn = "yes" | "no" | undefined). It does
           not block submit, has no separate T&C, and is mirrored into
@@ -811,11 +823,11 @@ export function Step6_Review(): JSX.Element {
           </Card>
         )}
 
-        {/* PGI question — Personal Guarantee Insurance */}
+        {/* PGI question - Personal Guarantee Insurance */}
         <div data-testid="step6-pgi-section">
           <h2 style={components.form.sectionTitle}>Personal Guarantee Insurance (PGI)</h2>
           <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
-            Most lenders require a personal guarantee — meaning you are personally responsible if the business cannot repay. Personal Guarantee Insurance protects you if that happens.
+            Most lenders require a personal guarantee - meaning you are personally responsible if the business cannot repay. Personal Guarantee Insurance protects you if that happens.
           </p>
           <div style={{ ...layout.stackTight, marginTop: tokens.spacing.sm }}>
             <label style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
@@ -832,7 +844,7 @@ export function Step6_Review(): JSX.Element {
               Learn more about PGI
             </summary>
             <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
-              PGI is an optional insurance product that covers your personal guarantee obligation if your business defaults on the loan. Premiums vary by loan size, term, and credit profile, typically 1–3% of the loan amount. If you opt in, lenders will quote PGI alongside their loan offers; you can still decline at the offer stage. Coverage and pricing are determined by the insurer, not Boreal Financial.
+              PGI is an optional insurance product that covers your personal guarantee obligation if your business defaults on the loan. Premiums vary by loan size, term, and credit profile, typically 1-3% of the loan amount. If you opt in, lenders will quote PGI alongside their loan offers; you can still decline at the offer stage. Coverage and pricing are determined by the insurer, not Boreal Financial.
             </p>
           </details>
         </div>
@@ -844,7 +856,7 @@ export function Step6_Review(): JSX.Element {
           </p>
         </div>
 
-        {/* BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 — three required consents, each with a popup */}
+        {/* BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - three required consents, each with a popup */}
         {TC_CLAUSES.map((clause, i) => (
           <label
             key={clause.title}
@@ -955,7 +967,7 @@ export function Step6_Review(): JSX.Element {
               style={{ width: "100%", maxWidth: "160px" }}
               onClick={() => navigate("/apply/step-5")}
             >
-              ← Back
+              {"<- Back"}
             </Button>
             <Button
               style={{ width: "100%", maxWidth: "240px" }}
@@ -970,7 +982,7 @@ export function Step6_Review(): JSX.Element {
                   termsAccepted: app.termsAccepted && Boolean(app.infoConfirmed) && Boolean(app.shareAuthorization),
                   typedSignature: Boolean(app.typedSignature?.trim()),
                   partnerSignature: hasPartner ? Boolean(app.coApplicantSignature?.trim()) : true,
-                  // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 — photo IDs moved
+                  // BF_CLIENT_WIZARD_STEP6_NOIDS_v60 - photo IDs moved
                   // to Step 5; never block submit on them here.
                   missingIdDocs: 0,
                   missingRequiredDocs: missingRequiredDocs.length,
