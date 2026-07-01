@@ -94,6 +94,7 @@ export default function MayaWidget() {
   const [sending, setSending] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null); // BF_CLIENT_MAYA_FOCUS_v1
 
   const { user } = (() => {
     try {
@@ -204,6 +205,7 @@ export default function MayaWidget() {
       ]);
     } finally {
       setSending(false);
+      inputRef.current?.focus(); // BF_CLIENT_MAYA_FOCUS_v1 - keep the typing bar focused
     }
   }
 
@@ -409,9 +411,9 @@ export default function MayaWidget() {
                 <input
                   className="min-w-0 flex-1 rounded border border-white/20 bg-[#0f1d3a] px-3 py-2 text-sm text-white placeholder:text-slate-400"
                   placeholder="Type a message…"
+                  ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  disabled={sending}
                 />
                 <button
                   type="submit"
