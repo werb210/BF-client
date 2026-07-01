@@ -16,6 +16,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { apiRequest } from "@/lib/api";
+import { getToken } from "@/auth/token";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { useAuth } from "@/auth/useAuth";
 
@@ -179,7 +180,12 @@ export default function MayaWidget() {
       } else {
         const res = (await apiRequest("/api/maya/message", {
           method: "POST",
-          headers: { "X-Maya-Audience": "client" },
+          headers: {
+            "X-Maya-Audience": "client",
+            // BF_CLIENT_MAYA_AUTH_HEADER_v1 - attach the signed-in OTP token so BF-Server's
+            // proxy can decode the phone and Maya can recognize the client (name, business).
+            ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+          },
           body: {
             message: text,
             sessionId,
