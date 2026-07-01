@@ -33,53 +33,61 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
   }, [applicationId]);
 
   async function pickAndUpload(documentType: string) {
+    // BF_CLIENT_DOCPICKER_MULTIFILE_v1 -- accept multiple files per requirement.
+    // Applicants can select several files at once (e.g. all 6 bank statements);
+    // each is uploaded sequentially against the same category. The still-needed
+    // list is cleared only after EVERY selected file succeeds. On any failure the
+    // item stays so the client can retry. (Count-aware "stay until N of N" is a
+    // separate server change and is intentionally not handled here.)
     const input = document.createElement("input");
     input.type = "file";
+    input.multiple = true;
     input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
+      const files = Array.from(input.files ?? []);
+      if (files.length === 0) return;
       setUploading(documentType);
       setError(null);
-      const form = new FormData();
-      form.append("file", file);
-      // BF_CLIENT_BLOCK_v873_UPLOAD_FIELD — the live server /upload reads the
-      // `category` field; this picker historically sent only `document_type`,
-      // so category came back null and every CMP upload 400'd. Send both names
-      // so it works against the current server and any future build.
-      form.append("category", documentType);
-      form.append("document_type", documentType);
-      form.append("applicationId", applicationId);
-      let resp: Response | undefined;
-      try {
-        resp = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${getToken() ?? ""}` },
-          body: form,
-        });
-        if (!resp.ok) throw new Error(String(resp.status));
-        onUploaded?.();
-        // Optimistically remove the uploaded doc type from both lists.
-        setData((cur) => ({
-          stillNeeded: cur.stillNeeded.filter((d) => d.document_type !== documentType),
-          rejected: cur.rejected.filter((d) => d.document_type !== documentType),
-        }));
-      } catch (err) {
-        // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — surface the
-        // real error to the user (and console) so we can diagnose
-        // the iPhone-testing failure (screenshot 11.33.25). Common
-        // causes: 401 (token expired), 413 (file too large), 415
-        // (file type rejected), 500 (server upload pipeline broken).
-        const detail = err instanceof Error ? err.message : "";
-        console.error("[DocPicker upload] failed:", detail, resp?.status, resp?.statusText);
+      let lastResp: Response | undefined;
+      let failed = false;
+      for (const file of files) {
+        const form = new FormData();
+        form.append("file", file);
+        // The live server /upload reads the `category` field; send both names so
+        // it works against the current server and any future build.
+        form.append("category", documentType);
+        form.append("document_type", documentType);
+        form.append("applicationId", applicationId);
+        try {
+          lastResp = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+            body: form,
+          });
+          if (!lastResp.ok) throw new Error(String(lastResp.status));
+        } catch (err) {
+          failed = true;
+          const detail = err instanceof Error ? err.message : "";
+          console.error("[DocPicker upload] failed:", detail, lastResp?.status, lastResp?.statusText);
+          break;
+        }
+      }
+      if (failed) {
         const userMessage =
-          resp?.status === 401 ? "Session expired. Please sign in again."
-          : resp?.status === 413 ? "That file is too large. Please use a smaller file (under 25 MB)."
-          : resp?.status === 415 ? "That file type isn't supported. Please upload a PDF, PNG, or JPEG."
+          lastResp?.status === 401 ? "Session expired. Please sign in again."
+          : lastResp?.status === 413 ? "That file is too large. Please use a smaller file (under 25 MB)."
+          : lastResp?.status === 415 ? "That file type is not supported. Please upload a PDF, PNG, or JPEG."
           : "Upload failed. Please try again.";
         setError(userMessage);
-      } finally {
         setUploading(null);
+        return;
       }
+      onUploaded?.();
+      // All selected files uploaded: remove this doc type from both lists.
+      setData((cur) => ({
+        stillNeeded: cur.stillNeeded.filter((d) => d.document_type !== documentType),
+        rejected: cur.rejected.filter((d) => d.document_type !== documentType),
+      }));
+      setUploading(null);
     };
     input.click();
   }
