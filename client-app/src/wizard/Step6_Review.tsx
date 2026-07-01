@@ -464,17 +464,13 @@ export function Step6_Review(): JSX.Element {
       try { localStorage.removeItem("creditSessionToken"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
       sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872
-      // BF_CLIENT_GA4_GENERATE_LEAD_v1 - fire a real lead event on successful
-      // submit so Google Ads/GA4 can optimize toward applications, not clicks.
-      // Fired via dataLayer (GTM) and gtag (Google tag) so it lands regardless
-      // of how GA4 is wired. Never allowed to block the submit flow.
+      // BF_CLIENT_GA4_GENERATE_LEAD_v1 - fire the real lead on true submit success
+      // (the old ConfirmationPage conversion was dead code - never routed).
       try {
         const w = window as any;
         w.dataLayer = w.dataLayer || [];
         w.dataLayer.push({ event: "generate_lead", currency: "CAD", value: 100, application_token: app.applicationToken ?? null });
-        if (typeof w.gtag === "function") {
-          w.gtag("event", "generate_lead", { currency: "CAD", value: 100 });
-        }
+        if (typeof w.gtag === "function") w.gtag("event", "generate_lead", { currency: "CAD", value: 100 });
       } catch { /* analytics must never block submit */ }
       // BF_CLIENT_v63_SUBMIT_HYDRATE_GUARD
       // Server has GET /api/client/application/:id/status (singular, with
