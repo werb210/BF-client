@@ -135,6 +135,15 @@ export default function PersonalNetWorthForm({
   }, [data]);
 
   const handleSubmit = async () => {
+    // BF_CLIENT_PNW_SIGN_FIX_v1 — the signer email is required: the server needs it to create
+    // the one-signer SignNow envelope. Without it no signing_url comes back and signing silently
+    // never happens (common for phone-OTP applicants with no email on file).
+    const signerEmail = String((data as Record<string, unknown>).primary_email ?? "").trim();
+    if (!signerEmail) {
+      setError("Please enter your personal email above - it is required to sign your Personal Net Worth statement.");
+      return;
+    }
+    setError(null);
     setSubmitting(true);
     try {
       const resp = await submitFormResponse(applicationId, FORM_KEY, {
@@ -144,9 +153,15 @@ export default function PersonalNetWorthForm({
         submitted_at: new Date().toISOString(),
       });
       setSubmitted(true);
-      // v_PNW_SIGNING_v1 — sign the PNW immediately on submit, in an embedded frame.
-      if (resp?.signing_url) setSigningUrl(resp.signing_url);
-      onComplete();
+      // BF_CLIENT_PNW_SIGN_FIX_v1 — keep this form mounted so the signing frame can render.
+      // Previously onComplete() (parent setOpenForm(null)) ran here unconditionally and
+      // unmounted the component the instant the iframe was created, so PNW signing never
+      // appeared. Close only when there is genuinely nothing to sign.
+      if (resp?.signing_url) {
+        setSigningUrl(resp.signing_url);
+      } else {
+        setError("We could not start signing. Please confirm your personal email above is correct, then submit again.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Submit failed");
     } finally {
@@ -210,6 +225,9 @@ export default function PersonalNetWorthForm({
           Please review and sign below. Your statement is saved.
         </p>
         <iframe title="Sign Personal Net Worth" src={signingUrl} style={{ width: "100%", height: 620, border: "1px solid #e5e7eb", borderRadius: 8 }} />
+        <div style={{ marginTop: 12, textAlign: "right" }}>
+          <button type="button" onClick={() => onComplete()} style={{ padding: "8px 16px", border: 0, borderRadius: 8, background: "#2563eb", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Done</button>
+        </div>
       </div>
     );
   }
