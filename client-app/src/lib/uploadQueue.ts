@@ -144,7 +144,20 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
       if (item.id !== undefined) wtx.objectStore(STORE_NAME).delete(item.id);
       await txDone(wtx);
       succeeded += 1;
-    } catch {
+    } catch (err) {
+      // BF_CLIENT_QUEUE_PERMANENT_4XX_v1 - a 4xx (except 408/429) is permanent:
+      // the server told us the file is rejected (415 unsupported type, 413 too
+      // large, 404 gone). Retrying it every 30s forever just hammers the server
+      // (observed: the same .docx re-posted for 12+ minutes). Drop it now.
+      const st = (err as { status?: number })?.status;
+      if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429) {
+        try {
+          const wtx = db.transaction(STORE_NAME, "readwrite");
+          if (item.id !== undefined) wtx.objectStore(STORE_NAME).delete(item.id);
+          await txDone(wtx);
+        } catch { /* swallow */ }
+        continue;
+      }
       // Bump attempts; leave in queue.
       try {
         const wtx = db.transaction(STORE_NAME, "readwrite");

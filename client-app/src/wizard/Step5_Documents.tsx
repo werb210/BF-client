@@ -622,7 +622,21 @@ export function Step5_Documents() {
         trackEvent("client_document_uploaded", { documentType: docType });
         track("document_uploaded", { documentType: docType });
         break;
-      } catch {
+      } catch (err) {
+        // BF_CLIENT_STEP5_PERMANENT_4XX_v1 - the server rejected this exact
+        // file (unsupported type / too large / bad request). Queueing it for
+        // background retry can never succeed; tell the applicant what to fix.
+        const st = (err as { status?: number })?.status;
+        if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429) {
+          setDocErrors((prev) => ({
+            ...prev,
+            [docType]:
+              st === 415 ? "That file type is not supported. Please upload a PDF, Word document, Excel file, or a photo (PNG/JPEG/HEIC)."
+              : st === 413 ? "That file is too large. Please use a smaller file (under 25 MB)."
+              : "This file was rejected. Please check it and try a different file.",
+          }));
+          break;
+        }
         if (attempt === 3) {
           // BF_UPLOAD_QUEUE_v51 — on final failure, queue file for background retry.
           try {

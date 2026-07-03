@@ -75,7 +75,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
         const userMessage =
           lastResp?.status === 401 ? "Session expired. Please sign in again."
           : lastResp?.status === 413 ? "That file is too large. Please use a smaller file (under 25 MB)."
-          : lastResp?.status === 415 ? "That file type is not supported. Please upload a PDF, PNG, or JPEG."
+          : lastResp?.status === 415 ? "That file type is not supported. Please upload a PDF, Word document, Excel file, or a photo (PNG/JPEG/HEIC)." // BF_CLIENT_STEP5_PERMANENT_4XX_v1
           : "Upload failed. Please try again.";
         setError(userMessage);
         setUploading(null);
