@@ -961,7 +961,9 @@ export function Step1_KYC(): JSX.Element {
               if (intent === "BOTH") {
                 return (<>
                               <div data-error={showErrors && fieldErrors.fundingAmount}>
-              <label style={components.form.label}>How much funding are you seeking?</label>
+              {/* BF_CLIENT_BOTH_INTENT_LABELS_v1 - combined intent must split
+                  the two amounts unambiguously: capital here, equipment below. */}
+              <label style={components.form.label}>How much funding are you seeking? - Capital portion only</label>
               <Input
                 id={getWizardFieldId("step1", "fundingAmount")}
                 inputMode="decimal"
@@ -1014,7 +1016,7 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
                   <div data-error={showErrors && fieldErrors.equipmentAmount}>
-                    <label style={components.form.label}>Equipment amount</label>
+                    <label style={components.form.label}>Equipment amount - Equipment Total only</label>
                     <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
                     {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
                   </div>

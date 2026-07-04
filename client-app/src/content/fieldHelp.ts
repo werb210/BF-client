@@ -4,6 +4,8 @@
 export const FIELD_HELP: Record<string, string> = {
   "What are you looking for?": "Pick the closest match. This helps us shortlist the right lenders - you can change it later without starting over.",
   "How much funding are you seeking?": "Your best estimate is fine. Lenders expect a ballpark, not an exact figure.",
+  "How much funding are you seeking? - Capital portion only": "Just the working-capital portion. Do not include the equipment cost here - it goes in the field below.",
+  "Equipment amount - Equipment Total only": "The full cost of the equipment only. Keep it out of the capital amount above.",
   "How much equipment financing are you seeking?": "Roughly what the equipment costs. A quote or invoice amount works best if you have one.",
   "Equipment amount": "The purchase price of the equipment you want financed, before tax.",
   "Purpose of funds": "One line is enough, e.g. inventory for fall, new truck, payroll bridge. Lenders read this first.",
