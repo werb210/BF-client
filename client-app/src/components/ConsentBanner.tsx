@@ -3,18 +3,22 @@ import { useEffect, useState, type ReactElement } from "react";
 const KEY = "boreal_consent_v1";
 
 function applyConsent(granted: boolean) {
-  const w = window as unknown as { dataLayer: unknown[] };
+  // BF_CLIENT_CONSENT_GTAG_FORMAT_FIX_v1 - Consent Mode commands MUST be pushed
+  // as gtag()-style `arguments` objects; pushing a plain array is silently
+  // ignored by GTM. Accept was a no-op, so with the index.html denied default
+  // every applicant stayed denied and GA4 collected NOTHING.
+  const w = window as unknown as { dataLayer?: unknown[] };
   w.dataLayer = w.dataLayer || [];
-  w.dataLayer.push([
-    "consent",
-    "update",
-    {
-      ad_storage: granted ? "granted" : "denied",
-      analytics_storage: granted ? "granted" : "denied",
-      ad_user_data: granted ? "granted" : "denied",
-      ad_personalization: granted ? "granted" : "denied",
-    },
-  ]);
+  function gtag(..._args: unknown[]) {
+    // eslint-disable-next-line prefer-rest-params
+    (w.dataLayer as unknown[]).push(arguments);
+  }
+  gtag("consent", "update", {
+    ad_storage: granted ? "granted" : "denied",
+    analytics_storage: granted ? "granted" : "denied",
+    ad_user_data: granted ? "granted" : "denied",
+    ad_personalization: granted ? "granted" : "denied",
+  });
 }
 
 export default function ConsentBanner(): ReactElement | null {
