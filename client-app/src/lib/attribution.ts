@@ -14,6 +14,7 @@ export type Attribution = {
   gbraid?: string;
   wbraid?: string;
   li_fat_id?: string; // BF_CLIENT_LI_FAT_ID_v1
+  sessionId?: string; // BF_CLIENT_VISITOR_JOURNEY_v1 - stitches the website journey to this application
 };
 
 export function captureAttribution(): void {
@@ -36,6 +37,9 @@ export function captureAttribution(): void {
     if (wbraid) a.wbraid = wbraid;
     const liFatId = (p.get("li_fat_id") || "").trim();
     if (liFatId) a.li_fat_id = liFatId;
+    // BF_CLIENT_VISITOR_JOURNEY_v1 - the website forwards its anonymous journey session id.
+    const journeySession = (p.get("journeySession") || "").trim();
+    if (journeySession) a.sessionId = journeySession;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
     if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
