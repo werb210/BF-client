@@ -68,7 +68,24 @@ export default function MiniPortalPage() {
   const navigate = useNavigate();
   const { app, startNewApplication } = useApplicationStore();
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
-  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null); const [offersOpen, setOffersOpen] = useState(false); // BF_CLIENT_OFFERS_MODAL_v1
+
+  // BF_CLIENT_TERM_SHEET_STREAM_v1 - fetch the PDF from BF-Server (authenticated) and open it
+  // as an object URL. Linking straight at the Azure blob URL broke once the SAS expired or the
+  // blob was private: Chrome rendered the error page and showed "Failed to load PDF document".
+  const openTermSheet = useCallback(async (o: Offer) => {
+    try {
+      const base = ENV.API_BASE || "https://server.boreal.financial";
+      const res = await fetch(`${base}/api/offers/${o.id}/term-sheet`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
+      if (!res.ok) throw new Error(`term_sheet_${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, "_blank", "noreferrer");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch {
+      if (o?.pdfUrl) window.open(o.pdfUrl, "_blank", "noreferrer"); // legacy fallback
+    }
+  }, []);
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — the caller's applications for the switcher
   const [myApps, setMyApps] = useState<any[]>([]);
   useEffect(() => {
@@ -741,7 +758,59 @@ export default function MiniPortalPage() {
             )}
           </aside>
         )}
-        {showOfferView && <section className="mp-offers">{offers.length === 0 ? <div className="mp-offers__empty">No offers yet.</div> : offers.map((o) => { const exp = expirationColor(o.expiresAt); const expiryMs = o.expiresAt ? (safeParseDate(o.expiresAt).getTime() - Date.now()) : 0; const safeHrs = Math.max(0, Math.floor(expiryMs / 3600000)); const days = Math.floor(safeHrs / 24); const hours = safeHrs % 24; return <article key={o.id} className={`mp-offer mp-offer--${exp}`}><header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header><div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "—"}</div><div className="mp-offer__subtitle">Offer Amount.</div><div className="mp-offer__meta"><div className="mp-offer__meta-row-main">{o.rateOrFactor?.includes("%") ? `${o.rateOrFactor} Interest rate` : `${o.rateOrFactor ?? "—"} factor`}</div><div className="mp-offer__meta-row">{o.term ?? "—"} years | Term</div><div className="mp-offer__meta-row">{o.paymentFrequency ?? "—"} payment</div></div><div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>{o.status === "pending_acceptance" || pendingOfferId === o.id ? <div className="mp-offer__pending">✓ Sent for staff confirmation. We'll text you when it's ready to sign.</div> : <div className="mp-offer__actions">{o.pdfUrl ? <a href={o.pdfUrl} target="_blank" rel="noopener noreferrer" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost">View PDF</a> : null}<button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button><button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button></div>}</article>; })}</section>}
+        {showOfferView && (
+          <section className="mp-offers-bar">
+            {offers.length === 0 ? (
+              <div className="mp-offers__empty">No offers yet.</div>
+            ) : (
+              <button type="button" className="mp-offers-open" data-testid="open-offers-btn" onClick={() => setOffersOpen(true)}>
+                View {offers.length === 1 ? "offer" : `${offers.length} offers`}
+              </button>
+            )}
+          </section>
+        )}
+        {/* BF_CLIENT_OFFERS_MODAL_v1 - offers open in a full-width dialog so amounts are never clipped. */}
+        {offersOpen && (
+          <div className="mp-offers-overlay" role="dialog" aria-modal="true" aria-label="Offers" onClick={() => setOffersOpen(false)}>
+            <div className="mp-offers-dialog" onClick={(e) => e.stopPropagation()}>
+              <header className="mp-offers-dialog__head">
+                <strong>Your offers</strong>
+                <button type="button" className="mp-offers-dialog__close" aria-label="Close" onClick={() => setOffersOpen(false)}>&times;</button>
+              </header>
+              <div className="mp-offers">
+                {offers.map((o) => {
+                  const exp = expirationColor(o.expiresAt);
+                  const expiryMs = o.expiresAt ? (safeParseDate(o.expiresAt).getTime() - Date.now()) : 0;
+                  const safeHrs = Math.max(0, Math.floor(expiryMs / 3600000));
+                  const days = Math.floor(safeHrs / 24);
+                  const hours = safeHrs % 24;
+                  return (
+                    <article key={o.id} className={`mp-offer mp-offer--${exp}`}>
+                      <header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>
+                      <div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "\u2014"}</div>
+                      <div className="mp-offer__subtitle">Offer Amount.</div>
+                      <div className="mp-offer__meta">
+                        <div className="mp-offer__meta-row-main">{o.rateOrFactor?.includes("%") ? `${o.rateOrFactor} Interest rate` : `${o.rateOrFactor ?? "\u2014"} factor`}</div>
+                        <div className="mp-offer__meta-row">{o.term ?? "\u2014"} years | Term</div>
+                        <div className="mp-offer__meta-row">{o.paymentFrequency ?? "\u2014"} payment</div>
+                      </div>
+                      <div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>
+                      {o.status === "pending_acceptance" || pendingOfferId === o.id ? (
+                        <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
+                      ) : (
+                        <div className="mp-offer__actions">
+                          <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
+                          <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button>
+                          <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       {/* BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1 — form modals */}
       {openForm !== null && (
         <div
