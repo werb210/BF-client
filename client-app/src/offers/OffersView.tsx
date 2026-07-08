@@ -114,13 +114,33 @@ function getOfferStatus(offer: OfferTermSheet) {
   return (offer.status ?? "").toLowerCase();
 }
 
-function TermSheetButton({ url }: { url?: string | null }) {
-  if (!url) return null;
+// BF_CLIENT_TERM_SHEET_STREAM_v1 - fetch the PDF from BF-Server (authenticated) and open
+// it as an object URL. Previously this linked straight at the Azure blob URL, which broke
+// when the SAS expired or the blob was private: Chrome showed "Failed to load PDF document".
+function TermSheetButton({ offerId, url }: { offerId?: string | null; url?: string | null }) {
+  if (!offerId && !url) return null;
+  const openPdf = async () => {
+    if (!offerId) { if (url) window.open(url, "_blank", "noreferrer"); return; }
+    try {
+      const { getToken } = await import("@/auth/token");
+      const { ENV } = await import("@/env");
+      const base = ENV.API_BASE || "https://server.boreal.financial";
+      const res = await fetch(`${base}/api/offers/${offerId}/term-sheet`, {
+        headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+      });
+      if (!res.ok) throw new Error(`term_sheet_${res.status}`);
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, "_blank", "noreferrer");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch {
+      if (url) window.open(url, "_blank", "noreferrer"); // fall back to the legacy link
+    }
+  };
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
+    <button
+      type="button"
+      onClick={openPdf}
       style={{
         ...components.buttons.base,
         ...components.buttons.primary,
@@ -132,7 +152,7 @@ function TermSheetButton({ url }: { url?: string | null }) {
       }}
     >
       View Term Sheet
-    </a>
+    </button>
   );
 }
 
@@ -231,7 +251,7 @@ function OfferCard({ offer, archived, onAcceptOffer, onRequestChanges }: { offer
 
         {!archived ? (
           <div style={{ display: "flex", gap: tokens.spacing.sm, flexWrap: "wrap" }}>
-            <TermSheetButton url={offer.document_url} />
+            <TermSheetButton offerId={offer.id} url={offer.document_url} /> {/* BF_CLIENT_TERM_SHEET_STREAM_v1 */}
             <button type="button" style={{ ...components.buttons.base, ...components.buttons.secondary }} onClick={() => onRequestChanges?.(offer.id)}>
               Request Changes
             </button>
