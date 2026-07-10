@@ -15,6 +15,7 @@ export type Attribution = {
   wbraid?: string;
   li_fat_id?: string; // BF_CLIENT_LI_FAT_ID_v1
   sessionId?: string; // BF_CLIENT_VISITOR_JOURNEY_v1 - stitches the website journey to this application
+  ref?: string; // BF_CLIENT_REFERRAL_REF_v1 - referral code from a referrer landing page (?ref=)
 };
 
 export function captureAttribution(): void {
@@ -40,6 +41,12 @@ export function captureAttribution(): void {
     // BF_CLIENT_VISITOR_JOURNEY_v1 - the website forwards its anonymous journey session id.
     const journeySession = (p.get("journeySession") || "").trim();
     if (journeySession) a.sessionId = journeySession;
+    // BF_CLIENT_REFERRAL_REF_v1 - referral code carried from a referrer landing
+    // page ("Apply now" -> client.boreal.financial?ref=<code>). Rides through to
+    // /api/public/application/start as attribution.ref, which BF-Server stores on
+    // metadata.attribution.ref and credits the referrer at application-accepted.
+    const ref = (p.get("ref") || "").trim();
+    if (ref) a.ref = ref;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
     if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
