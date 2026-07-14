@@ -19,6 +19,8 @@ export type SubmissionPayload = {
   documents: SubmissionDocument[];
   signature: {
     terms_accepted: ApplicationData["termsAccepted"];
+    share_authorization?: ApplicationData["shareAuthorization"];   // BF_CLIENT_CONSENT_TRANSMIT_v1
+    communication_consent?: ApplicationData["infoConfirmed"];      // BF_CLIENT_CONSENT_TRANSMIT_v1
     typed_signature?: ApplicationData["typedSignature"];
     co_applicant_signature?: ApplicationData["coApplicantSignature"];
     signature_date?: ApplicationData["signatureDate"];
@@ -29,6 +31,8 @@ export type SubmissionPayload = {
     selected_product_type: ApplicationData["selectedProductType"];
     requires_closing_cost_funding?: ApplicationData["requires_closing_cost_funding"];
     terms_accepted: ApplicationData["termsAccepted"];
+    share_authorization?: ApplicationData["shareAuthorization"];   // BF_CLIENT_CONSENT_TRANSMIT_v1
+    communication_consent?: ApplicationData["infoConfirmed"];      // BF_CLIENT_CONSENT_TRANSMIT_v1
     typed_signature?: ApplicationData["typedSignature"];
     co_applicant_signature?: ApplicationData["coApplicantSignature"];
     signature_date?: ApplicationData["signatureDate"];
@@ -87,8 +91,18 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
     business_info: app.business,
     applicant_info: app.applicant,
     documents,
+    // BF_CLIENT_CONSENT_TRANSMIT_v1 - Step 6 gates submission on THREE clauses, but only
+    // clause 1 (termsAccepted) was ever sent. Clause 3 -- "Communication Consent
+    // (Email, SMS, Phone...)", the gate key `infoConfirmed` -- is express CASL consent to
+    // marketing SMS with no expiry. It was captured in the browser and thrown away, so
+    // the SMS sender had no idea any applicant had ever consented.
+    //   TC_CLAUSES[0] "Electronic Communications Risk Acknowledgement" -> termsAccepted
+    //   TC_CLAUSES[1] "Consent to Collect, Use, Verify, and Share"     -> shareAuthorization
+    //   TC_CLAUSES[2] "Communication Consent (Email, SMS, Phone...)"   -> infoConfirmed
     signature: {
       terms_accepted: app.termsAccepted,
+      share_authorization: app.shareAuthorization,
+      communication_consent: app.infoConfirmed,
       typed_signature: app.typedSignature,
       co_applicant_signature: app.coApplicantSignature,
       signature_date: app.signatureDate,
@@ -103,6 +117,8 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
       capital_amount: (app.kyc as any)?.capitalAmount ?? (app.kyc as any)?.fundingAmount,
       equipment_amount: (app.kyc as any)?.equipmentAmount,
       terms_accepted: app.termsAccepted,
+      share_authorization: app.shareAuthorization,       // BF_CLIENT_CONSENT_TRANSMIT_v1
+      communication_consent: app.infoConfirmed,          // BF_CLIENT_CONSENT_TRANSMIT_v1
       typed_signature: app.typedSignature,
       co_applicant_signature: app.coApplicantSignature,
       signature_date: app.signatureDate,
