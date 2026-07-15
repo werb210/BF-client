@@ -17,12 +17,13 @@ type EquipRow = {
   value: string;
   lienholder: string;
   balance: string;
+  payment: string; // BF_CLIENT_BLOCK_v_EQUIP_PAYMENT_COL_v1 - payment amount on the equipment
 };
 type EquipData = { business_name: string; rows: EquipRow[]; notes: string };
 
 const emptyRow = (): EquipRow => ({
   year: "", make: "", model: "", description: "", serial: "",
-  condition: "", value: "", lienholder: "", balance: "",
+  condition: "", value: "", lienholder: "", balance: "", payment: "",
 });
 const emptyData = (): EquipData => ({ business_name: "", rows: [emptyRow(), emptyRow()], notes: "" });
 
@@ -81,6 +82,7 @@ export default function EquipmentCollateralForm({
   const totals = {
     value: data.rows.reduce((s, r) => s + num(r.value), 0),
     balance: data.rows.reduce((s, r) => s + num(r.balance), 0),
+    payment: data.rows.reduce((s, r) => s + num(r.payment), 0),
   };
 
   const handleSubmit = async () => {
@@ -108,6 +110,7 @@ export default function EquipmentCollateralForm({
     { key: "value", label: "Est. value" },
     { key: "lienholder", label: "Lienholder (if any)" },
     { key: "balance", label: "Balance owing" },
+    { key: "payment", label: "Payment amt." },
   ];
 
   return (
@@ -151,6 +154,7 @@ export default function EquipmentCollateralForm({
       <div style={{ marginTop: 12, padding: 12, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14 }}>
         <div>Total estimated value: <strong>{money(totals.value)}</strong></div>
         <div>Total balance owing: <strong>{money(totals.balance)}</strong></div>
+        <div>Total payments: <strong>{money(totals.payment)}</strong></div>
         <div style={{ marginTop: 4 }}>Net equity: <strong>{money(totals.value - totals.balance)}</strong></div>
       </div>
 
