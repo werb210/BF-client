@@ -409,6 +409,10 @@ export function Step6_Review(): JSX.Element {
           lead_strength: app.readinessScore,
           ...attribution,
         });
+        // BF_CLIENT_ADS_CONVERSION_v1 - report the Google Ads "Apply" conversion (AW-18248196538/cfD0CI2m9M8cELrDtf1D).
+        if (typeof window !== "undefined" && window.gtag) {
+          window.gtag("event", "conversion", { send_to: "AW-18248196538/cfD0CI2m9M8cELrDtf1D" });
+        }
         track("submit");
       } catch (analyticsErr) {
         // eslint-disable-next-line no-console
