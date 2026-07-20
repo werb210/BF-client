@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
+import { getAttribution } from "../lib/attribution"; // BF_CLIENT_SUBMIT_SESSIONID_v1
 import { ACCORD_RISK_QUESTIONS, isAccordLOCApp } from "./accordRisk";
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
@@ -356,7 +357,7 @@ export function Step6_Review(): JSX.Element {
       // sent. Capture attribution defensively and isolate all tracking.
       let attribution: Record<string, any> = {};
       try {
-        attribution = getClientAttribution() || {};
+        attribution = { ...(getClientAttribution() || {}), ...getAttribution() }; // BF_CLIENT_SUBMIT_SESSIONID_v1 - include journey sessionId + gclid so the server can stitch
         trackEvent("client_submission_started");
         trackEvent("client_application_submitted", { step: 6 });
         track("Application Submitted");
