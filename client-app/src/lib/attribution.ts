@@ -20,8 +20,6 @@ export type Attribution = {
 
 export function captureAttribution(): void {
   try {
-    const existing = sessionStorage.getItem(KEY);
-    if (existing) return; // first-touch wins
     const p = new URLSearchParams(window.location.search);
     const a: Attribution = {};
     const src = (p.get("utm_source") || "").trim();
@@ -49,7 +47,22 @@ export function captureAttribution(): void {
     if (ref) a.ref = ref;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
-    if (Object.keys(a).length) sessionStorage.setItem(KEY, JSON.stringify(a));
+    // BF_CLIENT_ATTRIBUTION_MERGE_v1 - keep first-touch marketing source, but always fill in a
+    // missing journey sessionId / gclid from the current URL. A clean earlier visit used to lock
+    // out the real journey session, so it never reached the application and never stitched.
+    let merged: Attribution = a;
+    try {
+      const existing = sessionStorage.getItem(KEY);
+      if (existing) {
+        const prev = JSON.parse(existing) as Attribution;
+        merged = { ...a, ...prev };
+        if (!merged.sessionId && a.sessionId) merged.sessionId = a.sessionId;
+        if (!merged.gclid && a.gclid) merged.gclid = a.gclid;
+        if (!merged.gbraid && a.gbraid) merged.gbraid = a.gbraid;
+        if (!merged.wbraid && a.wbraid) merged.wbraid = a.wbraid;
+      }
+    } catch { /* ignore */ }
+    if (Object.keys(merged).length) sessionStorage.setItem(KEY, JSON.stringify(merged));
   } catch { /* sessionStorage unavailable - skip */ }
 }
 
