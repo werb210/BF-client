@@ -16,8 +16,7 @@
     "cap:copy": "cap copy",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
-    "cap:open:android": "cap open android",
-    "assets:generate": "capacitor-assets generate"
+    "cap:open:android": "cap open android"
   },
   "engines": {
     "node": ">=20.10 <23"
@@ -84,8 +83,7 @@
     "vite": "^4.5.14",
     "vite-plugin-pwa": "^0.20.0",
     "vite-tsconfig-paths": "file:../vite-tsconfig-paths-shim",
-    "vitest": "^2.1.1",
-    "@capacitor/assets": "^3.0.5"
+    "vitest": "^2.1.1"
   },
   "engineStrict": true
 }
