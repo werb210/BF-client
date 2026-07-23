@@ -88,10 +88,25 @@ export function formatIdentityNumber(value: string, countryCode: string) {
   return `${trimmed.slice(0, 3)}-${trimmed.slice(3, 5)}-${trimmed.slice(5)}`;
 }
 
+// BF_CLIENT_PHONE_LEADING_ONE_v1
+// NANP numbers are frequently typed or pasted WITH the country code:
+// "1 705 930 0053", "+1 (705) 930-0053". The old code did digits.slice(0, 10),
+// taking the FIRST ten digits, which kept the leading 1 and threw away the last
+// real digit: 17059300053 -> 1705930005. normalizePhone then saw exactly ten
+// digits and prefixed +1, producing +11705930005 - a number with an impossible
+// 170 area code, one digit short, stored as if it were valid.
+//
+// Observed in production on a live application's business phone, and it silently
+// corrupts every phone field in the wizard. Strip a leading NANP 1 first, then
+// truncate.
+function stripNanpCountryCode(digits: string): string {
+  return digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+}
+
 export function formatPhoneNumber(value: string, countryCode: string) {
   const digits = value.replace(/\D/g, "");
   if (countryCode === "CA" || countryCode === "US") {
-    const trimmed = digits.slice(0, 10);
+    const trimmed = stripNanpCountryCode(digits).slice(0, 10);
     if (trimmed.length <= 3) return trimmed;
     if (trimmed.length <= 6) {
       return `(${trimmed.slice(0, 3)}) ${trimmed.slice(3)}`;
