@@ -27,11 +27,48 @@ function loadInitialState(): ApplicationData { if(typeof window==="undefined") r
 let _state: ApplicationData = loadInitialState(); const _subs=new Set<()=>void>(); let _trackedStep:number|undefined=_state.currentStep; let _stepStartTime=Date.now(); let _initRan=false;
 function _persist(){ if(typeof window==="undefined") return; try{const j=JSON.stringify(_state); localStorage.setItem(APPLICATION_STATE_KEY,j); localStorage.setItem(CLIENT_BACKUP_KEY,j);}catch{} }
 function _notify(){ _subs.forEach(fn=>{try{fn();}catch{}}); }
-function _track(prev:ApplicationData,next:ApplicationData){ const s=next.currentStep; if(!s||_trackedStep===s) return; if(_trackedStep!==undefined){const d=Date.now()-_stepStartTime; trackEvent("application_step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); trackEvent("step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); void import("../lib/journey").then((j)=>j.trackWizardStep(_trackedStep as number,d)).catch(()=>{});} /* BF_CLIENT_VISITOR_JOURNEY_v1 */ _trackedStep=s; _stepStartTime=Date.now(); trackEvent("application_step_view",{step:s}); trackEvent("client_step_progressed",{step:s}); }
+// BF_CLIENT_PERSIST_WIZARD_STEP_v1
+// The wizard tracked its step in the store and localStorage only. Nothing ever
+// told the SERVER which step an applicant reached, so applications.current_step
+// and metadata.currentStep stayed at their creation value forever. Measured over
+// 90 days: all 32 rows sat at step 1 - including the 5 that were fully submitted.
+//
+// That made the funnel unmeasurable. Every abandoned application looked like it
+// died on step 1, so there was no way to tell a wizard that loses people at
+// Documents from one that loses them at Business Details - and no way to know
+// whether ad spend was producing real starts or bounces.
+//
+// The server has accepted this since v82: PATCH /api/client/applications/:id
+// takes `currentStep` (1-6) and writes it through bfBuildWizardMetadata. The
+// client simply never sent it.
+//
+// _set is the single choke point for every state change and _track already
+// detects a step transition, so the PATCH goes here rather than being repeated
+// in six step components where one would inevitably be missed.
+//
+// Fire-and-forget by design: a failed step ping must never block navigation or
+// surface an error. Losing one ping costs a data point; blocking the wizard
+// costs an application.
+let _lastPersistedStep: number | undefined;
+
+function _persistStepToServer(step: number, token: string | undefined): void {
+  if (typeof window === "undefined") return;
+  if (!token) return;                    // no application row exists yet
+  if (_lastPersistedStep === step) return; // already sent, do not re-ping
+  _lastPersistedStep = step;
+  void import("../client/autosave")
+    .then((m) => m.patchApplication(token, { currentStep: step }))
+    .catch(() => {
+      // Allow a later transition to retry this step if the ping failed.
+      if (_lastPersistedStep === step) _lastPersistedStep = undefined;
+    });
+}
+
+function _track(prev:ApplicationData,next:ApplicationData){ const s=next.currentStep; if(!s||_trackedStep===s) return; if(_trackedStep!==undefined){const d=Date.now()-_stepStartTime; trackEvent("application_step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); trackEvent("step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); void import("../lib/journey").then((j)=>j.trackWizardStep(_trackedStep as number,d)).catch(()=>{});} /* BF_CLIENT_VISITOR_JOURNEY_v1 */ _trackedStep=s; _stepStartTime=Date.now(); trackEvent("application_step_view",{step:s}); trackEvent("client_step_progressed",{step:s}); _persistStepToServer(s, next.applicationToken); }
 function _set(updater:(prev:ApplicationData)=>ApplicationData){ const prev=_state; const next=updater(prev); if(next===prev) return; _state=next; OfflineStore.save(next); _persist(); _track(prev,next); _notify(); }
 const _subscribe=(cb:()=>void)=>{ _subs.add(cb); return ()=>_subs.delete(cb);}; const _getSnapshot=()=>_state;
 export function reconcileWithBootToken(): void { if(typeof window==="undefined") return; const bootToken=readBootToken(); if(!bootToken) return; if(_state.applicationToken===bootToken) return; if(_state.applicationToken&&_state.applicationToken!==bootToken){ _set(()=>({...emptyApp,applicationToken:bootToken} as ApplicationData)); return; } _set((prev)=>{const n={...prev,applicationToken:bootToken} as ApplicationData; return {...n,applicationDraft:buildApplicationDraft(n)};}); }
-export function __resetSingletonForTests(){ _state=loadInitialState(); _subs.clear(); _trackedStep=_state.currentStep; _stepStartTime=Date.now(); _initRan=false; }
+export function __resetSingletonForTests(){ _state=loadInitialState(); _subs.clear(); _trackedStep=_state.currentStep; _stepStartTime=Date.now(); _initRan=false; _lastPersistedStep=undefined; /* BF_CLIENT_PERSIST_WIZARD_STEP_v1 */ }
 export function useApplicationStore(){ const app=useSyncExternalStore(_subscribe,_getSnapshot,_getSnapshot); const update=useCallback((part:Partial<ApplicationData>)=>_set(prev=>{const n={...prev,...part} as ApplicationData; return {...n,applicationDraft:buildApplicationDraft(n)};}),[]); const reset=useCallback(()=>{_set(()=>emptyApp); OfflineStore.clear(); try{localStorage.removeItem(APPLICATION_STATE_KEY);localStorage.removeItem(CLIENT_BACKUP_KEY);}catch{} clearDraft(); clearSubmissionIdempotencyKey(); _trackedStep=undefined;},[]); const startNewApplication=useCallback(()=>{/* BF_CLIENT_BLOCK_v765_NEW_APP_PREFILL — a new application keeps Step 3 (business) + Step 4 (applicant/owners) and starts fresh on Step 1 (kyc), Step 2 (product/amount) and documents. Drop the boot token + draft + idempotency so the wizard mints a NEW application instead of resuming the prior one; the seeded profile is persisted by _set so a refresh keeps it. */ _set((prev)=>{const seeded={...emptyApp,business:prev.business,applicant:prev.applicant} as ApplicationData; return {...seeded,applicationDraft:buildApplicationDraft(seeded)};}); try{localStorage.removeItem("bf_application_token");}catch{} clearDraft(); clearSubmissionIdempotencyKey(); _trackedStep=undefined;},[]); const loadFromServer=useCallback((state:Partial<ApplicationData>)=>_set(prev=>hydrateApplication({...prev,...state} as ApplicationData)),[]); const setToken=useCallback((token:string)=>_set(prev=>{const n={...prev,applicationToken:token} as ApplicationData; return {...n,applicationDraft:buildApplicationDraft(n)};}),[]);
 useEffect(()=>{ if(_initRan) return; _initRan=true; const pathname=typeof window!=="undefined"?window.location.pathname:""; const isOtpScreen=pathname==="/otp"||pathname==="/portal"; if(!isOtpScreen&&hasToken()){ void import("../lender/productSync").then(({ProductSync})=>{ try{ProductSync.invalidateCache(); void ProductSync.sync().catch(()=>{});}catch{}}).catch(()=>{});} },[]);
 const init=useCallback(()=>{},[]); return {app,initialized:true,init,update,reset,startNewApplication,loadFromServer,autosaveError:null as string|null,applicationToken:app.applicationToken,setToken}; }
