@@ -36,27 +36,34 @@ describe("v92 country", () => {
   });
 });
 
-// BF_CLIENT_TEST_REPAIR_v1 - computeCompanion() now also returns
-// matchCategories. toEqual is exact-match, so the added field failed three
-// tests even though amount and category were correct. Assert the contract
-// these tests exist to pin, not the whole object shape.
-describe("v92 companion routing", () => {
-  it("$200k -> $40k TERM", () => { expect(computeCompanion(200_000)).toMatchObject({ amount: 40_000, category: "TERM" }); });
-  // $300k * 0.2 = $60k, which lands in the $50,001-$250k band that
-  // BF_CLIENT_CLOSING_COST_DUAL_v1 defines as matching BOTH TERM and LOC, with
-  // TERM primary. This test predates that locked rule and asserted LOC only.
-  it("$300k -> $60k matches both TERM and LOC, TERM primary", () => {
-    const c = computeCompanion(300_000);
-    expect(c.amount).toBe(60_000);
+// BF_CLIENT_CLOSING_COST_LOC_OVER_50K_v1 - companion is 15% of the parent
+// equipment total, capped $250k; under $50k TERM, $50k and over LOC.
+describe("closing-cost companion routing", () => {
+  it("$200k equipment -> $30k TERM", () => {
+    const c = computeCompanion(200_000);
+    expect(c.amount).toBe(30_000);
     expect(c.category).toBe("TERM");
-    expect(c.matchCategories).toEqual(["TERM", "LOC"]);
+    expect(c.matchCategories).toEqual(["TERM"]);
   });
-  it("$1.5m -> $300k is LOC only", () => {
-    const c = computeCompanion(1_500_000);
-    expect(c.amount).toBe(300_000);
+  it("$300k equipment -> $45k TERM (still under $50k)", () => {
+    const c = computeCompanion(300_000);
+    expect(c.amount).toBe(45_000);
+    expect(c.matchCategories).toEqual(["TERM"]);
+  });
+  it("$400k equipment -> $60k LOC", () => {
+    const c = computeCompanion(400_000);
+    expect(c.amount).toBe(60_000);
+    expect(c.category).toBe("LOC");
     expect(c.matchCategories).toEqual(["LOC"]);
   });
-  it("$250k -> $50k TERM (boundary <=)", () => { expect(computeCompanion(250_000)).toMatchObject({ amount: 50_000, category: "TERM" }); });
+  it("caps at $250k", () => {
+    expect(computeCompanion(5_000_000).amount).toBe(250_000);
+  });
+  it("never returns both categories", () => {
+    for (const eq of [10_000, 200_000, 333_333, 400_000, 5_000_000]) {
+      expect(computeCompanion(eq).matchCategories).toHaveLength(1);
+    }
+  });
 });
 
 describe("v92 buildLegs", () => {
