@@ -1,5 +1,13 @@
 import { afterAll, afterEach, vi } from 'vitest'
 
+// BF_CLIENT_TEST_REPAIR_v1 - jsdom does not implement Element.scrollIntoView.
+// MiniPortalPage calls el?.scrollIntoView(...); optional chaining guards a null
+// element but not a missing method, so the call threw and took down four tests
+// in MiniPortalPage.spec.tsx. Stub it once here rather than in each test.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {}
+}
+
 const originalSetTimeout = globalThis.setTimeout
 const trackedTimeouts = new Set<ReturnType<typeof setTimeout>>()
 
