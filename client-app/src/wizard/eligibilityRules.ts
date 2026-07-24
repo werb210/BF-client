@@ -135,11 +135,14 @@ export function isStartupAvailable(products: NormalizedLenderProduct[], country:
 }
 
 export function computeCompanion(equipmentAmount: number): { amount: number; category: "TERM" | "LOC"; matchCategories: ("TERM" | "LOC")[] } {
-  // BF_CLIENT_CLOSING_COST_DUAL_v1 — locked rule: <=$50k TERM only; $50,001-$250k
-  // matches BOTH TERM and LOC; above that, LOC. Mirrors the server companion.
-  const amount = Math.round(equipmentAmount * 0.2);
-  const matchCategories: ("TERM" | "LOC")[] =
-    amount <= 50_000 ? ["TERM"] : amount <= 250_000 ? ["TERM", "LOC"] : ["LOC"];
+  // BF_CLIENT_CLOSING_COST_LOC_OVER_50K_v1 - locked rule (Todd, 2026-07-24):
+  // the companion is 15% of the parent equipment total, capped at $250k; under
+  // $50k it is a TERM application, $50k and over it is a LOC application. One
+  // category, never both. This previously used 20% and a $50k-$250k band that
+  // matched TERM and LOC together, which disagreed with the server normalizer
+  // (already 15%) and produced a companion amount a third too high.
+  const amount = Math.min(Math.round(equipmentAmount * 0.15), 250_000);
+  const matchCategories: ("TERM" | "LOC")[] = amount < 50_000 ? ["TERM"] : ["LOC"];
   return { amount, category: matchCategories[0], matchCategories };
 }
 
