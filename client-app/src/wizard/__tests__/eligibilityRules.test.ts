@@ -36,10 +36,27 @@ describe("v92 country", () => {
   });
 });
 
+// BF_CLIENT_TEST_REPAIR_v1 - computeCompanion() now also returns
+// matchCategories. toEqual is exact-match, so the added field failed three
+// tests even though amount and category were correct. Assert the contract
+// these tests exist to pin, not the whole object shape.
 describe("v92 companion routing", () => {
-  it("$200k → $40k TERM", () => { expect(computeCompanion(200_000)).toEqual({ amount: 40_000, category: "TERM" }); });
-  it("$300k → $60k LOC", () => { expect(computeCompanion(300_000)).toEqual({ amount: 60_000, category: "LOC" }); });
-  it("$250k → $50k TERM (boundary ≤)", () => { expect(computeCompanion(250_000)).toEqual({ amount: 50_000, category: "TERM" }); });
+  it("$200k -> $40k TERM", () => { expect(computeCompanion(200_000)).toMatchObject({ amount: 40_000, category: "TERM" }); });
+  // $300k * 0.2 = $60k, which lands in the $50,001-$250k band that
+  // BF_CLIENT_CLOSING_COST_DUAL_v1 defines as matching BOTH TERM and LOC, with
+  // TERM primary. This test predates that locked rule and asserted LOC only.
+  it("$300k -> $60k matches both TERM and LOC, TERM primary", () => {
+    const c = computeCompanion(300_000);
+    expect(c.amount).toBe(60_000);
+    expect(c.category).toBe("TERM");
+    expect(c.matchCategories).toEqual(["TERM", "LOC"]);
+  });
+  it("$1.5m -> $300k is LOC only", () => {
+    const c = computeCompanion(1_500_000);
+    expect(c.amount).toBe(300_000);
+    expect(c.matchCategories).toEqual(["LOC"]);
+  });
+  it("$250k -> $50k TERM (boundary <=)", () => { expect(computeCompanion(250_000)).toMatchObject({ amount: 50_000, category: "TERM" }); });
 });
 
 describe("v92 buildLegs", () => {

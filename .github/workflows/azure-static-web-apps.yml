@@ -24,6 +24,12 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      # BF_CLIENT_TEST_REPAIR_v1 - client-app holds 145 test files that no
+      # workflow ever ran. They are gated here, before Build, so a red suite
+      # blocks the deploy instead of shipping unnoticed.
+      - name: Test
+        run: npm run test:ci
+
       - name: Build
         run: npm run build
 

@@ -39,10 +39,22 @@ describe("OffersView", () => {
     expect(html).toContain("Expired");
   });
 
-  it("links to term sheet in a new tab", () => {
+  // BF_CLIENT_TEST_REPAIR_v1 - BF_CLIENT_TERM_SHEET_STREAM_v1 replaced the
+  // plain <a href target="_blank"> with a button that fetches the term sheet
+  // through the authenticated /api/offers/:id/term-sheet endpoint and opens the
+  // resulting blob. Asserting on href/target pinned the old design, not the
+  // behaviour. The legacy document_url is still used as a fallback inside the
+  // click handler.
+  it("renders a term sheet control for an offer that has one", () => {
     const html = renderToStaticMarkup(<OffersView offers={[baseOffer]} />);
-    expect(html).toContain(`href="${baseOffer.document_url}"`);
-    expect(html).toContain('target="_blank"');
+    expect(html).toContain("View Term Sheet");
+    expect(html).toContain("<button");
+  });
+
+  it("renders no term sheet control when the offer has neither id nor url", () => {
+    const bare: OfferTermSheet = { ...baseOffer, id: "", document_url: null };
+    const html = renderToStaticMarkup(<OffersView offers={[bare]} />);
+    expect(html).not.toContain("View Term Sheet");
   });
 
   it("renders offer action buttons", () => {

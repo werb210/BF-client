@@ -38,7 +38,8 @@ describe("v323 — DocPicker error surfacing (D)", () => {
   it("differentiates 401/413/415", () => {
     expect(docPicker).toMatch(/Session expired/);
     expect(docPicker).toMatch(/too large/);
-    expect(docPicker).toMatch(/file type isn't supported/);
+    // BF_CLIENT_TEST_REPAIR_v1 - DocPicker copy reworded to "is not supported".
+    expect(docPicker).toMatch(/file type is not supported/);
   });
   it("logs detail to console", () => {
     expect(docPicker).toMatch(/console\.error\("\[DocPicker upload\] failed:"/);
