@@ -29,6 +29,8 @@ import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
 import { trackEvent } from "../utils/analytics";
 import { loadStepData, mergeDraft, saveStepData } from "../client/autosave";
+// BF_CLIENT_AUTOFILL_STEP3_OTP_v1 - autocomplete tokens on the business
+// address so iOS can fill it from the Contact card.
 import { AddressAutocompleteInput } from "../components/ui/AddressAutocompleteInput";
 import {
   getNextEmptyFieldKey,
@@ -479,6 +481,7 @@ export function Step3_Business() {
             <label style={components.form.label}>City</label>
             <Input
               id={getWizardFieldId("step3", "city")}
+              autoComplete="address-level2"
               value={values.city || ""}
               onChange={(e: unknown) => setField("city", e.target.value)}
               onKeyDown={(e: unknown) => {
@@ -505,6 +508,7 @@ export function Step3_Business() {
             <label style={components.form.label}>{postalLabel}</label>
             <Input
               id={getWizardFieldId("step3", "zip")}
+              autoComplete="postal-code"
               value={formatPostalCode(values.zip || "", countryCode)}
               onChange={(e: unknown) => {
                 const nextValues = {
@@ -624,6 +628,7 @@ export function Step3_Business() {
             <Input
               id={getWizardFieldId("step3", "website")}
               type="url"
+              autoComplete="url"
               value={values.website || ""}
               onChange={(e: unknown) => setField("website", e.target.value)}
               onKeyDown={(e: unknown) => {
