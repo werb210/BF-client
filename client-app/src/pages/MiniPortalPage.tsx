@@ -516,7 +516,7 @@ export default function MiniPortalPage() {
             id="mp-app-switch"
             value={applicationId}
             onChange={(e) => { const id = e.target.value; if (id && id !== applicationId) navigate(`/application/${encodeURIComponent(id)}`); }}
-            style={{ flex: 1, minWidth: 240, maxWidth: 520, padding: "8px 10px", fontSize: 13, color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
+            style={{ flex: 1, minWidth: 0, maxWidth: 520, padding: "8px 10px", fontSize: 13, color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
           >
             {myApps.map((a) => (
               <option key={String(a.id)} value={String(a.id)}>{fmtApp(a)}</option>

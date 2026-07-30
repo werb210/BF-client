@@ -1,3 +1,7 @@
+/* BF_CLIENT_NO_HSCROLL_v1 - a single over-wide element used to widen the whole
+   document on a phone, which cut the right edge off every row and dragged
+   position:fixed panels off-screen with it. */
+html, body { max-width: 100%; overflow-x: hidden; }
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; color: #111827; }
 input, select, textarea, button { font-family: inherit; }
