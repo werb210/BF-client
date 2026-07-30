@@ -49,6 +49,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Boreal uses the camera so you can photograph and upload documents for your application.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Boreal uses the microphone so you can speak to an advisor from inside the app.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Boreal accesses your photo library so you can attach documents and images to your application.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

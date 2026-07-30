@@ -75,15 +75,15 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
   };
   return (
     <div style={grid}>
-      <div><label style={L}>First Name</label><Input value={data.firstName || ""} onChange={(e) => setName("firstName", e.target.value)} /></div>
-      <div><label style={L}>Last Name</label><Input value={data.lastName || ""} onChange={(e) => setName("lastName", e.target.value)} /></div>
-      <div><label style={L}>Email</label><Input type="email" value={data.email || ""} onChange={(e) => setField("email", e.target.value)} /></div>
+      <div><label style={L}>First Name</label><Input autoComplete="given-name" value={data.firstName || ""} onChange={(e) => setName("firstName", e.target.value)} /></div>
+      <div><label style={L}>Last Name</label><Input autoComplete="family-name" value={data.lastName || ""} onChange={(e) => setName("lastName", e.target.value)} /></div>
+      <div><label style={L}>Email</label><Input type="email" autoComplete="email" value={data.email || ""} onChange={(e) => setField("email", e.target.value)} /></div>
       <div><label style={L}>Mobile Phone</label><PhoneInput value={formatPhoneNumber(data.phone || "", countryCode)} onChange={(e) => setField("phone", formatPhoneNumber(e.target.value, countryCode))} /></div>
       {isAccordLOC && (
         <div><label style={L}>Home Phone</label><PhoneInput value={formatPhoneNumber(data.homePhone || "", countryCode)} onChange={(e) => setField("homePhone", formatPhoneNumber(e.target.value, countryCode))} /></div>
       )}
-      <div><label style={L}>Date of Birth</label><Input type="date" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} /></div>
-      <div><label style={L}>{identityLabel}</label><Input inputMode="numeric" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} /></div>
+      <div><label style={L}>Date of Birth</label><Input type="date" autoComplete="bday" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} /></div>
+      <div><label style={L}>{identityLabel}</label><Input inputMode="numeric" autoComplete="off" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} /></div>
       {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 — Title/Role (Accord senior leadership). Shared component → applicant + partner. */}
       {isAccordLOC && (
         <div><label style={L}>Title / Role</label>
@@ -98,9 +98,9 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
           onChange={(e) => setField("street", e.target.value)}
           onSelect={(sel) => { if (!("street" in sel)) return; setMany({ street: sel.street || data.street, city: sel.city || data.city, state: sel.state || data.state, zip: formatPostalCode(sel.postalCode || data.zip || "", countryCode) }); }} />
       </div>
-      <div><label style={L}>City</label><Input value={data.city || ""} onChange={(e) => setField("city", e.target.value)} /></div>
+      <div><label style={L}>City</label><Input autoComplete="address-level2" value={data.city || ""} onChange={(e) => setField("city", e.target.value)} /></div>
       <div><label style={L}>{regionLabel}</label><RegionSelect country={regionCountry} value={data.state || ""} onChange={(v) => setField("state", v)} /></div>
-      <div><label style={L}>{postalLabel}</label><Input value={formatPostalCode(data.zip || "", countryCode)} onChange={(e) => setField("zip", formatPostalCode(e.target.value, countryCode))} /></div>
+      <div><label style={L}>{postalLabel}</label><Input autoComplete="postal-code" value={formatPostalCode(data.zip || "", countryCode)} onChange={(e) => setField("zip", formatPostalCode(e.target.value, countryCode))} /></div>
       {isAccordLOC && (
         <div style={{ gridColumn: "1 / -1" }}>
           <label style={{ ...L, display: "flex", alignItems: "center", gap: 8, fontWeight: 400 }}>
