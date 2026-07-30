@@ -350,6 +350,7 @@ export default function PhoneOTPInline() {
           <input
             type="tel"
             inputMode="tel"
+            name="tel"
             autoComplete="tel"
             placeholder="(555) 000-0000"
             value={phoneDisplay}

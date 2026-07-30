@@ -142,6 +142,9 @@ export default function OtpPage() {
             <label style={components.form.label}>Mobile Phone Number (E.164)</label>
             <input
               type="tel"
+              name="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               onBlur={(e) => {
