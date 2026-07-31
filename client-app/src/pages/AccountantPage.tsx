@@ -1,5 +1,13 @@
 // BF_CLIENT_ACCOUNTANT_PORTAL_v1
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
+import { disableAccountantFormMode, enableAccountantFormMode } from "@/lib/api";
+import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
+import CraAuthorizationForm from "@/pages/mini-portal/forms/forms/CraAuthorizationForm";
+import DebtStackForm from "@/pages/mini-portal/forms/forms/DebtStackForm";
+import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCollateralForm";
+import FlinksConnectForm from "@/pages/mini-portal/forms/forms/FlinksConnectForm";
+import RealEstateCollateralForm from "@/pages/mini-portal/forms/forms/RealEstateCollateralForm";
 import {
   clearAccountantToken, fetchAccountantApplication, fetchAccountantMe, getAccountantToken,
   startAccountantOtp, uploadAccountantDocument, verifyAccountantOtp,
@@ -25,6 +33,28 @@ function signInMessage(error: unknown): string {
   return "Something went wrong signing you in. Please try again.";
 }
 
+// Keys match the server's ACCOUNTANT_FORM_DOC_TYPES and the applicant CMP's
+// FORM_RENDERERS. Anything not listed here has no renderer and is skipped.
+const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string; onComplete: () => void }>> = {
+  debt_stack: DebtStackForm,
+  equipment_collateral: EquipmentCollateralForm,
+  real_estate_collateral_disclosure: RealEstateCollateralForm,
+  professional_advisors: AdvisorsForm,
+  cra_view_only_authorization: CraAuthorizationForm,
+  flinks_banking: FlinksConnectForm,
+};
+
+const FORM_LABELS: Record<string, string> = {
+  debt_stack: "Debt stack",
+  equipment_collateral: "Equipment collateral",
+  real_estate_collateral_disclosure: "Real estate collateral",
+  professional_advisors: "Professional advisors",
+  cra_view_only_authorization: "CRA view-only access",
+  flinks_banking: "Banking connection (view-only)",
+};
+
+const page: CSSProperties = { minHeight: "100dvh", background: "rgb(248 250 252)", fontFamily: "'Inter', system-ui, -apple-system, sans-serif" };
+const bar: CSSProperties = { background: "#0a1120", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10 };
 const wrap: CSSProperties = { maxWidth: 560, margin: "0 auto", padding: 20 };
 const card: CSSProperties = { border: "1px solid #cbd5e1", borderRadius: 12, padding: 16, marginBottom: 12, background: "#fff" };
 const input: CSSProperties = { width: "100%", padding: "10px 12px", fontSize: 16, borderRadius: 8, border: "1px solid #cbd5e1", boxSizing: "border-box" };
@@ -44,6 +74,15 @@ export default function AccountantPage() {
   const [uploads, setUploads] = useState<AccountantUploadSlot[]>([]);
   const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [forms, setForms] = useState<string[]>([]);
+  const [openForm, setOpenForm] = useState<string | null>(null);
+
+  // Point the shared form components at the accountant routes for as long as
+  // this page is mounted, and hand them back on the way out.
+  useEffect(() => {
+    enableAccountantFormMode(() => getAccountantToken());
+    return () => disableAccountantFormMode();
+  }, []);
 
   const loadMe = useCallback(async () => {
     try {
@@ -60,9 +99,9 @@ export default function AccountantPage() {
   useEffect(() => { if (signedIn) void loadMe(); }, [signedIn, loadMe]);
 
   async function openApplication(id: string) {
-    if (id === openId) { setOpenId(null); setUploads([]); return; }
+    if (id === openId) { setOpenId(null); setUploads([]); setForms([]); setOpenForm(null); return; }
     setOpenId(id); setNotice(null); setError(null);
-    try { const detail = await fetchAccountantApplication(id); setUploads(detail.uploads ?? []); }
+    try { const detail = await fetchAccountantApplication(id); setUploads(detail.uploads ?? []); setForms((detail.forms ?? []).filter((f) => FORM_RENDERERS[f])); setOpenForm(null); }
     catch { setOpenId(null); setError("We couldn't open that application."); }
   }
 
@@ -82,7 +121,12 @@ export default function AccountantPage() {
     } finally { setUploadingCategory(null); }
   }
 
-  if (!signedIn) return (
+  const shell = (children: React.ReactNode) => <div style={page}>
+    <div style={bar}><img src={logoUrl} alt="" style={{ height: 24, width: "auto" }} /><span style={{ color: "#fff", fontWeight: 600, fontSize: 16 }}>Boreal Financial</span></div>
+    {children}
+  </div>;
+
+  if (!signedIn) return shell(
     <div style={wrap}>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Accountant sign-in</h1>
       <p style={{ color: "#475569", fontSize: 14, marginTop: 0 }}>Use the mobile number your client gave us. We'll text you a code.</p>
@@ -112,7 +156,7 @@ export default function AccountantPage() {
     </div>
   );
 
-  return <div style={wrap}>
+  return shell(<div style={wrap}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
       <h1 style={{ fontSize: 22 }}>{name ? `Hello, ${name}` : "Documents"}</h1>
       <button type="button" style={link} onClick={() => { clearAccountantToken(); setSignedIn(false); setPhase("phone"); setCode(""); setOpenId(null); }}>Sign out</button>
@@ -133,7 +177,23 @@ export default function AccountantPage() {
             }} />
           </label>
         </div>)}
+
+        {forms.length > 0 && <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Forms</div>
+          {forms.map((docType) => {
+            const Form = FORM_RENDERERS[docType];
+            return <div key={docType} style={{ borderTop: "1px solid #e2e8f0", padding: "8px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14 }}>{FORM_LABELS[docType] ?? docType}</span>
+                <button type="button" style={link} data-testid={`accountant-form-${docType}`} aria-expanded={openForm === docType} onClick={() => setOpenForm(openForm === docType ? null : docType)}>{openForm === docType ? "Close" : "Open"}</button>
+              </div>
+              {openForm === docType && <div style={{ marginTop: 10 }}>
+                <Form applicationId={app.id} onComplete={() => { setOpenForm(null); setNotice(`${FORM_LABELS[docType] ?? docType} saved. Thank you.`); }} />
+              </div>}
+            </div>;
+          })}
+        </div>}
       </div>}
     </div>)}
-  </div>;
+  </div>);
 }
