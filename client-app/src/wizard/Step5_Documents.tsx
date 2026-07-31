@@ -44,6 +44,9 @@ import {
 } from "../documents/documentStatus";
 // BF_UPLOAD_QUEUE_v51
 import { enqueueUploadFromFile } from "../lib/uploadQueue";
+import AccountantReferralModal, {
+  type AccountantDetails,
+} from "@/components/AccountantReferralModal";
 
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 // The hardcoded "every applicant must upload contracts/invoices/tax_returns"
@@ -166,6 +169,8 @@ export function Step5_Documents() {
   const [uploadingDocs, setUploadingDocs] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false); // BF_CLIENT_AUDIT_FIX_v7
+  const [accountantOpen, setAccountantOpen] = useState(false);
+  const [accountantBusy, setAccountantBusy] = useState(false);
   const selectedCategory =
     app.productCategory ||
     app.selectedProductType ||
@@ -691,6 +696,22 @@ export function Step5_Documents() {
       });
   }
 
+  // BF_CLIENT_STEP5_ACCOUNTANT_v1 - capture the accountant first, then use the
+  // existing deferral path so both Step 5 actions advance identically.
+  async function referAccountant(details: AccountantDetails) {
+    setAccountantBusy(true);
+    try {
+      if (app.applicationId) {
+        await ClientAppAPI.referAccountant(String(app.applicationId), details);
+      }
+    } catch (err) {
+      console.warn("[step5] referAccountant failed; continuing anyway", err);
+    }
+    setAccountantBusy(false);
+    setAccountantOpen(false);
+    await uploadLater();
+  }
+
   async function uploadLater() {
     if (!app.applicationToken!) {
       setDocError("Missing application token. Please restart your application.");
@@ -806,6 +827,30 @@ export function Step5_Documents() {
             I will supply all required documents at a later time
           </Button>
         </div>
+        {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
+        <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+          <Button
+            variant="secondary"
+            data-testid="step5-accountant-btn"
+            onClick={() => setAccountantOpen(true)}
+            disabled={isLoading || hasUploadsInFlight}
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              minHeight: "48px",
+              fontWeight: 600,
+              border: `2px solid ${tokens.colors.border}`,
+            }}
+          >
+            Have my accountant upload the documents
+          </Button>
+        </div>
+        <AccountantReferralModal
+          open={accountantOpen}
+          busy={accountantBusy}
+          onCancel={() => setAccountantOpen(false)}
+          onSubmit={(details) => { void referAccountant(details); }}
+        />
         <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
           {groupedRequirements.map(([category, entries]) => (
             <div key={category} style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>

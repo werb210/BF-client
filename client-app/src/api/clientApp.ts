@@ -105,6 +105,16 @@ export const ClientAppAPI = {
       return res;
     });
   },
+  // BF_CLIENT_STEP5_ACCOUNTANT_v1 - the server merges this into the CPA
+  // professional-advisor row and mirrors the same advisor into the CRM.
+  referAccountant(
+    applicationId: string,
+    details: { firm: string; contact: string; email: string; phone: string }
+  ) {
+    return withRetry(() =>
+      api.post<GenericObjectResponse>("/api/client/accountant", { applicationId, ...details })
+    );
+  },
   deferDocuments(token: string) {
     return withRetry(() =>
       api.patch<ClientAppStatusResponse>(`${API_ENDPOINTS_CONTRACT.CLIENT_APPLICATIONS.PREFIX}${token}`, { documentsDeferred: true })
