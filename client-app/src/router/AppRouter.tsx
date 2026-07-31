@@ -8,6 +8,8 @@ const LandingPage        = lazy(() => import("@/pages/LandingPage"));
 const OtpPage            = lazy(() => import("@/pages/OtpPage"));
 import Wizard from "@/wizard/Wizard";
 const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
+// BF_CLIENT_ACCOUNTANT_PORTAL_v1 - outside RequireOTP because that guard expects a client token.
+const AccountantPage     = lazy(() => import("@/pages/AccountantPage"));
 const Stage2Page         = lazy(() => import("@/pages/mini-portal/forms/Stage2Page"));
 const SessionExpiredPage = lazy(() => import("@/pages/SessionExpiredPage").then((m) => ({ default: m.SessionExpiredPage })));
 const SessionRevokedPage = lazy(() => import("@/pages/SessionRevokedPage").then((m) => ({ default: m.SessionRevokedPage })));
@@ -20,6 +22,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/otp" element={<OtpPage />} />
+        <Route path="/accountant" element={<AccountantPage />} />
         <Route path="/expired" element={<SessionExpiredPage />} />
         <Route path="/revoked" element={<SessionRevokedPage />} />
         <Route path="/offline" element={<OfflineFallback />} />
