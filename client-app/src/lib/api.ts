@@ -49,7 +49,30 @@ export const apiUpload = <T = unknown>(path: string, formData: FormData) =>
 
 // BF_CLIENT_BLOCK_TWO_STAGE_v1 — form-response helpers, rewritten with
 // absolute URLs and Bearer auth.
+// BF_CLIENT_ACCOUNTANT_FORMS_v2 - the CMP form components are shared between
+// the applicant and their accountant, who authenticate differently and are
+// authorised by different routes. Rather than fork the components, the
+// transport switches under them. Module-level rather than React state because
+// the form components call these helpers directly, outside any provider.
+let accountantFormMode: { token: () => string | null } | null = null;
+
+export function enableAccountantFormMode(getToken: () => string | null): void {
+  accountantFormMode = { token: getToken };
+}
+
+export function disableAccountantFormMode(): void {
+  accountantFormMode = null;
+}
+
 function buildFormResponsesUrl(applicationId: string, suffix = ""): string {
+  if (accountantFormMode) {
+    const base = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
+    return `${base}/api/accountant/applications/${encodeURIComponent(applicationId)}/form-responses${suffix}`;
+  }
+  return buildClientFormResponsesUrl(applicationId, suffix);
+}
+
+function buildClientFormResponsesUrl(applicationId: string, suffix = ""): string {
   const base = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
   // BF_CLIENT_BLOCK_v_FORM_RESPONSES_CLIENT_ROUTE_v1 — use the client-authed route
   // (the portal route is staff-gated). applicationId in the query lets the client
@@ -59,7 +82,7 @@ function buildFormResponsesUrl(applicationId: string, suffix = ""): string {
 }
 
 function buildAuthHeaders(extra?: Record<string, string>): Record<string, string> {
-  const token = getToken();
+  const token = accountantFormMode ? accountantFormMode.token() : getToken();
   const headers: Record<string, string> = { ...(extra ?? {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
