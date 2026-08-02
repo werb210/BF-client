@@ -171,6 +171,8 @@ export function Step5_Documents() {
   const [submitAttempted, setSubmitAttempted] = useState(false); // BF_CLIENT_AUDIT_FIX_v7
   const [accountantOpen, setAccountantOpen] = useState(false);
   const [accountantBusy, setAccountantBusy] = useState(false);
+  // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1
+  const [accountantError, setAccountantError] = useState<string | null>(null);
   const selectedCategory =
     app.productCategory ||
     app.selectedProductType ||
@@ -698,14 +700,28 @@ export function Step5_Documents() {
 
   // BF_CLIENT_STEP5_ACCOUNTANT_v1 - capture the accountant first, then use the
   // existing deferral path so both Step 5 actions advance identically.
+  // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1 - the `if (app.applicationId)`
+  // guard and the console.warn-only catch both hid total failure: the modal
+  // closed, the wizard advanced, and no invitation was ever sent. Neither the
+  // applicant nor Boreal had any signal. Both now stop the flow and say so.
   async function referAccountant(details: AccountantDetails) {
     setAccountantBusy(true);
+    setAccountantError(null);
     try {
-      if (app.applicationId) {
-        await ClientAppAPI.referAccountant(String(app.applicationId), details);
+      if (!app.applicationId) {
+        throw new Error("missing_application_id");
       }
+      await ClientAppAPI.referAccountant(String(app.applicationId), {
+        ...details,
+        businessName: app.business?.businessName ?? "",
+      });
     } catch (err) {
-      console.warn("[step5] referAccountant failed; continuing anyway", err);
+      console.error("[step5] referAccountant failed", err);
+      setAccountantBusy(false);
+      setAccountantError(
+        "We couldn't send this to your accountant. Please check the details and try again, or upload the documents yourself."
+      );
+      return;
     }
     setAccountantBusy(false);
     setAccountantOpen(false);
@@ -850,6 +866,7 @@ export function Step5_Documents() {
           busy={accountantBusy}
           onCancel={() => setAccountantOpen(false)}
           onSubmit={(details) => { void referAccountant(details); }}
+          submitError={accountantError}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
           {groupedRequirements.map(([category, entries]) => (
