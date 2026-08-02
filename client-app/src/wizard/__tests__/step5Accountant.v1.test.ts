@@ -32,7 +32,16 @@ describe("BF_CLIENT_STEP5_ACCOUNTANT_v1", () => {
     expect(clientApp).toContain("/api/client/accountant");
   });
 
-  it("does not block the applicant when the capture call fails", () => {
-    expect(step5).toContain("referAccountant failed; continuing anyway");
+  // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1
+  it("stops and tells the applicant when the capture call fails", () => {
+    expect(step5).not.toContain("referAccountant failed; continuing anyway");
+    expect(step5).toContain("setAccountantError(");
+    expect(step5).toContain("We couldn't send this to your accountant.");
+    expect(modal).toContain("submitError");
+  });
+
+  it("sends the business name the server cannot know yet at Step 5", () => {
+    expect(step5).toContain("businessName: app.business?.businessName");
+    expect(clientApp).toContain("businessName?: string");
   });
 });

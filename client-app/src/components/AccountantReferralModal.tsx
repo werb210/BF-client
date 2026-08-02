@@ -20,11 +20,17 @@ export function AccountantReferralModal({
   busy,
   onCancel,
   onSubmit,
+  // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1 - a failed capture used to be
+  // swallowed by a console.warn and the wizard advanced anyway, so the
+  // applicant believed their accountant had been contacted when nothing was
+  // sent. The caller now reports the failure here.
+  submitError = null,
 }: {
   open: boolean;
   busy: boolean;
   onCancel: () => void;
   onSubmit: (details: AccountantDetails) => void;
+  submitError?: string | null;
 }) {
   const [details, setDetails] = useState<AccountantDetails>(EMPTY);
   const [error, setError] = useState<string | null>(null);
@@ -107,9 +113,9 @@ export function AccountantReferralModal({
           <Input type="tel" inputMode="tel" autoComplete="tel" value={details.phone} onChange={set("phone")} disabled={busy} />
         </label>
 
-        {error && (
+        {(submitError ?? error) && (
           <div role="alert" style={{ color: tokens.colors.error, fontSize: 13, marginBottom: tokens.spacing.sm }}>
-            {error}
+            {submitError ?? error}
           </div>
         )}
 

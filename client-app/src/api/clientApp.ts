@@ -107,9 +107,11 @@ export const ClientAppAPI = {
   },
   // BF_CLIENT_STEP5_ACCOUNTANT_v1 - the server merges this into the CPA
   // professional-advisor row and mirrors the same advisor into the CRM.
+  // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1 - businessName is sent because the
+  // server cannot know it yet at Step 5.
   referAccountant(
     applicationId: string,
-    details: { firm: string; contact: string; email: string; phone: string }
+    details: { firm: string; contact: string; email: string; phone: string; businessName?: string }
   ) {
     return withRetry(() =>
       api.post<GenericObjectResponse>("/api/client/accountant", { applicationId, ...details })
