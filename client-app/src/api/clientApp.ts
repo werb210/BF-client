@@ -107,6 +107,16 @@ export const ClientAppAPI = {
   },
   // BF_CLIENT_STEP5_ACCOUNTANT_v1 - the server merges this into the CPA
   // professional-advisor row and mirrors the same advisor into the CRM.
+  // BF_CLIENT_LENDER_RESPONSES_v1 - anonymous ordinal plus reason; the server
+  // deliberately withholds which lender it was.
+  lenderResponses(applicationId: string) {
+    return withRetry(() =>
+      api.get<GenericObjectResponse>(
+        `/api/client/application/${encodeURIComponent(applicationId)}/lender-responses`
+      )
+    );
+  },
+
   // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1 - businessName is sent because the
   // server cannot know it yet at Step 5.
   referAccountant(
