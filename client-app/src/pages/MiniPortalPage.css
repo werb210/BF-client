@@ -102,3 +102,42 @@
   .mp-root{padding-bottom:84px}
   .mp-thread-card__composer{padding-right:64px}
 }
+
+/* BF_CLIENT_OFFERS_IN_THREAD_v3 */
+.mp-offer-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px 0;
+}
+.mp-offer-bubble {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  background: #eff6ff;
+  cursor: pointer;
+}
+.mp-offer-bubble__lender { font-weight: 600; font-size: 14px; }
+.mp-offer-bubble__amount { font-size: 14px; color: #1d4ed8; }
+.mp-offer-bubble__cta { margin-left: auto; font-size: 13px; font-weight: 600; color: #1d4ed8; }
+.mp-offer-bubble--expired {
+  border-color: #e5e7eb;
+  background: #f8fafc;
+  opacity: .65;
+  cursor: default;
+}
+.mp-offer-bubble--expired .mp-offer-bubble__amount,
+.mp-offer-bubble--expired .mp-offer-bubble__cta { color: #6b7280; }
+.mp-offer--expired { filter: grayscale(1); opacity: .65; }
+
+/* Two or more offers compare side by side; one uses the full width. */
+.mp-offers--multi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
