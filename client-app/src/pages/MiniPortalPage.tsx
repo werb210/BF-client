@@ -45,6 +45,15 @@ const STAGE_BY_KEY: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...
 type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean };
 type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean };
 function normalizeOffer(s: ServerOffer): Offer { return { id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) }; }
+// BF_CLIENT_OFFERS_IN_THREAD_v3 - an offer past its expiry is greyed, not
+// removed: a client who missed it should still see that it existed.
+function isOfferExpired(expiresAt?: string): boolean {
+  if (!expiresAt) return false;
+  const t = safeParseDate(expiresAt).getTime();
+  if (Number.isNaN(t)) return false;
+  return t <= Date.now();
+}
+
 function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!expiresAt) return "ok"; const t = safeParseDate(expiresAt).getTime(); if (Number.isNaN(t)) return "ok"; const diffDays = (t - Date.now()) / 86_400_000; if (diffDays <= 2) return "danger"; if (diffDays <= 4) return "warn"; return "ok"; }
 // BF_CLIENT_BLOCK_53_v1 -- final 7-pill spec. Media dropped per
 // product decision (2026-05-17). Upload Documents is the first pill
@@ -664,19 +673,6 @@ export default function MiniPortalPage() {
                 </div>
               );
             })}
-            {/* BF_CLIENT_ACCOUNTANT_UX_v2 - keep the offer in the conversation so
-                the actions panel remains available while an offer is live. */}
-            {showOfferView && (
-              <section className="mp-offers-bar mp-offers-bar--inline">
-                {offers.length === 0 ? (
-                  <div className="mp-offers__empty">No offers yet.</div>
-                ) : (
-                  <button type="button" className="mp-offers-open" data-testid="open-offers-btn" onClick={() => setOffersOpen(true)}>
-                    View {offers.length === 1 ? "offer" : `${offers.length} offers`}
-                  </button>
-                )}
-              </section>
-            )}
             {/* BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — staff typing */}
             {staffTyping && (
               <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
@@ -694,6 +690,32 @@ export default function MiniPortalPage() {
               ))}
             </div>
           )}
+          {/* BF_CLIENT_OFFERS_IN_THREAD_v3 - one bubble per offer. */}
+          {offers.length > 0 && (
+            <div className="mp-offer-bubbles">
+              {offers.map((o) => {
+                const expired = isOfferExpired(o.expiresAt);
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    className={expired ? "mp-offer-bubble mp-offer-bubble--expired" : "mp-offer-bubble"}
+                    data-testid="open-offers-btn"
+                    onClick={() => setOffersOpen(true)}
+                  >
+                    <span className="mp-offer-bubble__lender">{o.lenderName}</span>
+                    <span className="mp-offer-bubble__amount">
+                      {o.amount ? `$${o.amount}` : "Offer"}
+                    </span>
+                    <span className="mp-offer-bubble__cta">
+                      {expired ? "Expired" : "View offer"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="mp-thread-card__composer" style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <label style={{ cursor: "pointer", padding: "6px 8px", border: "1px solid #cbd6e2", borderRadius: 6, fontSize: 13, background: "#fff" }} title="Attach a file (≤3MB)">
               📎
@@ -777,15 +799,17 @@ export default function MiniPortalPage() {
                 <strong>Your offers</strong>
                 <button type="button" className="mp-offers-dialog__close" aria-label="Close" onClick={() => setOffersOpen(false)}>&times;</button>
               </header>
-              <div className="mp-offers">
+              {/* BF_CLIENT_OFFERS_IN_THREAD_v3 - side by side from two up. */}
+              <div className={offers.length > 1 ? "mp-offers mp-offers--multi" : "mp-offers"}>
                 {offers.map((o) => {
                   const exp = expirationColor(o.expiresAt);
+                  const expired = isOfferExpired(o.expiresAt);
                   const expiryMs = o.expiresAt ? (safeParseDate(o.expiresAt).getTime() - Date.now()) : 0;
                   const safeHrs = Math.max(0, Math.floor(expiryMs / 3600000));
                   const days = Math.floor(safeHrs / 24);
                   const hours = safeHrs % 24;
                   return (
-                    <article key={o.id} className={`mp-offer mp-offer--${exp}`}>
+                    <article key={o.id} className={`mp-offer mp-offer--${exp}${expired ? " mp-offer--expired" : ""}`}>
                       <header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>
                       <div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "\u2014"}</div>
                       <div className="mp-offer__subtitle">Offer Amount.</div>
@@ -795,7 +819,7 @@ export default function MiniPortalPage() {
                         <div className="mp-offer__meta-row">{o.paymentFrequency ?? "\u2014"} payment</div>
                       </div>
                       <div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>
-                      {o.status === "pending_acceptance" || pendingOfferId === o.id ? (
+                      {expired ? null : o.status === "pending_acceptance" || pendingOfferId === o.id ? (
                         <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
                       ) : (
                         <div className="mp-offer__actions">
