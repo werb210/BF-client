@@ -853,13 +853,16 @@ export default function MiniPortalPage() {
                         <div className="mp-offer__meta-row">{o.paymentFrequency ?? "\u2014"} payment</div>
                       </div>
                       <div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>
-                      {expired ? null : o.status === "pending_acceptance" || pendingOfferId === o.id ? (
-                        <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
-                      ) : (
-                        <div className="mp-offer__actions">
-                          <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
-                          {/* BF_CLIENT_SIGNED_TERM_SHEET_v4 - download, sign by
-                              hand or in any PDF app, send the signed copy back. */}
+
+                      {/* BF_CLIENT_SIGNED_UPLOAD_PENDING_v5 - outside the
+                          accept/pending branch, because signing and returning
+                          happens AFTER acceptance, not instead of it. */}
+                      <div className="mp-signed-return">
+                        Download the term sheet, sign it, and send the signed copy back to us.
+                        <div className="mp-signed-return__actions">
+                          <button type="button" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>
+                            Download term sheet
+                          </button>
                           <label className="mp-btn mp-btn--ghost" style={{ cursor: "pointer" }}>
                             {signingOfferId === o.id ? "Sending…" : "Upload signed copy"}
                             <input
@@ -874,6 +877,13 @@ export default function MiniPortalPage() {
                               }}
                             />
                           </label>
+                        </div>
+                      </div>
+                      {expired ? null : o.status === "pending_acceptance" || pendingOfferId === o.id ? (
+                        <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
+                      ) : (
+                        <div className="mp-offer__actions">
+                          <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
                           <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button>
                           <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button>
                         </div>
