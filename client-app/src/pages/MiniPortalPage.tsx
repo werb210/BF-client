@@ -409,6 +409,40 @@ export default function MiniPortalPage() {
     setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // BF_CLIENT_SIGNED_TERM_SHEET_v4 - goes through the same client upload the
+  // DocPicker uses, tagged with the offer so staff know which one it signs.
+  const [signingOfferId, setSigningOfferId] = useState<string | null>(null);
+
+  async function uploadSignedTermSheet(offerId: string, file: File) {
+    setSigningOfferId(offerId);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("category", "signed_term_sheet");
+      form.append("documentType", "signed_term_sheet");
+      form.append("applicationId", applicationId);
+      form.append("offerId", offerId);
+      const res = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+        body: form,
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      // Staff still accept it, so say what happens next rather than "done".
+      setMessages((cur) => [...cur, {
+        id: `signed-${offerId}-${Date.now()}`,
+        authorRole: "other",
+        authorName: "Boreal",
+        body: "Signed term sheet received. We'll review it and be in touch shortly.",
+        createdAt: new Date().toISOString(),
+      }]);
+    } catch {
+      window.alert("We couldn't upload that file. Please try again, or reply here and we'll help.");
+    } finally {
+      setSigningOfferId(null);
+    }
+  }
+
   async function acceptOffer(offerId: string) { await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" }); setPendingOfferId(offerId); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o))); }
   async function requestChanges(offerId: string) { const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : ""; if (reason === null) return; await apiCall(`/api/offers/${encodeURIComponent(offerId)}/request-changes`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))); }
   async function sendMessage() {
@@ -824,6 +858,22 @@ export default function MiniPortalPage() {
                       ) : (
                         <div className="mp-offer__actions">
                           <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
+                          {/* BF_CLIENT_SIGNED_TERM_SHEET_v4 - download, sign by
+                              hand or in any PDF app, send the signed copy back. */}
+                          <label className="mp-btn mp-btn--ghost" style={{ cursor: "pointer" }}>
+                            {signingOfferId === o.id ? "Sending…" : "Upload signed copy"}
+                            <input
+                              type="file"
+                              accept="application/pdf,image/*"
+                              style={{ display: "none" }}
+                              disabled={signingOfferId !== null}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.currentTarget.value = "";
+                                if (f) void uploadSignedTermSheet(o.id, f);
+                              }}
+                            />
+                          </label>
                           <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button>
                           <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button>
                         </div>
