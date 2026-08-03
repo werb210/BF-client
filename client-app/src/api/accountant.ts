@@ -81,9 +81,10 @@ export function fetchAccountantApplication(id: string) {
   }>(`/api/accountant/applications/${encodeURIComponent(id)}`);
 }
 
-export async function uploadAccountantDocument(id: string, category: string, file: File) {
+export async function uploadAccountantDocument(id: string, category: string, files: File[]) {
   const body = new FormData();
-  body.append("file", file);
+  // BF_CLIENT_ACCOUNTANT_UX_v2 - the server accepts an array under "files".
+  for (const file of files) body.append("files", file);
   body.append("category", category);
   return accountantFetch<{ id: string }>(`/api/accountant/applications/${encodeURIComponent(id)}/upload`, {
     method: "POST", body,

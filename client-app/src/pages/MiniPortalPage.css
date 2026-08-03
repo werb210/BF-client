@@ -44,6 +44,29 @@
    six-figure amounts never clip. Cards wrap instead of being forced into 3 columns. */
 .mp-offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .mp-offers-bar{display:flex;justify-content:flex-start}
+.mp-offers-bar--inline {
+  position: static;
+  width: auto;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #eff6ff;
+}
+.mp-signed-return {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+}
+.mp-signed-return__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
 .mp-offers-open{min-height:44px;padding:10px 18px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
 .mp-offers-open:hover{background:#1e40af}
 .mp-offers-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}

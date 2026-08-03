@@ -664,6 +664,19 @@ export default function MiniPortalPage() {
                 </div>
               );
             })}
+            {/* BF_CLIENT_ACCOUNTANT_UX_v2 - keep the offer in the conversation so
+                the actions panel remains available while an offer is live. */}
+            {showOfferView && (
+              <section className="mp-offers-bar mp-offers-bar--inline">
+                {offers.length === 0 ? (
+                  <div className="mp-offers__empty">No offers yet.</div>
+                ) : (
+                  <button type="button" className="mp-offers-open" data-testid="open-offers-btn" onClick={() => setOffersOpen(true)}>
+                    View {offers.length === 1 ? "offer" : `${offers.length} offers`}
+                  </button>
+                )}
+              </section>
+            )}
             {/* BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — staff typing */}
             {staffTyping && (
               <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
@@ -698,8 +711,7 @@ export default function MiniPortalPage() {
             <button onClick={() => void sendMessage()}>Send</button>
           </div>
         </section>
-        {!showOfferView && (
-          <aside className="mp-actions">
+        <aside className="mp-actions">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
@@ -756,19 +768,7 @@ export default function MiniPortalPage() {
                 onUploaded={() => { void loadAll(); }}
               />
             )}
-          </aside>
-        )}
-        {showOfferView && (
-          <section className="mp-offers-bar">
-            {offers.length === 0 ? (
-              <div className="mp-offers__empty">No offers yet.</div>
-            ) : (
-              <button type="button" className="mp-offers-open" data-testid="open-offers-btn" onClick={() => setOffersOpen(true)}>
-                View {offers.length === 1 ? "offer" : `${offers.length} offers`}
-              </button>
-            )}
-          </section>
-        )}
+        </aside>
         {/* BF_CLIENT_OFFERS_MODAL_v1 - offers open in a full-width dialog so amounts are never clipped. */}
         {offersOpen && (
           <div className="mp-offers-overlay" role="dialog" aria-modal="true" aria-label="Offers" onClick={() => setOffersOpen(false)}>

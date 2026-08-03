@@ -73,6 +73,8 @@ export default function AccountantPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [uploads, setUploads] = useState<AccountantUploadSlot[]>([]);
   const [uploadingCategory, setUploadingCategory] = useState<string | null>(null);
+  // BF_CLIENT_ACCOUNTANT_UX_v2
+  const [dragCategory, setDragCategory] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [forms, setForms] = useState<string[]>([]);
   const [openForm, setOpenForm] = useState<string | null>(null);
@@ -105,11 +107,11 @@ export default function AccountantPage() {
     catch { setOpenId(null); setError("We couldn't open that application."); }
   }
 
-  async function handleUpload(category: string, file: File) {
+  async function handleUpload(category: string, fileList: File[]) {
     if (!openId) return;
     setUploadingCategory(category); setError(null);
     try {
-      await uploadAccountantDocument(openId, category, file);
+      await uploadAccountantDocument(openId, category, fileList);
       setNotice(`${category} received. Thank you.`);
       const detail = await fetchAccountantApplication(openId);
       setUploads(detail.uploads ?? []);
@@ -119,6 +121,22 @@ export default function AccountantPage() {
       else if (code === "APPLICATION_NOT_ACCEPTING_UPLOADS") setError("This application is closed and no longer accepts documents.");
       else setError("The upload didn't go through. Please try again.");
     } finally { setUploadingCategory(null); }
+  }
+
+  async function sendCode() {
+    if (busy || !phone.trim()) return;
+    setBusy(true); setError(null);
+    try { await startAccountantOtp(toE164(phone)); setPhase("code"); }
+    catch { setError("We couldn't send the code. Check the number and try again."); }
+    finally { setBusy(false); }
+  }
+
+  async function verifyCode() {
+    if (busy || code.trim().length < 6) return;
+    setBusy(true); setError(null);
+    try { await verifyAccountantOtp(toE164(phone), code.trim()); setSignedIn(true); }
+    catch (error) { setError(signInMessage(error)); }
+    finally { setBusy(false); }
   }
 
   const shell = (children: React.ReactNode) => <div style={page}>
@@ -133,22 +151,12 @@ export default function AccountantPage() {
       <div style={card}>
         {phase === "phone" ? <>
           <label htmlFor="accountant-phone" style={{ fontSize: 13 }}>Mobile number</label>
-          <input id="accountant-phone" type="tel" name="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
-          <button type="button" style={button} disabled={busy || !phone.trim()} onClick={async () => {
-            setBusy(true); setError(null);
-            try { await startAccountantOtp(toE164(phone)); setPhase("code"); }
-            catch { setError("We couldn't send the code. Check the number and try again."); }
-            finally { setBusy(false); }
-          }}>{busy ? "Sending…" : "Send code"}</button>
+          <input id="accountant-phone" type="tel" name="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void sendCode(); } }} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
+          <button type="button" style={button} disabled={busy || !phone.trim()} onClick={() => void sendCode()}>{busy ? "Sending…" : "Send code"}</button>
         </> : <>
           <label htmlFor="accountant-code" style={{ fontSize: 13 }}>6-digit code</label>
-          <input id="accountant-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value)} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
-          <button type="button" style={button} disabled={busy || code.trim().length < 6} onClick={async () => {
-            setBusy(true); setError(null);
-            try { await verifyAccountantOtp(toE164(phone), code.trim()); setSignedIn(true); }
-            catch (error) { setError(signInMessage(error)); }
-            finally { setBusy(false); }
-          }}>{busy ? "Checking…" : "Sign in"}</button>
+          <input id="accountant-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void verifyCode(); } }} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
+          <button type="button" style={button} disabled={busy || code.trim().length < 6} onClick={() => void verifyCode()}>{busy ? "Checking…" : "Sign in"}</button>
           <div style={{ marginTop: 10 }}><button type="button" style={link} onClick={() => { setPhase("phone"); setCode(""); setError(null); }}>Use a different number</button></div>
         </>}
         {error && <div role="alert" style={{ color: "#b91c1c", fontSize: 13, marginTop: 10 }}>{error}</div>}
@@ -163,6 +171,17 @@ export default function AccountantPage() {
     </div>
     {error && <div role="alert" style={{ color: "#b91c1c", fontSize: 13, marginBottom: 10 }}>{error}</div>}
     {notice && <div role="status" style={{ color: "#15803d", fontSize: 13, marginBottom: 10 }}>{notice}</div>}
+    {/* BF_CLIENT_ACCOUNTANT_UX_v2 */}
+    <div style={{ ...card, background: "#f8fafc", fontSize: 14, lineHeight: 1.5, marginBottom: 12 }}>
+      <div style={{ fontWeight: 600, marginBottom: 6 }}>What we need from you</div>
+      <div style={{ color: "#475569" }}>
+        Your client has asked us to collect their financial documents from you directly.
+        Open the application below and upload only the items listed — you can select
+        several files at once or drag them in. You will not see anything else on your
+        client's file. If you are not sure you are authorised to release these
+        documents, please confirm with your client first.
+      </div>
+    </div>
     {applications.length === 0 ? <div style={card}>Nothing is waiting on you right now.</div> : applications.map((app) => <div key={app.id} style={card}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong>{app.business_name || "Application"}</strong>
@@ -170,10 +189,27 @@ export default function AccountantPage() {
       </div>
       {openId === app.id && <div style={{ marginTop: 12 }}>
         {uploads.length === 0 ? <div style={{ fontSize: 13, color: "#475569" }}>No documents are outstanding.</div> : uploads.map((slot) => <div key={slot.category} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderTop: "1px solid #e2e8f0" }}>
-          <span style={{ fontSize: 14 }}>{slot.category}{!slot.outstanding && <span style={{ color: "#15803d", marginLeft: 8, fontSize: 12 }}>received</span>}</span>
-          <label style={{ ...link, whiteSpace: "nowrap" }}>{uploadingCategory === slot.category ? "Uploading…" : "Choose file"}
-            <input type="file" data-testid={`accountant-upload-${slot.category}`} style={{ display: "none" }} disabled={uploadingCategory !== null} onChange={(event) => {
-              const file = event.target.files?.[0]; if (file) void handleUpload(slot.category, file); event.currentTarget.value = "";
+          <span style={{ fontSize: 14, fontWeight: 500 }}>
+            {slot.category}
+            {!slot.outstanding
+              ? <span style={{ color: "#15803d", marginLeft: 8, fontSize: 12, fontWeight: 400 }}>received</span>
+              : <span style={{ color: "#b45309", marginLeft: 8, fontSize: 12, fontWeight: 400 }}>needed</span>}
+          </span>
+          {/* BF_CLIENT_ACCOUNTANT_UX_v2 - select or drop multiple documents. */}
+          <label
+            style={{ ...link, whiteSpace: "nowrap", border: dragCategory === slot.category ? "2px dashed #1d4ed8" : "2px dashed transparent", borderRadius: 8, padding: "6px 10px", background: dragCategory === slot.category ? "#eff6ff" : "transparent" }}
+            onDragOver={(event) => { event.preventDefault(); setDragCategory(slot.category); }}
+            onDragLeave={() => setDragCategory(null)}
+            onDrop={(event) => {
+              event.preventDefault(); setDragCategory(null);
+              const dropped = Array.from(event.dataTransfer.files);
+              if (dropped.length) void handleUpload(slot.category, dropped);
+            }}
+          >{uploadingCategory === slot.category ? "Uploading…" : "Choose files or drop here"}
+            <input type="file" multiple data-testid={`accountant-upload-${slot.category}`} style={{ display: "none" }} disabled={uploadingCategory !== null} onChange={(event) => {
+              const picked = Array.from(event.target.files ?? []);
+              if (picked.length) void handleUpload(slot.category, picked);
+              event.currentTarget.value = "";
             }} />
           </label>
         </div>)}
