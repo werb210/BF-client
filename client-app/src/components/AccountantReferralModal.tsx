@@ -15,6 +15,37 @@ export type AccountantDetails = {
 
 const EMPTY: AccountantDetails = { firm: "", contact: "", email: "", phone: "" };
 
+// BF_CLIENT_ACCOUNTANT_FORMATTING_v2
+// The phone went in as a raw run of digits - "5873815330" - and was sent that
+// way. It is the number the accountant later signs in with, so it is worth
+// showing back in a shape a person can proof-read before they send it.
+// Formats as the applicant types and tolerates a leading country code.
+function formatPhone(input: string): string {
+  let digits = input.replace(/[^0-9]/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+const phoneDigits = (input: string): string => input.replace(/[^0-9]/g, "").replace(/^1(?=\d{10}$)/, "");
+
+// A firm or a person typed in caps or all lower reads as a mistake in the
+// invitation email, which goes out over our name. Only touches the obvious
+// cases - anything with deliberate mixed case is left exactly as typed.
+function tidyName(input: string): string {
+  const trimmed = input.trim().replace(/\s+/g, " ");
+  if (!trimmed) return trimmed;
+  const hasLower = /[a-z]/.test(trimmed);
+  const hasUpper = /[A-Z]/.test(trimmed);
+  if (hasLower && hasUpper) return trimmed;
+  return trimmed
+    .split(" ")
+    .map((word) => (word.length > 2 ? word[0].toUpperCase() + word.slice(1).toLowerCase() : word))
+    .join(" ");
+}
+
 export function AccountantReferralModal({
   open,
   busy,
@@ -38,14 +69,22 @@ export function AccountantReferralModal({
   if (!open) return null;
 
   const set = (key: keyof AccountantDetails) => (event: ChangeEvent<HTMLInputElement>) =>
-    setDetails((previous) => ({ ...previous, [key]: event.target.value }));
+    setDetails((previous) => ({
+      ...previous,
+      // BF_CLIENT_ACCOUNTANT_FORMATTING_v2
+      [key]: key === "phone" ? formatPhone(event.target.value) : event.target.value,
+    }));
 
   function handleSubmit() {
+    // BF_CLIENT_ACCOUNTANT_FORMATTING_v2 - tidy the names, lowercase the email
+    // (it is an address, not prose), and send the phone as bare digits. The
+    // server stores this on the contact record and the accountant signs in
+    // against it, so the stored value must not carry display punctuation.
     const trimmed: AccountantDetails = {
-      firm: details.firm.trim(),
-      contact: details.contact.trim(),
-      email: details.email.trim(),
-      phone: details.phone.trim(),
+      firm: tidyName(details.firm),
+      contact: tidyName(details.contact),
+      email: details.email.trim().toLowerCase(),
+      phone: phoneDigits(details.phone),
     };
     if (!trimmed.firm || !trimmed.contact || !trimmed.email || !trimmed.phone) {
       setError("Please fill in all four fields so we can reach your accountant.");
@@ -53,6 +92,11 @@ export function AccountantReferralModal({
     }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed.email)) {
       setError("Please enter a valid email address.");
+      return;
+    }
+    // Ten digits, because the accountant signs in with this number by SMS.
+    if (trimmed.phone.length !== 10) {
+      setError("Please enter a 10-digit phone number for your accountant.");
       return;
     }
     setError(null);
@@ -110,7 +154,16 @@ export function AccountantReferralModal({
         </label>
         <label style={{ display: "block", marginBottom: tokens.spacing.md }}>
           <div style={{ fontSize: 13, marginBottom: 4 }}>Phone</div>
-          <Input type="tel" inputMode="tel" autoComplete="tel" value={details.phone} onChange={set("phone")} disabled={busy} />
+          <Input
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="(587) 381-5330"
+            maxLength={14}
+            value={details.phone}
+            onChange={set("phone")}
+            disabled={busy}
+          />
         </label>
 
         {(submitError ?? error) && (
