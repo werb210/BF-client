@@ -19,7 +19,7 @@
     "cap:open:android": "cap open android"
   },
   "engines": {
-    "node": ">=20.10 <23"
+    "node": ">=22.0.0 <23"
   },
   "dependencies": {
     "@boreal/shared-contract": "file:../shared-contract",
