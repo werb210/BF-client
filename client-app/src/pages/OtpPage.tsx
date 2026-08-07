@@ -9,19 +9,21 @@ import { startOtp, verifyOtp } from "@/api/auth";
 // /portal when the server confirms they have a submitted application.
 import { ClientProfileStore } from "@/state/clientProfiles";
 import { tokens, components } from "@/styles";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 type Step = "phone" | "code";
 
 function toE164(raw: string): string {
-  // Strip everything except digits
-  const digits = raw.replace(/\D/g, "");
+  // BF_CLIENT_PHONE_LEADING_ONE_v4 - delegates to the shared normaliser so the
+  // ten-digits-starting-with-1 case cannot slip through here. Partial entry still
+  // returns the raw string so the field stays typable.
+  const digits = String(raw ?? "").replace(/\D/g, "");
   if (!digits) return "";
-  // Already has country code (11 digits starting with 1)
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  // Standard 10-digit North American number
-  if (digits.length === 10) return `+1${digits}`;
-  // Partial entry — return as-is so user can keep typing
-  return raw;
+  try {
+    return normalizePhone(raw);
+  } catch {
+    return raw;
+  }
 }
 
 export default function OtpPage() {

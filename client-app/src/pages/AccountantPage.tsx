@@ -13,12 +13,15 @@ import {
   startAccountantOtp, uploadAccountantDocument, verifyAccountantOtp,
   type AccountantApplication, type AccountantUploadSlot,
 } from "@/api/accountant";
+import { normalizePhone } from "@/utils/normalizePhone";
 
+// BF_CLIENT_PHONE_LEADING_ONE_v4 - see utils/normalizePhone.ts.
 function toE164(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  if (digits.length === 10) return `+1${digits}`;
-  return raw.trim();
+  try {
+    return normalizePhone(raw);
+  } catch {
+    return raw.trim();
+  }
 }
 
 function getError(error: unknown): Error & { status?: number } {
