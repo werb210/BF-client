@@ -2,6 +2,7 @@ import { getPersistedAttribution } from "./attribution";
 import { apiCall } from "@/api/client";
 import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { isDevMode } from "@/config/env";
+import { normalizePhone } from "@/utils/normalizePhone";
 
 export function track(event: string) {
   if (isDevMode()) {
@@ -135,6 +136,51 @@ export const trackConversion = (
 
 // ---- Client Revenue Modeling ----
 const COMMISSION_RATE = 0.03; // Adjust later if needed
+
+// BF_CLIENT_ADS_CONVERSION_VALUE_v2
+// Report estimated commission (our revenue), rather than the requested loan
+// amount, so Google Ads can optimize bids toward application value.
+export const ADS_CONVERSION_SEND_TO = "AW-18248196538/cfD0CI2m9M8cELrDtf1D";
+
+export const buildAdsConversionPayload = (
+  estimatedCommission: number,
+  transactionId?: string | null
+): Record<string, unknown> => {
+  const payload: Record<string, unknown> = {
+    send_to: ADS_CONVERSION_SEND_TO,
+  };
+
+  if (Number.isFinite(estimatedCommission) && estimatedCommission > 0) {
+    payload.value = Math.round(estimatedCommission * 100) / 100;
+    payload.currency = "CAD";
+  }
+
+  const id = String(transactionId || "").trim();
+  if (id) payload.transaction_id = id;
+
+  return payload;
+};
+
+// BF_CLIENT_ADS_ENHANCED_CONVERSIONS_v3
+// Google requires normalized contact data for enhanced conversion matching.
+// A malformed phone must not prevent the remaining user data from being sent.
+export const buildAdsUserData = (
+  email?: string | null,
+  phone?: string | null
+): Record<string, string> => {
+  const userData: Record<string, string> = {};
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  if (cleanEmail.includes("@")) userData.email = cleanEmail;
+
+  try {
+    const e164 = normalizePhone(String(phone || ""));
+    if (e164) userData.phone_number = e164;
+  } catch {
+    // Preserve valid fields when the optional phone number is malformed.
+  }
+
+  return userData;
+};
 
 export const estimateClientCommission = (
   requestedAmount: number

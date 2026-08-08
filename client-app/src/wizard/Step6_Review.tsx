@@ -34,6 +34,8 @@ import {
 } from "../client/submissionIdempotency";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import {
+  buildAdsConversionPayload,
+  buildAdsUserData,
   calculateApplicationQuality,
   classifyReadiness,
   estimateClientCommission,
@@ -410,9 +412,27 @@ export function Step6_Review(): JSX.Element {
           lead_strength: app.readinessScore,
           ...attribution,
         });
-        // BF_CLIENT_ADS_CONVERSION_v1 - report the Google Ads "Apply" conversion (AW-18248196538/cfD0CI2m9M8cELrDtf1D).
+        // BF_CLIENT_ADS_CONVERSION_v1 - report the Google Ads "Apply" conversion.
+        // BF_CLIENT_ADS_CONVERSION_VALUE_v2 - include estimated commission so
+        // Ads can optimize toward revenue instead of the action's default value.
         if (typeof window !== "undefined" && window.gtag) {
-          window.gtag("event", "conversion", { send_to: "AW-18248196538/cfD0CI2m9M8cELrDtf1D" });
+          // BF_CLIENT_ADS_ENHANCED_CONVERSIONS_v3 - explicitly provide contact
+          // details because this review screen has no inputs for automatic mode.
+          const adsUserData = buildAdsUserData(
+            app.applicant?.email || app.kyc?.email,
+            app.applicant?.phone || app.kyc?.phone
+          );
+          if (Object.keys(adsUserData).length > 0) {
+            window.gtag("set", "user_data", adsUserData);
+          }
+          window.gtag(
+            "event",
+            "conversion",
+            buildAdsConversionPayload(
+              estimatedCommission,
+              app.applicationId || app.applicationToken
+            )
+          );
         }
         track("submit");
       } catch (analyticsErr) {
