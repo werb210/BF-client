@@ -56,11 +56,13 @@ describe("BF_CLIENT_BLOCK_v130b_STEP5_SCROLL_AND_OTP_PHONE_CLAIM_v1 — OTP phon
 
   it("/application/start POST body uses readiness_phone, not bare phone", () => {
     expect(src).toContain("readiness_phone: phoneE164");
-    const bodyLineIdx = src.indexOf("body: JSON.stringify({ source: 'client_direct'");
-    expect(bodyLineIdx).toBeGreaterThan(-1);
-    const bodyLine = src.slice(bodyLineIdx, src.indexOf("\n", bodyLineIdx));
-    expect(bodyLine).not.toContain(" phone:");
-    expect(bodyLine).toContain("readiness_phone:");
+    // BF_CLIENT_OTP_ATTRIBUTION_v1 - body is multi-line now; anchor on the mint.
+    const mintIdx = src.indexOf("API_BASE + '/api/public/application/start'");
+    expect(mintIdx).toBeGreaterThan(-1);
+    const bodyIdx = src.indexOf("body: JSON.stringify({", mintIdx);
+    const body = src.slice(bodyIdx, src.indexOf("15000,", bodyIdx));
+    expect(body).not.toContain(" phone:");
+    expect(body).toContain("readiness_phone:");
   });
 
   it("phoneE164 variable is still the value being sent (no accidental rename)", () => {
