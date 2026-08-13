@@ -11,6 +11,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { setToken } from '@/auth/token';
+// BF_CLIENT_OTP_ATTRIBUTION_v1
+import { getAttribution } from '@/lib/attribution';
 
 const API_BASE =
   ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
@@ -231,7 +233,26 @@ export default function PhoneOTPInline() {
           // metadata.readiness_phone). This rename activates the claim
           // path so the wizard receives the same uuid the staff portal
           // already sees.
-          body: JSON.stringify({ source: 'client_direct', readiness_phone: phoneE164 }),
+          // BF_CLIENT_OTP_ATTRIBUTION_v1 - this is the call that actually mints
+          // the application row. Step1_KYC builds the same request and does
+          // attach attribution, but the wizard mounts after this has already
+          // created the row, so its copy never takes effect. Without this the
+          // gclid captured on boreal.financial and carried across the domain
+          // hop was discarded at the last step, and every application - 52 of
+          // them - was recorded as coming from nowhere.
+          body: JSON.stringify({
+            source: 'client_direct',
+            readiness_phone: phoneE164,
+            ...(() => {
+              try {
+                const attr = getAttribution();
+                return attr && Object.keys(attr).length ? { attribution: attr } : {};
+              } catch {
+                // Attribution must never block a login.
+                return {};
+              }
+            })(),
+          }),
         },
         15000,
         'mint',
