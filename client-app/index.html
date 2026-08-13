@@ -1,15 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Consent Mode v2 — default denied until the consent banner grants -->
+    <!-- Consent Mode v2 — implied consent (CA); banner Decline revokes everything -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('consent', 'default', {
-        ad_storage: 'denied',
-        analytics_storage: 'granted', /* BF_CLIENT_CONSENT_GTAG_FORMAT_FIX_v1: implied consent (CA); banner Decline still turns this off */
-        ad_user_data: 'denied',
-        ad_personalization: 'denied',
+        /* BF_CLIENT_ADS_CONSENT_v1: the ad keys used to default to 'denied'
+           while analytics_storage defaulted to 'granted' on the same implied-
+           consent basis - an inconsistency, not a decision. The Apply
+           conversion fires on wizard submit, before most applicants touch the
+           banner, so it landed in a denied state and Google recorded it as
+           modelled instead of attributed: 52 applications, 2 recorded
+           conversions. Declining in the banner still revokes all of these
+           (see ConsentBanner.tsx), and Quebec - where Law 25 applies - is
+           excluded from the Canada campaign. */
+        ad_storage: 'granted',
+        analytics_storage: 'granted',
+        ad_user_data: 'granted',
+        ad_personalization: 'denied', /* personalised remarketing stays off */
         functionality_storage: 'granted',
         security_storage: 'granted',
         wait_for_update: 500
