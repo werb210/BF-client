@@ -1,0 +1,69 @@
+/* BF_CLIENT_UI_v169
+   Inline styles cannot express hover, active or focus-visible, so the wizard's
+   buttons never reacted to the pointer or the keyboard. These classes carry the
+   interactive states; tokens.ts still owns the colours, mirrored here. */
+
+.bf-btn {
+  height: 48px;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    box-shadow 120ms ease, transform 60ms ease;
+}
+
+/* Visible only for keyboard users, so the pointer experience stays clean while
+   anyone tabbing through six steps of forms can still see where they are. */
+.bf-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(191, 155, 73, 0.45);
+}
+
+.bf-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.bf-btn--primary {
+  background: #BF9B49;
+  color: #0B1F3A;
+  border: 1px solid #BF9B49;
+}
+.bf-btn--primary:hover:not(:disabled) {
+  background: #cfa953;
+  border-color: #cfa953;
+}
+
+.bf-btn--secondary {
+  background: #FFFFFF;
+  color: #0B1F3A;
+  border: 1px solid #E4EAF2;
+}
+.bf-btn--secondary:hover:not(:disabled) {
+  background: #F5F8FC;
+  border-color: #0B1F3A;
+}
+
+.bf-btn--ghost {
+  background: transparent;
+  color: #0B1F3A;
+  border: 1px solid transparent;
+}
+.bf-btn--ghost:hover:not(:disabled) {
+  background: #F5F8FC;
+}
+
+/* A solid muted state reads as "not yet available". Half-opacity reads as
+   broken, which is what opacity: 0.5 was doing on every step. */
+.bf-btn:disabled {
+  background: #E4EAF2;
+  color: #8593aa;
+  border-color: #E4EAF2;
+  cursor: not-allowed;
+  transform: none;
+}
