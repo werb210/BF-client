@@ -1,0 +1,9 @@
+/* BF_CLIENT_CHROME_v170
+   Mirrors .container in BF-Website client/src/styles/global.css. If the
+   template's --max-width changes, change it here too - the two are compared by
+   src/__tests__/chromeParity.v170.test.ts. */
+.bf-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}

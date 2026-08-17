@@ -6,6 +6,7 @@
 // BF_CLIENT_BLOCK_v102_LOGO_LOCAL_v1 — local logo asset to avoid
 // cross-origin fetch from boreal.financial in production.
 import { useState } from "react";
+import "@/styles/container.css"; // BF_CLIENT_CHROME_v170
 import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 import { isNativeApp } from "@/lib/platform";
 
@@ -58,7 +59,7 @@ export default function LandingHeader() {
   if (isNativeApp()) {
     return (
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a1120]/95 backdrop-blur">
-        <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-3 px-6">
+        <div className="bf-container flex min-h-14 items-center gap-3">
           <img src={logoUrl} alt="Boreal Financial" className="h-7 w-auto" />
           <span className="text-sm font-semibold text-white">Boreal Financial</span>
         </div>
@@ -68,7 +69,7 @@ export default function LandingHeader() {
 
   return (
     <header className="site-header w-full border-b border-white/10 bg-[#0B1320]/95 backdrop-blur">
-      <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-6 py-3">
+      <div className="bf-container flex min-h-20 items-center justify-between gap-4 py-3">
         <a
           href="https://www.boreal.financial"
           className="flex items-center gap-3 sm:gap-4"
