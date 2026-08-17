@@ -7,6 +7,7 @@
 // cross-origin fetch from boreal.financial in production.
 import { useState } from "react";
 import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
+import { isNativeApp } from "@/lib/platform";
 
 const NAV_ITEMS = [
   { href: "https://www.boreal.financial/products", label: "Products" },
@@ -50,6 +51,20 @@ function MenuIcon({ open }: { open: boolean }) {
 
 export default function LandingHeader() {
   const [open, setOpen] = useState(false);
+
+  // BF_CLIENT_CHROME_v168 - inside the app the nav links open an external
+  // browser mid-application, so they are dropped. A logo-only bar stays: a
+  // screen with no header at all leaves the user unanchored part-way through.
+  if (isNativeApp()) {
+    return (
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a1120]/95 backdrop-blur">
+        <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-3 px-6">
+          <img src={logoUrl} alt="Boreal Financial" className="h-7 w-auto" />
+          <span className="text-sm font-semibold text-white">Boreal Financial</span>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="site-header w-full border-b border-white/10 bg-[#0B1320]/95 backdrop-blur">

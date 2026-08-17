@@ -4,8 +4,14 @@
 // / copyright row. Website pages live on boreal.financial (different origin) so
 // those links are absolute; Apply Now scrolls to this page's OTP form.
 import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
+import { isNativeApp } from "@/lib/platform";
 
 export default function LandingFooter() {
+  // BF_CLIENT_CHROME_v168 - no marketing footer inside the app. Privacy and
+  // Terms still have to be reachable for both stores; they belong on an About
+  // screen, not stapled to the bottom of the application flow.
+  if (isNativeApp()) return null;
+
   return (
     <footer className="bg-[#0a1120] border-t border-[#1c2538] text-white/80 px-6 py-8">
       <div className="max-w-[1200px] mx-auto">
