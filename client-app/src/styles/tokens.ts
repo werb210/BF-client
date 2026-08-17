@@ -1,16 +1,21 @@
 export const tokens = {
   colors: {
-    primary: "rgb(30 58 138)",
-    primaryDark: "rgb(29 78 216)",
-    primaryLight: "rgb(219 234 254)",
+    // BF_CLIENT_UI_v169 - BF-Website palette. primary is the navy used for
+    // focus rings, borders and secondary text; accent is the gold used on the
+    // primary call to action, matching the Apply button on the marketing site.
+    primary: "#0B1F3A",
+    primaryDark: "#081729",
+    primaryLight: "#F5F8FC",
+    accent: "#BF9B49",
+    accentHover: "#cfa953",
     success: "rgb(22 163 74)",
     warning: "rgb(245 158 11)",
     error: "rgb(220 38 38)",
     background: "rgb(248 250 252)",
     surface: "rgb(255 255 255)",
-    border: "rgb(229 231 235)",
+    border: "#E4EAF2",
     textPrimary: "rgb(15 23 42)",
-    textSecondary: "rgb(75 85 99)",
+    textSecondary: "#51617D",
     disabled: "rgb(203 213 225)",
   },
   typography: {
