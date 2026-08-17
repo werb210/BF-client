@@ -57,8 +57,21 @@ function toTitleCaseV66(input: string): string {
 // requested order (applicant + partner). Base fields always render; the Accord
 // LOC extras render only when isAccordLOC. All fields formatted. No Work Phone,
 // no CEM here (CEM consent lives in Step 6 with the T&C).
-function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, countryCode, regionCountry, regionLabel, postalLabel, identityLabel }) {
+function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }) {
   const L = components.form.label;
+  // BF_CLIENT_STEP4_VALIDATION_v171 - an error shows only once the user has
+  // left the field, so nothing turns red while they are still typing into it.
+  const showErr = (key) => (touched[key] && errors[key]) || "";
+  const errStyle = { color: "#b3261e", fontSize: 13, marginTop: 4, lineHeight: 1.4 };
+  // Field wrapper: labels the input for the scroll-to-first-error pass and
+  // renders the message directly beneath it.
+  const F = (key, label, control) => (
+    <div data-field={`${fieldPrefix}${key}`}>
+      <label style={L}>{label}</label>
+      <div onBlur={() => onBlurField(key)}>{control}</div>
+      {showErr(key) ? <div style={errStyle} role="alert">{showErr(key)}</div> : null}
+    </div>
+  );
   const grid = { display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md };
   const fmtMoney = (v) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
   const yn = (key) => (
@@ -75,15 +88,15 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
   };
   return (
     <div style={grid}>
-      <div><label style={L}>First Name</label><Input autoComplete="given-name" value={data.firstName || ""} onChange={(e) => setName("firstName", e.target.value)} /></div>
-      <div><label style={L}>Last Name</label><Input autoComplete="family-name" value={data.lastName || ""} onChange={(e) => setName("lastName", e.target.value)} /></div>
-      <div><label style={L}>Email</label><Input type="email" autoComplete="email" value={data.email || ""} onChange={(e) => setField("email", e.target.value)} /></div>
-      <div><label style={L}>Mobile Phone</label><PhoneInput value={formatPhoneNumber(data.phone || "", countryCode)} onChange={(e) => setField("phone", formatPhoneNumber(e.target.value, countryCode))} /></div>
+      {F("firstName", "First Name", <Input autoComplete="given-name" value={data.firstName || ""} onChange={(e) => setName("firstName", e.target.value)} />)}
+      {F("lastName", "Last Name", <Input autoComplete="family-name" value={data.lastName || ""} onChange={(e) => setName("lastName", e.target.value)} />)}
+      {F("email", "Email", <Input type="email" autoComplete="email" value={data.email || ""} onChange={(e) => setField("email", e.target.value)} />)}
+      {F("phone", "Mobile Phone", <PhoneInput value={formatPhoneNumber(data.phone || "", countryCode)} onChange={(e) => setField("phone", formatPhoneNumber(e.target.value, countryCode))} />)}
       {isAccordLOC && (
         <div><label style={L}>Home Phone</label><PhoneInput value={formatPhoneNumber(data.homePhone || "", countryCode)} onChange={(e) => setField("homePhone", formatPhoneNumber(e.target.value, countryCode))} /></div>
       )}
-      <div><label style={L}>Date of Birth</label><Input type="date" autoComplete="bday" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} /></div>
-      <div><label style={L}>{identityLabel}</label><Input inputMode="numeric" autoComplete="off" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} /></div>
+      {F("dob", "Date of Birth", <Input type="date" autoComplete="bday" value={data.dob || ""} onChange={(e) => setField("dob", e.target.value)} />)}
+      {F("ssn", identityLabel, <Input inputMode="numeric" autoComplete="off" value={formatIdentityNumber(data.ssn || "", countryCode)} onChange={(e) => setField("ssn", formatIdentityNumber(e.target.value, countryCode))} />)}
       {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 — Title/Role (Accord senior leadership). Shared component → applicant + partner. */}
       {isAccordLOC && (
         <div><label style={L}>Title / Role</label>
@@ -182,12 +195,67 @@ function AccordAdditionalShareholders({ list, onChange }) {
 }
 
 
+// BF_CLIENT_STEP4_VALIDATION_v171
+// Human labels so a message reads "Enter the date of birth" rather than
+// "dob is required".
+const LABELS = {
+  firstName: "first name",
+  lastName: "last name",
+  email: "email address",
+  phone: "mobile phone number",
+  street: "street address",
+  city: "city",
+  state: "province or state",
+  zip: "postal or ZIP code",
+  dob: "date of birth",
+  ssn: "identity number",
+  ownership: "ownership percentage",
+};
+
+function validateOwner(values, requiredFields, labels) {
+  const out = {};
+  requiredFields.forEach((field) => {
+    if (!Validate.required(values[field])) {
+      out[field] = `Enter the ${labels[field] || field}.`;
+    }
+  });
+  if (!out.phone && values.phone && !Validate.phone(values.phone)) {
+    out.phone = "Enter a valid 10-digit phone number.";
+  }
+  if (!out.email && values.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(values.email)) {
+    out.email = "Enter a valid email address.";
+  }
+  return out;
+}
+
+// Scrolling to the first problem matters most on mobile, where the summary
+// banner is off-screen by the time the user starts looking.
+function focusFirstError(errs, prefix) {
+  if (typeof document === "undefined") return;
+  const first = Object.keys(errs)[0];
+  if (!first) return;
+  const el = document.querySelector(`[data-field="${prefix}${first}"]`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const input = el.querySelector("input, select, textarea");
+  if (input && typeof input.focus === "function") {
+    window.setTimeout(() => input.focus({ preventScroll: true }), 300);
+  }
+}
+
 export function Step4_Applicant() {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
+  // BF_CLIENT_STEP4_VALIDATION_v171 - per-field errors, and which fields the
+  // user has actually left. Nothing shows red until a field is touched.
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const handleBlurField = (key) => {
+    setTouched((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+  };
 
   const values = { ...app.applicant };
   const partner = values.partner || {};
@@ -328,6 +396,8 @@ export function Step4_Applicant() {
       setSaveError(msg);
       return;
     }
+    // BF_CLIENT_STEP4_VALIDATION_v171 - see validateOwner below; the banner is
+    // kept as a summary but the field-level messages are what people act on.
     const requiredFields = [
       // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — fullName removed; first
       // and last cover the same intent, and fullName is still
@@ -345,15 +415,19 @@ export function Step4_Applicant() {
       "ownership",
     ];
 
-    const missing = requiredFields.find(
-      (field) => !Validate.required(values[field])
-    );
-    if (missing) {
-      setSaveError("Please complete all required applicant details.");
-      return;
-    }
-    if (!Validate.phone(values.phone)) {
-      setSaveError("Please enter a valid 10-digit mobile phone number.");
+    // BF_CLIENT_STEP4_VALIDATION_v171 - collect EVERY problem, not just the
+    // first, so the user fixes the form in one pass instead of submitting
+    // repeatedly to discover one more blank field each time.
+    const applicantErrors = validateOwner(values, requiredFields, LABELS);
+    setErrors(applicantErrors);
+    setTouched((prev) => {
+      const next = { ...prev };
+      Object.keys(applicantErrors).forEach((k) => { next[k] = true; });
+      return next;
+    });
+    if (Object.keys(applicantErrors).length > 0) {
+      setSaveError("Please correct the highlighted fields below.");
+      focusFirstError(applicantErrors, "");
       return;
     }
 
@@ -568,7 +642,7 @@ export function Step4_Applicant() {
 
             <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
               <div style={components.form.eyebrow}>Primary applicant</div>
-              <OwnerFields
+              <OwnerFields errors={errors} touched={touched} onBlurField={handleBlurField}
                 data={values}
                 setField={setField}
                 setMany={(o) => update({ applicant: { ...values, ...o } })}
