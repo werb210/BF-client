@@ -850,15 +850,51 @@ export function Step6_Review(): JSX.Element {
           <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
             Most lenders require a personal guarantee - meaning you are personally responsible if the business cannot repay. Personal Guarantee Insurance protects you if that happens.
           </p>
+          {/* BF_CLIENT_PGI_v176 - bordered rows, matching the consent rows
+            below. These were unstyled browser radios, which on white read as
+            barely there. */}
           <div style={{ ...layout.stackTight, marginTop: tokens.spacing.sm }}>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
-              <input type="radio" name="pgi-opt-in" value="yes" checked={app.pgiOptIn === "yes"} onChange={() => update({ pgiOptIn: "yes" })} style={{ width: "auto", marginTop: 4 }} />
-              <span>Yes, send me PGI details with my offers</span>
-            </label>
-            <label style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
-              <input type="radio" name="pgi-opt-in" value="no" checked={app.pgiOptIn === "no"} onChange={() => update({ pgiOptIn: "no" })} style={{ width: "auto", marginTop: 4 }} />
-              <span>No, I will proceed without PGI</span>
-            </label>
+            {([
+              ["yes", "Yes, send me PGI details with my offers"],
+              ["no", "No, I will proceed without PGI"],
+            ] as const).map(([value, label]) => {
+              const selected = app.pgiOptIn === value;
+              return (
+                <label
+                  key={value}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: tokens.spacing.sm,
+                    padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+                    borderRadius: tokens.radii.md,
+                    border: `1px solid ${selected ? tokens.colors.accent : tokens.colors.border}`,
+                    background: selected ? tokens.colors.background : tokens.colors.surface,
+                    fontSize: tokens.typography.label.fontSize,
+                    color: tokens.colors.textPrimary,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="pgi-opt-in"
+                    value={value}
+                    checked={selected}
+                    onChange={() => update({ pgiOptIn: value })}
+                    style={{
+                      width: 18,
+                      height: 18,
+                      marginTop: 1,
+                      flexShrink: 0,
+                      // gold dot rather than the browser default blue, which is
+                      // the last stray colour on this step
+                      accentColor: tokens.colors.accent,
+                    }}
+                  />
+                  <span>{label}</span>
+                </label>
+              );
+            })}
           </div>
           <details style={{ marginTop: tokens.spacing.sm }}>
             <summary style={{ cursor: "pointer", color: tokens.colors.textSecondary, fontSize: tokens.typography.body.fontSize }}>
