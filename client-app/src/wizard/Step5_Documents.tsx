@@ -157,6 +157,38 @@ const RequirementRow = memo(function RequirementRow({
 });
 
 
+// BF_CLIENT_STEP5_OPTIONS_v174
+// A plain "Or" between the three document options. Rendered as a hairline with
+// the word centred on it, so the choice is visible at a glance on a long page.
+function OptionSeparator() {
+  return (
+    <div
+      aria-hidden
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        maxWidth: 420,
+        margin: "0 auto",
+      }}
+    >
+      <span style={{ flex: 1, height: 1, background: tokens.colors.border }} />
+      <span
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: tokens.colors.textSecondary,
+        }}
+      >
+        Or
+      </span>
+      <span style={{ flex: 1, height: 1, background: tokens.colors.border }} />
+    </div>
+  );
+}
+
 export function Step5_Documents() {
   const { app, update } = useApplicationStore();
   const navigate = useNavigate();
@@ -817,6 +849,26 @@ export function Step5_Documents() {
             />
           </Card>
         )}
+        {/* BF_CLIENT_STEP5_OPTIONS_v174 - the two buttons below are
+          ALTERNATIVES to uploading, not extra steps. Without this line a user
+          reads them as more work rather than a way out. */}
+        {missingRequiredDocs.length > 0 && (
+          <p
+            data-testid="step5-options-intro"
+            style={{
+              margin: `${tokens.spacing.md} 0 0`,
+              fontSize: 15,
+              lineHeight: 1.6,
+              color: tokens.colors.textSecondary,
+            }}
+          >
+            You have three options. You can supply documents now, supply them
+            later and finalize the application now, or have your accountant
+            upload the required documents.
+          </p>
+        )}
+        {/* BF_CLIENT_STEP5_OPTIONS_v174 - "Or" between each option, so the
+          three read as a choice rather than a sequence. */}
         {/* BF_CLIENT_WIZARD_STEP5_DEFER_BTN_v59 — defer-upload action
           placed under the missing-documents banner and above the
           upload list, where users see it before they've scrolled past
@@ -837,12 +889,16 @@ export function Step5_Documents() {
               maxWidth: "420px",
               minHeight: "48px",
               fontWeight: 600,
-              border: `2px solid ${tokens.colors.border ?? "rgba(255,255,255,0.18)"}`,
+              // BF_CLIENT_STEP5_OPTIONS_v174 - the hairline border read as an
+              // inert panel. Navy makes it look pressable without competing
+              // with the gold primary action.
+              border: `2px solid ${tokens.colors.primary}`,
             }}
           >
             I will supply all required documents at a later time
           </Button>
         </div>
+        <OptionSeparator />
         {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
         <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
           <Button
@@ -855,12 +911,13 @@ export function Step5_Documents() {
               maxWidth: "420px",
               minHeight: "48px",
               fontWeight: 600,
-              border: `2px solid ${tokens.colors.border}`,
+              border: `2px solid ${tokens.colors.primary}`,
             }}
           >
             Have my accountant upload the documents
           </Button>
         </div>
+        <OptionSeparator />
         <AccountantReferralModal
           open={accountantOpen}
           busy={accountantBusy}
