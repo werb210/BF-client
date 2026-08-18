@@ -3,7 +3,10 @@
    position:fixed panels off-screen with it. */
 html, body { max-width: 100%; overflow-x: hidden; }
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9fafb; color: #111827; }
+/* BF_CLIENT_GLOBALS_v181 - this system stack overrode the Public Sans set in
+   index.css for every element that does not name a face itself, which is most
+   of the wizard. Ground and text move onto mist and ink at the same time. */
+body { margin: 0; font-family: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #F5F8FC; color: #0B1F3A; }
 input, select, textarea, button { font-family: inherit; }
 
 /* #28 — kill the browser autofill yellow so filled fields keep the design
@@ -13,10 +16,10 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 select:-webkit-autofill {
-  -webkit-text-fill-color: #111827;
+  -webkit-text-fill-color: #0B1F3A;
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
   box-shadow: 0 0 0 1000px #ffffff inset;
-  caret-color: #111827;
+  caret-color: #0B1F3A;
   transition: background-color 9999s ease-in-out 0s;
 }
 
@@ -42,9 +45,9 @@ select:-webkit-autofill {
   .resp-table { min-width: 0 !important; display: block; }
   .resp-table thead { display: none; }
   .resp-table tbody { display: block; }
-  .resp-table tr { display: block; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; margin-bottom: 12px; }
+  .resp-table tr { display: block; border: 1px solid #E4EAF2; border-radius: 8px; padding: 6px 10px; margin-bottom: 12px; }
   .resp-table td { display: block; border-bottom: 0 !important; }
   .resp-table td:empty { display: none; }
-  .resp-table td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; color: #6b7280; margin-top: 6px; }
+  .resp-table td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; color: #51617D; margin-top: 6px; }
   .resp-table td[data-label='']::before { content: none; }
 }
