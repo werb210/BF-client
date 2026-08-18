@@ -10,7 +10,7 @@ export const tokens = {
     accentHover: "#cfa953",
     success: "rgb(22 163 74)",
     warning: "rgb(245 158 11)",
-    error: "rgb(220 38 38)",
+    error: "#b3261e",
     background: "#F5F8FC",
     surface: "rgb(255 255 255)",
     border: "#E4EAF2",
@@ -72,8 +72,11 @@ export const tokens = {
     pill: "999px",
   },
   shadows: {
-    focus: "0 0 0 3px rgba(11, 42, 74, 0.2)",
-    errorFocus: "0 0 0 3px rgba(220, 38, 38, 0.2)",
-    card: "0 10px 30px rgba(15, 23, 42, 0.10)",
+    // BF_CLIENT_DESIGN_v173 - the same gold ring the buttons use, and the same
+    // one bi-website and BI-Client apply on focus-visible. One ring across
+    // every focusable thing on every property.
+    focus: "0 0 0 3px rgba(191, 155, 73, 0.45)",
+    errorFocus: "0 0 0 3px rgba(179, 38, 30, 0.25)",
+    card: "0 10px 30px rgba(11, 31, 58, 0.10)",
   },
 };
