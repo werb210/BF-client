@@ -1,40 +1,52 @@
-.mp-root { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
-.mp-app-header { display:flex; justify-content:space-between; font-size:12px; color:#64748b; }
-.mp-app-header__left,.mp-app-header__right{display:flex;gap:8px;align-items:center}
-.mp-app-header__id,.mp-app-header__stage-value{font-weight:600;color:#0f172a}
+/* BF_CLIENT_PORTAL_v178 - the portal is the screen a returning client sees
+   most. It now shares the wizard's palette and faces: navy #0B1F3A, gold
+   #BF9B49, mist #F5F8FC, hairline #E4EAF2, body #51617D. Semantic colours for
+   call, hang-up, error and warning are deliberately unchanged. */
+.mp-root h1,
+.mp-root h2,
+.mp-root h3 {
+  font-family: "Libre Caslon Text", Georgia, "Times New Roman", serif;
+}
 
-.mp-tracker { display:flex; justify-content:space-between; gap:0; background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:16px 20px; overflow-x:auto; }
+.mp-root { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.mp-app-header { display:flex; justify-content:space-between; font-size:12px; color:#51617D; }
+.mp-app-header__left,.mp-app-header__right{display:flex;gap:8px;align-items:center}
+.mp-app-header__id,.mp-app-header__stage-value{font-weight:600;color:#0B1F3A}
+
+.mp-tracker { display:flex; justify-content:space-between; gap:0; background:#fff; border:1px solid #E4EAF2; border-radius:16px; padding:16px 20px; overflow-x:auto; }
 .mp-stage { flex:1; min-width:110px; display:flex; flex-direction:column; align-items:center; position:relative; }
-.mp-stage:not(:last-child)::after { content:""; position:absolute; top:15px; left:calc(50% + 16px); width:calc(100% - 32px); height:2px; background:#e5e7eb; transition:background-color .6s ease, border-color .6s ease; }
-.mp-stage--done:not(:last-child)::after, .mp-stage--current:not(:last-child)::after { background:#3b82f6; }
-.mp-stage__bullet { width:32px; height:32px; border-radius:999px; background:#f1f5f9; border:1px solid #d1d5db; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; position:relative; z-index:1; transition:background-color .6s ease, border-color .6s ease; }
-.mp-stage--done .mp-stage__bullet, .mp-stage--current .mp-stage__bullet { background:#3b82f6; border-color:#3b82f6; }
-.mp-stage__label{margin-top:8px;text-align:center;font-size:12px;color:#111827;line-height:1.2;display:flex;flex-direction:column}
+.mp-stage:not(:last-child)::after { content:""; position:absolute; top:15px; left:calc(50% + 16px); width:calc(100% - 32px); height:2px; background:#E4EAF2; transition:background-color .6s ease, border-color .6s ease; }
+.mp-stage--done:not(:last-child)::after, .mp-stage--current:not(:last-child)::after { background:#BF9B49; }
+/* BF_CLIENT_PORTAL_v178 - a gold bullet needs a navy glyph. White on #BF9B49
+   fails contrast, the same reason the primary button is navy-on-gold. */
+.mp-stage__bullet { width:32px; height:32px; border-radius:999px; background:#F5F8FC; border:1px solid #E4EAF2; color:#0B1F3A; display:flex; align-items:center; justify-content:center; font-weight:700; position:relative; z-index:1; transition:background-color .6s ease, border-color .6s ease; }
+.mp-stage--done .mp-stage__bullet, .mp-stage--current .mp-stage__bullet { background:#BF9B49; border-color:#BF9B49; }
+.mp-stage__label{margin-top:8px;text-align:center;font-size:12px;color:#0B1F3A;line-height:1.2;display:flex;flex-direction:column}
 
 .mp-grid { display:grid; grid-template-columns: 65% 35%; gap:16px; }
-.mp-thread-card,.mp-actions,.mp-offer { border:1px solid #e5e7eb; border-radius:16px; background:#fff; }
+.mp-thread-card,.mp-actions,.mp-offer { border:1px solid #E4EAF2; border-radius:16px; background:#fff; }
 .mp-thread-card{display:flex;flex-direction:column;overflow:hidden}
-.mp-thread-card__header,.mp-actions__header{padding:16px;font-size:14px;font-weight:600;border-bottom:1px solid #e5e7eb}
+.mp-thread-card__header,.mp-actions__header{padding:16px;font-size:14px;font-weight:600;border-bottom:1px solid #E4EAF2}
 .mp-thread-card__body{max-height:480px;overflow-y:auto;padding:16px 20px}
-.mp-thread-card__empty{font-size:14px;color:#64748b}
+.mp-thread-card__empty{font-size:14px;color:#51617D}
 .mp-msg-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:10px}
 .mp-msg-row--out{justify-content:flex-end}
-.mp-msg-avatar{width:32px;height:32px;border-radius:999px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.mp-msg-avatar{width:32px;height:32px;border-radius:999px;background:#0B1F3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
 .mp-msg-stack{max-width:70%}
 .mp-msg-bubble{padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.35}
-.mp-msg-bubble--in{background:#e0f2fe;color:#0f172a}
-.mp-msg-bubble--out{background:#fff;border:1px solid #e5e7eb;color:#0f172a}
-.mp-msg-time{font-size:11px;color:#6b7280;white-space:nowrap}
-.mp-msg-cta{margin-top:8px;background:#3b82f6;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
-.mp-thread-card__composer{padding:12px;border-top:1px solid #e5e7eb}
-.mp-thread-card__composer input{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;min-height:44px}
+.mp-msg-bubble--in{background:#F5F8FC;color:#0B1F3A}
+.mp-msg-bubble--out{background:#fff;border:1px solid #E4EAF2;color:#0B1F3A}
+.mp-msg-time{font-size:11px;color:#51617D;white-space:nowrap}
+.mp-msg-cta{margin-top:8px;background:#BF9B49;color:#0B1F3A;border:0;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.mp-thread-card__composer{padding:12px;border-top:1px solid #E4EAF2}
+.mp-thread-card__composer input{border:1px solid #E4EAF2;border-radius:10px;padding:10px 12px;min-height:44px}
 .mp-thread-card__composer button,.mp-btn--primary,.mp-chip{cursor:pointer}
 
 .mp-actions{padding-bottom:16px}
 .mp-actions__chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
 /* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — cleaner bordered chips (mockup look). */
-.mp-chip--action{min-height:46px;border:1px solid #c7d2e8;background:#fff;color:#1E3A8A;border-radius:10px;font-size:14px;font-weight:600;padding:8px 12px;text-align:center;transition:border-color .15s,background .15s}
-.mp-chip--action:hover{border-color:#1E3A8A;background:#f5f8ff}
+.mp-chip--action{min-height:46px;border:1px solid #E4EAF2;background:#fff;color:#0B1F3A;border-radius:10px;font-size:14px;font-weight:600;padding:8px 12px;text-align:center;transition:border-color .15s,background .15s}
+.mp-chip--action:hover{border-color:#0B1F3A;background:#F5F8FC}
 /* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — was a 56px solid-green slab that dominated the panel; mockup de-emphasizes it to a small outline button. */
 .mp-callus{display:flex;align-items:center;justify-content:center;margin:0;min-height:42px;border:1px solid #16a34a;border-radius:10px;background:#fff;color:#16a34a;font-size:14px;font-weight:600;cursor:pointer}/* BF_CLIENT_UI_CLUSTER_2 */
 .mp-callus:hover{background:#f0fdf4}
@@ -49,16 +61,16 @@
   width: auto;
   margin: 10px 0 0;
   padding: 12px 14px;
-  border: 1px solid #dbeafe;
+  border: 1px solid #E4EAF2;
   border-radius: 12px;
-  background: #eff6ff;
+  background: #F5F8FC;
 }
 .mp-signed-return {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #E4EAF2;
   font-size: 13px;
-  color: #475569;
+  color: #51617D;
   line-height: 1.45;
 }
 .mp-signed-return__actions {
@@ -67,25 +79,25 @@
   margin-top: 8px;
   flex-wrap: wrap;
 }
-.mp-offers-open{min-height:44px;padding:10px 18px;border:none;border-radius:10px;background:#1d4ed8;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
-.mp-offers-open:hover{background:#1e40af}
+.mp-offers-open{min-height:44px;padding:10px 18px;border:none;border-radius:10px;background:#0B1F3A;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.mp-offers-open:hover{background:#081729}
 .mp-offers-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:1000}
 .mp-offers-dialog{background:#fff;border-radius:16px;width:min(1040px,100%);max-height:88vh;overflow:auto;padding:20px}
 .mp-offers-dialog__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:18px}
-.mp-offers-dialog__close{border:none;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#6b7280;padding:0 4px}
-.mp-offer__head{background:#3b82f6;color:#fff;padding:10px 12px;border-radius:16px 16px 0 0;font-size:14px;font-weight:600;position:relative}
+.mp-offers-dialog__close{border:none;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#51617D;padding:0 4px}
+.mp-offer__head{background:#BF9B49;color:#fff;padding:10px 12px;border-radius:16px 16px 0 0;font-size:14px;font-weight:600;position:relative}
 .mp-offer__badge{position:absolute;right:10px;top:8px;background:#f59e0b;color:#fff;border-radius:999px;padding:2px 8px;font-size:11px}
-.mp-offer__amount{font-size:clamp(22px,2.4vw,32px);font-weight:700;color:#111827;padding:12px 12px 2px;overflow-wrap:anywhere;line-height:1.15}
-.mp-offer__subtitle{padding:0 12px 10px;font-size:11px;color:#6b7280}
-.mp-offer__meta{padding:10px 12px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb}
-.mp-offer__meta-row-main{font-size:18px;color:#111827;margin-bottom:4px}
-.mp-offer__meta-row{font-size:14px;color:#4b5563;margin-bottom:4px}
+.mp-offer__amount{font-size:clamp(22px,2.4vw,32px);font-weight:700;color:#0B1F3A;padding:12px 12px 2px;overflow-wrap:anywhere;line-height:1.15}
+.mp-offer__subtitle{padding:0 12px 10px;font-size:11px;color:#51617D}
+.mp-offer__meta{padding:10px 12px;border-top:1px solid #E4EAF2;border-bottom:1px solid #E4EAF2}
+.mp-offer__meta-row-main{font-size:18px;color:#0B1F3A;margin-bottom:4px}
+.mp-offer__meta-row{font-size:14px;color:#51617D;margin-bottom:4px}
 .mp-offer__expires{padding:10px 12px;font-size:14px;font-weight:600;color:#d97706}
 .mp-offer--danger .mp-offer__expires{color:#dc2626}
 .mp-offer__actions{display:grid;gap:8px;padding:0 12px 12px}
 .mp-btn{min-height:42px;border-radius:10px;font-weight:600;font-size:14px;text-align:center;padding:10px 12px;text-decoration:none}
-.mp-btn--ghost{background:#dbeafe;color:#1d4ed8;border:none}
-.mp-btn--secondary{background:#fff;color:#1d4ed8;border:1px solid #1d4ed8}
+.mp-btn--ghost{background:#E4EAF2;color:#0B1F3A;border:none}
+.mp-btn--secondary{background:#fff;color:#0B1F3A;border:1px solid #0B1F3A}
 
 @media (max-width: 767px){
   .mp-tracker{padding:12px}
@@ -117,22 +129,22 @@
   width: 100%;
   text-align: left;
   padding: 12px 14px;
-  border: 1px solid #bfdbfe;
+  border: 1px solid #E4EAF2;
   border-radius: 14px;
-  background: #eff6ff;
+  background: #F5F8FC;
   cursor: pointer;
 }
 .mp-offer-bubble__lender { font-weight: 600; font-size: 14px; }
-.mp-offer-bubble__amount { font-size: 14px; color: #1d4ed8; }
-.mp-offer-bubble__cta { margin-left: auto; font-size: 13px; font-weight: 600; color: #1d4ed8; }
+.mp-offer-bubble__amount { font-size: 14px; color: #0B1F3A; }
+.mp-offer-bubble__cta { margin-left: auto; font-size: 13px; font-weight: 600; color: #0B1F3A; }
 .mp-offer-bubble--expired {
-  border-color: #e5e7eb;
-  background: #f8fafc;
+  border-color: #E4EAF2;
+  background: #F5F8FC;
   opacity: .65;
   cursor: default;
 }
 .mp-offer-bubble--expired .mp-offer-bubble__amount,
-.mp-offer-bubble--expired .mp-offer-bubble__cta { color: #6b7280; }
+.mp-offer-bubble--expired .mp-offer-bubble__cta { color: #51617D; }
 .mp-offer--expired { filter: grayscale(1); opacity: .65; }
 
 /* Two or more offers compare side by side; one uses the full width. */
