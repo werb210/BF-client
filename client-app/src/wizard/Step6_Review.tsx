@@ -881,7 +881,23 @@ export function Step6_Review(): JSX.Element {
         {TC_CLAUSES.map((clause, i) => (
           <label
             key={clause.title}
-            style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, fontWeight: tokens.typography.label.fontWeight, color: tokens.colors.textPrimary }}
+            // BF_CLIENT_CONSENT_v175 - each consent sits in its own bordered
+            // row. Unticked it reads as an outstanding action; ticked it fills
+            // with mist so progress through the three is visible at a glance.
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: tokens.spacing.sm,
+              padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+              marginBottom: tokens.spacing.xs,
+              borderRadius: tokens.radii.md,
+              border: `1px solid ${tcConsents[i].get() ? tokens.colors.accent : tokens.colors.border}`,
+              background: tcConsents[i].get() ? tokens.colors.background : tokens.colors.surface,
+              cursor: "pointer",
+              fontSize: tokens.typography.label.fontSize,
+              fontWeight: tokens.typography.label.fontWeight,
+              color: tokens.colors.textPrimary,
+            }}
           >
             <Checkbox checked={tcConsents[i].get()} onChange={tcConsents[i].toggle} />
             <span>
