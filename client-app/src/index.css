@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* BF_CLIENT_DESIGN_v172
+   The wizard is mostly inline-styled from tokens.ts, but plain elements and
+   any third-party widget inherit from the root. Setting the body face here
+   means nothing falls back to system sans mid-application. */
+:root {
+  --boreal-ink: #0B1F3A;
+  --boreal-gold: #BF9B49;
+  --boreal-mist: #F5F8FC;
+  --boreal-line: #E4EAF2;
+  --boreal-body: #51617D;
+}
+
+html,
+body {
+  font-family: "Public Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--boreal-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Libre Caslon Text", Georgia, "Times New Roman", serif;
+}

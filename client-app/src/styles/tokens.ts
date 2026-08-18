@@ -11,15 +11,19 @@ export const tokens = {
     success: "rgb(22 163 74)",
     warning: "rgb(245 158 11)",
     error: "rgb(220 38 38)",
-    background: "rgb(248 250 252)",
+    background: "#F5F8FC",
     surface: "rgb(255 255 255)",
     border: "#E4EAF2",
-    textPrimary: "rgb(15 23 42)",
+    textPrimary: "#0B1F3A",
     textSecondary: "#51617D",
     disabled: "rgb(203 213 225)",
   },
   typography: {
-    fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    // BF_CLIENT_DESIGN_v172 - the marketing site's faces. Both are already
+    // loaded non-blocking in index.html, so this adds no request. displayFamily
+    // is the serif used for headings on every page of boreal.financial.
+    fontFamily: "'Public Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    displayFamily: "'Libre Caslon Text', Georgia, 'Times New Roman', serif",
     h1: {
       fontSize: "36px",
       fontWeight: 700,

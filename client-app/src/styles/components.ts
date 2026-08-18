@@ -152,12 +152,17 @@ export const components = {
     },
     eyebrow: {
       textTransform: "uppercase",
-      letterSpacing: "0.2em",
-      fontSize: "12px",
+      // BF_CLIENT_DESIGN_v172 - the site's eyebrow is gold at .14em, not grey
+      // at .2em. This is the "STEP 3 OF 6" line above each step title.
+      letterSpacing: "0.14em",
+      fontSize: "13px",
       fontWeight: 600,
-      color: tokens.colors.textSecondary,
+      color: tokens.colors.accent,
     },
     title: {
+      // BF_CLIENT_DESIGN_v172 - display serif, matching every heading on
+      // boreal.financial. The step title is the first thing on each screen.
+      fontFamily: tokens.typography.displayFamily,
       fontSize: tokens.typography.h1.fontSize,
       fontWeight: tokens.typography.h1.fontWeight,
       lineHeight: tokens.typography.h1.lineHeight,
