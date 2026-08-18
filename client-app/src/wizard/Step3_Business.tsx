@@ -99,17 +99,26 @@ export function Step3_Business() {
     });
   }
 
-  function accordRequirementsMet(v: Record<string, any>): boolean {
-    if (!isAccordLOC) return true;
-    if (!Validate.required(v.fiscalYearEnd)) return false;
-    if (!Validate.required(v.inBusinessSince)) return false;
+  // BF_CLIENT_STEP3_ACCORD_v180 - returns WHAT is missing rather than just
+  // whether anything is, so the summary above Continue can name these fields
+  // the same way it names the base ten. accordRequirementsMet is kept as a
+  // thin wrapper because three call sites use it as a boolean.
+  function missingAccordFields(v: Record<string, any>): string[] {
+    if (!isAccordLOC) return [];
+    const out: string[] = [];
+    if (!Validate.required(v.fiscalYearEnd)) out.push("fiscal year end");
+    if (!Validate.required(v.inBusinessSince)) out.push("the month and year the business started");
     if (v.mailingSameAsOperating === false) {
-      if (!Validate.required(v.mailingAddress)) return false;
-      if (!Validate.required(v.mailingCity)) return false;
-      if (!Validate.required(v.mailingState)) return false;
-      if (!Validate.required(v.mailingZip)) return false;
+      if (!Validate.required(v.mailingAddress)) out.push("mailing address");
+      if (!Validate.required(v.mailingCity)) out.push("mailing city");
+      if (!Validate.required(v.mailingState)) out.push("mailing province or state");
+      if (!Validate.required(v.mailingZip)) out.push("mailing postal or ZIP code");
     }
-    return true;
+    return out;
+  }
+
+  function accordRequirementsMet(v: Record<string, any>): boolean {
+    return missingAccordFields(v).length === 0;
   }
 
   useEffect(() => {
@@ -183,22 +192,32 @@ export function Step3_Business() {
   const isCompanyNameLocked = false;
   const isBusinessPhoneLocked = false;
 
-  const isValid = [
+  const REQUIRED_STEP3 = [
     // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName removed from this
     // list; it's optional on the form and is filled from businessName
     // on continue when blank. companyName is mirrored from businessName
     // on every keystroke, so requiring both is also redundant.
-    "businessName",
-    "businessStructure",
-    "address",
-    "city",
-    "state",
-    "zip",
-    "phone",
-    "startDate",
-    "employees",
-    "estimatedRevenue",
-  ].every((field) => Validate.required(values[field])) && accordRequirementsMet(values);
+    ["businessName", "business name"],
+    ["businessStructure", "business structure"],
+    ["address", "business address"],
+    ["city", "city"],
+    ["state", "province or state"],
+    ["zip", "postal or ZIP code"],
+    ["phone", "business phone"],
+    ["startDate", "business start date"],
+    ["employees", "number of employees"],
+    ["estimatedRevenue", "estimated yearly revenue"],
+  ] as const;
+
+  const missingStep3 = [
+    ...REQUIRED_STEP3
+      .filter(([field]) => !Validate.required(values[field]))
+      .map(([, label]) => label),
+    // BF_CLIENT_STEP3_ACCORD_v180 - the Accord LOC branch adds up to six more.
+    ...missingAccordFields(values),
+  ];
+
+  const isValid = missingStep3.length === 0;
 
   async function next() {
     saveStepData(3, values);
@@ -796,6 +815,11 @@ export function Step3_Business() {
       </Card>
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+        {missingStep3.length > 0 && (
+          <div style={{ width: "100%", color: tokens.colors.textSecondary, fontSize: 14 }}>
+            Please complete: {missingStep3.join(", ")}.
+          </div>
+        )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
           <Button
             variant="secondary"
