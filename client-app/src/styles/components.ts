@@ -101,10 +101,13 @@ export const components = {
   },
   checkbox: {
     base: {
-      width: "18px",
-      height: "18px",
+      // BF_CLIENT_CONSENT_v175 - 18px with a hairline border was almost
+      // invisible on white. A bare checkbox has no filled surface to define
+      // it, so it needs a heavier edge than a text input does.
+      width: "20px",
+      height: "20px",
       borderRadius: "4px",
-      border: `1px solid ${tokens.colors.border}`,
+      border: `2px solid ${tokens.colors.textSecondary}`,
       background: tokens.colors.surface,
       display: "inline-grid",
       placeContent: "center",
