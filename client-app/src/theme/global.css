@@ -4,17 +4,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* BF_CLIENT_GLOBALS_v181 - these variables carried brand NAMES with non-brand
+   values: --boreal-gold held a pale yellow and --boreal-blue a bright blue,
+   neither of which is in the design system. Anything written against them
+   looked correct in the source and rendered wrong.
+   --boreal-green is left alone; it is a semantic success colour. */
 :root {
-  --boreal-blue: #2563eb;
-  --boreal-blue-light: #dbeafe;
-  --boreal-accent: #1d4ed8;
-  --boreal-gold: #f3c969;
-  --boreal-gold-soft: #fff4d4;
+  --boreal-blue: #0B1F3A;
+  --boreal-blue-light: #F5F8FC;
+  --boreal-accent: #BF9B49;
+  --boreal-gold: #BF9B49;
+  --boreal-gold-soft: #F5F8FC;
   --boreal-green: #1bbe7a;
-  --boreal-gray: #f8fafc;
-  --boreal-gray-border: #e2e8f0;
-  --boreal-text: #0f172a;
-  --boreal-text-muted: #475569;
+  --boreal-gray: #F5F8FC;
+  --boreal-gray-border: #E4EAF2;
+  --boreal-text: #0B1F3A;
+  --boreal-text-muted: #51617D;
   --boreal-radius-card: 12px;
   --boreal-radius-input: 12px;
   --boreal-radius-pill: 999px;
