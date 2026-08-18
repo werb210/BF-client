@@ -25,8 +25,10 @@ const inputBase: CSSProperties = {
   minHeight: "44px",
   padding: `0 ${tokens.spacing.md}`,
   borderRadius: tokens.radii.md,
-  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_v1 — stronger resting border so fields read as editable.
-  border: `1.5px solid ${tokens.colors.textSecondary}`,
+  // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_v1 - stronger resting border so fields read as editable.
+  // BF_CLIENT_DESIGN_v173 - on the brand hairline rather than body-text grey.
+  // 1.5px is kept: it was a deliberate call so fields read as editable.
+  border: `1.5px solid ${tokens.colors.border}`,
   background: tokens.colors.surface,
   color: tokens.colors.textPrimary,
   fontFamily: tokens.typography.fontFamily,
@@ -83,7 +85,9 @@ export const components = {
   inputs: {
     base: inputBase,
     focused: {
-      borderColor: tokens.colors.primary,
+      // BF_CLIENT_DESIGN_v173 - gold border with the gold ring, so a focused
+      // field and a focused button look like the same system.
+      borderColor: tokens.colors.accent,
       boxShadow: tokens.shadows.focus,
     },
     error: {
@@ -107,10 +111,12 @@ export const components = {
       appearance: "none",
     },
     checked: {
-      background: tokens.colors.primary,
-      border: `1px solid ${tokens.colors.primary}`,
+      // BF_CLIENT_DESIGN_v173 - gold ground with a navy tick, matching the
+      // primary button rather than inverting it.
+      background: tokens.colors.accent,
+      border: `1px solid ${tokens.colors.accent}`,
       backgroundImage:
-        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 10.5l3 3 7-7' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 10.5l3 3 7-7' stroke='%230B1F3A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
       backgroundRepeat: "no-repeat",
       backgroundPosition: "center",
       backgroundSize: "12px",
