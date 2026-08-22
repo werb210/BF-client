@@ -2,7 +2,7 @@
 // BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 — legacy SlimHeader block superseded.
 // De-minified for legibility. Behavior unchanged: same URL-driven step routing,
 // same OfflineStore token fallback, same Step1 redirect when no token.
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { OfflineStore } from "@/state/offline";
@@ -12,6 +12,7 @@ import Step3 from "@/wizard/Step3_BusinessDetails";
 import Step4 from "@/wizard/Step4_ApplicantInformation";
 import Step5 from "@/wizard/Step5_Documents";
 import Step6 from "@/wizard/Step6_TermsSignature";
+import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_STEP_PERSIST_v183
 import { trackEvent } from "@/utils/analytics";
 
 const STEP_COMPONENTS = [Step1, Step2, Step3, Step4, Step5, Step6];
@@ -22,6 +23,9 @@ const clampStep = (n: number): number =>
 
 export default function Wizard() {
   const { app, update } = useApplicationStore();
+  // BF_CLIENT_STEP_PERSIST_v183 - guards against re-sending the same step when
+  // the component re-renders for an unrelated reason.
+  const lastPersistedStep = useRef<number | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -38,6 +42,26 @@ export default function Wizard() {
     if (stepFromUrl == null || app.currentStep === stepFromUrl) return;
     update({ currentStep: stepFromUrl });
   }, [stepFromUrl, app.currentStep, update]);
+
+  // BF_CLIENT_STEP_PERSIST_v183 - the effect above keeps the step in the local
+  // store only. Without this the server column stays at 1 forever, so an
+  // application abandoned on arrival looks identical to one that reached step 5
+  // and stalled. Fire-and-forget: a failed write must never block the wizard,
+  // and the step is re-sent on the next transition anyway.
+  useEffect(() => {
+    if (stepFromUrl == null) return;
+    const token = app.applicationToken
+      ?? (OfflineStore.load() as { applicationToken?: string | null } | null)?.applicationToken;
+    if (!token) return;
+    if (lastPersistedStep.current === stepFromUrl) return;
+    lastPersistedStep.current = stepFromUrl;
+    void ClientAppAPI.update(token, { current_step: stepFromUrl }).catch((err) => {
+      // The furthest step reached matters more than any single write, so a
+      // failure here is logged and dropped rather than surfaced to the user.
+      console.warn("[wizard] current_step persist failed", err);
+      lastPersistedStep.current = null;
+    });
+  }, [stepFromUrl, app.applicationToken]);
 
   const cached = OfflineStore.load() as { applicationToken?: string | null } | null;
   const hasAppToken = Boolean(app.applicationToken) || Boolean(cached?.applicationToken);
