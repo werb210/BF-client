@@ -12,6 +12,7 @@ import "./theme/global.css";
 import "./styles/global.css";
 import App from "./App";
 import { captureAttribution } from "./lib/attribution";
+import { startJourney } from "./lib/journey"; // BF_CLIENT_JOURNEY_BOOT_v185
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
@@ -27,6 +28,10 @@ try {
   console.error("ENV ERROR IGNORED:", err);
 }
 
+// BF_CLIENT_JOURNEY_BOOT_v185 - ORDER MATTERS. startJourney mints and persists the
+// journey session id and creates the server-side visitor_sessions row. It must run
+// first so captureAttribution finds the id and forwards it to the server at start.
+startJourney();
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
 
 console.log("NEW BUILD LIVE:", new Date().toISOString());
