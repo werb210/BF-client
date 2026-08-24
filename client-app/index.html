@@ -53,6 +53,14 @@
       <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     </noscript>
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- BF_CLIENT_NOINDEX_v1
+         Every route here is behind OTP, so there is nothing for Google to index, and
+         the landing page duplicated boreal.financial closely enough that Search Console
+         flagged it "Duplicate without user-selected canonical" and dropped it. noindex
+         rather than robots.txt Disallow: the crawler must still be able to read the page
+         for Google Ads landing-page quality, and a blocked crawl can never see a noindex. -->
+    <meta name="robots" content="noindex, follow" />
+    <link rel="canonical" href="https://client.boreal.financial/" />
     <meta name="theme-color" content="#020C1C" />
     <meta property="og:image" content="/og.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />

@@ -39,6 +39,16 @@ export function captureAttribution(): void {
     // BF_CLIENT_VISITOR_JOURNEY_v1 - the website forwards its anonymous journey session id.
     const journeySession = (p.get("journeySession") || "").trim();
     if (journeySession) a.sessionId = journeySession;
+    // BF_CLIENT_JOURNEY_SESSION_FALLBACK_v1 - sessionId was only ever read from the
+    // ?journeySession= handoff, so anyone landing straight on client.boreal.financial
+    // recorded journey events under a locally minted id that never reached the server.
+    // Their events were written and then orphaned. Fall back to the local id.
+    if (!a.sessionId) {
+      try {
+        const local = localStorage.getItem("boreal_journey_session");
+        if (local) a.sessionId = local;
+      } catch { /* storage unavailable */ }
+    }
     // BF_CLIENT_REFERRAL_REF_v1 - referral code carried from a referrer landing
     // page ("Apply now" -> client.boreal.financial?ref=<code>). Rides through to
     // /api/public/application/start as attribution.ref, which BF-Server stores on

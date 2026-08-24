@@ -362,6 +362,10 @@ export function Step6_Review(): JSX.Element {
         attribution = { ...(getClientAttribution() || {}), ...getAttribution() }; // BF_CLIENT_SUBMIT_SESSIONID_v1 - include journey sessionId + gclid so the server can stitch
         trackEvent("client_submission_started");
         trackEvent("client_application_submitted", { step: 6 });
+        // BF_CLIENT_JOURNEY_SUBMIT_v1 - journey.ts exported this from day one and
+        // nothing ever called it, so the journey summary could not tell a completed
+        // application from an abandoned one and every exit looked like a drop-off.
+        void import("@/lib/journey").then((j) => j.trackApplicationSubmitted()).catch(() => {});
         track("Application Submitted");
         const requestedAmount = parseCurrencyAmount(app.kyc?.fundingAmount);
         const estimatedCommission = estimateClientCommission(requestedAmount);
