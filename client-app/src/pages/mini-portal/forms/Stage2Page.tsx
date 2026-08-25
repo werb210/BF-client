@@ -12,6 +12,8 @@ import CraAuthorizationForm from "./forms/CraAuthorizationForm";
 import RealEstateCollateralForm from "./forms/RealEstateCollateralForm";
 // BF_CLIENT_BLOCK_v700_ADVISORS_FORM_v1
 import AdvisorsForm from "./forms/AdvisorsForm";
+// BF_CLIENT_SBA_413_v198
+import Sba413Form from "./forms/Sba413Form";
 
 type RequiredDoc = {
   document_type: string;
@@ -29,6 +31,9 @@ const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string
   real_estate_collateral_disclosure: RealEstateCollateralForm,
   // BF_CLIENT_BLOCK_v700_ADVISORS_FORM_v1
   professional_advisors: AdvisorsForm,
+  // BF_CLIENT_SBA_413_v198 - key must match the document_type on the SBA lender
+  // products, or the row falls through to a plain file upload instead of the form.
+  sba_form_413: Sba413Form,
 };
 
 function humanLabel(docType: string): string {
