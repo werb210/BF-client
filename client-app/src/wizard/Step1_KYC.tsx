@@ -622,10 +622,11 @@ export function Step1_KYC(): JSX.Element {
       revenueLast12Months: isStartupPathKyc(values)
         ? false
         : !Validate.required(values.revenueLast12Months),
+      // BF_CLIENT_STEP1_HARDSTOPS_v187 - the floor gates Continue in Canada only.
       monthlyRevenue: isStartupPathKyc(values)
         ? false
         : !Validate.required(values.monthlyRevenue) ||
-          values.monthlyRevenue === "Under $10,000",
+          (values.monthlyRevenue === "Under $10,000" && countryCode === "CA"),
       accountsReceivable: !Validate.required(values.accountsReceivable),
       fixedAssets: !Validate.required(values.fixedAssets),
     };
@@ -1260,9 +1261,18 @@ export function Step1_KYC(): JSX.Element {
                 value={app.kyc.monthlyRevenue || ""}
                 onChange={(e: unknown) => {
                   const value = e.target.value;
-                  if (value === "Under $10,000") {
+                  // BF_CLIENT_STEP1_HARDSTOPS_v187
+                  // The under-$10K/month floor is a CANADIAN lender-panel constraint.
+                  // In the US, SBA lending is built for exactly this applicant, so a
+                  // US business under $10K/month is fundable and must not be stopped.
+                  // This previously fired on the revenue value alone, turning away
+                  // every low-revenue US applicant the panel could have placed.
+                  //
+                  // It also used to blank the field while showing the modal, so the
+                  // answer was destroyed as well as blocked. The selection is kept.
+                  if (value === "Under $10,000" && countryCode === "CA") {
                     setShowMinRevenueModal(true);
-                    update({ kyc: { ...app.kyc, monthlyRevenue: "" } });
+                    update({ kyc: { ...app.kyc, monthlyRevenue: value } });
                     return;
                   }
                   const nextKyc = { ...app.kyc, monthlyRevenue: value };
@@ -1381,19 +1391,58 @@ export function Step1_KYC(): JSX.Element {
       </div>
       </WizardLayout>
 
+      {/* BF_CLIENT_STEP1_HARDSTOPS_v187
+          Both modals rendered a heading and a paragraph and nothing else - no button,
+          no close, no Escape handler, no backdrop dismiss. The applicant had already
+          received an SMS and typed a verification code to get here, and was then
+          trapped on a dialog whose only exit was closing the tab.
+          The decisions stand: we do not fund outside CA/US, and the Canadian panel
+          cannot place under $10K/month. But a decision the person cannot acknowledge
+          is a dead end rather than an answer, so both are dismissable and both point
+          somewhere useful. */}
       {showLocationModal && (
-        <div className="wizard-modal-backdrop" role="dialog" aria-modal="true">
-          <div className="wizard-modal">
-            <h3>Sorry, we can't help you</h3>
-            <p>At this time we only fund corporations registered in either Canada or the United States.</p>
+        <div
+          className="wizard-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowLocationModal(false)}
+        >
+          <div className="wizard-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>We can't fund this one</h3>
+            <p>
+              We fund businesses registered in Canada and the United States. If your
+              business is registered in either country, change the location above and
+              carry on.
+            </p>
+            <Button type="button" onClick={() => setShowLocationModal(false)}>
+              Back to the form
+            </Button>
           </div>
         </div>
       )}
       {showMinRevenueModal && (
-        <div className="wizard-modal-backdrop" role="dialog" aria-modal="true">
-          <div className="wizard-modal">
-            <h3>Revenue threshold not met</h3>
-            <p>Your business does not currently meet our minimum monthly revenue threshold. Please reach out once revenue has grown.</p>
+        <div
+          className="wizard-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowMinRevenueModal(false)}
+        >
+          <div className="wizard-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Not a fit for our Canadian lenders right now</h3>
+            <p>
+              Our Canadian lender panel needs at least $10,000 in average monthly
+              revenue. That is a lender requirement, not a judgement on the business -
+              come back to us once revenue is above that and we will take another look.
+            </p>
+            <p>
+              If you think we have this wrong, or the last three months are not
+              representative, call us on{" "}
+              <a href="tel:+18254511768">(825) 451-1768</a> and we will look at it
+              properly.
+            </p>
+            <Button type="button" onClick={() => setShowMinRevenueModal(false)}>
+              Back to the form
+            </Button>
           </div>
         </div>
       )}
