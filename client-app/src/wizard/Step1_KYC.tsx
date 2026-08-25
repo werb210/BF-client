@@ -84,7 +84,12 @@ const EquipmentPurposeOptions = [
 
 function purposeOptionsForIntent(intent: string | null | undefined, startupAvailable: boolean): string[] {
   if (intent === "EQUIPMENT") return EquipmentPurposeOptions;
-  return PurposeOptions.filter((opt) => opt !== "Start up Funding" || startupAvailable);
+  // BF_CLIENT_SBA_STARTUP_v190 - "SBA / Start-up" replaces the old "Start up
+  // Funding" wording so the option names the product the applicant actually gets.
+  // Still gated on startupAvailable, which now counts SBA products in the US.
+  return PurposeOptions
+    .filter((opt) => opt !== "Start up Funding" || startupAvailable)
+    .map((opt) => (opt === "Start up Funding" ? "SBA / Start-up" : opt));
 }
 
 const SalesHistoryOptions = [
@@ -252,6 +257,14 @@ export function Step1_KYC(): JSX.Element {
     const intent = normalizeFundingIntent(app.kyc.lookingFor);
     return purposeOptionsForIntent(intent, startupAvailable);
   }, [app.kyc.lookingFor, startupAvailable]);
+  // BF_CLIENT_SBA_STARTUP_v190
+  // On the SBA / Start-up path a pre-revenue business cannot answer industry
+  // history, revenue, AR or fixed assets - and none of it narrows an SBA match.
+  // Amount and business location stay: those two decide whether SBA is offered.
+  const onSbaStartupPath = useMemo(
+    () => isStartupPathKyc(app.kyc as Record<string, unknown>),
+    [app.kyc],
+  );
   const visibleSalesHistoryOptions = useMemo(() => {
     return SalesHistoryOptions.filter((opt) => opt !== "Zero" || startupAvailable);
   }, [startupAvailable]);
@@ -1129,7 +1142,7 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
-            <div data-error={showErrors && fieldErrors.industry}>
+            {!onSbaStartupPath && <div data-error={showErrors && fieldErrors.industry}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>
                 Industry *
               </label>
@@ -1180,7 +1193,7 @@ export function Step1_KYC(): JSX.Element {
               {showErrors && fieldErrors.industry && (
                 <div style={components.form.errorText}>Select your industry.</div>
               )}
-            </div>
+            </div>}
 
             <div data-error={showErrors && fieldErrors.purposeOfFunds}>
               <label style={components.form.label}>Purpose of funds</label>
@@ -1206,6 +1219,7 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
+            {!onSbaStartupPath && <>
             <div data-error={showErrors && fieldErrors.salesHistory}>
               <label style={components.form.label}>Years of sales history</label>
               <Select
@@ -1372,6 +1386,7 @@ export function Step1_KYC(): JSX.Element {
                   </div>
                 )}
               </div>
+            </>}
           </div>
         </Card>
 

@@ -21,7 +21,7 @@ export type WizardSchemaContext = {
 export function isStartupPathKyc(kyc?: Record<string, any>): boolean {
   const purpose = String(kyc?.purposeOfFunds ?? "").trim();
   const sales = String(kyc?.salesHistory ?? kyc?.yearsInBusiness ?? "").trim();
-  return purpose === "Start up Funding" || sales === "Zero";
+  return purpose === "Start up Funding" || purpose === "SBA / Start-up" || sales === "Zero"; // BF_CLIENT_SBA_STARTUP_v190
 }
 
 export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> = {
@@ -52,20 +52,22 @@ export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> 
         },
       },
       { key: "businessLocation", required: true, autoAdvance: true },
-      { key: "industry", required: true, autoAdvance: true },
+      { key: "industry", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
       { key: "purposeOfFunds", required: true, autoAdvance: true },
-      { key: "salesHistory", required: true, autoAdvance: true },
+      { key: "salesHistory", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
       { key: "revenueLast12Months", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
       { key: "monthlyRevenue", required: true, autoAdvance: true, conditional: ({ kyc }) => !isStartupPathKyc(kyc) },
       {
         key: "accountsReceivable",
         required: true,
         autoAdvance: true,
+        conditional: ({ kyc }) => !isStartupPathKyc(kyc),
       },
       {
         key: "fixedAssets",
         required: true,
         autoAdvance: true,
+        conditional: ({ kyc }) => !isStartupPathKyc(kyc),
       },
     ],
   },

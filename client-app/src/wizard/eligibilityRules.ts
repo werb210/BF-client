@@ -93,7 +93,16 @@ export function detectHardStop(a: Step1Answers): HardStop | null {
     reason: "OTHER_LOCATION",
     message: "At this time we only fund corporations registered in either Canada or the United States.",
   };
-  if (!onStartupPath && a.avgMonthly === "<10k") return {
+  // BF_CLIENT_SBA_STARTUP_v190
+  // THE SHOW STOPPER. The under-$10K/month floor is a Canadian lender-panel
+  // constraint, but this copy of the rule had no country check. v187 made the
+  // Step 1 modal and Continue gate Canada-only and left this one alone, so a US
+  // applicant cleared Step 1, reached Step 2, and computeAllowedCategories()
+  // returned [] because detectHardStop fires before any rule runs. Every bucket
+  // was filtered out and Step 2 rendered an empty card with Continue disabled -
+  // no message, no explanation, looking exactly like a broken site. In the US,
+  // SBA lending exists for precisely this applicant.
+  if (!onStartupPath && a.avgMonthly === "<10k" && a.location === "CA") return {
     reason: "MIN_REVENUE",
     message: "Your business does not currently meet our minimum monthly revenue threshold.",
   };
@@ -116,6 +125,9 @@ export function computeAllowedCategories(a: Step1Answers): Cat[] {
   // never collected, so it must never filter the eligible category set.
   const onStartupPath = a.purpose === "startup" || a.years === "0";
   if (!onStartupPath && a.revenue12) apply(revenue12Rule[a.revenue12]);
+  // BF_CLIENT_SBA_STARTUP_v190 - "<10k" maps to "BLOCK", not a category array,
+  // so it was skipped here and left to detectHardStop. Outside Canada it must not
+  // narrow anything at all; the US floor is the lender product's own minimum.
   if (!onStartupPath && a.avgMonthly && a.avgMonthly !== "<10k") apply(avgMonthlyRule[a.avgMonthly] as readonly Cat[]);
   if (a.ar) apply(arRule[a.ar]);
   if (a.fixedAssets) apply(fixedAssetsRule[a.fixedAssets]);
@@ -126,10 +138,23 @@ export function isStartupAvailable(products: NormalizedLenderProduct[], country:
   if (!country) return false;
   return products.some((p: any) => {
     if (!p) return false;
+    // BF_CLIENT_SBA_STARTUP_v190 - SBA IS the startup product in the US. This
+    // looked only for a STARTUP/STARTUP_CAPITAL category, and the US panel carries
+    // SBA products instead, so the purpose option was stripped from the dropdown
+    // before it ever rendered and no US applicant could reach an SBA product.
+    // Canada keeps requiring an explicitly Canadian STARTUP product: locationRule.CA
+    // excludes SBA, so an SBA row must never unlock the option there.
     const cat = String(p.category ?? "").toUpperCase();
-    if (cat !== "STARTUP" && cat !== "STARTUP_CAPITAL") return false;
+    const isStartupCat = cat === "STARTUP" || cat === "STARTUP_CAPITAL";
+    const isSbaCat = cat === "SBA" || cat === "SBA_GOVERNMENT";
     const c = String(p.country ?? "").toUpperCase();
-    if (c !== country && c !== "BOTH" && c !== "") return false;
+    if (country === "CA") {
+      if (!isStartupCat) return false;
+      if (c !== "CA" && c !== "CANADA") return false;
+    } else {
+      if (!isStartupCat && !isSbaCat) return false;
+      if (c !== country && c !== "BOTH" && c !== "") return false;
+    }
     return (p.active ?? true) === true;
   });
 }
@@ -247,6 +272,7 @@ const PURPOSE_MAP: Record<string, PurposeKey> = {
   "Buy Inventory": "inventory",
   "Expansion": "expansion",
   "Start up Funding": "startup",
+  "SBA / Start-up": "startup", // BF_CLIENT_SBA_STARTUP_v190
   "Media Financing": "media",
 };
 
