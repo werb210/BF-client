@@ -15,7 +15,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 
-const FORM_KEY = "sba_form_413";
+// BF_CLIENT_SBA_413_PER_OWNER_v200
+// SBA requires one Form 413 per owner of 20% or more, plus each guarantor - it
+// is a personal balance sheet, not a company one. application_form_responses is
+// UNIQUE (application_id, doc_type), so a single "sba_form_413" key meant a
+// second owner's submission OVERWROTE the first, and a two-owner deal would
+// reach the lender with owner 1's assets on both statements.
+//
+// Owner 1 keeps the unsuffixed key so existing submissions are not orphaned;
+// owner 2 onward get sba_form_413_owner_N. The server already reads both shapes
+// (see loadSbaContext in sbaOwners.ts v95).
+function formKeyFor(ownerIndex: number): string {
+  return ownerIndex <= 1 ? "sba_form_413" : `sba_form_413_owner_${ownerIndex}`;
+}
 
 type Data = Record<string, string>;
 
@@ -79,7 +91,11 @@ const fmt = (n: number): string =>
 export default function Sba413Form({
   applicationId,
   onComplete,
-}: { applicationId: string; onComplete: () => void }) {
+  ownerIndex = 1,
+  ownerName = "",
+}: { applicationId: string; onComplete: () => void; ownerIndex?: number; ownerName?: string }) {
+  // BF_CLIENT_SBA_413_PER_OWNER_v200
+  const FORM_KEY = formKeyFor(ownerIndex);
   const [data, setData] = useState<Data>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -153,7 +169,10 @@ export default function Sba413Form({
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h3 style={{ marginTop: 0, color: "#0B1F3A" }}>Personal Financial Statement (SBA Form 413)</h3>
+      <h3 style={{ marginTop: 0, color: "#0B1F3A" }}>
+        Personal Financial Statement (SBA Form 413)
+        {ownerName ? <span style={{ fontWeight: 400, color: "#51617D" }}> — {ownerName}</span> : null}
+      </h3>
       <p style={{ color: "#51617D", fontSize: 14 }}>
         SBA requires this from every owner of 20% or more and from anyone guaranteeing
         the loan. Figures should be current within 120 days. Divide jointly owned

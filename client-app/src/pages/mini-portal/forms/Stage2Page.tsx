@@ -35,7 +35,14 @@ const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string
   professional_advisors: AdvisorsForm,
   // BF_CLIENT_SBA_413_v198 - key must match the document_type on the SBA lender
   // products, or the row falls through to a plain file upload instead of the form.
+  // BF_CLIENT_SBA_413_PER_OWNER_v200 - owner 1 keeps the plain key; owners 2-5
+  // are registered under suffixed keys so each renders its own statement rather
+  // than all four overwriting one row.
   sba_form_413: Sba413Form,
+  sba_form_413_owner_2: (p: any) => <Sba413Form {...p} ownerIndex={2} />,
+  sba_form_413_owner_3: (p: any) => <Sba413Form {...p} ownerIndex={3} />,
+  sba_form_413_owner_4: (p: any) => <Sba413Form {...p} ownerIndex={4} />,
+  sba_form_413_owner_5: (p: any) => <Sba413Form {...p} ownerIndex={5} />,
   // BF_CLIENT_SBA_1919_v199
   sba_form_1919: Sba1919Form,
 };
