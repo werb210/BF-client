@@ -71,14 +71,15 @@ describe("wizardSchema", () => {
     expect(getStepFieldKeys("step1", {
       kyc: { lookingFor: "WORKING_CAPITAL", purposeOfFunds: "Start up Funding" },
     })).toEqual([
+      // BF_CLIENT_SBA_TEST_PINS_v195 - the SBA / Start-up path asks four questions.
+      // Industry, sales history, AR balance and fixed assets came off deliberately:
+      // a pre-revenue business cannot answer them, none of them narrows an SBA
+      // match, and 51 of 68 applicants were stopping on this screen. Amount and
+      // location stay because they decide whether SBA is offered at all.
       "lookingFor",
       "fundingAmount",
       "businessLocation",
-      "industry",
       "purposeOfFunds",
-      "salesHistory",
-      "accountsReceivable",
-      "fixedAssets",
     ]);
 
     expect(getStepFieldKeys("step1", {
