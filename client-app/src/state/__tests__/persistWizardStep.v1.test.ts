@@ -8,15 +8,40 @@ const src = readFileSync(
   "utf8",
 );
 
+// BF_CLIENT_FIX_PERSIST_TEST_v189
+describe("the answers reach the server too", () => {
+  it("sends the wizard slices alongside the step", () => {
+    // Before v186 only the step number left the device. Everything the applicant
+    // typed sat in localStorage until submit, so an abandoned application on the
+    // server was an empty shell and a returning applicant got a blank form.
+    expect(src).toContain("function _wizardPayload");
+    expect(src).toContain('put("kyc"');
+    expect(src).toContain('put("business"');
+    expect(src).toContain('put("applicant"');
+  });
+
+  it("still sends the step if the payload cannot be built", () => {
+    expect(src).toContain("payload = { currentStep: step };");
+  });
+});
+
 describe("wizard step reaches the server", () => {
   it("pings the server when the step changes", () => {
+    // BF_CLIENT_FIX_PERSIST_TEST_v189 - this pinned the exact call signature,
+    // so adding the wizard payload as a third argument in v186 broke it even
+    // though the behaviour it guards was intact. Assert the token still reaches
+    // the persist call, without freezing the arity.
     expect(src).toContain("function _persistStepToServer");
-    expect(src).toContain("_persistStepToServer(s, next.applicationToken)");
+    expect(src).toContain("_persistStepToServer(s, next.applicationToken");
   });
 
   it("sends the field name the server actually accepts", () => {
     // patchSchema takes currentStep (1-6); snake_case current_step is legacy.
-    expect(src).toContain("{ currentStep: step }");
+    // BF_CLIENT_FIX_PERSIST_TEST_v189 - currentStep is now the base of a payload
+    // that also carries kyc/business/applicant, so the literal object no longer
+    // appears verbatim. The field name is what matters and is still asserted.
+    expect(src).toContain("currentStep: step");
+    expect(src).not.toContain("current_step: step");
   });
 
   it("does nothing before an application row exists", () => {
