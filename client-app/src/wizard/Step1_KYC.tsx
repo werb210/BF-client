@@ -68,6 +68,7 @@ const PurposeOptions = [
   "Funds to cover A/R",
   "Buy Inventory",
   "Expansion",
+  "Not sure",
 ];
 
 // BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
@@ -91,6 +92,7 @@ const SalesHistoryOptions = [
   "Under 1 Year",
   "1 to 3 Years",
   "Over 3 Years",
+  "Not sure",
 ];
 
 const RevenueOptions = [
@@ -99,6 +101,7 @@ const RevenueOptions = [
   "$500,001 to $1,000,000",
   "$1,000,001 to $3,000,000",
   "Over $3,000,000",
+  "Not sure",
 ];
 
 // BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
@@ -119,6 +122,7 @@ const AccountsReceivableOptions = [
   "$500,000 to $1,000,000",
   "$1,000,000 to $3,000,000",
   "Over $3,000,000",
+  "Not sure",
 ];
 
 
@@ -138,6 +142,7 @@ type Step1KycData = Partial<{
 const FixedAssetsOptions = [
   "None", "$1 to $50,000", "$50,001 to $100,000",
   "$100,001 to $250,000", "$250,001 to $500,000", "Over $500,000",
+  "Not sure",
 ];
 
 // BF_CLIENT_BLOCK_v110_PARSECURRENCY_GUARD_v1 — for Equipment-only flow
@@ -231,8 +236,14 @@ export function Step1_KYC(): JSX.Element {
     return lenderProducts.some((p) => {
       const cat = String((p as any).category ?? "").toUpperCase();
       if (cat !== "STARTUP" && cat !== "STARTUP_CAPITAL") return false;
+      // BF_CLIENT_STEP1_REQUIRED_v188 - Canada demands an exact match; a product
+      // with BOTH or a blank country is not evidence of a Canadian startup lender.
       const c = String((p as any).country ?? "").toUpperCase();
-      if (c !== country && c !== "BOTH" && c !== "") return false;
+      if (country === "CA") {
+        if (c !== "CA" && c !== "CANADA") return false;
+      } else if (c !== country && c !== "BOTH" && c !== "") {
+        return false;
+      }
       return ((p as any).active ?? true) === true;
     });
   }, [lenderProducts, app.kyc.businessLocation]);
@@ -617,18 +628,17 @@ export function Step1_KYC(): JSX.Element {
         !Validate.required(values.businessLocation) ||
         values.businessLocation === "Other",
       industry: !Validate.required(values.industry),
-      purposeOfFunds: !Validate.required(values.purposeOfFunds),
-      salesHistory: !Validate.required(values.salesHistory),
-      revenueLast12Months: isStartupPathKyc(values)
-        ? false
-        : !Validate.required(values.revenueLast12Months),
+      purposeOfFunds: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
+      salesHistory: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
+      revenueLast12Months: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
       // BF_CLIENT_STEP1_HARDSTOPS_v187 - the floor gates Continue in Canada only.
-      monthlyRevenue: isStartupPathKyc(values)
+      // BF_CLIENT_STEP1_REQUIRED_v188 - startup path cannot bypass the CA floor.
+      monthlyRevenue: (isStartupPathKyc(values) && countryCode !== "CA")
         ? false
         : !Validate.required(values.monthlyRevenue) ||
           (values.monthlyRevenue === "Under $10,000" && countryCode === "CA"),
-      accountsReceivable: !Validate.required(values.accountsReceivable),
-      fixedAssets: !Validate.required(values.fixedAssets),
+      accountsReceivable: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
+      fixedAssets: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
     };
   }
 
