@@ -673,9 +673,39 @@ export function Step4_Applicant() {
                 postalLabel={postalLabel}
                 identityLabel={identityLabel}
               />
-              {Number(values.ownership || 0) < 100 && (
+              {/* BF_CLIENT_STEP4_PARTNER_TOGGLE_v194
+                  This was gated on ownership < 100 alone, which trapped anyone who
+                  ticked the box and then changed their mind:
+                    1. set ownership to 60, checkbox appears, tick it
+                    2. partner card opens, hasMultipleOwners = true
+                    3. set ownership back to 100 - the checkbox UNMOUNTS
+                    4. the partner card stays open, because it renders on
+                       hasMultipleOwners alone (below), and nothing on screen can
+                       set the flag back to false
+                  Continue then becomes unsatisfiable: isStepValid demands every
+                  partner field, and ownershipTotalValid demands primary + partner
+                  === 100, so with the primary at 100 the partner needs 0 - which
+                  fails the separate partnerOwnership >= 1 range check. The only
+                  escapes were dropping ownership below 100 again, or clearing
+                  local storage. A live applicant hit exactly this.
+                  The box now also shows whenever it is already ticked, so the
+                  control that opened the partner section can always close it. */}
+              {(Number(values.ownership || 0) < 100 || values.hasMultipleOwners) && (
                 <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, fontWeight: tokens.typography.label.fontWeight, color: tokens.colors.textPrimary }}>
-                  <Checkbox checked={values.hasMultipleOwners || false} onChange={(e) => setField("hasMultipleOwners", (e.target as HTMLInputElement).checked)} />
+                  <Checkbox
+                    checked={values.hasMultipleOwners || false}
+                    onChange={(e) => {
+                      const checked = (e.target as HTMLInputElement).checked;
+                      // Unticking clears the partner outright. Leaving a half-filled
+                      // partner object behind means a stale SIN or email is still in
+                      // state and can reach the server on submit.
+                      if (!checked) {
+                        update({ applicant: { ...values, hasMultipleOwners: false, partner: {}, additionalShareholders: [] } });
+                        return;
+                      }
+                      setField("hasMultipleOwners", true);
+                    }}
+                  />
                   This business has multiple owners/partners
                 </label>
               )}
