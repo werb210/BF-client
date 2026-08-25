@@ -51,20 +51,58 @@ function _notify(){ _subs.forEach(fn=>{try{fn();}catch{}}); }
 // costs an application.
 let _lastPersistedStep: number | undefined;
 
-function _persistStepToServer(step: number, token: string | undefined): void {
+// BF_CLIENT_PERSIST_ANSWERS_v186
+// This sent { currentStep } and nothing else. Every answer the applicant typed was
+// written to localStorage by client/autosave and stayed on their device until submit.
+// Measured consequence on the live database: of 60 unsubmitted applications over 90
+// days, 26 carried a currentStep and only 3 carried any kyc data. Rows sitting at
+// step 5 and step 6 had a completely empty kyc object - people who demonstrably
+// filled ten required fields, because Step 1's Continue button will not enable
+// until all ten validate.
+//
+// Three costs, all paid by the business:
+//   - someone who leaves and returns gets a blank form and starts over
+//   - staff calling an abandoned applicant cannot see what they asked for
+//   - the abandoned-application nudge has nothing to personalise with
+//
+// The wizard payload now rides along with the step ping. Still fire-and-forget:
+// a failed save must never block navigation. Losing a save costs a data point;
+// blocking the wizard costs an application.
+function _wizardPayload(state: ApplicationData): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const put = (key: string, value: unknown) => {
+    if (value && typeof value === "object" && Object.keys(value as object).length > 0) {
+      out[key] = value;
+    }
+  };
+  put("kyc", (state as any).kyc);
+  put("business", (state as any).business);
+  put("applicant", (state as any).applicant);
+  put("selected_product", (state as any).selectedProduct);
+  return out;
+}
+
+function _persistStepToServer(step: number, token: string | undefined, state?: ApplicationData): void {
   if (typeof window === "undefined") return;
   if (!token) return;                    // no application row exists yet
   if (_lastPersistedStep === step) return; // already sent, do not re-ping
   _lastPersistedStep = step;
+  let payload: Record<string, unknown> = { currentStep: step };
+  try {
+    if (state) payload = { ...payload, ..._wizardPayload(state) };
+  } catch {
+    // A malformed slice must not stop the step ping - send the step alone.
+    payload = { currentStep: step };
+  }
   void import("../client/autosave")
-    .then((m) => m.patchApplication(token, { currentStep: step }))
+    .then((m) => m.patchApplication(token, payload))
     .catch(() => {
       // Allow a later transition to retry this step if the ping failed.
       if (_lastPersistedStep === step) _lastPersistedStep = undefined;
     });
 }
 
-function _track(prev:ApplicationData,next:ApplicationData){ const s=next.currentStep; if(!s||_trackedStep===s) return; if(_trackedStep!==undefined){const d=Date.now()-_stepStartTime; trackEvent("application_step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); trackEvent("step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); void import("../lib/journey").then((j)=>j.trackWizardStep(_trackedStep as number,d)).catch(()=>{});} /* BF_CLIENT_VISITOR_JOURNEY_v1 */ _trackedStep=s; _stepStartTime=Date.now(); /* BF_CLIENT_STEP_ENTERED_v1 - the old code only emitted a wizard_step on EXIT, so someone who abandoned on step 3 was recorded as having reached step 2, and anyone abandoning on step 1 was recorded as having reached nothing at all. */ void import("../lib/journey").then((j)=>j.trackWizardStep(s)).catch(()=>{}); trackEvent("application_step_view",{step:s}); trackEvent("client_step_progressed",{step:s}); _persistStepToServer(s, next.applicationToken); }
+function _track(prev:ApplicationData,next:ApplicationData){ const s=next.currentStep; if(!s||_trackedStep===s) return; if(_trackedStep!==undefined){const d=Date.now()-_stepStartTime; trackEvent("application_step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); trackEvent("step_completed",{step:_trackedStep,time_spent_ms:d,session_id:getSessionId()}); void import("../lib/journey").then((j)=>j.trackWizardStep(_trackedStep as number,d)).catch(()=>{});} /* BF_CLIENT_VISITOR_JOURNEY_v1 */ _trackedStep=s; _stepStartTime=Date.now(); /* BF_CLIENT_STEP_ENTERED_v1 - the old code only emitted a wizard_step on EXIT, so someone who abandoned on step 3 was recorded as having reached step 2, and anyone abandoning on step 1 was recorded as having reached nothing at all. */ void import("../lib/journey").then((j)=>j.trackWizardStep(s)).catch(()=>{}); trackEvent("application_step_view",{step:s}); trackEvent("client_step_progressed",{step:s}); _persistStepToServer(s, next.applicationToken, next); /* BF_CLIENT_PERSIST_ANSWERS_v186 */ }
 function _set(updater:(prev:ApplicationData)=>ApplicationData){ const prev=_state; const next=updater(prev); if(next===prev) return; _state=next; OfflineStore.save(next); _persist(); _track(prev,next); _notify(); }
 const _subscribe=(cb:()=>void)=>{ _subs.add(cb); return ()=>_subs.delete(cb);}; const _getSnapshot=()=>_state;
 export function reconcileWithBootToken(): void { if(typeof window==="undefined") return; const bootToken=readBootToken(); if(!bootToken) return; if(_state.applicationToken===bootToken) return; if(_state.applicationToken&&_state.applicationToken!==bootToken){ _set(()=>({...emptyApp,applicationToken:bootToken} as ApplicationData)); return; } _set((prev)=>{const n={...prev,applicationToken:bootToken} as ApplicationData; return {...n,applicationDraft:buildApplicationDraft(n)};}); }
