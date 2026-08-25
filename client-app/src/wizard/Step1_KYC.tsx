@@ -640,7 +640,9 @@ export function Step1_KYC(): JSX.Element {
       businessLocation:
         !Validate.required(values.businessLocation) ||
         values.businessLocation === "Other",
-      industry: !Validate.required(values.industry),
+      // BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA path, so it cannot gate
+      // Continue there.
+      industry: !isStartupPathKyc(values) && !Validate.required(values.industry),
       purposeOfFunds: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
       salesHistory: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
       revenueLast12Months: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
@@ -1142,7 +1144,11 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
-            {!onSbaStartupPath && <div data-error={showErrors && fieldErrors.industry}>
+            {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}
+            <div
+              data-error={showErrors && fieldErrors.industry}
+              style={{ display: onSbaStartupPath ? "none" : undefined }}
+            >
               <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>
                 Industry *
               </label>
@@ -1193,7 +1199,7 @@ export function Step1_KYC(): JSX.Element {
               {showErrors && fieldErrors.industry && (
                 <div style={components.form.errorText}>Select your industry.</div>
               )}
-            </div>}
+            </div>
 
             <div data-error={showErrors && fieldErrors.purposeOfFunds}>
               <label style={components.form.label}>Purpose of funds</label>
@@ -1219,8 +1225,11 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
-            {!onSbaStartupPath && <>
-            <div data-error={showErrors && fieldErrors.salesHistory}>
+            {/* BF_CLIENT_SBA_REDUCED_v191 - retain answers when the path changes */}
+            <div
+              data-error={showErrors && fieldErrors.salesHistory}
+              style={{ display: onSbaStartupPath ? "none" : undefined }}
+            >
               <label style={components.form.label}>Years of sales history</label>
               <Select
                 id={getWizardFieldId("step1", "salesHistory")}
@@ -1318,7 +1327,11 @@ export function Step1_KYC(): JSX.Element {
             </div>
               </>
             )}
-              <div data-error={showErrors && fieldErrors.accountsReceivable}>
+              {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}
+              <div
+                data-error={showErrors && fieldErrors.accountsReceivable}
+                style={{ display: onSbaStartupPath ? "none" : undefined }}
+              >
                 <label style={components.form.label}>Current AR balance</label>
                 <Select
                   id={getWizardFieldId("step1", "accountsReceivable")}
@@ -1357,7 +1370,11 @@ export function Step1_KYC(): JSX.Element {
                 )}
               </div>
 
-              <div data-error={showErrors && fieldErrors.fixedAssets}>
+              {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}
+              <div
+                data-error={showErrors && fieldErrors.fixedAssets}
+                style={{ display: onSbaStartupPath ? "none" : undefined }}
+              >
                 <label style={components.form.label}>Fixed assets value for loan security</label>
                 <Select
                   id={getWizardFieldId("step1", "fixedAssets")}
@@ -1386,7 +1403,6 @@ export function Step1_KYC(): JSX.Element {
                   </div>
                 )}
               </div>
-            </>}
           </div>
         </Card>
 
