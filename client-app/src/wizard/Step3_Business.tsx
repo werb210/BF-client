@@ -36,6 +36,7 @@ import {
   getNextEmptyFieldKey,
   getNextFieldKey,
   getWizardFieldId,
+  isStartupPathKyc,
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
@@ -44,6 +45,11 @@ import { isAccordLOCApp } from "./accordRisk";
 
 export function Step3_Business() {
   const { app, update, autosaveError } = useApplicationStore();
+  // BF_CLIENT_SBA_REDUCED_v191 - start-ups have no operating history to report.
+  // Step 3 therefore asks only for basic identity and contact details, all optional.
+  const onSbaStartupPath = isStartupPathKyc(
+    (app?.kyc ?? {}) as Record<string, unknown>
+  );
   console.log("[wizard] Step3_Business RENDER", { currentStep: app.currentStep, applicationToken: app.applicationToken, businessLocation: app.kyc?.businessLocation });
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -209,7 +215,7 @@ export function Step3_Business() {
     ["estimatedRevenue", "estimated yearly revenue"],
   ] as const;
 
-  const missingStep3 = [
+  const missingStep3 = onSbaStartupPath ? [] : [ // BF_CLIENT_SBA_REDUCED_v191
     ...REQUIRED_STEP3
       .filter(([field]) => !Validate.required(values[field]))
       .map(([, label]) => label),
@@ -222,7 +228,7 @@ export function Step3_Business() {
   async function next() {
     saveStepData(3, values);
     try {
-      enforceV1StepSchema("step3", values);
+      if (!onSbaStartupPath) enforceV1StepSchema("step3", values);
     } catch (zodErr: any) {
       // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
       // failures so the user sees what to fix instead of silently stuck.
@@ -259,19 +265,19 @@ export function Step3_Business() {
       "estimatedRevenue",
     ];
 
-    const missing = requiredFields.find(
+    const missing = !onSbaStartupPath && requiredFields.find(
       (field) => !Validate.required(nextValues[field])
     );
     if (missing) {
       setSaveError("Please complete all required business details.");
       return;
     }
-    if (!Validate.phone(nextValues.phone)) {
+    if (!onSbaStartupPath && !Validate.phone(nextValues.phone)) {
       setSaveError("Please enter a valid 10-digit phone number for the business.");
       return;
     }
     // BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1
-    if (!accordRequirementsMet(nextValues)) {
+    if (!onSbaStartupPath && !accordRequirementsMet(nextValues)) {
       setSaveError("Please complete all required Accord line-of-credit details.");
       return;
     }
@@ -659,7 +665,8 @@ export function Step3_Business() {
             />
           </div>
 
-          {!isAccordLOC && (
+          {/* BF_CLIENT_SBA_REDUCED_v191 - no operating history on the SBA path */}
+          {!isAccordLOC && !onSbaStartupPath && (
             <div>
               <label style={components.form.label}>Business Start Date</label>
               <Input
@@ -720,7 +727,8 @@ export function Step3_Business() {
             </div>
           )}
 
-          <div>
+          {/* BF_CLIENT_SBA_REDUCED_v191 */}
+          <div style={{ display: onSbaStartupPath ? "none" : undefined }}>
             <label style={components.form.label}>Number of Employees</label>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
@@ -766,7 +774,8 @@ export function Step3_Business() {
             </div>
           </div>
 
-          <div>
+          {/* BF_CLIENT_SBA_REDUCED_v191 */}
+          <div style={{ display: onSbaStartupPath ? "none" : undefined }}>
             <label style={components.form.label}>Estimated Yearly Revenue</label>
             <Input
               id={getWizardFieldId("step3", "estimatedRevenue")}
