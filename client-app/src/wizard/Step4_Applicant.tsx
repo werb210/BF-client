@@ -58,7 +58,12 @@ function toTitleCaseV66(input: string): string {
 // requested order (applicant + partner). Base fields always render; the Accord
 // LOC extras render only when isAccordLOC. All fields formatted. No Work Phone,
 // no CEM here (CEM consent lives in Step 6 with the T&C).
-function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }) {
+// BF_CLIENT_SBA_912_STEP4_v197 - onSba threads through here rather than being
+// duplicated per owner card. SBA Form 912 is filled in by EVERY owner of 20% or
+// more, so the questions have to live in the shared component: asking them once
+// on the page would collect the primary applicant's answers and silently attach
+// them to the partner as well.
+function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onSba = false, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }) {
   const L = components.form.label;
   // BF_CLIENT_STEP4_VALIDATION_v171 - an error shows only once the user has
   // left the field, so nothing turns red while they are still typing into it.
@@ -164,6 +169,95 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, cou
         </>
       )}
       <div><label style={L}>Ownership %</label><Input type="number" min="1" max="100" value={data.ownership || ""} onChange={(e) => setField("ownership", e.target.value)} placeholder="%" /></div>
+
+      {/* BF_CLIENT_SBA_912_STEP4_v197
+          SBA Form 912, Statement of Personal History. Everything here is per
+          person, which is why it sits inside OwnerFields and repeats for the
+          partner. Q8, Q9 and Q10 each carry their own initial on the paper form -
+          a single signature at the end is not accepted - so each is captured
+          separately rather than as one combined disclosure.
+          Nothing is required: staff chase what is missing rather than the form
+          refusing to advance. */}
+      {onSba && (
+        <>
+          <div style={{ gridColumn: "1 / -1", ...components.form.eyebrow, marginTop: tokens.spacing.md }}>
+            SBA personal history (Form 912)
+          </div>
+          <div><label style={L}>Place of birth (city and state, or country)</label>
+            <Input value={data.placeOfBirth || ""} onChange={(e) => setField("placeOfBirth", e.target.value)} /></div>
+          <div><label style={L}>Are you a US citizen?</label>
+            <select value={data.usCitizen || ""} onChange={(e) => setField("usCitizen", e.target.value)}>
+              <option value="">Select...</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          {data.usCitizen === "no" && (
+            <div><label style={L}>Alien registration number</label>
+              <Input value={data.alienRegistrationNumber || ""} onChange={(e) => setField("alienRegistrationNumber", e.target.value)} placeholder="Leave blank if you do not have one" /></div>
+          )}
+          <div><label style={L}>Any former names used, and when <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
+            <Input value={data.formerNames || ""} onChange={(e) => setField("formerNames", e.target.value)} placeholder="e.g. Jane Smith, 2010-2018" /></div>
+          {/* 912 asks for the previous address only when under ten years at the current one. */}
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Previous address, if you have been at your current address under 10 years</label>
+            <Input value={data.priorAddress || ""} onChange={(e) => setField("priorAddress", e.target.value)} placeholder="Street, city, state, ZIP - and the dates you lived there" /></div>
+
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+            Are you currently incarcerated, serving a sentence, or under indictment for a felony
+            or any crime involving financial misconduct or a false statement?
+          </label>{yn("sba912Q8")}</div>
+
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+            In the past year, have you been convicted of a criminal offence committed during and
+            in connection with a riot, civil disorder or other declared disaster?
+          </label>{yn("sba912Q9")}</div>
+
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+            Are you currently more than 60 days late on any child support obligation?
+          </label>{yn("sba912Q10")}</div>
+
+          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+            Your initials, confirming the three answers above
+          </label><Input value={data.sba912Initials || ""} onChange={(e) => setField("sba912Initials", e.target.value.toUpperCase())} placeholder="e.g. WJ" maxLength={5} /></div>
+
+          <div style={{ gridColumn: "1 / -1", ...components.form.eyebrow, marginTop: tokens.spacing.md }}>
+            Demographics (optional, for SBA reporting only)
+          </div>
+          <div><label style={L}>Veteran status</label>
+            <select value={data.veteranStatus || ""} onChange={(e) => setField("veteranStatus", e.target.value)}>
+              <option value="">Not disclosed</option>
+              <option value="non_veteran">Non-veteran</option>
+              <option value="veteran">Veteran</option>
+              <option value="service_disabled">Service-disabled veteran</option>
+              <option value="spouse">Spouse of veteran</option>
+            </select>
+          </div>
+          <div><label style={L}>Sex</label>
+            <select value={data.sex || ""} onChange={(e) => setField("sex", e.target.value)}>
+              <option value="">Not disclosed</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div><label style={L}>Race</label>
+            <select value={data.race || ""} onChange={(e) => setField("race", e.target.value)}>
+              <option value="">Not disclosed</option>
+              <option value="american_indian">American Indian or Alaska Native</option>
+              <option value="asian">Asian</option>
+              <option value="black">Black or African American</option>
+              <option value="pacific_islander">Native Hawaiian or Pacific Islander</option>
+              <option value="white">White</option>
+            </select>
+          </div>
+          <div><label style={L}>Ethnicity</label>
+            <select value={data.ethnicity || ""} onChange={(e) => setField("ethnicity", e.target.value)}>
+              <option value="">Not disclosed</option>
+              <option value="hispanic">Hispanic or Latino</option>
+              <option value="not_hispanic">Not Hispanic or Latino</option>
+            </select>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -266,6 +360,8 @@ export function Step4_Applicant() {
     [app.kyc.businessLocation]
   );
   const identityLabel = getIdentityLabel(countryCode);
+  // BF_CLIENT_SBA_912_STEP4_v197
+  const onSba = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>);
   const regionLabel = getRegionLabel(countryCode);
   const postalLabel = getPostalLabel(countryCode);
   const regionCountry = useMemo<"CA" | "US">(
@@ -661,6 +757,7 @@ export function Step4_Applicant() {
 
             <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
               <div style={components.form.eyebrow}>Primary applicant</div>
+              {/* BF_CLIENT_SBA_912_STEP4_v197 */}
               <OwnerFields errors={errors} touched={touched} onBlurField={handleBlurField}
                 data={values}
                 setField={setField}
@@ -672,6 +769,7 @@ export function Step4_Applicant() {
                 regionLabel={regionLabel}
                 postalLabel={postalLabel}
                 identityLabel={identityLabel}
+                onSba={onSba}
               />
               {/* BF_CLIENT_STEP4_PARTNER_TOGGLE_v194
                   This was gated on ownership < 100 alone, which trapped anyone who
@@ -714,6 +812,7 @@ export function Step4_Applicant() {
             {values.hasMultipleOwners && (
               <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg, marginTop: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
                 <div style={components.form.eyebrow}>Partner / second owner</div>
+                {/* BF_CLIENT_SBA_912_STEP4_v197 */}
                 <OwnerFields
                   data={partner}
                   setField={setPartnerField}
@@ -724,6 +823,7 @@ export function Step4_Applicant() {
                   regionLabel={regionLabel}
                   postalLabel={postalLabel}
                   identityLabel={identityLabel}
+                  onSba={onSba}
                 />
               </Card>
             )}
