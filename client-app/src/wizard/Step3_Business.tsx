@@ -11,6 +11,7 @@ import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
 import { RegionSelect } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
+import { NaicsPicker } from "./NaicsPicker"; // BF_CLIENT_SBA_1919_STEP3_v196
 import { Validate } from "../utils/validate";
 import {
   formatCurrencyValue,
@@ -402,6 +403,121 @@ export function Step3_Business() {
             kept in state and mirrored from Business Name (DBA) on
             every keystroke so server records stay valid until the
             column itself is dropped (separate cross-repo round). */}
+
+          {/* BF_CLIENT_SBA_1919_STEP3_v196
+              SBA Form 1919 asks six things about the business that nothing else in
+              the wizard captures. They sit at the top of Step 3 because that is
+              where the company is described, and because Q4 can end the application
+              outright - better to ask before someone fills in an address than after.
+
+              NAICS, year began and employee count were on the form until v191 hid
+              them on the SBA path. That was right for AR balances and revenue
+              history; it was wrong for these three, which 1919 asks of every
+              applicant regardless. They write back to the same startDate and
+              employees keys, so nothing downstream changes.
+
+              Person-level questions (912 Q8-Q10, place of birth, citizenship) are
+              deliberately NOT here: they are asked per owner and repeat for every
+              20%+ owner, so they belong on Step 4 beside SSN and date of birth. */}
+          {onSbaStartupPath && (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ ...components.form.eyebrow, marginBottom: tokens.spacing.sm }}>
+                SBA loan questions
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr",
+                  gap: tokens.spacing.md,
+                  marginBottom: tokens.spacing.lg,
+                }}
+              >
+                <div>
+                  <label style={components.form.label}>Business EIN</label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="12-3456789"
+                    value={values.ein || ""}
+                    onChange={(e: any) => setField("ein", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={components.form.label}>Industry (NAICS code)</label>
+                  <NaicsPicker
+                    value={values.naicsCode || ""}
+                    title={values.naicsTitle || ""}
+                    country={countryCode}
+                    onPick={(code, title) =>
+                      update({ business: { ...values, naicsCode: code, naicsTitle: title } })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label style={components.form.label}>Year began operations</label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="2026"
+                    value={values.startDate || ""}
+                    onChange={(e: any) => setField("startDate", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label style={components.form.label}>Number of employees (including owners)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={values.employees || ""}
+                    onChange={(e: any) => setField("employees", e.target.value)}
+                  />
+                </div>
+
+                {/* 1919 Q4. SBA's own wording: a Yes means the applicant is not
+                    eligible for SBA financial assistance. No lender discretion. */}
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={components.form.label}>
+                    Is the applicant, or any associate of the applicant, currently
+                    incarcerated, serving a sentence, or under indictment for a felony
+                    or any crime involving financial misconduct or a false statement?
+                  </label>
+                  <Select
+                    value={values.sbaQ4Criminal || ""}
+                    onChange={(e: any) => setField("sbaQ4Criminal", e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                  </Select>
+                  {values.sbaQ4Criminal === "yes" && (
+                    <div style={{ ...components.form.errorText, marginTop: 6 }}>
+                      SBA rules make an applicant in this position ineligible for 7(a)
+                      assistance. Carry on if you like and we will look at other options,
+                      but we cannot place this as an SBA loan.
+                    </div>
+                  )}
+                </div>
+
+                {/* 1919 applicant certification. */}
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={components.form.label}>
+                    Is the business at least 51% owned and controlled by US citizens or
+                    Lawful Permanent Residents?
+                  </label>
+                  <Select
+                    value={values.sbaCitizenOwned || ""}
+                    onChange={(e: any) => setField("sbaCitizenOwned", e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label style={components.form.label}>Business Name (DBA)</label>
