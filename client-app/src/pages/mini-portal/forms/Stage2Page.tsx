@@ -14,6 +14,8 @@ import RealEstateCollateralForm from "./forms/RealEstateCollateralForm";
 import AdvisorsForm from "./forms/AdvisorsForm";
 // BF_CLIENT_SBA_413_v198
 import Sba413Form from "./forms/Sba413Form";
+// BF_CLIENT_SBA_1919_v199
+import Sba1919Form from "./forms/Sba1919Form";
 
 type RequiredDoc = {
   document_type: string;
@@ -34,6 +36,8 @@ const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string
   // BF_CLIENT_SBA_413_v198 - key must match the document_type on the SBA lender
   // products, or the row falls through to a plain file upload instead of the form.
   sba_form_413: Sba413Form,
+  // BF_CLIENT_SBA_1919_v199
+  sba_form_1919: Sba1919Form,
 };
 
 function humanLabel(docType: string): string {
