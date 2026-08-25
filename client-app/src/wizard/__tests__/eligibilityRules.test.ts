@@ -7,9 +7,22 @@ describe("v92 hard stops", () => {
     expect(detectHardStop({ location: "OTHER" })?.reason).toBe("OTHER_LOCATION");
     expect(computeAllowedCategories({ location: "OTHER" })).toEqual([]);
   });
-  it("<10k blocks", () => {
-    expect(detectHardStop({ avgMonthly: "<10k" })?.reason).toBe("MIN_REVENUE");
-    expect(computeAllowedCategories({ avgMonthly: "<10k" })).toEqual([]);
+  // BF_CLIENT_SBA_TEST_PINS_v195 - the under-$10K floor is a Canadian lender-panel
+  // constraint, not a global one. This called detectHardStop with no location at
+  // all, which used to hard-stop everyone. In the US, SBA lending exists for
+  // exactly this applicant, and stopping them produced an empty Step 2 with no
+  // explanation. The location is now part of the case.
+  it("<10k blocks in Canada", () => {
+    expect(detectHardStop({ avgMonthly: "<10k", location: "CA" })?.reason).toBe("MIN_REVENUE");
+    expect(computeAllowedCategories({ avgMonthly: "<10k", location: "CA" })).toEqual([]);
+  });
+
+  // BF_CLIENT_SBA_TEST_PINS_v195 - the regression this guards against: a US
+  // applicant under $10K/month reached Step 2 and every bucket was filtered out,
+  // because computeAllowedCategories returns [] the moment detectHardStop fires.
+  it("<10k does NOT block in the US", () => {
+    expect(detectHardStop({ avgMonthly: "<10k", location: "US" })).toBeNull();
+    expect(computeAllowedCategories({ avgMonthly: "<10k", location: "US" }).length).toBeGreaterThan(0);
   });
   it("does not hard-stop startup applicants on revenue", () => {
     expect(detectHardStop({ purpose: "startup", avgMonthly: "<10k" })).toBeNull();
