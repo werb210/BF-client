@@ -11,6 +11,7 @@ import { Validate } from "../utils/validate";
 import { WizardLayout } from "../components/WizardLayout";
 import { RegionSelect } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
+import { isStartupPathKyc } from "./wizardSchema"; // BF_CLIENT_SBA_SKIP_DOCS_v192
 import {
   formatIdentityNumber,
   formatPhoneNumber,
@@ -498,6 +499,24 @@ export function Step4_Applicant() {
       });
     }
     track("step_completed", { step: 4 });
+    // BF_CLIENT_SBA_SKIP_DOCS_v192
+    // A start-up has none of what Step 5 asks for - six months of bank statements
+    // and filed financials do not exist for a business that has not traded. Sending
+    // them to a screen listing documents they cannot produce is a dead end at the
+    // last hurdle, after they have already answered everything else.
+    //
+    // documentsDeferred is set BEFORE navigating because it is what the Step 6
+    // submit gate checks (see submission.deferredGate); without it the applicant
+    // arrives at Review with the submit button disabled and nothing explaining why.
+    //
+    // currentStep is set to 6 rather than 5 for a second reason: Step 6 runs
+    // resolveStepGuard(app.currentStep, 6), and resolveStepGuard(4, 6) returns 5.
+    // Leaving the step at 4 or 5 would bounce them straight back into Documents.
+    if (isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)) {
+      update({ currentStep: 6, documentsDeferred: true });
+      navigate("/apply/step-6");
+      return;
+    }
     update({ currentStep: 5 });
     navigate("/apply/step-5");
     // BF_CLIENT_WIZARD_LOCAL_FIRST_v58_STEP4_ANCHOR
