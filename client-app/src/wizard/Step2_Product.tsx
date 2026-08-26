@@ -548,26 +548,27 @@ export function Step2_Product() {
   // Guarded on a SINGLE visible bucket: if the US panel ever carries a second
   // SBA-eligible category, the choice becomes real again and the page renders
   // normally rather than silently picking for the applicant.
-  const sbaAutoAdvancedRef = useRef(false);
+  const sbaAutoRef = useRef<"idle" | "selecting" | "advancing">("idle");
   useEffect(() => {
-    if (sbaAutoAdvancedRef.current || isLoading || loadError) return;
+    if (sbaAutoRef.current !== "idle") return;
+    if (isLoading || loadError) return;
     if (!isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)) return;
-    if (visibleCategoryBuckets.length !== 1) return;
-
-    const only = visibleCategoryBuckets[0];
-    const productIds = only.products.map((product) => product.id);
-    const product = only.products[0];
-    if (!product) return;
-
-    sbaAutoAdvancedRef.current = true;
-    selectCategory(only.bucket, productIds);
-    goNext(only.bucket, only.bucket, productIds, {
-      id: product.id,
-      name: product.name,
-      product_type: only.bucket,
-      lender_id: product.lender_id,
-    });
+    const buckets = visibleCategoryBuckets ?? [];
+    if (buckets.length !== 1) return;
+    const only = buckets[0];
+    if (!only) return;
+    sbaAutoRef.current = "selecting";
+    selectCategory(only.bucket, only.products.map((product: any) => product.id));
   }, [app?.kyc, isLoading, loadError, visibleCategoryBuckets]);
+
+  // selectCategory updates the state that goNext reads. Advance only after that
+  // selection has landed, matching the existing human-click flow.
+  useEffect(() => {
+    if (sbaAutoRef.current !== "selecting") return;
+    if (!selectedBucket) return;
+    sbaAutoRef.current = "advancing";
+    goNext();
+  }, [selectedBucket]);
   const matchingProducts = useMemo(() => {
     return getMatchingProducts(
       products,
@@ -655,7 +656,8 @@ export function Step2_Product() {
                 : "No financing products match your requested amount. Try a different amount or contact us."}
           </EmptyState>
         )}
-        {!isLoading && !loadError && visibleCategoryBuckets.map((bucket) => {
+        {/* BF_CLIENT_SBA_WIZARD_FLOW_v210 - suppressed while auto-advancing. */}
+        {!isLoading && !loadError && sbaAutoRef.current === "idle" && visibleCategoryBuckets.map((bucket) => {
           const category = bucket.bucket;
           const isSelected = selectedBucket === category || selectedCategory === category;
           const matchPct = app.matchPercentages?.[category] ?? null;

@@ -869,7 +869,9 @@ export function Step4_Applicant() {
             <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
                 <Button variant="secondary" style={{ width: "100%", maxWidth: "160px" }} onClick={() => navigate("/apply/step-3")}>← Back</Button>
-                <Button style={{ width: "100%", maxWidth: "260px" }} onClick={next} disabled={!isValid}>Continue to Documents →</Button>
+                {/* BF_CLIENT_SBA_WIZARD_FLOW_v210 - SBA skips Step 5 because its
+                    documents are collected in Stage 2, so describe the real destination. */}
+                <Button style={{ width: "100%", maxWidth: "260px" }} onClick={next} disabled={!isValid}>{onSba ? "Continue to Review →" : "Continue to Documents →"}</Button>
               </div>
             </div>
           </div>
