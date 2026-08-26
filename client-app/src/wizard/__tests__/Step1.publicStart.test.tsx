@@ -84,8 +84,21 @@ describe("Step 1 public draft start (Block 12)", () => {
     await act(async () => { continueBtn.click(); });
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [calledUrl, calledOpts] = fetchMock.mock.calls[0];
+    // BF_CLIENT_STEP1_PUBLICSTART_SCOPE_v209
+    // This counted EVERY fetch the component made, on the assumption that the
+    // start call was the only one. Since v207 wired Step 1 to the lender product
+    // panel, mounting also calls ProductSync.sync() when the cache is cold - a
+    // second, unrelated request that made the count 2 and failed the assertion.
+    //
+    // The behaviour actually being protected is that the applicant is minted
+    // EXACTLY ONCE - a double-mint creates two draft applications for one
+    // person. So count calls to that endpoint rather than calls in total, which
+    // pins the real rule and stops unrelated requests breaking it again.
+    const startCalls = fetchMock.mock.calls.filter(
+      (args) => String(args[0]).includes("/api/public/application/start"),
+    );
+    expect(startCalls).toHaveLength(1);
+    const [calledUrl, calledOpts] = startCalls[0];
     expect(String(calledUrl)).toContain("/api/public/application/start");
     expect((calledOpts as RequestInit).method).toBe("POST");
 
