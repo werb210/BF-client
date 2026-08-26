@@ -57,6 +57,14 @@ export default function Stage2Page() {
   const [responses, setResponses] = useState<Record<string, FormResponse>>({});
   const [activeForm, setActiveForm] = useState<string | null>(null);
   // BF_CLIENT_BLOCK_v_STAGE2_UPLOAD_v1 — upload rows now open the real DocPicker.
+  // BF_CLIENT_STAGE2_UPLOADS_v205 - which requirement the picker was opened for.
+  const [uploadFor, setUploadFor] = useState<{ type: string; label: string } | null>(null);
+  // Categories already uploaded on this application. Upload rows previously took
+  // their completion state from `responses`, which is application_form_responses
+  // - the FORMS table. An upload writes to `documents` and never appears there,
+  // so every upload row read "Not started" permanently however many files went
+  // up. On the SBA path that is seven rows that never tick.
+  const [uploadedCategories, setUploadedCategories] = useState<Set<string>>(new Set());
   const [showUpload, setShowUpload] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +90,30 @@ export default function Stage2Page() {
       const byType: Record<string, FormResponse> = {};
       for (const r of items) byType[r.doc_type] = r;
       setResponses(byType);
+
+      // BF_CLIENT_STAGE2_UPLOADS_v205 - the upload side of completion. Anything
+      // documents-needed no longer lists as still-needed has been satisfied.
+      try {
+        const needRes = await fetch(
+          `/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`,
+          { credentials: "include" },
+        );
+        const needJson = await needRes.json();
+        const outstanding = new Set<string>(
+          (Array.isArray(needJson?.stillNeeded) ? needJson.stillNeeded : [])
+            .map((d: any) => String(d?.document_type ?? "").trim().toLowerCase())
+            .filter(Boolean),
+        );
+        const rejected = new Set<string>(
+          (Array.isArray(needJson?.rejected) ? needJson.rejected : [])
+            .map((d: any) => String(d?.document_type ?? "").trim().toLowerCase())
+            .filter(Boolean),
+        );
+        setUploadedCategories(new Set([...outstanding, ...rejected].map((k) => `!${k}`)));
+      } catch {
+        // A failure here must not blank the page; rows simply show as not started.
+        setUploadedCategories(new Set());
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
@@ -164,8 +196,12 @@ export default function Stage2Page() {
         {requiredDocs.map((doc) => {
           const isForm = !!FORM_RENDERERS[doc.document_type];
           const response = responses[doc.document_type];
-          const isComplete = !!response?.submitted_at;
-          const isDraft = !!response && !response.submitted_at;
+          // BF_CLIENT_STAGE2_UPLOADS_v205 - forms are complete when submitted;
+          // uploads are complete when the server stops asking for them. The
+          // negated keys mark what is STILL outstanding, so absence means done.
+          const stillOutstanding = uploadedCategories.has(`!${doc.document_type.toLowerCase()}`);
+          const isComplete = isForm ? !!response?.submitted_at : !stillOutstanding;
+          const isDraft = isForm && !!response && !response.submitted_at;
           return (
             <li
               key={doc.document_type}
@@ -210,7 +246,13 @@ export default function Stage2Page() {
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowUpload(true)}
+                  /* BF_CLIENT_STAGE2_UPLOADS_v205 - aim the picker at THIS row.
+                     It previously opened a generic picker with no idea which of
+                     the seven SBA uploads had been clicked. */
+                  onClick={() => {
+                    setUploadFor({ type: doc.document_type, label: humanLabel(doc.document_type) });
+                    setShowUpload(true);
+                  }}
                   style={{
                     padding: "8px 14px", fontSize: 13, fontWeight: 600,
                     background: isComplete ? "#fff" : "#1E3A8A",
@@ -229,8 +271,10 @@ export default function Stage2Page() {
       {showUpload && applicationId && (
         <DocPicker
           applicationId={applicationId}
-          onClose={() => setShowUpload(false)}
-          onUploaded={() => { setShowUpload(false); void load(); }}
+          documentType={uploadFor?.type}
+          documentLabel={uploadFor?.label}
+          onClose={() => { setShowUpload(false); setUploadFor(null); }}
+          onUploaded={() => { setShowUpload(false); setUploadFor(null); void load(); }}
         />
       )}
     </div>

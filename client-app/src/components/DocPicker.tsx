@@ -15,9 +15,17 @@ interface Props {
   applicationId: string;
   onClose: () => void;
   onUploaded?: () => void;
+  // BF_CLIENT_STAGE2_UPLOADS_v205 - when the picker is opened from a specific
+  // Stage 2 row, upload against THAT requirement rather than making the client
+  // find it again in a list. The list here is built from documents-needed, which
+  // reads document_requirements; the Stage 2 rows come from the product's
+  // required_documents JSON. Those two sets do not always agree, so an aimed
+  // open must not depend on the row appearing in the fetched list.
+  documentType?: string;
+  documentLabel?: string;
 }
 
-export default function DocPicker({ applicationId, onClose, onUploaded }: Props) {
+export default function DocPicker({ applicationId, onClose, onUploaded, documentType, documentLabel }: Props) {
   const [data, setData] = useState<NeededResponse>({ stillNeeded: [], rejected: [] });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -25,12 +33,20 @@ export default function DocPicker({ applicationId, onClose, onUploaded }: Props)
 
   useEffect(() => {
     let active = true;
+    // BF_CLIENT_STAGE2_UPLOADS_v205 - an aimed open needs no list at all. Going
+    // to the network for one anyway means a slow or failing documents-needed
+    // call blocks an upload that does not depend on it.
+    if (documentType) {
+      setData({ stillNeeded: [{ document_type: documentType, label: documentLabel || documentType }], rejected: [] });
+      setLoading(false);
+      return () => { active = false; };
+    }
     apiCall<NeededResponse>(`/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`)
       .then((d) => { if (active) setData(d); })
       .catch(() => { if (active) setError("Couldn't load required documents."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [applicationId]);
+  }, [applicationId, documentType, documentLabel]);
 
   async function pickAndUpload(documentType: string) {
     // BF_CLIENT_DOCPICKER_MULTIFILE_v1 -- accept multiple files per requirement.
