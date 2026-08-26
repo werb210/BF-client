@@ -216,21 +216,25 @@ export function Step1_KYC(): JSX.Element {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showMinRevenueModal, setShowMinRevenueModal] = useState(false);
   const [lenderProducts, setLenderProducts] = useState<any[]>([]);
-  // BF_CLIENT_STEP1_PRODUCTSYNC_IMPORT_v206
-  // This imported ProductSync from "./productSelection". It does not live there
-  // - it is in "../lender/productSync", which is where Step5_Documents and
-  // useApplicationStore both import it from. The dynamic import therefore threw,
-  // the surrounding catch swallowed it, and lenderProducts stayed [] forever.
+  // BF_CLIENT_STEP1_PRODUCTSYNC_v207
+  // Step 1 read the lender product panel via
+  //   ProductSync from the dynamically imported productSelection module
+  // productSelection.ts exists and the import resolves - but it has no
+  // ProductSync export. That name lives in "../lender/productSync", which is
+  // where Step5_Documents and useApplicationStore both import it from. So
+  // ?.ProductSync was undefined, the ternary returned [], nothing threw, the
+  // catch never fired, and lenderProducts stayed empty for the life of the page.
   //
-  // Everything on Step 1 that reads the product panel was silently disabled by
-  // this: the "SBA / Start-up" purpose option could never appear no matter what
-  // the panel held, because the panel was never loaded. No console error, no
-  // network request - it looked exactly like "no SBA lender configured".
+  // Every product-driven decision on Step 1 was disabled by that. The
+  // "SBA / Start-up" purpose option in particular could never appear no matter
+  // which lenders were configured, because the panel was never loaded. It looked
+  // exactly like "no SBA lender on the panel", which is why it was chased as a
+  // data problem.
   //
-  // load() reads the cached panel; if the cache is cold it returns [] and no
-  // product-driven option would render on a first visit, so fall through to
-  // sync() in that case. The catch is kept - Step 1 must still render if the
-  // panel cannot be fetched - but it now logs rather than swallowing silently.
+  // load() reads the cached panel and returns [] when the cache is cold, so a
+  // first visit would still see nothing; fall through to sync() in that case.
+  // The catch stays - Step 1 must render even if the panel cannot be fetched -
+  // but it logs now rather than swallowing.
   useEffect(() => {
     let cancelled = false;
     (async () => {
