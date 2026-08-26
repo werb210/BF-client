@@ -216,14 +216,34 @@ export function Step1_KYC(): JSX.Element {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showMinRevenueModal, setShowMinRevenueModal] = useState(false);
   const [lenderProducts, setLenderProducts] = useState<any[]>([]);
+  // BF_CLIENT_STEP1_PRODUCTSYNC_IMPORT_v206
+  // This imported ProductSync from "./productSelection". It does not live there
+  // - it is in "../lender/productSync", which is where Step5_Documents and
+  // useApplicationStore both import it from. The dynamic import therefore threw,
+  // the surrounding catch swallowed it, and lenderProducts stayed [] forever.
+  //
+  // Everything on Step 1 that reads the product panel was silently disabled by
+  // this: the "SBA / Start-up" purpose option could never appear no matter what
+  // the panel held, because the panel was never loaded. No console error, no
+  // network request - it looked exactly like "no SBA lender configured".
+  //
+  // load() reads the cached panel; if the cache is cold it returns [] and no
+  // product-driven option would render on a first visit, so fall through to
+  // sync() in that case. The catch is kept - Step 1 must still render if the
+  // panel cannot be fetched - but it now logs rather than swallowing silently.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const ProductSync = (await import("./productSelection"))?.ProductSync;
-        const list = ProductSync ? ProductSync.load() : [];
-        if (!cancelled) setLenderProducts(list);
-      } catch { /* ignore */ }
+        const { ProductSync } = await import("../lender/productSync");
+        let list = ProductSync.load();
+        if (!Array.isArray(list) || list.length === 0) {
+          list = await ProductSync.sync();
+        }
+        if (!cancelled) setLenderProducts(Array.isArray(list) ? list : []);
+      } catch (e) {
+        console.warn("[step1] lender product panel unavailable", e);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
