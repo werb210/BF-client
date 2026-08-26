@@ -78,6 +78,12 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
       {showErr(key) ? <div style={errStyle} role="alert">{showErr(key)}</div> : null}
     </div>
   );
+  // BF_CLIENT_STEP4_TWO_COLUMN_v211
+  // This container has always been two-column. What read as a single column was
+  // the Form 912 block, where each question carried gridColumn "1 / -1". Those
+  // four are now narrowed. Section eyebrows and the address fields keep the
+  // full-width override on purpose: headings that span both columns read as
+  // headings, and a wrapped address line is the field applicants mistype most.
   const grid = { display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md };
   const fmtMoney = (v) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
   const yn = (key) => (
@@ -202,21 +208,21 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
           <div style={{ gridColumn: "1 / -1" }}><label style={L}>Previous address, if you have been at your current address under 10 years</label>
             <Input value={data.priorAddress || ""} onChange={(e) => setField("priorAddress", e.target.value)} placeholder="Street, city, state, ZIP - and the dates you lived there" /></div>
 
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+          <div><label style={L}>
             Are you currently incarcerated, serving a sentence, or under indictment for a felony
             or any crime involving financial misconduct or a false statement?
           </label>{yn("sba912Q8")}</div>
 
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+          <div><label style={L}>
             In the past year, have you been convicted of a criminal offence committed during and
             in connection with a riot, civil disorder or other declared disaster?
           </label>{yn("sba912Q9")}</div>
 
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+          <div><label style={L}>
             Are you currently more than 60 days late on any child support obligation?
           </label>{yn("sba912Q10")}</div>
 
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>
+          <div><label style={L}>
             Your initials, confirming the three answers above
           </label><Input value={data.sba912Initials || ""} onChange={(e) => setField("sba912Initials", e.target.value.toUpperCase())} placeholder="e.g. WJ" maxLength={5} /></div>
 
