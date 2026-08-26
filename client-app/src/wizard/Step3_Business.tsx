@@ -492,11 +492,25 @@ export function Step3_Business() {
                     <option value="yes">Yes</option>
                   </Select>
                   {values.sbaQ4Criminal === "yes" && (
-                    <div style={{ ...components.form.errorText, marginTop: 6 }}>
-                      SBA rules make an applicant in this position ineligible for 7(a)
-                      assistance. Carry on if you like and we will look at other options,
-                      but we cannot place this as an SBA loan.
-                    </div>
+                    <>
+                      <div style={{ ...components.form.errorText, marginTop: 6 }}>
+                        SBA rules make an applicant in this position ineligible for 7(a)
+                        assistance. Carry on if you like and we will look at other options,
+                        but we cannot place this as an SBA loan.
+                      </div>
+                      {/* BF_CLIENT_SBA_YES_DETAIL_v214 - collected here rather than
+                          as a nameless upload in the mini-portal days later. */}
+                      <div style={{ marginTop: 8 }}>
+                        <label style={components.form.label}>Please give the details</label>
+                        <textarea
+                          value={values.sbaQ4CriminalDetail || ""}
+                          onChange={(e: any) => setField("sbaQ4CriminalDetail", e.target.value)}
+                          placeholder="Charge or offence, date, jurisdiction, and current status"
+                          rows={3}
+                          style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                        />
+                      </div>
+                    </>
                   )}
                 </div>
 

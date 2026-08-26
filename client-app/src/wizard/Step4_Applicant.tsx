@@ -208,19 +208,66 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
           <div style={{ gridColumn: "1 / -1" }}><label style={L}>Previous address, if you have been at your current address under 10 years</label>
             <Input value={data.priorAddress || ""} onChange={(e) => setField("priorAddress", e.target.value)} placeholder="Street, city, state, ZIP - and the dates you lived there" /></div>
 
+          {/* BF_CLIENT_SBA_YES_DETAIL_v214
+              A Yes on any of these needs supporting detail. That was previously
+              collected as "sba_1919_attachments" - an upload row in the
+              mini-portal, days later, labelled only "Supporting detail for any
+              Yes answer on Form 1919". By then the applicant has no idea which
+              answer it refers to, and nothing tells them.
+              Ask here instead, while the question is on screen and the answer is
+              the one they just gave. */}
           <div><label style={L}>
             Are you currently incarcerated, serving a sentence, or under indictment for a felony
             or any crime involving financial misconduct or a false statement?
-          </label>{yn("sba912Q8")}</div>
+          </label>{yn("sba912Q8")}
+            {data.sba912Q8 === "yes" && (
+              <div style={{ marginTop: 8 }}>
+                <label style={L}>Please give the details</label>
+                <textarea
+                  value={data.sba912Q8Detail || ""}
+                  onChange={(e) => setField("sba912Q8Detail", e.target.value)}
+                  placeholder="Charge or offence, date, jurisdiction, and current status"
+                  rows={3}
+                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                />
+              </div>
+            )}
+          </div>
 
           <div><label style={L}>
             In the past year, have you been convicted of a criminal offence committed during and
             in connection with a riot, civil disorder or other declared disaster?
-          </label>{yn("sba912Q9")}</div>
+          </label>{yn("sba912Q9")}
+            {data.sba912Q9 === "yes" && (
+              <div style={{ marginTop: 8 }}>
+                <label style={L}>Please give the details</label>
+                <textarea
+                  value={data.sba912Q9Detail || ""}
+                  onChange={(e) => setField("sba912Q9Detail", e.target.value)}
+                  placeholder="Offence, date, jurisdiction, and the outcome"
+                  rows={3}
+                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                />
+              </div>
+            )}
+          </div>
 
           <div><label style={L}>
             Are you currently more than 60 days late on any child support obligation?
-          </label>{yn("sba912Q10")}</div>
+          </label>{yn("sba912Q10")}
+            {data.sba912Q10 === "yes" && (
+              <div style={{ marginTop: 8 }}>
+                <label style={L}>Please give the details</label>
+                <textarea
+                  value={data.sba912Q10Detail || ""}
+                  onChange={(e) => setField("sba912Q10Detail", e.target.value)}
+                  placeholder="Amount outstanding, jurisdiction, and any arrangement in place"
+                  rows={3}
+                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                />
+              </div>
+            )}
+          </div>
 
           <div><label style={L}>
             Your initials, confirming the three answers above
