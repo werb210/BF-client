@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getClientLenderProducts,
@@ -50,6 +50,7 @@ import {
   mapKycToAnswers,
   bucketIdToCat,
 } from "./eligibilityRules";
+import { isStartupPathKyc } from "./wizardSchema";
 
 function formatAmount(amount: number | null | undefined, countryCode: string) {
   if (typeof amount !== "number") return "N/A";
@@ -364,8 +365,13 @@ export function Step2_Product() {
     navigate("/apply/step-1");
   }
 
-  function goNext() {
-    if (!selectedCategory || loadError) {
+  function goNext(
+    category = selectedCategory,
+    bucket = selectedBucket,
+    productIds = selectedProductIds,
+    product = app.selectedProduct
+  ) {
+    if (!category || loadError) {
       return;
     }
     if (
@@ -391,10 +397,10 @@ export function Step2_Product() {
     // Fire-and-forget autosave; navigation must never block on the network.
     // Mirrors Step 1's startApplication() pattern.
     persistApplicationStep(app, 2, {
-      selectedProduct: app.selectedProduct || null,
-      selectedProductId: app.selectedProductId || null,
-      selectedProductType: app.selectedProductType || null,
-      productCategory: app.productCategory || null,
+      selectedProduct: product || null,
+      selectedProductId: product?.id || null,
+      selectedProductType: category,
+      productCategory: category,
       requires_closing_cost_funding: app.requires_closing_cost_funding,
     }).catch(() => {});
     setSaveError(null);
@@ -404,8 +410,8 @@ export function Step2_Product() {
     console.log("[wizard] Step2.goNext: update({currentStep:3}) returned, calling navigate now");
     navigate("/apply/step-3", {
       state: {
-        bucket: selectedBucket || selectedCategory,
-        productIds: selectedProductIds,
+        bucket: bucket || category,
+        productIds,
       },
     });
   }
@@ -532,6 +538,36 @@ export function Step2_Product() {
     }),
     [categoryBuckets, allowedCategorySet, amountValue]
   );
+
+  // BF_CLIENT_SBA_WIZARD_FLOW_v210
+  // On the SBA path there is exactly one category to choose, so presenting a
+  // one-option chooser is a click that carries no decision. Select it and move
+  // on. The page still owns selection and persistence - this only removes the
+  // interaction, so nothing downstream has to know Step 2 was skipped.
+  //
+  // Guarded on a SINGLE visible bucket: if the US panel ever carries a second
+  // SBA-eligible category, the choice becomes real again and the page renders
+  // normally rather than silently picking for the applicant.
+  const sbaAutoAdvancedRef = useRef(false);
+  useEffect(() => {
+    if (sbaAutoAdvancedRef.current || isLoading || loadError) return;
+    if (!isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)) return;
+    if (visibleCategoryBuckets.length !== 1) return;
+
+    const only = visibleCategoryBuckets[0];
+    const productIds = only.products.map((product) => product.id);
+    const product = only.products[0];
+    if (!product) return;
+
+    sbaAutoAdvancedRef.current = true;
+    selectCategory(only.bucket, productIds);
+    goNext(only.bucket, only.bucket, productIds, {
+      id: product.id,
+      name: product.name,
+      product_type: only.bucket,
+      lender_id: product.lender_id,
+    });
+  }, [app?.kyc, isLoading, loadError, visibleCategoryBuckets]);
   const matchingProducts = useMemo(() => {
     return getMatchingProducts(
       products,
@@ -726,7 +762,7 @@ export function Step2_Product() {
           </Button>
           <Button
             style={{ width: "100%", maxWidth: "200px" }}
-            onClick={goNext}
+            onClick={() => goNext()}
             disabled={
               !selectedBucket ||
               Boolean(loadError) ||
