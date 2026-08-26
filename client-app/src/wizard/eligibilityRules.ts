@@ -129,8 +129,19 @@ export function computeAllowedCategories(a: Step1Answers): Cat[] {
   // so it was skipped here and left to detectHardStop. Outside Canada it must not
   // narrow anything at all; the US floor is the lender product's own minimum.
   if (!onStartupPath && a.avgMonthly && a.avgMonthly !== "<10k") apply(avgMonthlyRule[a.avgMonthly] as readonly Cat[]);
-  if (a.ar) apply(arRule[a.ar]);
-  if (a.fixedAssets) apply(fixedAssetsRule[a.fixedAssets]);
+  // BF_CLIENT_SBA_PATH_RULES_v203 - the same guard revenue12 and avgMonthly
+  // already carry. Step 1 hides the A/R and fixed-asset questions on the SBA /
+  // Start-up path with display:none and DELIBERATELY retains whatever was
+  // answered before the switch (BF_CLIENT_SBA_REDUCED_v191). These two rules
+  // then applied that retained value anyway - and fixedAssetsRule.none excludes
+  // SBA outright. A pre-revenue start-up answers "none" for fixed assets by
+  // definition, so SBA was stripped from the allowed set for very nearly every
+  // applicant the path exists to serve, leaving Step 2 empty with no message.
+  //
+  // Neither answer narrows an SBA match in any case: SBA underwrites the owner
+  // and the plan, not the balance sheet.
+  if (!onStartupPath && a.ar) apply(arRule[a.ar]);
+  if (!onStartupPath && a.fixedAssets) apply(fixedAssetsRule[a.fixedAssets]);
   return [...allowed];
 }
 
