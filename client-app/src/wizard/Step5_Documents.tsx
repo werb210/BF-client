@@ -31,6 +31,8 @@ import { useForegroundRefresh } from "../hooks/useForegroundRefresh";
 import { components, layout, scrollToFirstError, tokens } from "@/styles";
 import { trackEvent } from "../utils/analytics";
 import { resolveStepGuard } from "./stepGuard";
+// BF_CLIENT_SBA_SKIP_2_AND_5_v213
+import { isStartupPathKyc } from "./wizardSchema";
 import { track } from "../utils/track";
 import { validateFile } from "@/utils/fileValidation";
 import { persistApplicationStep } from "./saveStepProgress";
@@ -192,6 +194,26 @@ function OptionSeparator() {
 export function Step5_Documents() {
   const { app, update } = useApplicationStore();
   const navigate = useNavigate();
+
+  // BF_CLIENT_SBA_SKIP_2_AND_5_v213
+  // Step 4 already routes the SBA path straight to Review
+  // (BF_CLIENT_SBA_SKIP_DOCS_v192), and yet Step 5 was still being reached.
+  // Rather than chase which upstream branch let it through, refuse to render
+  // here: every SBA document is Stage 2, so this screen has nothing to ask for
+  // and asking anyway is how an applicant is sent looking for bank statements a
+  // pre-revenue business does not have.
+  //
+  // A guard at the destination also covers the routes Step 4 does not control -
+  // a bookmark, a browser Back, or a resumed draft landing on /apply/step-5.
+  const onSbaPath = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>);
+  useEffect(() => {
+    if (!onSbaPath) return;
+    // Mirrors Step 4: documentsDeferred is what the Step 6 submit gate checks,
+    // and currentStep must be 6 or resolveStepGuard bounces back to Documents.
+    update({ currentStep: 6, documentsDeferred: true });
+    navigate("/apply/step-6", { replace: true });
+  }, [onSbaPath]);
+  if (onSbaPath) return null;
   const [requirementsRaw, setRequirementsRaw] = useState<
     LenderProductRequirement[]
   >([]);
