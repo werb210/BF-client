@@ -553,6 +553,37 @@ export function Step4_Applicant() {
       }
     }
 
+    // BF_CLIENT_SBA_PATH_RULES_v204
+    // The applicant and partner already require an email above. Additional
+    // shareholders carry an email field that nothing validated, and SBA resolves
+    // its signers from that same list. SignNow cannot address an envelope
+    // without an email, so a 20%+ owner with a blank one is skipped at signing -
+    // and the server's dispatch gate (BF_SERVER_SBA_V103) now correctly refuses
+    // to release a package missing that owner's signed Form 413. The file would
+    // simply park, with nothing on screen to explain why. Catch it here, at the
+    // point the address is actually being asked for.
+    if (onSba) {
+      const shareholders = Array.isArray(values.additionalShareholders)
+        ? values.additionalShareholders
+        : [];
+      const emailShape = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      for (let i = 0; i < shareholders.length; i += 1) {
+        const row = shareholders[i] || {};
+        const pct = Number(row.ownership || 0);
+        // Unstated ownership is treated as significant, matching the server's
+        // resolveSbaOwners, which keeps owners whose percentage is 0/unstated.
+        if (pct > 0 && pct < 20) continue;
+        const email = String(row.email || "").trim();
+        if (!email || !emailShape.test(email)) {
+          setSaveError(
+            `Owner ${i + 1} in Additional Shareholders needs a valid email address. ` +
+            "Every owner of 20% or more signs their own SBA forms, so each one needs their own address.",
+          );
+          return;
+        }
+      }
+    }
+
     const { ownershipValid } = getOwnershipValidity(values);
     if (!ownershipValid) {
       setSaveError("Ownership percentages must total 100.");

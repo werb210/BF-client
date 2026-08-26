@@ -129,7 +129,7 @@ export function computeAllowedCategories(a: Step1Answers): Cat[] {
   // so it was skipped here and left to detectHardStop. Outside Canada it must not
   // narrow anything at all; the US floor is the lender product's own minimum.
   if (!onStartupPath && a.avgMonthly && a.avgMonthly !== "<10k") apply(avgMonthlyRule[a.avgMonthly] as readonly Cat[]);
-  // BF_CLIENT_SBA_PATH_RULES_v203 - the same guard revenue12 and avgMonthly
+  // BF_CLIENT_SBA_PATH_RULES_v204 - the same guard revenue12 and avgMonthly
   // already carry. Step 1 hides the A/R and fixed-asset questions on the SBA /
   // Start-up path with display:none and DELIBERATELY retains whatever was
   // answered before the switch (BF_CLIENT_SBA_REDUCED_v191). These two rules
