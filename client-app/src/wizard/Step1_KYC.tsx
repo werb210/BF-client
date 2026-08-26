@@ -20,6 +20,8 @@ import {
   FUNDING_INTENT_OPTIONS,
   normalizeFundingIntent,
 } from "../constants/wizard";
+// BF_CLIENT_SBA_STEP1_WIRE_v201
+import { isStartupAvailable } from "./eligibilityRules";
 import { components, layout, scrollToFirstError, tokens } from "@/styles";
 import { loadStepData, mergeDraft, saveStepData } from "../client/autosave";
 import {
@@ -234,23 +236,18 @@ export function Step1_KYC(): JSX.Element {
     [app.kyc.businessLocation]
   );
 
+  // BF_CLIENT_SBA_STEP1_WIRE_v201 - Step 1 carried its own copy of this test
+  // which matched only STARTUP / STARTUP_CAPITAL. A US panel carries SBA
+  // products instead, so startupAvailable was always false and the
+  // "SBA / Start-up" purpose option was filtered out before it ever rendered.
+  // eligibilityRules.isStartupAvailable already holds the correct rule - SBA
+  // counts in the US, never in Canada - but nothing imported it, so it was dead
+  // code that its own unit test kept green. One implementation from here on.
   const startupAvailable = useMemo(() => {
     const country = app.kyc.businessLocation === "Canada" ? "CA"
       : app.kyc.businessLocation === "United States" ? "US" : null;
     if (!country) return false;
-    return lenderProducts.some((p) => {
-      const cat = String((p as any).category ?? "").toUpperCase();
-      if (cat !== "STARTUP" && cat !== "STARTUP_CAPITAL") return false;
-      // BF_CLIENT_STEP1_REQUIRED_v188 - Canada demands an exact match; a product
-      // with BOTH or a blank country is not evidence of a Canadian startup lender.
-      const c = String((p as any).country ?? "").toUpperCase();
-      if (country === "CA") {
-        if (c !== "CA" && c !== "CANADA") return false;
-      } else if (c !== country && c !== "BOTH" && c !== "") {
-        return false;
-      }
-      return ((p as any).active ?? true) === true;
-    });
+    return isStartupAvailable(lenderProducts as any, country);
   }, [lenderProducts, app.kyc.businessLocation]);
   // BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
   const visiblePurposeOptions = useMemo(() => {
