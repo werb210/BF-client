@@ -3,32 +3,60 @@ import { z } from "zod";
 const nonEmptyString = z.string().trim().min(1);
 
 // Step 1 — Financial Profile
+// BF_CLIENT_STEP1_SCHEMA_SBA_v212
+// Two faults here stopped every SBA applicant at Step 1 with "Something went
+// wrong", and no request ever reached the server.
+//
+// 1. The startup test matched purposeOfFunds === "Start up Funding". v190
+//    renamed that option to "SBA / Start-up", so onStartupPath was ALWAYS false
+//    and even the revenue exemption below never applied. A string comparison
+//    against a label that had been renamed - which nothing failed on, because
+//    the test for this pins the old wording too.
+//
+// 2. industry, salesHistoryYears, accountsReceivableRange and
+//    fixedAssetsValueRange were nonEmptyString on the OBJECT. superRefine
+//    cannot relax an object-level check: those run first and fail regardless of
+//    what the refinement decides. Step 1 hides all four inputs on the SBA path
+//    (BF_CLIENT_SBA_REDUCED_v191), so the schema demanded values the form no
+//    longer offers any way to supply.
+//
+// Both are fixed by making the five conditional fields plain strings on the
+// object and enforcing them in the refinement, where the path is known.
+const startupPurposes = new Set(["Start up Funding", "SBA / Start-up"]);
+
 export const step1Schema = z
   .object({
     fundingType: nonEmptyString,
     requestedAmount: z.number().positive(),
     businessLocation: nonEmptyString,
-    industry: nonEmptyString,
     purposeOfFunds: nonEmptyString,
-    salesHistoryYears: nonEmptyString,
+    // Conditional: required off the startup path, absent on it. Enforced below.
+    industry: z.string(),
+    salesHistoryYears: z.string(),
     annualRevenueRange: z.string(),
     avgMonthlyRevenueRange: z.string(),
-    accountsReceivableRange: nonEmptyString,
-    fixedAssetsValueRange: nonEmptyString,
+    accountsReceivableRange: z.string(),
+    fixedAssetsValueRange: z.string(),
   })
   .strict()
-  // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — revenue is required for normal
-  // applicants but skipped on the startup path (purpose "Start up Funding" or
-  // "Zero" sales history); enforce it conditionally instead of unconditionally.
+  // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — kept, widened by v212.
   .superRefine((data, ctx) => {
     const onStartupPath =
-      data.purposeOfFunds === "Start up Funding" || data.salesHistoryYears === "Zero";
+      startupPurposes.has(String(data.purposeOfFunds ?? "").trim()) ||
+      data.salesHistoryYears === "Zero";
     if (onStartupPath) return;
-    if (!String(data.annualRevenueRange ?? "").trim()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["annualRevenueRange"], message: "Required" });
-    }
-    if (!String(data.avgMonthlyRevenueRange ?? "").trim()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["avgMonthlyRevenueRange"], message: "Required" });
+
+    for (const field of [
+      "industry",
+      "salesHistoryYears",
+      "annualRevenueRange",
+      "avgMonthlyRevenueRange",
+      "accountsReceivableRange",
+      "fixedAssetsValueRange",
+    ] as const) {
+      if (!String(data[field] ?? "").trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
+      }
     }
   });
 
