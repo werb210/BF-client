@@ -29,7 +29,7 @@ function formKeyFor(ownerIndex: number): string {
   return ownerIndex <= 1 ? "sba_form_413" : `sba_form_413_owner_${ownerIndex}`;
 }
 
-type Data = Record<string, string>;
+type Data = Record<string, any>;
 
 const ASSET_ROWS: Array<{ key: string; label: string }> = [
   { key: "asset_cash", label: "Cash on hand and in banks" },
@@ -167,6 +167,57 @@ export default function Sba413Form({
     </div>
   );
 
+  // BF_CLIENT_SBA_413_SCHEDULES_v215
+  const amount = (key: string) => Number(String(data[key] ?? "").replace(/[^0-9.-]/g, "")) || 0;
+
+  const setRow = (listKey: string, index: number, field: string, value: string) => {
+    const list = Array.isArray(data[listKey]) ? [...(data[listKey] as any[])] : [];
+    list[index] = { ...(list[index] ?? {}), [field]: value };
+    set(listKey, list as any);
+  };
+  const addRow = (listKey: string, max: number) => {
+    const list = Array.isArray(data[listKey]) ? [...(data[listKey] as any[])] : [];
+    if (list.length >= max) return;
+    list.push({});
+    set(listKey, list as any);
+  };
+  const removeRow = (listKey: string, index: number) => {
+    const list = Array.isArray(data[listKey]) ? [...(data[listKey] as any[])] : [];
+    list.splice(index, 1);
+    set(listKey, list as any);
+  };
+  const cell = (listKey: string, index: number, field: string, placeholder: string) => (
+    <input value={String((data[listKey] as any[])?.[index]?.[field] ?? "")}
+      onChange={(e) => setRow(listKey, index, field, e.target.value)} onBlur={persist}
+      placeholder={placeholder} style={{ padding: "6px 8px", border: "1px solid #E4EAF2", borderRadius: 6, width: "100%" }} />
+  );
+  const table = (listKey: string, title: string, hint: string, max: number,
+    columns: Array<{ field: string; label: string; placeholder: string }>) => {
+    const list = Array.isArray(data[listKey]) ? (data[listKey] as any[]) : [];
+    return <div style={{ marginBottom: 20 }}>
+      <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 2 }}>{title}</div>
+      <div style={{ color: "#51617D", fontSize: 13, marginBottom: 8 }}>{hint}</div>
+      {list.map((_, index) => <div key={index} style={{ border: "1px solid #E4EAF2", borderRadius: 8, padding: 12, marginBottom: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {columns.map((c) => <div key={c.field} style={{ gridColumn: c.field === columns[0].field ? "1 / -1" : undefined }}>
+          <label style={{ display: "block", fontSize: 12, color: "#51617D", marginBottom: 4 }}>{c.label}</label>
+          {cell(listKey, index, c.field, c.placeholder)}
+        </div>)}
+        <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => removeRow(listKey, index)}
+          style={{ background: "transparent", border: "1px solid #E4EAF2", borderRadius: 6, padding: "4px 10px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button></div>
+      </div>)}
+      {list.length < max ? <button type="button" onClick={() => addRow(listKey, max)}
+        style={{ background: "#0B1F3A", color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13 }}>
+        Add {list.length === 0 ? "an entry" : "another"}</button> :
+        <div style={{ color: "#51617D", fontSize: 13 }}>The form holds {max}. If you have more, tell us in Notes and we will attach a continuation sheet.</div>}
+    </div>;
+  };
+  const textSchedule = (key: string, title: string, hint: string) => <div style={{ marginBottom: 20 }}>
+    <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 2 }}>{title}</div>
+    <div style={{ color: "#51617D", fontSize: 13, marginBottom: 8 }}>{hint}</div>
+    <textarea value={String(data[key] ?? "")} onChange={(e) => set(key, e.target.value)} onBlur={persist} rows={3}
+      style={{ width: "100%", padding: "8px", border: "1px solid #E4EAF2", borderRadius: 6, resize: "vertical", fontFamily: "inherit" }} />
+  </div>;
+
   return (
     <div style={{ maxWidth: 720 }}>
       <h3 style={{ marginTop: 0, color: "#0B1F3A" }}>
@@ -191,7 +242,31 @@ export default function Sba413Form({
         </div>
       </div>
 
+      {amount("liab_notes_payable") > 0 && table("noteholders", "Section 2 - Notes payable to banks and others",
+        "You reported notes payable above. SBA needs each lender listed.", 5, [
+          { field: "name", label: "Name and address of noteholder", placeholder: "Lender name, street, city, state" },
+          { field: "original_balance", label: "Original balance", placeholder: "$0" },
+          { field: "current_balance", label: "Current balance", placeholder: "$0" },
+          { field: "payment", label: "Payment amount", placeholder: "$0" },
+          { field: "frequency", label: "Frequency", placeholder: "Monthly" },
+          { field: "collateral", label: "How secured or endorsed - type of collateral", placeholder: "e.g. Vehicle, unsecured" },
+        ])}
+      {amount("asset_real_estate") > 0 && table("properties", "Section 4 - Real estate owned",
+        "You reported real estate above. List each property.", 3, [
+          { field: "address", label: "Property address", placeholder: "Street, city, state, ZIP" },
+          { field: "type", label: "Type of real estate", placeholder: "Primary residence, rental, land" },
+          { field: "market_value", label: "Present market value", placeholder: "$0" },
+          { field: "mortgage_balance", label: "Mortgage balance", placeholder: "$0" },
+        ])}
+      {amount("asset_other_personal") > 0 && textSchedule("section5_other_property", "Section 5 - Other personal property and other assets",
+        "Describe each item. If any is pledged as security, give the lien holder's name and address, the amount, the payment terms, and say if it is delinquent.")}
+      {amount("liab_unpaid_taxes") > 0 && textSchedule("section6_unpaid_taxes", "Section 6 - Unpaid taxes",
+        "Type of tax, who it is payable to, when it fell due, the amount, and any property a lien attaches to.")}
+      {amount("asset_life_insurance") > 0 && textSchedule("section8_life_insurance", "Section 8 - Life insurance held",
+        "Face amount and cash surrender value of each policy, the insurance company, and the beneficiaries.")}
       {section("Source of income (annual)", INCOME_ROWS)}
+      {amount("income_other") > 0 && textSchedule("other_income_description", "Description of other income",
+        "Alimony or child support need not be disclosed unless you want it counted toward total income.")}
       {section("Contingent liabilities", CONTINGENT_ROWS)}
 
       <div style={{ marginBottom: 20 }}>
