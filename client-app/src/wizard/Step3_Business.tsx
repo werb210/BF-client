@@ -477,7 +477,7 @@ export function Step3_Business() {
 
                 {/* 1919 Q4. SBA's own wording: a Yes means the applicant is not
                     eligible for SBA financial assistance. No lender discretion. */}
-                <div style={{ gridColumn: "1 / -1" }}>
+                <div>
                   <label style={components.form.label}>
                     Is the applicant, or any associate of the applicant, currently
                     incarcerated, serving a sentence, or under indictment for a felony
@@ -501,7 +501,7 @@ export function Step3_Business() {
                 </div>
 
                 {/* 1919 applicant certification. */}
-                <div style={{ gridColumn: "1 / -1" }}>
+                <div>
                   <label style={components.form.label}>
                     Is the business at least 51% owned and controlled by US citizens or
                     Lawful Permanent Residents?
