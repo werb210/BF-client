@@ -38,10 +38,21 @@ const lookingForRule: Record<LookingFor, readonly Cat[]> = {
 };
 const locationRule: Record<LocationKey, readonly Cat[] | "BLOCK"> = {
   CA: ["LOC","TERM","EQUIPMENT","FACTORING","PO","MCA","MEDIA","ABL","STARTUP"],
-  US: ALL_CATEGORIES, OTHER: "BLOCK",
+  // STARTUP is the Canadian start-up bucket; US start-ups use SBA.
+  US: ALL_CATEGORIES.filter((c) => c !== "STARTUP"), OTHER: "BLOCK",
 };
 const purposeRule: Record<PurposeKey, readonly Cat[]> = {
-  startup: ["LOC","TERM","EQUIPMENT","ABL","SBA","STARTUP"],
+  // BF_CLIENT_SBA_SKIP_2_AND_5_v213
+  // Was ["LOC","TERM","EQUIPMENT","ABL","SBA","STARTUP"], which is why Step 2
+  // still rendered a chooser on the SBA path: a US applicant saw Line of Credit,
+  // Term Loan AND SBA, so the v210 auto-advance correctly refused to pick on
+  // their behalf. Narrowed to the two start-up categories.
+  //
+  // Canada is unaffected in practice: locationRule.CA excludes SBA, so a
+  // Canadian start-up still resolves to STARTUP alone. In the US there are no
+  // STARTUP products, so this resolves to SBA alone - one bucket, and Step 2
+  // advances itself.
+  startup: ["SBA","STARTUP"],
   media: ["LOC","TERM","MEDIA"],
   // BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
   // MEDIA only appears when the user explicitly picks Media Financing
