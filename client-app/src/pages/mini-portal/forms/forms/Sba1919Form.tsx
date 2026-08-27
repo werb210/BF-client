@@ -96,7 +96,31 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
           <div style={{ display: "flex", gap: 16 }}>{["No", "Yes"].map((opt) => (
             <label key={opt} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#51617D" }}><input type="radio" name={q.key} value={opt.toLowerCase()} checked={data[q.key] === opt.toLowerCase()} onChange={(e) => { set(q.key, e.target.value); persist(); }} />{opt}</label>
           ))}</div>
-          {data[q.key] === "yes" && <textarea rows={2} placeholder="Please give us the detail - SBA needs it as an attachment." value={data[`${q.key}_detail`] ?? ""} onChange={(e) => set(`${q.key}_detail`, e.target.value)} onBlur={persist} style={{ width: "100%", marginTop: 6, padding: 8, border: "1px solid #E4EAF2", borderRadius: 6 }} />}
+          {/* BF_CLIENT_EXPORT_SALES_v131 - question 5 has two named sub-parts on
+              the form. 5.a is a dollar amount and 5.b is a country list; the
+              generic detail box could only carry one of them. */}
+          {data[q.key] === "yes" && q.key === "q5_exports" && (
+            <div style={{ marginTop: 8 }}>
+              <label style={{ display: "block", fontSize: 13, color: "#51617D", marginBottom: 4 }}>
+                5.a Estimated total export sales this loan will support
+              </label>
+              <input inputMode="decimal" placeholder="$0"
+                value={data.q5_export_sales ?? ""}
+                onChange={(e) => set("q5_export_sales", e.target.value)} onBlur={persist}
+                style={{ width: "100%", padding: 8, border: "1px solid #E4EAF2", borderRadius: 6 }} />
+              <label style={{ display: "block", fontSize: 13, color: "#51617D", margin: "10px 0 4px" }}>
+                5.b Principal countries of export - list at least one
+              </label>
+              <input placeholder="United States, Mexico"
+                value={data.q5_exports_detail ?? ""}
+                onChange={(e) => set("q5_exports_detail", e.target.value)} onBlur={persist}
+                style={{ width: "100%", padding: 8, border: "1px solid #E4EAF2", borderRadius: 6 }} />
+              <div style={{ fontSize: 12, color: "#51617D", marginTop: 4 }}>
+                Separate countries with commas. The form has room for three.
+              </div>
+            </div>
+          )}
+          {data[q.key] === "yes" && q.key !== "q5_exports" && <textarea rows={2} placeholder="Please give us the detail - SBA needs it as an attachment." value={data[`${q.key}_detail`] ?? ""} onChange={(e) => set(`${q.key}_detail`, e.target.value)} onBlur={persist} style={{ width: "100%", marginTop: 6, padding: 8, border: "1px solid #E4EAF2", borderRadius: 6 }} />}
         </div>
       ))}
       {error ? <p style={{ color: "#B42318", fontSize: 14 }}>{error}</p> : null}
