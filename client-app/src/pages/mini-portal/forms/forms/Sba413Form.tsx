@@ -251,12 +251,29 @@ export default function Sba413Form({
           { field: "frequency", label: "Frequency", placeholder: "Monthly" },
           { field: "collateral", label: "How secured or endorsed - type of collateral", placeholder: "e.g. Vehicle, unsecured" },
         ])}
+      {/* BF_CLIENT_SBA413_SECTIONS_v129 - Section 3 had no UI. Four rows is what
+          the paper form holds; beyond that SBA wants a continuation sheet. */}
+      {amount("asset_stocks_bonds") > 0 && table("securities", "Section 3 - Stocks and bonds",
+        "You reported stocks and bonds above. SBA needs each holding listed.", 4, [
+          { field: "name", label: "Name of security", placeholder: "e.g. Royal Bank of Canada common" },
+          { field: "shares", label: "Number of shares", placeholder: "100" },
+          { field: "cost", label: "Cost", placeholder: "$0" },
+          { field: "market_value", label: "Market value per share", placeholder: "$0" },
+          { field: "quote_date", label: "Date of quotation", placeholder: "YYYY-MM-DD" },
+          { field: "total_value", label: "Total value", placeholder: "$0" },
+        ])}
       {amount("asset_real_estate") > 0 && table("properties", "Section 4 - Real estate owned",
         "You reported real estate above. List each property.", 3, [
           { field: "address", label: "Property address", placeholder: "Street, city, state, ZIP" },
           { field: "type", label: "Type of real estate", placeholder: "Primary residence, rental, land" },
+          { field: "date_purchased", label: "Date purchased", placeholder: "YYYY-MM-DD" },
+          { field: "original_cost", label: "Original cost", placeholder: "$0" },
           { field: "market_value", label: "Present market value", placeholder: "$0" },
+          { field: "mortgage_holder", label: "Name and address of mortgage holder", placeholder: "Lender name, street, city" },
+          { field: "mortgage_account", label: "Mortgage account number", placeholder: "Account number" },
           { field: "mortgage_balance", label: "Mortgage balance", placeholder: "$0" },
+          { field: "payment", label: "Payment per month or year", placeholder: "$0 monthly" },
+          { field: "mortgage_status", label: "Status of mortgage", placeholder: "Current, or explain" },
         ])}
       {amount("asset_other_personal") > 0 && textSchedule("section5_other_property", "Section 5 - Other personal property and other assets",
         "Describe each item. If any is pledged as security, give the lien holder's name and address, the amount, the payment terms, and say if it is delinquent.")}
