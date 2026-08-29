@@ -63,6 +63,23 @@ function toTitleCaseV66(input: string): string {
 // more, so the questions have to live in the shared component: asking them once
 // on the page would collect the primary applicant's answers and silently attach
 // them to the partner as well.
+// BF_CLIENT_STEP4_ADDRESS_SINCE_v139
+// Form 912: "Most recent prior address (omit if over 10 years ago)". Blank means
+// unanswered, and an unanswered question must not hide the follow-up - so blank
+// returns true and the field stays visible.
+export function underTenYearsAtAddress(since: unknown): boolean {
+  const raw = String(since ?? "").trim();
+  if (!raw) return true;
+  const m = /^(\d{4})-(\d{1,2})$/.exec(raw);
+  if (!m) return true;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return true;
+  const now = new Date();
+  const months = (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month);
+  return months < 120;
+}
+
 function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onSba = false, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }) {
   const L = components.form.label;
   // BF_CLIENT_STEP4_VALIDATION_v171 - an error shows only once the user has
@@ -142,7 +159,9 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
           <div><label style={L}>Mailing {postalLabel}</label><Input value={data.mailingZip || ""} onChange={(e) => setField("mailingZip", e.target.value)} /></div>
         </>
       )}
-      {isAccordLOC && (
+      {/* BF_CLIENT_STEP4_ADDRESS_SINCE_v139 - the SBA block below asks for this
+          too. Rendering both would put two controls on one field. */}
+      {isAccordLOC && !onSba && (
         <div><label style={L}>At this address since</label><MonthYearSelect ariaLabel="At this address since" value={data.addressSince || ""} onChange={(v) => setField("addressSince", v)} /></div>
       )}
       {isAccordLOC && (
@@ -202,11 +221,23 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
             <div><label style={L}>Alien registration number</label>
               <Input value={data.alienRegistrationNumber || ""} onChange={(e) => setField("alienRegistrationNumber", e.target.value)} placeholder="Leave blank if you do not have one" /></div>
           )}
+          {/* BF_CLIENT_STEP4_ADDRESS_SINCE_v139
+              Paired deliberately: former names sat alone with an empty cell
+              beside it, and the 912 needs the residence date the server had no
+              way to fill. */}
           <div><label style={L}>Any former names used, and when <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
             <Input value={data.formerNames || ""} onChange={(e) => setField("formerNames", e.target.value)} placeholder="e.g. Jane Smith, 2010-2018" /></div>
-          {/* 912 asks for the previous address only when under ten years at the current one. */}
-          <div style={{ gridColumn: "1 / -1" }}><label style={L}>Previous address, if you have been at your current address under 10 years</label>
-            <Input value={data.priorAddress || ""} onChange={(e) => setField("priorAddress", e.target.value)} placeholder="Street, city, state, ZIP - and the dates you lived there" /></div>
+          <div><label style={L}>At this address since</label>
+            <MonthYearSelect ariaLabel="At this address since" value={data.addressSince || ""} onChange={(v) => setField("addressSince", v)} /></div>
+          {/* 912 asks for the previous address only when under ten years at the
+              current one. Until v139 that rule was a comment and the field was
+              always shown; now addressSince is collected it can be applied. The
+              field stays visible while addressSince is blank, so nobody is
+              blocked from answering by not having answered yet. */}
+          {underTenYearsAtAddress(data.addressSince) && (
+            <div style={{ gridColumn: "1 / -1" }}><label style={L}>Previous address, if you have been at your current address under 10 years</label>
+              <Input value={data.priorAddress || ""} onChange={(e) => setField("priorAddress", e.target.value)} placeholder="Street, city, state, ZIP - and the dates you lived there" /></div>
+          )}
 
           {/* BF_CLIENT_SBA_YES_DETAIL_v214
               A Yes on any of these needs supporting detail. That was previously
