@@ -69,6 +69,9 @@ const ACTION_CHIPS = [
   { id: "debt",       label: "Debt Stack" },
   // BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
   { id: "advisors",   label: "Professional Advisors" },
+  // BF_CLIENT_SBA_FORMS_ENTRY_v142 - opens the stage-2 page, which lists the
+  // 1919 and a 413 per owner. Shown only on SBA files; see sbaChips below.
+  { id: "sba_forms",  label: "SBA Forms" },
 ] as const;
 
 export default function MiniPortalPage() {
@@ -307,6 +310,9 @@ export default function MiniPortalPage() {
       return;
     }
     if (id === "sign") { setShowSign(true); void fetchSigningSession(); return; }
+    // BF_CLIENT_SBA_FORMS_ENTRY_v142 - a page, not a modal: it lists several
+    // forms and tracks which are done.
+    if (id === "sba_forms") { navigate(`/mini-portal/forms/${encodeURIComponent(applicationId)}`); return; }
   };
 
   // Call Us! VOIP state + handlers.
@@ -507,6 +513,12 @@ export default function MiniPortalPage() {
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
+    // BF_CLIENT_SBA_FORMS_ENTRY_v142 - accepts the canonical cta and the raw
+    // doc types, so prompts already sitting in a thread start working too.
+    if (/^(sba_forms|sba1919|sba413|sba_form_1919|sba_form_413(_owner_\d+)?)$/i.test(ctaAction)) {
+      onChip("sba_forms");
+      return;
+    }
     // BF_CLIENT_BLOCK_v721 — Stage-2 buttons carry cta_action = chip id
     // ("cra","flinks","networth",...); also accept legacy "form:<id>". Open the modal.
     const formId = ctaAction.startsWith("form:") ? ctaAction.slice(5) : ctaAction;
@@ -516,6 +528,16 @@ export default function MiniPortalPage() {
     }
     onMessageCta(ctaAction);
   };
+
+  // BF_CLIENT_SBA_FORMS_ENTRY_v142 - mirrors the server's isSbaApplication:
+  // product category first, wizard purpose as the fallback for a file not yet
+  // matched to a product.
+  const isSbaApplication = (() => {
+    const cat = String((app as any)?.productCategory ?? (app as any)?.product_category ?? "").toUpperCase();
+    if (cat.includes("SBA")) return true;
+    const purpose = String((app as any)?.purposeOfFunds ?? (app as any)?.purpose_of_funds ?? "").toLowerCase();
+    return purpose.includes("sba") || purpose.includes("start up") || purpose.includes("start-up");
+  })();
 
   const currentStageLabel = STAGES[stageIndex]?.label ?? "";
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — "category · $amount — stage"
@@ -771,7 +793,11 @@ export default function MiniPortalPage() {
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
-              {ACTION_CHIPS.filter((c) => c.id !== "upload" || hasOutstandingDocs).map((c) => (
+              {ACTION_CHIPS
+                .filter((c) => c.id !== "upload" || hasOutstandingDocs)
+                // BF_CLIENT_SBA_FORMS_ENTRY_v142
+                .filter((c) => c.id !== "sba_forms" || isSbaApplication)
+                .map((c) => (
                 <button key={c.id} type="button" className="mp-chip mp-chip--action" onClick={() => onChip(c.id)}>
                   {c.label}
                 </button>
