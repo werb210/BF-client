@@ -100,3 +100,73 @@ select option:checked {
     border-radius: 0 !important;
   }
 }
+
+/* BF_CLIENT_WIZARD_MODAL_CSS_v147
+   Step1_KYC renders two hard-stop dialogs with these class names and no
+   stylesheet in the repo defined either, so both appeared as unstyled text at
+   the bottom of the page - below the Continue button and usually below the fold.
+
+   That is why Canadian applicants under $10K/month were abandoning at Step 1:
+   getStepErrors gates Continue on that answer, so the button dies, and the one
+   message explaining why was rendered somewhere they never saw. From their side
+   the form simply stopped working.
+
+   Appended to theme/global.css because that is what main.tsx imports.
+   wizard.css exists but nothing imports it. */
+.wizard-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 31, 58, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.wizard-modal {
+  background: #fff;
+  border-radius: var(--boreal-radius-card, 12px);
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 18px 50px rgba(11, 31, 58, 0.28);
+  font-family: var(--boreal-font, inherit);
+  /* A long message must scroll inside the card rather than pushing the
+     dismiss button off a short screen. */
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.wizard-modal h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--boreal-text, #0B1F3A);
+  line-height: 1.3;
+}
+
+.wizard-modal p {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--boreal-text, #0B1F3A);
+}
+
+.wizard-modal a {
+  color: var(--boreal-blue, #1D4ED8);
+  font-weight: 600;
+}
+
+/* The dismiss control is the only way out of these dialogs, so it must be
+   visible without scrolling on a phone. */
+.wizard-modal button {
+  margin-top: 6px;
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .wizard-modal { padding: 22px 18px; }
+  .wizard-modal h3 { font-size: 18px; }
+}
