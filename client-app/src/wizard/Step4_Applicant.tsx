@@ -798,6 +798,39 @@ export function Step4_Applicant() {
 
   const isValid = isStepValid(values);
 
+  // BF_CLIENT_STEP34_GUIDE_v156
+  // Derived from the same predicate that gates Continue, so the two cannot
+  // describe different sets. Ownership is called out separately because a
+  // partner split that does not total 100 is a different problem from a blank
+  // field, and "ownership" alone would send them looking for an empty box.
+  const STEP4_LABELS: Record<string, string> = {
+    firstName: "first name", lastName: "last name", email: "email",
+    phone: "phone number", street: "street address", city: "city",
+    state: "province or state", zip: "postal or ZIP code",
+    dob: "date of birth", ssn: identityLabel.toLowerCase(), ownership: "ownership %",
+  };
+  const missingStep4 = (() => {
+    const out = baseRequiredFields
+      .filter((f) => !Validate.required(values[f]))
+      .map((f) => STEP4_LABELS[f] ?? f);
+    // Deliberately not calling impliesMultipleOwners: that arrives in v150 and
+    // this block must stand on its own. Reads the stored flag as well as the
+    // percentage so it is correct before and after that change.
+    const pct = Number(values.ownership || 0);
+    const hasPartner = (pct > 0 && pct < 100) || Boolean(values.hasMultipleOwners);
+    if (hasPartner) {
+      const p = values.partner || {};
+      for (const f of partnerRequiredFields) {
+        if (!Validate.required(p[f])) out.push(`partner ${STEP4_LABELS[f] ?? f}`);
+      }
+    }
+    const { ownershipTotalValid, ownershipRangeValid } = getOwnershipValidity(values);
+    if (ownershipRangeValid && !ownershipTotalValid) {
+      out.push("ownership adding up to 100% across every owner");
+    }
+    return out;
+  })();
+
   const buildValueMap = (nextValues: typeof values) => {
     const nextPartner = nextValues.partner || {};
     return {
@@ -955,7 +988,23 @@ export function Step4_Applicant() {
                 <Button variant="secondary" style={{ width: "100%", maxWidth: "160px" }} onClick={() => navigate("/apply/step-3")}>← Back</Button>
                 {/* BF_CLIENT_SBA_WIZARD_FLOW_v210 - SBA skips Step 5 because its
                     documents are collected in Stage 2, so describe the real destination. */}
-                <Button style={{ width: "100%", maxWidth: "260px" }} onClick={next} disabled={!isValid}>{onSba ? "Continue to Review →" : "Continue to Documents →"}</Button>
+                {/* BF_CLIENT_STEP34_GUIDE_v156 - see Step 3. */}
+                <Button
+                  style={{ width: "100%", maxWidth: "260px" }}
+                  onClick={() => {
+                    if (!isValid) {
+                      setSaveError(
+                        missingStep4.length === 1
+                          ? `One thing left: ${missingStep4[0]}.`
+                          : `${missingStep4.length} things left: ${missingStep4.join(", ")}.`,
+                      );
+                      return;
+                    }
+                    setSaveError(null);
+                    void next();
+                  }}
+                  aria-disabled={!isValid}
+                >{onSba ? "Continue to Review →" : "Continue to Documents →"}</Button>
               </div>
             </div>
           </div>
