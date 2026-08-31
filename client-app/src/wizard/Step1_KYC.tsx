@@ -37,6 +37,7 @@ import { persistApplicationStep } from "./saveStepProgress";
 import { fetchCreditPrefill } from "../services/creditPrefill";
 import { getAttribution } from "../lib/attribution";
 import { fetchReadinessPrefill } from "@/api/readiness";
+import { ENV } from "@/env"; // BF_CLIENT_REPORT_BLOCK_v154
 
 const MatchCategories = [
   "Line of Credit",
@@ -215,6 +216,40 @@ export function Step1_KYC(): JSX.Element {
   // BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showMinRevenueModal, setShowMinRevenueModal] = useState(false);
+
+  // BF_CLIENT_REPORT_BLOCK_v154
+  // A stable key per browser session so a user toggling the dropdown does not
+  // write a row per keystroke; the server has a unique index on (session, reason).
+  const blockSessionRef = useRef<string>(
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : String(Date.now()) + Math.random().toString(36).slice(2),
+  );
+
+  function reportWizardBlock(reason: string, detail: Record<string, unknown>) {
+    try {
+      const body = JSON.stringify({
+        reason,
+        step: 1,
+        sessionKey: blockSessionRef.current,
+        applicationToken: app.applicationToken ?? null,
+        leadId: app.readinessLeadId ?? null,
+        phone: (app.kyc as any)?.phone ?? (app.applicant as any)?.phone ?? null,
+        ...detail,
+      });
+      // keepalive so it still goes if they close the tab on being turned away,
+      // which is exactly what the people we are trying to count tend to do.
+      const base = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
+      void fetch(`${base}/api/public/wizard-block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      }).catch(() => {});
+    } catch {
+      // Never let reporting a refusal turn into a second failure for the user.
+    }
+  }
   const [lenderProducts, setLenderProducts] = useState<any[]>([]);
   // BF_CLIENT_STEP1_PRODUCTSYNC_v207
   // Step 1 read the lender product panel via
@@ -1327,6 +1362,12 @@ export function Step1_KYC(): JSX.Element {
                   if (value === "Under $10,000" && countryCode === "CA") {
                     setShowMinRevenueModal(true);
                     update({ kyc: { ...app.kyc, monthlyRevenue: value } });
+                    // BF_CLIENT_REPORT_BLOCK_v154 - the only point at which this
+                    // answer is known to anyone but the applicant.
+                    reportWizardBlock("ca_under_10k_monthly_revenue", {
+                      country: countryCode,
+                      monthlyRevenue: value,
+                    });
                     return;
                   }
                   const nextKyc = { ...app.kyc, monthlyRevenue: value };
