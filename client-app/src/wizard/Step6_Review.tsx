@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
+import { isStartupPathKyc } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { getAttribution } from "../lib/attribution"; // BF_CLIENT_SUBMIT_SESSIONID_v1
@@ -102,6 +103,12 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
+
+  // BF_CLIENT_STEP6_BACK_v151
+  // Step 5 bounces straight back on the SBA path, so Back has to skip it.
+  const backTarget = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)
+    ? "/apply/step-4"
+    : "/apply/step-5";
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
@@ -1042,7 +1049,7 @@ export function Step6_Review(): JSX.Element {
             <Button
               variant="secondary"
               style={{ width: "100%", maxWidth: "160px" }}
-              onClick={() => navigate("/apply/step-5")}
+              onClick={() => navigate(backTarget)}
             >
               {"<- Back"}
             </Button>
