@@ -967,10 +967,24 @@ export function Step3_Business() {
           >
             ← Back
           </Button>
+          {/* BF_CLIENT_STEP34_GUIDE_v156 - not disabled. Pressing it is how the
+              applicant finds out what is missing; a disabled button answers
+              nothing and this step has no per-field messages to fall back on. */}
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
-            onClick={next}
-            disabled={!isValid}
+            onClick={() => {
+              if (!isValid) {
+                setSaveError(
+                  missingStep3.length === 1
+                    ? `One thing left: ${missingStep3[0]}.`
+                    : `${missingStep3.length} things left: ${missingStep3.join(", ")}.`,
+                );
+                return;
+              }
+              setSaveError(null);
+              void next();
+            }}
+            aria-disabled={!isValid}
           >
             Continue
           </Button>
