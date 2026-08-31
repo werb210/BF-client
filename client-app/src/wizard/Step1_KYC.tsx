@@ -716,6 +716,27 @@ export function Step1_KYC(): JSX.Element {
   const fieldErrors = getStepErrors(app.kyc);
   const isValid = Object.values(fieldErrors).every((error) => !error);
 
+  // BF_CLIENT_STEP1_GUIDE_v155
+  // Read off fieldErrors rather than re-deriving, so a rule change cannot leave
+  // the summary describing a different set of fields than the one gating Continue.
+  const STEP1_FIELD_LABELS: Record<string, string> = {
+    lookingFor: "what you are looking for",
+    fundingAmount: "how much funding you need",
+    equipmentAmount: "the equipment amount",
+    businessLocation: "your business location",
+    industry: "your industry",
+    monthlyRevenue: "your average monthly revenue",
+  };
+  const missingFieldLabels = Object.entries(fieldErrors)
+    .filter(([, bad]) => bad)
+    .map(([key]) => STEP1_FIELD_LABELS[key] ?? key);
+
+  // The revenue floor is a refusal, not a missing answer, and saying "one thing
+  // left: your average monthly revenue" to someone who has already answered it
+  // reads as a broken form.
+  const blockedByRevenueFloor =
+    countryCode === "CA" && String((app.kyc as any)?.monthlyRevenue ?? "") === "Under $10,000";
+
   // Expose live state on window for diagnostics — paste `__bfWizard` in console to inspect.
   if (typeof window !== "undefined") {
     (window as any).__bfWizard = {
@@ -1468,6 +1489,39 @@ export function Step1_KYC(): JSX.Element {
           </div>
         </Card>
 
+        {/* BF_CLIENT_STEP1_GUIDE_v155 - names every outstanding field in one
+            place. Per-field messages sit next to the inputs, but on a long form
+            the first one can be off-screen, and the applicant is standing at a
+            button that will not move. */}
+        {showErrors && !isValid && (
+          <div
+            data-testid="step1-missing-summary"
+            role="alert"
+            style={{
+              marginTop: tokens.spacing.lg, padding: "14px 16px", borderRadius: 8,
+              background: "#b45c090f", border: "1px solid #b45c0933", color: "#7c3d06",
+              fontSize: 14, lineHeight: 1.55,
+            }}
+          >
+            {blockedByRevenueFloor ? (
+              <>
+                <strong>We cannot match this one.</strong> Our Canadian lender panel
+                needs at least $10,000 in average monthly revenue. Change the answer
+                if it was a mistake, or call us on (825) 451-1768.
+              </>
+            ) : (
+              <>
+                <strong>
+                  {missingFieldLabels.length === 1
+                    ? "One thing left:"
+                    : `${missingFieldLabels.length} things left:`}
+                </strong>{" "}
+                {missingFieldLabels.join(", ")}.
+              </>
+            )}
+          </div>
+        )}
+
         <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
@@ -1481,12 +1535,17 @@ export function Step1_KYC(): JSX.Element {
               setShowErrors(true);
               if (!isValid) {
                 console.warn("[wizard] Continue blocked by isValid=false");
+                // scrollToFirstError already runs off showErrors; the summary
+                // above the button names them all.
                 return;
               }
               setShowErrors(false);
               void startApplication();
             }}
-            disabled={!isValid}
+            // BF_CLIENT_STEP1_GUIDE_v155 - deliberately NOT disabled. Pressing it
+            // is how an applicant discovers what is missing; a disabled button
+            // answers nothing and suppressed the click that revealed the errors.
+            aria-disabled={!isValid}
           >
             Continue →
           </Button>
