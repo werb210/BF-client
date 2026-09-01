@@ -1,5 +1,18 @@
 const STORAGE_KEY = "bf_jwt_token";
+import { Capacitor } from "@capacitor/core";
+import { credentialStore } from "./credentialStore";
 let token: string | null = null;
+
+export async function hydrateToken(): Promise<void> {
+  token = await credentialStore.get();
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const legacy = localStorage.getItem("auth_token") || localStorage.getItem(STORAGE_KEY);
+      if (!token && legacy) { token = legacy; await credentialStore.set(legacy); }
+      localStorage.removeItem("auth_token"); localStorage.removeItem(STORAGE_KEY);
+    } catch { /* WebView storage may be disabled. */ }
+  }
+}
 
 export function getToken(): string | null {
   if (token) return token;
@@ -26,6 +39,8 @@ export function getToken(): string | null {
 
 export function setToken(t: string): void {
   token = t;
+  void credentialStore.set(t);
+  if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(STORAGE_KEY, t);
@@ -38,6 +53,8 @@ export function setToken(t: string): void {
 
 export function clearToken(): void {
   token = null;
+  void credentialStore.clear();
+  if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
       localStorage.removeItem(STORAGE_KEY);

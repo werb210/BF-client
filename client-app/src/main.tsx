@@ -21,6 +21,7 @@ import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
 // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
 import { startFormResponseQueueWatcher } from "./state/formResponseQueueWatcher";
 import { validateBootToken } from "./state/validateBootToken";
+import { hydrateToken } from "./auth/token";
 
 try {
   validateEnv();
@@ -31,6 +32,8 @@ try {
 // BF_CLIENT_JOURNEY_BOOT_v185 - ORDER MATTERS. startJourney mints and persists the
 // journey session id and creates the server-side visitor_sessions row. It must run
 // first so captureAttribution finds the id and forwards it to the server at start.
+async function boot() {
+await hydrateToken();
 startJourney();
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
 
@@ -56,3 +59,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 );
 
 registerClientSW();
+}
+
+void boot();
