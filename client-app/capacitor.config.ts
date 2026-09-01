@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: { androidScheme: 'https' },
   ios: { contentInset: 'always' },
-  android: { path: '../android', allowMixedContent: true }
+  android: {}
 };
 
 export default config;

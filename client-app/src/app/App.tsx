@@ -10,10 +10,12 @@ import MayaWidget from "../components/MayaWidget";
 import InstallPromptBanner from "@/components/InstallPromptBanner";
 import UpdatePromptBanner from "@/components/UpdatePromptBanner";
 import RetryBanner from "../components/RetryBanner";
+import { NativeRuntime } from "../native/NativeRuntime";
 
 export default function App() {
   return (
     <ErrorBoundary fallback={<FatalErrorScreen />}>
+      <NativeRuntime />
       <RetryBanner />
       <UpdatePromptBanner />
       <InstallPromptBanner />

@@ -34,6 +34,28 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Insets are supplied by each OS; no device-specific dimensions are assumed. */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  overflow-x: hidden;
+}
+
+.native-backgrounded body::after {
+  content: "Boreal Financial";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: var(--boreal-blue);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
 a {
   color: inherit;
 }

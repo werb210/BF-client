@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 function urlBase64ToUint8Array(base64: string) {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -27,6 +29,15 @@ export function usePushNotifications() {
   }, []);
 
   const subscribe = useCallback(async () => {
+    if (Capacitor.isNativePlatform()) {
+      const current = await PushNotifications.checkPermissions();
+      const result = current.receive === "prompt" ? await PushNotifications.requestPermissions() : current;
+      const mapped: NotificationPermission = result.receive === "granted" ? "granted" : "denied";
+      setPermission(mapped);
+      if (result.receive !== "granted") return null;
+      await PushNotifications.register();
+      return { native: true };
+    }
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
     const vapid = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
     if (!vapid) { console.info("Push subscription skipped: missing VAPID key"); return null; }

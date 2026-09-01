@@ -12,6 +12,13 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array><string>borealclient</string></array>
+		</dict>
+	</array>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -50,7 +57,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Boreal uses the camera so you can photograph and upload documents for your application.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Boreal uses the microphone so you can speak to an advisor from inside the app.</string>
+	<string>Boreal Financial uses the microphone only when you choose to speak with an advisor in the app.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Boreal accesses your photo library so you can attach documents and images to your application.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
