@@ -22,7 +22,6 @@ import {
   getRegionLabel,
 } from "../utils/location";
 import { PhoneInput } from "../components/ui/PhoneInput";
-import { Checkbox } from "../components/ui/Checkbox";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
@@ -553,6 +552,20 @@ export function Step4_Applicant() {
   }, [update, values]);
 
   function setField(key: string, value: unknown) {
+    // BF_CLIENT_DERIVE_MULTIPLE_OWNERS_v150 - going back to sole ownership drops
+    // the partner. Leaving a half-filled partner behind means a stale SIN and
+    // email are still in state and reach the server on submit; the checkbox used
+    // to clear them on untick, and there is no checkbox now.
+    if (key === "ownership") {
+      const next = { ...values, ownership: value } as typeof values;
+      const multi = impliesMultipleOwners(next);
+      update({
+        applicant: multi
+          ? { ...next, hasMultipleOwners: true }
+          : { ...next, hasMultipleOwners: false, partner: {}, additionalShareholders: [] },
+      });
+      return;
+    }
     update({ applicant: { ...values, [key]: value } });
   }
 
@@ -612,7 +625,7 @@ export function Step4_Applicant() {
       return;
     }
 
-    if (values.hasMultipleOwners) {
+    if (impliesMultipleOwners(values)) {
       const partnerMissing = partnerRequiredFields.find(
         (field) => !Validate.required(partner[field])
       );
@@ -762,16 +775,26 @@ export function Step4_Applicant() {
     "ownership",
   ];
 
+  // BF_CLIENT_DERIVE_MULTIPLE_OWNERS_v150
+  // Owning less than all of it IS having other owners. A blank or zero field is
+  // someone who has not answered yet, not a co-owned business, so it stays false
+  // until they type something.
+  const impliesMultipleOwners = (v: typeof values) => {
+    const pct = Number(v?.ownership ?? 0);
+    return Number.isFinite(pct) && pct > 0 && pct < 100;
+  };
+
   const getOwnershipValidity = (nextValues: typeof values) => {
     const nextPartner = nextValues.partner || {};
     const primaryOwnership = Number(nextValues.ownership || 0);
     const partnerOwnership = Number(nextPartner.ownership || 0);
+    const multi = impliesMultipleOwners(nextValues);
     const ownershipRangeValid =
       primaryOwnership >= 1 &&
       primaryOwnership <= 100 &&
-      (!nextValues.hasMultipleOwners ||
+      (!multi ||
         (partnerOwnership >= 1 && partnerOwnership <= 100));
-    const ownershipTotalValid = nextValues.hasMultipleOwners
+    const ownershipTotalValid = multi
       ? primaryOwnership + partnerOwnership === 100
       : primaryOwnership === 100;
     return {
@@ -788,7 +811,7 @@ export function Step4_Applicant() {
       baseRequiredFields.every((field) =>
         Validate.required(nextValues[field])
       ) &&
-      (!nextValues.hasMultipleOwners ||
+      (!impliesMultipleOwners(nextValues) ||
         partnerRequiredFields.every((field) =>
           Validate.required((nextValues.partner || {})[field])
         )) &&
@@ -919,45 +942,17 @@ export function Step4_Applicant() {
                 identityLabel={identityLabel}
                 onSba={onSba}
               />
-              {/* BF_CLIENT_STEP4_PARTNER_TOGGLE_v194
-                  This was gated on ownership < 100 alone, which trapped anyone who
-                  ticked the box and then changed their mind:
-                    1. set ownership to 60, checkbox appears, tick it
-                    2. partner card opens, hasMultipleOwners = true
-                    3. set ownership back to 100 - the checkbox UNMOUNTS
-                    4. the partner card stays open, because it renders on
-                       hasMultipleOwners alone (below), and nothing on screen can
-                       set the flag back to false
-                  Continue then becomes unsatisfiable: isStepValid demands every
-                  partner field, and ownershipTotalValid demands primary + partner
-                  === 100, so with the primary at 100 the partner needs 0 - which
-                  fails the separate partnerOwnership >= 1 range check. The only
-                  escapes were dropping ownership below 100 again, or clearing
-                  local storage. A live applicant hit exactly this.
-                  The box now also shows whenever it is already ticked, so the
-                  control that opened the partner section can always close it. */}
-              {(Number(values.ownership || 0) < 100 || values.hasMultipleOwners) && (
-                <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs, fontSize: tokens.typography.label.fontSize, fontWeight: tokens.typography.label.fontWeight, color: tokens.colors.textPrimary }}>
-                  <Checkbox
-                    checked={values.hasMultipleOwners || false}
-                    onChange={(e) => {
-                      const checked = (e.target as HTMLInputElement).checked;
-                      // Unticking clears the partner outright. Leaving a half-filled
-                      // partner object behind means a stale SIN or email is still in
-                      // state and can reach the server on submit.
-                      if (!checked) {
-                        update({ applicant: { ...values, hasMultipleOwners: false, partner: {}, additionalShareholders: [] } });
-                        return;
-                      }
-                      setField("hasMultipleOwners", true);
-                    }}
-                  />
-                  This business has multiple owners/partners
-                </label>
+              {/* BF_CLIENT_DERIVE_MULTIPLE_OWNERS_v150 - the checkbox is gone.
+                  Entering less than 100% opens the partner fields directly. */}
+              {impliesMultipleOwners(values) && (
+                <div style={{ fontSize: tokens.typography.label.fontSize, color: tokens.colors.textSecondary }}>
+                  The remaining {Math.max(0, 100 - Number(values.ownership || 0))}% belongs to
+                  someone else - add them below. Everyone at 20% or more signs their own SBA forms.
+                </div>
               )}
             </Card>
 
-            {values.hasMultipleOwners && (
+            {impliesMultipleOwners(values) && (
               <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg, marginTop: tokens.spacing.lg }} onBlurCapture={() => saveStepData(4, values)}>
                 <div style={components.form.eyebrow}>Partner / second owner</div>
                 {/* BF_CLIENT_SBA_912_STEP4_v197 */}
@@ -976,7 +971,7 @@ export function Step4_Applicant() {
               </Card>
             )}
 
-            {values.hasMultipleOwners && (
+            {impliesMultipleOwners(values) && (
               <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginTop: tokens.spacing.lg }}>
                 <div style={components.form.eyebrow}>Additional shareholders (optional)</div>
                 <AccordAdditionalShareholders list={values.additionalShareholders || []} onChange={(next) => setField("additionalShareholders", next)} />
