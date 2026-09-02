@@ -845,6 +845,11 @@ export function Step1_KYC(): JSX.Element {
           if (__readinessPhone && __readinessPhone.trim()) {
             __startBody.readiness_phone = __readinessPhone.trim();
           }
+          // BF_CLIENT_ABANDONED_STEP1_PROFILE_v162 - send the Step 1 picks with the
+          // mint call (the only server hit before submit; per-step save is a no-op).
+          // The server persists them onto the draft so an abandoned Step 1 shows
+          // country / monthly revenue / amount in the funnel instead of blanks.
+          __startBody.financialProfile = payload;
           const __res = await fetch(__startUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

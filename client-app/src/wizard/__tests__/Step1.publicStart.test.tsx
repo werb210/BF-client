@@ -102,6 +102,13 @@ describe("Step 1 public draft start (Block 12)", () => {
     expect(String(calledUrl)).toContain("/api/public/application/start");
     expect((calledOpts as RequestInit).method).toBe("POST");
 
+    // BF_CLIENT_ABANDONED_STEP1_PROFILE_v162 - the mint call must carry the Step 1
+    // profile so the server can persist it; a z.object on the server would silently
+    // drop it if the key were missing, leaving the funnel blank.
+    const startBody = JSON.parse(String((calledOpts as RequestInit).body));
+    expect(startBody).toHaveProperty("financialProfile");
+    expect(typeof startBody.financialProfile).toBe("object");
+
     const stored = updateMock.mock.calls.find(
       (args) => args[0] && (args[0] as Record<string, unknown>).applicationToken === realUuid
     );
