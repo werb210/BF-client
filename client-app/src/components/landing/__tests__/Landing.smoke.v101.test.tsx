@@ -1,27 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
-import LandingHeader from "../LandingHeader";
-import LandingFooter from "../LandingFooter";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import LandingPage from "@/pages/LandingPage";
 
-describe("LandingHeader (v101)", () => {
-  it("renders the wordmark and the desktop Apply CTA", () => {
-    const { container, getAllByText } = render(<LandingHeader />);
-    expect(getAllByText("Boreal Financial").length).toBeGreaterThan(0);
-    expect(container.querySelectorAll('a[href="#apply-otp"]').length).toBeGreaterThan(0);
+describe("mobile landing shell", () => {
+  it("renders the branded landing content and real flow links", () => {
+    render(<MemoryRouter><LandingPage /></MemoryRouter>);
+
+    expect(screen.getByRole("heading", { name: /business financing, made simple/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Get Started" }).getAttribute("href")).toBe("/otp");
+    expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/otp");
+    expect(screen.getAllByAltText("Boreal Financial")[0].getAttribute("src")).toBe("/header.png");
+    expect(screen.getByTestId("landing-art-placeholder")).toBeTruthy();
   });
 
-  it("links to the BI cross-site", () => {
-    const { container } = render(<LandingHeader />);
-    expect(container.querySelector('a[href="https://www.boreal.insure/"]')).not.toBeNull();
-  });
-});
+  it("opens and closes the left drawer from both controls", () => {
+    render(<MemoryRouter><LandingPage /></MemoryRouter>);
+    const layer = screen.getByTestId("landing-drawer-layer");
 
-describe("LandingFooter (v101)", () => {
-  it("renders the three-column structure with Apply anchor", () => {
-    const { container, getByText, getAllByText } = render(<LandingFooter />);
-    expect(getByText("Boreal Financial")).toBeTruthy();
-    expect(getByText("Explore")).toBeTruthy();
-    expect(getAllByText("Contact Us").length).toBeGreaterThan(0);
-    expect(container.querySelector('a[href="#apply-otp"]')).not.toBeNull();
+    fireEvent.click(screen.getByTestId("landing-mobile-toggle"));
+    expect(layer.classList.contains("is-open")).toBe(true);
+    fireEvent.click(screen.getByTestId("landing-drawer-close"));
+    expect(layer.classList.contains("is-open")).toBe(false);
+
+    fireEvent.click(screen.getByTestId("landing-mobile-toggle"));
+    fireEvent.click(screen.getByTestId("landing-drawer-overlay"));
+    expect(layer.classList.contains("is-open")).toBe(false);
   });
 });

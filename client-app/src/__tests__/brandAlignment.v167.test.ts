@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 
 const LANDING = fs.readFileSync("src/pages/LandingPage.tsx", "utf8");
+const LANDING_CSS = fs.readFileSync("src/components/landing/landing-shell.css", "utf8");
 
 describe("landing page matches BF-Website positioning", () => {
   it("drops the retired boutique-advisory headline", () => {
@@ -12,15 +13,16 @@ describe("landing page matches BF-Website positioning", () => {
     expect(LANDING).not.toContain("perfect funding");
   });
 
-  it("repeats the locked claims at the point of hand-off", () => {
-    expect(LANDING).toContain("never pull your credit");
-    expect(LANDING).toContain("No cost, and no obligation");
+  it("uses the approved mobile-shell positioning at the point of hand-off", () => {
+    expect(LANDING).toContain("Business financing,");
+    expect(LANDING).toContain("made simple.");
+    expect(LANDING).toContain("Access the right financing options for your business.");
   });
 
   it("uses the website brand tokens, not the old generic palette", () => {
-    expect(LANDING).toContain("boreal-gold");
-    expect(LANDING).toContain("font-display");
-    expect(LANDING).not.toContain("#0B1320");
+    expect(LANDING_CSS).toContain("var(--boreal-blue)");
+    expect(LANDING_CSS).toContain("var(--boreal-blue-light)");
+    expect(LANDING_CSS).not.toContain("#0B1320");
   });
 
   it("makes no claim the website does not make", () => {

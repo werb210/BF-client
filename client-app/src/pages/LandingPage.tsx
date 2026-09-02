@@ -1,53 +1,46 @@
-import PhoneOTPInline from "@/components/PhoneOTPInline";
+import { Link } from "react-router-dom";
 import LandingHeader from "@/components/landing/LandingHeader";
-import LandingFooter from "@/components/landing/LandingFooter";
-
-// BF_CLIENT_BRAND_v167 - copy and palette aligned with BF-Website. The previous
-// headline carried the boutique-advisory positioning the website rebuild
-// removed, and read as a different company to anyone arriving from an ad.
-const REASSURANCE = [
-  "About five minutes to start",
-  "No cost, and no obligation",
-  "We never pull your credit",
-];
+import "@/components/landing/landing-shell.css";
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-boreal-inkDeep font-sans text-white">
+    <div className="landing-shell">
       <LandingHeader />
 
-      <main className="flex-1">
-        <section className="mx-auto max-w-7xl px-6 py-16 md:py-24">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-[13px] font-semibold uppercase tracking-[.14em] text-boreal-gold">
-              Start your application
-            </p>
-            <h1 className="mt-4 font-display text-4xl font-bold leading-[1.12] md:text-5xl">
-              One application. Every lender that fits.
+      <main className="landing-main">
+        <section className="landing-hero" aria-labelledby="landing-title">
+          <div className="landing-copy">
+            <h1 id="landing-title">
+              Business financing,
+              <br />
+              made simple.
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
-              Tell us about your business once and we take your file to the
-              lenders who fund companies like yours. Enter your mobile number to
-              begin or to pick up where you left off.
-            </p>
+            <p>Access the right financing options for your business.</p>
           </div>
 
           <div
-            id="apply-otp"
-            className="mx-auto mt-10 max-w-md scroll-mt-24 rounded-2xl bg-white p-1 text-slate-900 shadow-2xl"
-          >
-            <PhoneOTPInline />
-          </div>
+            className="landing-art"
+            role="img"
+            aria-label="Business financing illustration"
+            data-testid="landing-art-placeholder"
+          />
 
-          <ul className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-x-7 gap-y-2 text-sm text-white/70">
-            {REASSURANCE.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          <div className="landing-actions">
+            <Link className="landing-primary-cta" to="/otp">
+              Get Started
+            </Link>
+            <p className="landing-sign-in">
+              Already have an application? <Link to="/otp">Sign in</Link>
+            </p>
+          </div>
         </section>
       </main>
 
-      <LandingFooter />
+      <footer className="landing-trust">
+        <span>Your information is secure and confidential.</span>
+        <span aria-hidden="true">•</span>
+        <a href="https://www.boreal.financial/privacy">Privacy</a>
+      </footer>
     </div>
   );
 }
