@@ -24,6 +24,31 @@ export function isStartupPathKyc(kyc?: Record<string, any>): boolean {
   return purpose === "Start up Funding" || purpose === "SBA / Start-up" || sales === "Zero"; // BF_CLIENT_SBA_STARTUP_v190
 }
 
+// BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+// The SBA path after Step 2, decided the way the server decides it: by the
+// product. Falls back to the Step 1 purpose text so a file that has not reached
+// product selection still behaves as it did.
+//
+// Use this from Step 3 onward. Step 1 and the schema conditionals below must
+// keep using isStartupPathKyc - they run before a product exists.
+export function isSbaWizardPath(app?: Record<string, any>): boolean {
+  const candidates = [
+    app?.productCategory,
+    app?.selectedProductType,
+    app?.selectedProduct?.category,
+    app?.selectedProduct?.product_type,
+    app?.selectedProduct?.type,
+    app?.selectedProduct?.name,
+  ];
+  for (const c of candidates) {
+    const v = String(c ?? "").toUpperCase();
+    // Matches SBA, SBA_GOVERNMENT and "SBA / Government", which is how the
+    // category reads in the product catalogue.
+    if (v.includes("SBA")) return true;
+  }
+  return isStartupPathKyc((app?.kyc ?? {}) as Record<string, any>);
+}
+
 export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> = {
   step1: {
     fields: [

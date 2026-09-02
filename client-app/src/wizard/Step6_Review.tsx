@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
-import { isStartupPathKyc } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
+import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { getAttribution } from "../lib/attribution"; // BF_CLIENT_SUBMIT_SESSIONID_v1
@@ -106,7 +106,7 @@ export function Step6_Review(): JSX.Element {
 
   // BF_CLIENT_STEP6_BACK_v151
   // Step 5 bounces straight back on the SBA path, so Back has to skip it.
-  const backTarget = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)
+  const backTarget = isSbaWizardPath(app as Record<string, unknown>) // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
     ? "/apply/step-4"
     : "/apply/step-5";
   const [submitError, setSubmitError] = useState<string | null>(null);

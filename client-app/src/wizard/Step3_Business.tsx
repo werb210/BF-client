@@ -37,7 +37,7 @@ import {
   getNextEmptyFieldKey,
   getNextFieldKey,
   getWizardFieldId,
-  isStartupPathKyc,
+  isSbaWizardPath,
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
@@ -48,9 +48,8 @@ export function Step3_Business() {
   const { app, update, autosaveError } = useApplicationStore();
   // BF_CLIENT_SBA_REDUCED_v191 - start-ups have no operating history to report.
   // Step 3 therefore asks only for basic identity and contact details, all optional.
-  const onSbaStartupPath = isStartupPathKyc(
-    (app?.kyc ?? {}) as Record<string, unknown>
-  );
+  // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+  const onSbaStartupPath = isSbaWizardPath(app as Record<string, unknown>);
   console.log("[wizard] Step3_Business RENDER", { currentStep: app.currentStep, applicationToken: app.applicationToken, businessLocation: app.kyc?.businessLocation });
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
