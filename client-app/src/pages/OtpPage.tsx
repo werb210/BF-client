@@ -87,6 +87,16 @@ export default function OtpPage() {
       // verified phone for Step1_KYC to use on phone-based prefill lookup.
       try {
         sessionStorage.setItem("verified_phone", formatted);
+        // BF_CLIENT_DRAFT_SCOPED_v161 - drafts are keyed by the verified phone
+        // from here on. Adopt anything typed before verifying, and drop the old
+        // unscoped keys that were shared with everyone else on this browser.
+        try {
+          const { adoptAnonDrafts, currentDraftScope, purgeLegacyDrafts } = await import("@/client/autosave");
+          purgeLegacyDrafts();
+          adoptAnonDrafts(currentDraftScope());
+        } catch {
+          // Never let draft housekeeping block a successful login.
+        }
       } catch {
         // sessionStorage unavailable (private mode, ITP) — best-effort, skip.
       }
