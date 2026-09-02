@@ -6,7 +6,6 @@ import fs from "fs";
 const HEADER = fs.readFileSync("src/components/landing/LandingHeader.tsx", "utf8");
 const FOOTER = fs.readFileSync("src/components/landing/LandingFooter.tsx", "utf8");
 const PLATFORM = fs.readFileSync("src/lib/platform.ts", "utf8");
-const MOBILE_SHELL = fs.readFileSync("src/components/landing/landing-shell.css", "utf8");
 
 describe("native chrome", () => {
   it("platform detection cannot throw on web", () => {
@@ -19,10 +18,11 @@ describe("native chrome", () => {
     expect(FOOTER).toContain("return null");
   });
 
-  it("uses the same route-backed mobile shell inside the app", () => {
-    expect(HEADER).not.toContain("boreal.financial/products");
-    expect(HEADER).toContain('to: "/portal"');
-    expect(MOBILE_SHELL).toContain("env(safe-area-inset-top)");
+  it("header collapses to a logo-only bar inside the app", () => {
+    expect(HEADER).toContain("isNativeApp()");
+    const nativeBlock = HEADER.slice(HEADER.indexOf("if (isNativeApp())"), HEADER.indexOf("</header>"));
+    expect(nativeBlock).not.toContain("boreal.financial/products");
+    expect(nativeBlock).not.toContain("boreal.financial/contact");
   });
 });
 

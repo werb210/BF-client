@@ -5,17 +5,16 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 
 const HEADER = fs.readFileSync("src/components/landing/LandingHeader.tsx", "utf8");
-const MOBILE_SHELL = fs.readFileSync("src/components/landing/landing-shell.css", "utf8");
 const CONTAINER = fs.readFileSync("src/styles/container.css", "utf8");
 
 describe("header geometry matches the template", () => {
-  it("uses a bounded responsive container, not Tailwind's 1280px box", () => {
-    expect(MOBILE_SHELL).toContain("max-width: 1180px");
+  it("uses the shared container, not Tailwind's 1280px box", () => {
+    expect(HEADER).toContain("bf-container");
     expect(HEADER).not.toContain("max-w-7xl");
   });
 
-  it("keeps a compact 72px mobile header row", () => {
-    expect(MOBILE_SHELL).toContain("min-height: 72px");
+  it("keeps the template's 80px header row", () => {
+    expect(HEADER).toContain("min-h-20");
   });
 
   it("container is 1120px with 24px padding, matching global.css", () => {
