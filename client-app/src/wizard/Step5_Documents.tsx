@@ -32,7 +32,7 @@ import { components, layout, scrollToFirstError, tokens } from "@/styles";
 import { trackEvent } from "../utils/analytics";
 import { resolveStepGuard } from "./stepGuard";
 // BF_CLIENT_SBA_SKIP_2_AND_5_v213
-import { isStartupPathKyc } from "./wizardSchema";
+import { isSbaWizardPath } from "./wizardSchema";
 import { track } from "../utils/track";
 import { validateFile } from "@/utils/fileValidation";
 import { persistApplicationStep } from "./saveStepProgress";
@@ -205,7 +205,7 @@ export function Step5_Documents() {
   //
   // A guard at the destination also covers the routes Step 4 does not control -
   // a bookmark, a browser Back, or a resumed draft landing on /apply/step-5.
-  const onSbaPath = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>);
+  const onSbaPath = isSbaWizardPath(app as Record<string, unknown>); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
   useEffect(() => {
     if (!onSbaPath) return;
     // Mirrors Step 4: documentsDeferred is what the Step 6 submit gate checks,

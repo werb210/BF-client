@@ -11,7 +11,7 @@ import { Validate } from "../utils/validate";
 import { WizardLayout } from "../components/WizardLayout";
 import { RegionSelect } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
-import { isStartupPathKyc } from "./wizardSchema"; // BF_CLIENT_SBA_SKIP_DOCS_v192
+import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_SBA_SKIP_DOCS_v192
 import {
   formatIdentityNumber,
   formatPhoneNumber,
@@ -444,7 +444,7 @@ export function Step4_Applicant() {
   );
   const identityLabel = getIdentityLabel(countryCode);
   // BF_CLIENT_SBA_912_STEP4_v197
-  const onSba = isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>);
+  const onSba = isSbaWizardPath(app as Record<string, unknown>); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
   const regionLabel = getRegionLabel(countryCode);
   const postalLabel = getPostalLabel(countryCode);
   const regionCountry = useMemo<"CA" | "US">(
@@ -736,7 +736,7 @@ export function Step4_Applicant() {
     // currentStep is set to 6 rather than 5 for a second reason: Step 6 runs
     // resolveStepGuard(app.currentStep, 6), and resolveStepGuard(4, 6) returns 5.
     // Leaving the step at 4 or 5 would bounce them straight back into Documents.
-    if (isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)) {
+    if (isSbaWizardPath(app as Record<string, unknown>)) { // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
       update({ currentStep: 6, documentsDeferred: true });
       navigate("/apply/step-6");
       return;

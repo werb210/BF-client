@@ -18,8 +18,10 @@ describe("Back skips a step that refuses to render", () => {
   });
 
   it("uses the same predicate Step 5 uses, so the two cannot disagree", () => {
-    expect(step6).toContain("isStartupPathKyc");
-    expect(step5).toContain("isStartupPathKyc");
+    // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160 - both moved to the product-aware
+    // predicate together, which is the point: they must not diverge.
+    expect(step6).toContain("isSbaWizardPath");
+    expect(step5).toContain("isSbaWizardPath");
   });
 
   it("no longer hardcodes step-5", () => {

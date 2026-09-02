@@ -46,6 +46,8 @@ describe("Step 5 refuses the SBA path", () => {
   });
 
   it("guards at the destination, so a bookmark or Back cannot land here", () => {
-    expect(step5).toContain("isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)");
+    // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160 - now decided by the product.
+    expect(step5).toContain("isSbaWizardPath(app as Record<string, unknown>)");
+    expect(step5).toContain("if (onSbaPath) return null;");
   });
 });
