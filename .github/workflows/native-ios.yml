@@ -1,6 +1,11 @@
 name: Native iOS verification
 on:
+  push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 jobs:
   ios:
@@ -15,10 +20,12 @@ jobs:
       - run: npm run build
       - name: Verify Capacitor web artifact
         run: test -f client-app/dist/index.html
-      - name: Verify iOS release guardrails
-        run: python3 scripts/verify-ios-release.py
       - run: npx cap sync ios
         working-directory: client-app
+      - name: Verify post-sync iOS release guardrails
+        run: python3 scripts/verify-ios-release.py
+      - name: Resolve CapApp-SPM package
+        run: swift package resolve --package-path client-app/ios/App/CapApp-SPM
       - name: Resolve Swift package dependencies
         run: >-
           xcodebuild
