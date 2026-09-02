@@ -6,20 +6,20 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm }
       - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: 21 }
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: 8.14.3
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run test
+      - run: npm --prefix client-app run test:ci
       - run: npm run build
       - run: npx cap sync android
         working-directory: client-app
-      - name: Ensure Gradle wrapper is executable
-        run: chmod +x ./gradlew
-        working-directory: client-app/android
       - name: Build Android debug APK
-        run: ./gradlew assembleDebug
+        run: gradle assembleDebug
         working-directory: client-app/android
