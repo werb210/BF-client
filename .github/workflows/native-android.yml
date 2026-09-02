@@ -1,6 +1,11 @@
 name: Native Android verification
 on:
+  push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 jobs:
   android:
@@ -20,6 +25,10 @@ jobs:
       - run: npm run build
       - run: npx cap sync android
         working-directory: client-app
+      - name: Verify post-sync Android project and identity
+        run: |
+          test -f client-app/android/app/build.gradle
+          grep -Fq 'applicationId "com.boreal.client"' client-app/android/app/build.gradle
       - name: Build Android debug APK
         run: gradle assembleDebug
         working-directory: client-app/android
