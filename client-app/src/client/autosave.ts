@@ -5,8 +5,67 @@ export type StepData = Record<string, any>;
 
 const DRAFT_PREFIX = "client:draft:step:";
 
-function getDraftKey(step: Step) {
-  return `${DRAFT_PREFIX}${step}`;
+// BF_CLIENT_DRAFT_SCOPED_v161
+// OtpPage writes the verified number here; Step 1 already reads it for
+// phone-based prefill. Before OTP there is no identity, so drafts land under
+// "anon" and are adopted on login by the same person who typed them.
+export const ANON_DRAFT_SCOPE = "anon";
+
+function normalizePhone(v: unknown): string {
+  const digits = String(v ?? "").replace(/[^0-9]/g, "");
+  return digits ? digits.slice(-10) : "";
+}
+
+export function currentDraftScope(
+  storage: Storage | null = typeof window !== "undefined" ? window.sessionStorage : null,
+): string {
+  try {
+    const phone = normalizePhone(storage?.getItem("verified_phone"));
+    return phone || ANON_DRAFT_SCOPE;
+  } catch {
+    return ANON_DRAFT_SCOPE;
+  }
+}
+
+function getDraftKey(step: Step, scope?: string) {
+  return `${DRAFT_PREFIX}${scope ?? currentDraftScope()}:${step}`;
+}
+
+// Drafts written before OTP belong to whoever was at the keyboard, and that is
+// the person who just verified. Moving them keeps a mid-application OTP from
+// wiping what they typed; anything already under the phone wins, because a
+// stale anon draft must never overwrite the real one.
+export function adoptAnonDrafts(
+  scope: string,
+  storage: Storage | null = typeof window !== "undefined" ? window.localStorage : null,
+) {
+  if (!storage || !scope || scope === ANON_DRAFT_SCOPE) return;
+  for (const step of [1, 3, 4] as Step[]) {
+    try {
+      const anonKey = getDraftKey(step, ANON_DRAFT_SCOPE);
+      const raw = storage.getItem(anonKey);
+      if (!raw) continue;
+      if (!storage.getItem(getDraftKey(step, scope))) {
+        storage.setItem(getDraftKey(step, scope), raw);
+      }
+      storage.removeItem(anonKey);
+    } catch {
+      // A storage failure must not block the applicant.
+    }
+  }
+}
+
+// Everything written under the old unscoped key, from before v161. Left behind
+// it would keep leaking to the next person on the device.
+export function purgeLegacyDrafts(
+  storage: Storage | null = typeof window !== "undefined" ? window.localStorage : null,
+) {
+  if (!storage) return;
+  for (const step of [1, 3, 4]) {
+    try {
+      storage.removeItem(`${DRAFT_PREFIX}${step}`);
+    } catch {}
+  }
 }
 
 export function saveStepData(
