@@ -1,0 +1,38 @@
+name: Native iOS verification
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm --prefix client-app run test:ci
+      - run: npm run build
+      - name: Verify Capacitor web artifact
+        run: test -f client-app/dist/index.html
+      - name: Verify iOS release guardrails
+        run: python3 scripts/verify-ios-release.py
+      - run: npx cap sync ios
+        working-directory: client-app
+      - name: Resolve Swift package dependencies
+        run: >-
+          xcodebuild
+          -resolvePackageDependencies
+          -project client-app/ios/App/App.xcodeproj
+          -scheme App
+      - name: Build unsigned iOS Simulator app
+        run: >-
+          xcodebuild
+          -project client-app/ios/App/App.xcodeproj
+          -scheme App
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -configuration Debug
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          clean build

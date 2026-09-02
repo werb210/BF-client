@@ -2,6 +2,21 @@
 
 Statuses are deliberately limited to **READY**, **NEEDS CREDENTIALS**, and **NEEDS MANUAL STORE SETUP**.
 
+## Verified platform state
+
+- **Product:** Boreal Financial Client
+- **Bundle ID:** `com.boreal.client`
+- **Supported:** iPhone, iPad, and Android
+- **iOS code state:** Unsigned simulator build verified by CI
+- **Android code state:** Debug APK build verified by CI
+
+An Apple Developer account is still required for production signing,
+provisioning, APNs production credentials, App Store Connect, TestFlight, and
+physical-device deployment. These credentials are not claimed to exist.
+
+An Android release still requires a production signing key, Play Console
+release configuration, and final release assets where applicable.
+
 ## iOS
 
 | Item | Status | Evidence / remaining action |
