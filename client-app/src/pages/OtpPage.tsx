@@ -10,6 +10,7 @@ import { startOtp, verifyOtp } from "@/api/auth";
 import { ClientProfileStore } from "@/state/clientProfiles";
 import { tokens, components } from "@/styles";
 import { normalizePhone } from "@/utils/normalizePhone";
+import { identifyClarity } from "@/utils/analytics"; // BF_CLIENT_CLARITY_IDENTIFY_v162
 
 type Step = "phone" | "code";
 
@@ -87,6 +88,9 @@ export default function OtpPage() {
       // verified phone for Step1_KYC to use on phone-based prefill lookup.
       try {
         sessionStorage.setItem("verified_phone", formatted);
+        // BF_CLIENT_CLARITY_IDENTIFY_v162 - tag the Clarity session with this
+        // verified phone so staff can locate the recording from the CRM record.
+        identifyClarity(formatted);
         // BF_CLIENT_DRAFT_SCOPED_v161 - drafts are keyed by the verified phone
         // from here on. Adopt anything typed before verifying, and drop the old
         // unscoped keys that were shared with everyone else on this browser.

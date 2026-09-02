@@ -10,6 +10,25 @@ export function track(event: string) {
   }
 }
 
+// BF_CLIENT_CLARITY_IDENTIFY_v162
+// Tag the Clarity session with the applicant's verified phone so staff can find
+// this person's recording in the Clarity dashboard from their CRM record.
+// `identify` sets the searchable custom id; `set` adds a filterable tag under a
+// stable key. No-op (and never throws) when Clarity is not loaded on the page.
+export function identifyClarity(phone: string): void {
+  try {
+    const c =
+      typeof window !== "undefined" ? (window as any).clarity : undefined;
+    if (typeof c !== "function") return;
+    const digits = String(phone ?? "").replace(/[^0-9]/g, "");
+    if (!digits) return;
+    c("identify", digits);
+    c("set", "phone", digits);
+  } catch {
+    // Analytics must never interrupt the applicant flow.
+  }
+}
+
 // ---- Client Attribution Sync ----
 
 // ---- Consent Sync Layer ----
