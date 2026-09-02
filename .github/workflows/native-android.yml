@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: 21 }
       - run: npm ci
       - run: npm run typecheck
@@ -17,5 +17,9 @@ jobs:
       - run: npm run build
       - run: npx cap sync android
         working-directory: client-app
-      - run: ./gradlew assembleDebug
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x ./gradlew
+        working-directory: client-app/android
+      - name: Build Android debug APK
+        run: ./gradlew assembleDebug
         working-directory: client-app/android
