@@ -12,6 +12,7 @@ import "./theme/global.css";
 import "./styles/global.css";
 import App from "./App";
 import { captureAttribution } from "./lib/attribution";
+import { initClarity } from "./lib/clarity"; // BF_CLIENT_CLARITY_LOADER_v163
 import { startJourney } from "./lib/journey"; // BF_CLIENT_JOURNEY_BOOT_v185
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
@@ -36,6 +37,7 @@ async function boot() {
 await hydrateToken();
 startJourney();
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
+initClarity(); // BF_CLIENT_CLARITY_LOADER_v163 - start session recording early
 
 console.log("NEW BUILD LIVE:", new Date().toISOString());
 
