@@ -699,17 +699,21 @@ export function Step1_KYC(): JSX.Element {
       // BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA path, so it cannot gate
       // Continue there.
       industry: !isStartupPathKyc(values) && !Validate.required(values.industry),
-      purposeOfFunds: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
-      salesHistory: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
-      revenueLast12Months: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
+      purposeOfFunds: false, // optional on both gate and schema
+      // BF_CLIENT_STEP1_GATE_SCHEMA_ALIGN_v168 - the schema (v212) requires these
+      // off the startup path. Gate them the same way so Continue never advances a
+      // form that startApplication's Zod check will then reject. They stay exempt
+      // on the startup path, exactly as the schema's onStartupPath branch does.
+      salesHistory: !isStartupPathKyc(values) && !Validate.required(values.salesHistory),
+      revenueLast12Months: !isStartupPathKyc(values) && !Validate.required(values.revenueLast12Months),
       // BF_CLIENT_STEP1_HARDSTOPS_v187 - the floor gates Continue in Canada only.
       // BF_CLIENT_STEP1_REQUIRED_v188 - startup path cannot bypass the CA floor.
       monthlyRevenue: (isStartupPathKyc(values) && countryCode !== "CA")
         ? false
         : !Validate.required(values.monthlyRevenue) ||
           (values.monthlyRevenue === "Under $10,000" && countryCode === "CA"),
-      accountsReceivable: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
-      fixedAssets: false, // BF_CLIENT_STEP1_REQUIRED_v188 - optional
+      accountsReceivable: !isStartupPathKyc(values) && !Validate.required(values.accountsReceivable),
+      fixedAssets: !isStartupPathKyc(values) && !Validate.required(values.fixedAssets),
     };
   }
 
@@ -726,6 +730,12 @@ export function Step1_KYC(): JSX.Element {
     businessLocation: "your business location",
     industry: "your industry",
     monthlyRevenue: "your average monthly revenue",
+    // BF_CLIENT_STEP1_GATE_SCHEMA_ALIGN_v168 - labels for the fields the gate now
+    // enforces off the startup path, so the summary reads in plain language.
+    salesHistory: "how long you have been in business",
+    revenueLast12Months: "your annual revenue",
+    accountsReceivable: "your accounts receivable",
+    fixedAssets: "the value of your fixed assets",
   };
   const missingFieldLabels = Object.entries(fieldErrors)
     .filter(([, bad]) => bad)

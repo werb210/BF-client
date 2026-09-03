@@ -43,12 +43,10 @@ export const step1Schema = z
   })
   .strict()
   // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — kept, widened by v212.
-  // BF_CLIENT_STEP1_SCHEMA_GATE_ALIGN_v164 - the Continue gate only requires
-  // industry (off startup) and monthly revenue. salesHistoryYears,
-  // annualRevenueRange, accountsReceivableRange and fixedAssetsValueRange are
-  // OPTIONAL in the gate (v188), so requiring them here rejected forms the gate
-  // had already passed - the reported Step 1 ZOD VALIDATION FAILED. Require only
-  // what the gate requires.
+  // BF_CLIENT_STEP1_GATE_SCHEMA_ALIGN_v168 - the schema requires these off the
+  // startup path (v212). The Continue gate (getStepErrors) is aligned to require
+  // the same set, so a form the gate passes always passes the schema - no more
+  // silent Step 1 ZOD failure. purposeOfFunds stays optional on both sides.
   .superRefine((data, ctx) => {
     const onStartupPath =
       startupPurposes.has(String(data.purposeOfFunds ?? "").trim()) ||
@@ -57,7 +55,11 @@ export const step1Schema = z
 
     for (const field of [
       "industry",
+      "salesHistoryYears",
+      "annualRevenueRange",
       "avgMonthlyRevenueRange",
+      "accountsReceivableRange",
+      "fixedAssetsValueRange",
     ] as const) {
       if (!String(data[field] ?? "").trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
