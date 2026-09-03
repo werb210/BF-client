@@ -29,7 +29,10 @@ export const step1Schema = z
     fundingType: nonEmptyString,
     requestedAmount: z.number().positive(),
     businessLocation: nonEmptyString,
-    purposeOfFunds: nonEmptyString,
+    // BF_CLIENT_STEP1_SCHEMA_GATE_ALIGN_v164 - the Continue gate (getStepErrors,
+    // v188) treats purposeOfFunds as optional. The schema required it, so a valid
+    // form still failed startApplication. Match the gate: optional here.
+    purposeOfFunds: z.string(),
     // Conditional: required off the startup path, absent on it. Enforced below.
     industry: z.string(),
     salesHistoryYears: z.string(),
@@ -40,6 +43,12 @@ export const step1Schema = z
   })
   .strict()
   // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — kept, widened by v212.
+  // BF_CLIENT_STEP1_SCHEMA_GATE_ALIGN_v164 - the Continue gate only requires
+  // industry (off startup) and monthly revenue. salesHistoryYears,
+  // annualRevenueRange, accountsReceivableRange and fixedAssetsValueRange are
+  // OPTIONAL in the gate (v188), so requiring them here rejected forms the gate
+  // had already passed - the reported Step 1 ZOD VALIDATION FAILED. Require only
+  // what the gate requires.
   .superRefine((data, ctx) => {
     const onStartupPath =
       startupPurposes.has(String(data.purposeOfFunds ?? "").trim()) ||
@@ -48,11 +57,7 @@ export const step1Schema = z
 
     for (const field of [
       "industry",
-      "salesHistoryYears",
-      "annualRevenueRange",
       "avgMonthlyRevenueRange",
-      "accountsReceivableRange",
-      "fixedAssetsValueRange",
     ] as const) {
       if (!String(data[field] ?? "").trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
