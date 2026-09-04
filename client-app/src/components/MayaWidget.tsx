@@ -139,6 +139,20 @@ export default function MayaWidget() {
     setMessages([{ id: uid("m"), from: "system", message: GREETING }]);
   }, [open, messages.length]);
 
+  // BF_CLIENT_STEP1_TALK_TO_HUMAN_v169 - let any surface open Maya to a specific
+  // screen, e.g. window.dispatchEvent(new CustomEvent("maya:open",{detail:{mode:"lead"}}))
+  // The Step 1 "Talk to a specialist" button uses this to jump straight to the
+  // "an advisor will text you back" callback form.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { mode?: "chat" | "report" | "lead" } | undefined;
+      setOpen(true);
+      if (detail?.mode) setMode(detail.mode);
+    };
+    window.addEventListener("maya:open", onOpen as EventListener);
+    return () => window.removeEventListener("maya:open", onOpen as EventListener);
+  }, []);
+
   // BF_CLIENT_BLOCK_v56 — after a human handoff, poll the shared conversation
   // so the client sees staff replies in the same thread (two-way messenger).
   const seenStaffIds = useRef<Set<string>>(new Set());
