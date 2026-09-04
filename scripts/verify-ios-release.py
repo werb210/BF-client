@@ -51,6 +51,7 @@ for name in ("Debug", "Release"):
         "bundle ID": r"PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.boreal\.client\s*;",
         "iPhone and iPad device family (1,2)": r'TARGETED_DEVICE_FAMILY\s*=\s*"1\s*,\s*2"\s*;',
         "iPhone OS SDK": r"SDKROOT\s*=\s*iphoneos\s*;",
+        "Designed for iPhone/iPad on Mac enabled": r"SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD\s*=\s*YES\s*;",
         "Mac Catalyst disabled": r"SUPPORTS_MACCATALYST\s*=\s*NO\s*;",
     }
     for description, pattern in required_settings.items():
