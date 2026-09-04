@@ -714,10 +714,12 @@ export function Step1_KYC(): JSX.Element {
       // Continue - that gate/schema mismatch was the reported Step 1 abandonment.
       salesHistory: false,
       revenueLast12Months: false,
-      // BF_CLIENT_STEP1_SPLIT_v169 - monthly revenue is optional to ANSWER, but if
-      // they explicitly pick the below-floor band in Canada it still hard-stops
-      // (reported to the CRM via reportWizardBlock). Blank never blocks.
-      monthlyRevenue: values.monthlyRevenue === "Under $10,000" && countryCode === "CA",
+      // BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - in Canada avg monthly revenue
+      // is required (lender panel needs it; the <$10k floor can't be assessed
+      // without it): blank OR the below-floor band both block. Optional in the US.
+      monthlyRevenue: countryCode === "CA"
+        ? (!Validate.required(values.monthlyRevenue) || values.monthlyRevenue === "Under $10,000")
+        : false,
       accountsReceivable: false,
       fixedAssets: false,
     };
@@ -1363,6 +1365,52 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
+            {/* BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - avg monthly revenue is a
+                required matching question in Canada (gate + CA floor), so it sits
+                in the required section. Hidden on the SBA / Start-up path exactly
+                as it was before; optional in the US. */}
+            <div
+              data-error={showErrors && fieldErrors.monthlyRevenue}
+              style={{ display: onSbaStartupPath ? "none" : undefined }}
+            >
+              <label style={components.form.label}>
+                Avg monthly revenue (last 3 months)
+              </label>
+              <Select
+                id={getWizardFieldId("step1", "monthlyRevenue")}
+                value={app.kyc.monthlyRevenue || ""}
+                onChange={(e: unknown) => {
+                  const value = e.target.value;
+                  // BF_CLIENT_STEP1_HARDSTOPS_v187 - the under-$10K/month floor is a
+                  // Canadian lender-panel constraint; US low-revenue applicants are
+                  // fundable via SBA and must not be stopped. The selection is kept.
+                  if (value === "Under $10,000" && countryCode === "CA") {
+                    setShowMinRevenueModal(true);
+                    update({ kyc: { ...app.kyc, monthlyRevenue: value } });
+                    reportWizardBlock("ca_under_10k_monthly_revenue", {
+                      country: countryCode,
+                      monthlyRevenue: value,
+                    });
+                    return;
+                  }
+                  const nextKyc = { ...app.kyc, monthlyRevenue: value };
+                  update({ kyc: nextKyc });
+                  handleAutoAdvance("monthlyRevenue", nextKyc);
+                }}
+                hasError={showErrors && fieldErrors.monthlyRevenue}
+              >
+                <option value="">Average monthly revenue</option>
+                {MonthlyRevenueOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </Select>
+              {showErrors && fieldErrors.monthlyRevenue && (
+                <div style={components.form.errorText}>Select monthly revenue.</div>
+              )}
+            </div>
+
             {/* BF_CLIENT_STEP1_SPLIT_v169 - optional lender-routing questions */}
             <div style={{ gridColumn: "1 / -1", display: onSbaStartupPath ? "none" : undefined }}>
               <div style={{ ...components.form.label, fontWeight: 700, marginBottom: 0 }}>
@@ -1429,52 +1477,8 @@ export function Step1_KYC(): JSX.Element {
                 <div style={components.form.errorText}>Select a revenue range.</div>
               )}
             </div>
-            <div data-error={showErrors && fieldErrors.monthlyRevenue}>
-              <label style={components.form.label}>
-                Avg monthly revenue (last 3 months)
-              </label>
-              <Select
-                id={getWizardFieldId("step1", "monthlyRevenue")}
-                value={app.kyc.monthlyRevenue || ""}
-                onChange={(e: unknown) => {
-                  const value = e.target.value;
-                  // BF_CLIENT_STEP1_HARDSTOPS_v187
-                  // The under-$10K/month floor is a CANADIAN lender-panel constraint.
-                  // In the US, SBA lending is built for exactly this applicant, so a
-                  // US business under $10K/month is fundable and must not be stopped.
-                  // This previously fired on the revenue value alone, turning away
-                  // every low-revenue US applicant the panel could have placed.
-                  //
-                  // It also used to blank the field while showing the modal, so the
-                  // answer was destroyed as well as blocked. The selection is kept.
-                  if (value === "Under $10,000" && countryCode === "CA") {
-                    setShowMinRevenueModal(true);
-                    update({ kyc: { ...app.kyc, monthlyRevenue: value } });
-                    // BF_CLIENT_REPORT_BLOCK_v154 - the only point at which this
-                    // answer is known to anyone but the applicant.
-                    reportWizardBlock("ca_under_10k_monthly_revenue", {
-                      country: countryCode,
-                      monthlyRevenue: value,
-                    });
-                    return;
-                  }
-                  const nextKyc = { ...app.kyc, monthlyRevenue: value };
-                  update({ kyc: nextKyc });
-                  handleAutoAdvance("monthlyRevenue", nextKyc);
-                }}
-                hasError={showErrors && fieldErrors.monthlyRevenue}
-              >
-                <option value="">Average monthly revenue</option>
-                {MonthlyRevenueOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </Select>
-              {showErrors && fieldErrors.monthlyRevenue && (
-                <div style={components.form.errorText}>Select monthly revenue.</div>
-              )}
-            </div>
+            {/* BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - avg monthly revenue moved
+                up into the required section (it is required in Canada). */}
               </>
             )}
               {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}

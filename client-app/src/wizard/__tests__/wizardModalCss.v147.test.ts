@@ -44,7 +44,10 @@ describe("it renders as an overlay, not as text at the bottom of the page", () =
 
 describe("the hard stops it explains", () => {
   it("the Canadian revenue floor still gates Continue - the fix is visibility, not policy", () => {
-    expect(step1).toContain('values.monthlyRevenue === "Under $10,000" && countryCode === "CA"');
+    // BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - the gate is now a CA-required
+    // ternary; the below-floor band still blocks in Canada (and blank does too).
+    expect(step1).toContain('values.monthlyRevenue === "Under $10,000"');
+    expect(step1).toContain('countryCode === "CA"');
   });
 
   it("and the answer is still kept, so staff can see what they picked", () => {
