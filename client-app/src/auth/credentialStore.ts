@@ -14,7 +14,9 @@ function browserStorage(): Storage | undefined {
 
 export const credentialStore = {
   async get(): Promise<string | null> {
-    if (Capacitor.isNativePlatform()) return (await SecureCredentials.get()).value;
+    if (Capacitor.isNativePlatform()) {
+      try { return (await SecureCredentials.get()).value; } catch { return null; }
+    }
     try { return browserStorage()?.getItem(KEY) ?? null; } catch { return null; }
   },
   async set(value: string): Promise<void> {

@@ -139,6 +139,59 @@ for required_path in (
     if not required_path.exists():
         raise SystemExit(f"Missing post-sync iOS artifact: {required_path}")
 
+# App-local native plugins must be registered by the initial bridge controller.
+bridge_controller_path = Path(
+    "client-app/ios/App/App/BorealBridgeViewController.swift"
+)
+if not bridge_controller_path.is_file():
+    raise SystemExit(f"Missing app bridge controller: {bridge_controller_path}")
+bridge_controller = bridge_controller_path.read_text(encoding="utf-8")
+if "registerPluginInstance(SecureCredentialsPlugin())" not in bridge_controller:
+    raise SystemExit(
+        "BorealBridgeViewController must register a SecureCredentialsPlugin instance"
+    )
+
+source_phase_ids = (
+    re.findall(r"([A-F0-9]+) /\* Sources \*/", phase_ids_match.group(1))
+    if phase_ids_match
+    else []
+)
+if not source_phase_ids:
+    raise SystemExit("App target is missing its Sources build phase")
+sources = "\n".join(
+    object_body(phase_id, "App Sources build phase")
+    for phase_id in source_phase_ids
+)
+for source in (
+    "BorealBridgeViewController.swift",
+    "SecureCredentialsPlugin.swift",
+):
+    if not re.search(rf"/\* {re.escape(source)} in Sources \*/", sources):
+        raise SystemExit(f"{source} is not included in App target Sources")
+
+storyboard_path = Path("client-app/ios/App/App/Base.lproj/Main.storyboard")
+if not storyboard_path.is_file():
+    raise SystemExit(f"Missing main storyboard: {storyboard_path}")
+storyboard = storyboard_path.read_text(encoding="utf-8")
+initial_id_match = re.search(r'initialViewController="([^"]+)"', storyboard)
+if not initial_id_match:
+    raise SystemExit("Main.storyboard has no initial view controller")
+initial_controller_match = re.search(
+    rf'<viewController\b(?=[^>]*\bid="{re.escape(initial_id_match.group(1))}")[^>]*/?>',
+    storyboard,
+)
+if not initial_controller_match:
+    raise SystemExit("Could not locate the Main.storyboard initial view controller")
+initial_controller = initial_controller_match.group(0)
+if not re.search(r'customClass="BorealBridgeViewController"', initial_controller):
+    raise SystemExit(
+        "Main.storyboard initial view controller must use BorealBridgeViewController"
+    )
+if re.search(r'customClass="CAPBridgeViewController"', initial_controller):
+    raise SystemExit(
+        "Main.storyboard initial view controller must not use CAPBridgeViewController"
+    )
+
 config_paths = sorted(Path("client-app").glob("capacitor.config.*"))
 if not config_paths:
     raise SystemExit("Missing client-app/capacitor.config.*")

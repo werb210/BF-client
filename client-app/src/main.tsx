@@ -34,7 +34,14 @@ try {
 // journey session id and creates the server-side visitor_sessions row. It must run
 // first so captureAttribution finds the id and forwards it to the server at start.
 async function boot() {
-await hydrateToken();
+try {
+  await hydrateToken();
+} catch (error) {
+  console.error(
+    "Native credential hydration failed; continuing unauthenticated",
+    error
+  );
+}
 startJourney();
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
 initClarity(); // BF_CLIENT_CLARITY_LOADER_v163 - start session recording early
