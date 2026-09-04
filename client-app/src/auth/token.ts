@@ -5,17 +5,11 @@ let token: string | null = null;
 
 export async function hydrateToken(): Promise<void> {
   token = await credentialStore.get();
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const legacy = localStorage.getItem("auth_token") || localStorage.getItem(STORAGE_KEY);
-      if (!token && legacy) { token = legacy; await credentialStore.set(legacy); }
-      localStorage.removeItem("auth_token"); localStorage.removeItem(STORAGE_KEY);
-    } catch { /* WebView storage may be disabled. */ }
-  }
 }
 
 export function getToken(): string | null {
   if (token) return token;
+  if (Capacitor.isNativePlatform()) return null;
   if (typeof window === "undefined") return null;
   // BF_CLIENT_BLOCK_v865_STORAGE_SAFE — getToken() is called by the API client
   // on EVERY request, including the submit POST. Blocked localStorage must not
@@ -39,7 +33,9 @@ export function getToken(): string | null {
 
 export function setToken(t: string): void {
   token = t;
-  void credentialStore.set(t);
+  void credentialStore.set(t).catch((error) => {
+    console.error("Secure credential persistence failed", error);
+  });
   if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
@@ -53,7 +49,9 @@ export function setToken(t: string): void {
 
 export function clearToken(): void {
   token = null;
-  void credentialStore.clear();
+  void credentialStore.clear().catch((error) => {
+    console.error("Secure credential clear failed", error);
+  });
   if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
