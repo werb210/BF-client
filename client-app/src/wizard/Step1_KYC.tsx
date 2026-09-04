@@ -36,6 +36,7 @@ import { setReadiness, useReadiness } from "../state/readinessStore";
 import { persistApplicationStep } from "./saveStepProgress";
 import { fetchCreditPrefill } from "../services/creditPrefill";
 import { getAttribution } from "../lib/attribution";
+import { getClarityPlaybackUrl } from "../lib/clarityPlayback"; // BF_CLIENT_CLARITY_PLAYBACK_v170
 import { fetchReadinessPrefill } from "@/api/readiness";
 import { ENV } from "@/env"; // BF_CLIENT_REPORT_BLOCK_v154
 
@@ -865,6 +866,13 @@ export function Step1_KYC(): JSX.Element {
           // The server persists them onto the draft so an abandoned Step 1 shows
           // country / monthly revenue / amount in the funnel instead of blanks.
           __startBody.financialProfile = payload;
+          // BF_CLIENT_CLARITY_PLAYBACK_v170 - capture this session's Clarity player
+          // URL (cookies are set by now) so staff can open the recording from the
+          // CRM. Omitted when Clarity isn't recording (blocked / cookieless).
+          try {
+            const __clarityUrl = getClarityPlaybackUrl();
+            if (__clarityUrl) __startBody.clarityPlaybackUrl = __clarityUrl;
+          } catch { /* analytics capture must never block the mint */ }
           const __res = await fetch(__startUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
