@@ -234,7 +234,13 @@ export function Step1_KYC(): JSX.Element {
         sessionKey: blockSessionRef.current,
         applicationToken: app.applicationToken ?? null,
         leadId: app.readinessLeadId ?? null,
-        phone: (app.kyc as any)?.phone ?? (app.applicant as any)?.phone ?? null,
+        phone:
+          (app.kyc as any)?.phone ??
+          (app.applicant as any)?.phone ??
+          // BF_CLIENT_STEP1_SPLIT_v169 - fall back to the OTP-verified phone so the
+          // block reliably matches a contact and lands on the CRM timeline.
+          (() => { try { return sessionStorage.getItem("verified_phone"); } catch { return null; } })() ??
+          null,
         ...detail,
       });
       // keepalive so it still goes if they close the tab on being turned away,
@@ -699,21 +705,20 @@ export function Step1_KYC(): JSX.Element {
       // BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA path, so it cannot gate
       // Continue there.
       industry: !isStartupPathKyc(values) && !Validate.required(values.industry),
-      purposeOfFunds: false, // optional on both gate and schema
-      // BF_CLIENT_STEP1_GATE_SCHEMA_ALIGN_v168 - the schema (v212) requires these
-      // off the startup path. Gate them the same way so Continue never advances a
-      // form that startApplication's Zod check will then reject. They stay exempt
-      // on the startup path, exactly as the schema's onStartupPath branch does.
-      salesHistory: !isStartupPathKyc(values) && !Validate.required(values.salesHistory),
-      revenueLast12Months: !isStartupPathKyc(values) && !Validate.required(values.revenueLast12Months),
-      // BF_CLIENT_STEP1_HARDSTOPS_v187 - the floor gates Continue in Canada only.
-      // BF_CLIENT_STEP1_REQUIRED_v188 - startup path cannot bypass the CA floor.
-      monthlyRevenue: (isStartupPathKyc(values) && countryCode !== "CA")
-        ? false
-        : !Validate.required(values.monthlyRevenue) ||
-          (values.monthlyRevenue === "Under $10,000" && countryCode === "CA"),
-      accountsReceivable: !isStartupPathKyc(values) && !Validate.required(values.accountsReceivable),
-      fixedAssets: !isStartupPathKyc(values) && !Validate.required(values.fixedAssets),
+      // BF_CLIENT_STEP1_SPLIT_v169 - purpose is one of the five REQUIRED matching
+      // questions.
+      purposeOfFunds: !Validate.required(values.purposeOfFunds),
+      // BF_CLIENT_STEP1_SPLIT_v169 - the financial detail questions are OPTIONAL
+      // (they only help lender routing). Leaving them blank must not block
+      // Continue - that gate/schema mismatch was the reported Step 1 abandonment.
+      salesHistory: false,
+      revenueLast12Months: false,
+      // BF_CLIENT_STEP1_SPLIT_v169 - monthly revenue is optional to ANSWER, but if
+      // they explicitly pick the below-floor band in Canada it still hard-stops
+      // (reported to the CRM via reportWizardBlock). Blank never blocks.
+      monthlyRevenue: values.monthlyRevenue === "Under $10,000" && countryCode === "CA",
+      accountsReceivable: false,
+      fixedAssets: false,
     };
   }
 
@@ -988,6 +993,33 @@ export function Step1_KYC(): JSX.Element {
       <WizardLayout>
       <div className="wizard-step-shell">
         <StepHeader step={1} title="Financial Profile" subtitle="Tell us what you need so we can match you to the right lenders." />
+        {/* BF_CLIENT_STEP1_TALK_TO_HUMAN_v169 - a human escape hatch at the top of
+            Step 1: opens Maya straight to the "an advisor will text you back"
+            callback screen so someone unsure of their options reaches a person
+            instead of abandoning. */}
+        <div style={{ marginTop: `-${tokens.spacing.sm}`, marginBottom: tokens.spacing.md }}>
+          <button
+            type="button"
+            data-testid="step1-talk-to-specialist"
+            onClick={() => {
+              try {
+                window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "lead" } }));
+              } catch { /* never let the escape hatch throw */ }
+            }}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--boreal-gold, #C8A24B)",
+              color: "var(--boreal-blue, #0B1F3A)",
+              borderRadius: 8,
+              padding: "6px 14px",
+              font: "inherit",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Questions? Talk to a specialist
+          </button>
+        </div>
         {submitError && (
           <Card variant="muted" data-error={true}>
             <div style={components.form.errorText}>{submitError}</div>
@@ -1020,6 +1052,12 @@ export function Step1_KYC(): JSX.Element {
           onBlurCapture={() => saveStepData(1, app.kyc)}
         >
           <div style={fieldGridStyle}>
+            {/* BF_CLIENT_STEP1_SPLIT_v169 - required matching questions */}
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ ...components.form.label, fontWeight: 700, marginBottom: 0 }}>
+                These questions are required to find the best options for you.
+              </div>
+            </div>
             <div data-error={showErrors && fieldErrors.lookingFor}>
               <label style={components.form.label}>What are you looking for?</label>
               <Select
@@ -1317,6 +1355,12 @@ export function Step1_KYC(): JSX.Element {
               )}
             </div>
 
+            {/* BF_CLIENT_STEP1_SPLIT_v169 - optional lender-routing questions */}
+            <div style={{ gridColumn: "1 / -1", display: onSbaStartupPath ? "none" : undefined }}>
+              <div style={{ ...components.form.label, fontWeight: 700, marginBottom: 0 }}>
+                Optional, but they help us get your application in front of the right lenders.
+              </div>
+            </div>
             {/* BF_CLIENT_SBA_REDUCED_v191 - retain answers when the path changes */}
             <div
               data-error={showErrors && fieldErrors.salesHistory}

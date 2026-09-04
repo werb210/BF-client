@@ -29,11 +29,10 @@ export const step1Schema = z
     fundingType: nonEmptyString,
     requestedAmount: z.number().positive(),
     businessLocation: nonEmptyString,
-    // BF_CLIENT_STEP1_SCHEMA_GATE_ALIGN_v164 - the Continue gate (getStepErrors,
-    // v188) treats purposeOfFunds as optional. The schema required it, so a valid
-    // form still failed startApplication. Match the gate: optional here.
-    purposeOfFunds: z.string(),
-    // Conditional: required off the startup path, absent on it. Enforced below.
+    // BF_CLIENT_STEP1_SPLIT_v169 - purpose is a required matching question again.
+    purposeOfFunds: nonEmptyString,
+    // Conditional: industry is required off the startup path. The financial
+    // detail fields below are OPTIONAL (v169) - they only help lender routing.
     industry: z.string(),
     salesHistoryYears: z.string(),
     annualRevenueRange: z.string(),
@@ -43,24 +42,18 @@ export const step1Schema = z
   })
   .strict()
   // BF_CLIENT_BLOCK_v720_STARTUP_NO_REVENUE_v1 — kept, widened by v212.
-  // BF_CLIENT_STEP1_GATE_SCHEMA_ALIGN_v168 - the schema requires these off the
-  // startup path (v212). The Continue gate (getStepErrors) is aligned to require
-  // the same set, so a form the gate passes always passes the schema - no more
-  // silent Step 1 ZOD failure. purposeOfFunds stays optional on both sides.
+  // BF_CLIENT_STEP1_SPLIT_v169 - Step 1 is split into required matching questions
+  // and optional financial-detail questions. Only industry is a conditional
+  // required field off the startup path; salesHistoryYears, annualRevenueRange,
+  // avgMonthlyRevenueRange, accountsReceivableRange and fixedAssetsValueRange are
+  // optional (the Continue gate matches, so no silent Zod rejection).
   .superRefine((data, ctx) => {
     const onStartupPath =
       startupPurposes.has(String(data.purposeOfFunds ?? "").trim()) ||
       data.salesHistoryYears === "Zero";
     if (onStartupPath) return;
 
-    for (const field of [
-      "industry",
-      "salesHistoryYears",
-      "annualRevenueRange",
-      "avgMonthlyRevenueRange",
-      "accountsReceivableRange",
-      "fixedAssetsValueRange",
-    ] as const) {
+    for (const field of ["industry"] as const) {
       if (!String(data[field] ?? "").trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: "Required" });
       }

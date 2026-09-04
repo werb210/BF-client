@@ -72,7 +72,7 @@ describe("v720 startup revenue schema", () => {
     expect(() => enforceV1StepSchema("step1", startupKyc)).not.toThrow();
   });
 
-  it("still requires revenue ranges for non-startup applicants", () => {
+  it("no longer requires revenue ranges for non-startup applicants (optional in v169)", () => {
     const normalKyc = {
       ...baseKyc,
       salesHistory: "Over 3 Years",
@@ -82,6 +82,6 @@ describe("v720 startup revenue schema", () => {
       accountsReceivable: "$500,000 to $1,000,000",
       fixedAssets: "Over $500,000",
     };
-    expect(() => enforceV1StepSchema("step1", normalKyc)).toThrow();
+    expect(() => enforceV1StepSchema("step1", normalKyc)).not.toThrow();
   });
 });

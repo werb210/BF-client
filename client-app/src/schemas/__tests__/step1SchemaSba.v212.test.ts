@@ -57,17 +57,24 @@ describe("normal path is unchanged", () => {
 
   it.each([
     "industry",
-    "salesHistoryYears",
-    "annualRevenueRange",
-    "avgMonthlyRevenueRange",
-    "accountsReceivableRange",
-    "fixedAssetsValueRange",
   ])("still requires %s off the startup path", (field) => {
     const r = step1Schema.safeParse({ ...trading, [field]: "" });
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.error.issues.some((i) => i.path[0] === field)).toBe(true);
     }
+  });
+
+  // BF_CLIENT_STEP1_SPLIT_v169 - the financial-detail questions are optional now;
+  // blanking any of them off the startup path must still pass.
+  it.each([
+    "salesHistoryYears",
+    "annualRevenueRange",
+    "avgMonthlyRevenueRange",
+    "accountsReceivableRange",
+    "fixedAssetsValueRange",
+  ])("no longer requires %s off the startup path (optional in v169)", (field) => {
+    expect(step1Schema.safeParse({ ...trading, [field]: "" }).success).toBe(true);
   });
 
   it("still requires the unconditional fields on both paths", () => {
