@@ -538,6 +538,16 @@ export default function MiniPortalPage() {
     const purpose = String((app as any)?.purposeOfFunds ?? (app as any)?.purpose_of_funds ?? "").toLowerCase();
     return purpose.includes("sba") || purpose.includes("start up") || purpose.includes("start-up");
   })();
+  // BF_CLIENT_QA_FLOW_FIXES_v1 - CRA Authorization is Canada-only; show it unless
+  // the file is clearly US. Collateral forms only where equipment/RE/ABL/SBA apply.
+  const countryIsCanada = (() => {
+    const loc = String((app as any)?.kyc?.businessLocation ?? (app as any)?.businessLocation ?? (app as any)?.country ?? "").toUpperCase();
+    return !(loc.includes("UNITED STATES") || loc === "US" || loc === "USA" || loc.includes("U.S"));
+  })();
+  const collateralRelevant = (() => {
+    const cat = String((app as any)?.productCategory ?? (app as any)?.product_category ?? "").toUpperCase();
+    return isSbaApplication || cat.includes("EQUIPMENT") || cat.includes("ABL") || cat.includes("REAL") || cat.includes("LEASE");
+  })();
 
   const currentStageLabel = STAGES[stageIndex]?.label ?? "";
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — "category · $amount — stage"
@@ -799,6 +809,8 @@ export default function MiniPortalPage() {
                 .filter((c) => c.id !== "upload" || hasOutstandingDocs)
                 // BF_CLIENT_SBA_FORMS_ENTRY_v142
                 .filter((c) => c.id !== "sba_forms" || isSbaApplication)
+                .filter((c) => c.id !== "cra" || countryIsCanada)
+                .filter((c) => (c.id !== "equipment" && c.id !== "realestate") || collateralRelevant)
                 .map((c) => (
                 <button key={c.id} type="button" className="mp-chip mp-chip--action" onClick={() => onChip(c.id)}>
                   {c.label}
