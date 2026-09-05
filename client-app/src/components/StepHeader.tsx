@@ -1,5 +1,8 @@
 import { FieldTips } from "./FieldTips"; // BF_CLIENT_FIELD_TIPS_v1
 import { components, tokens } from "@/styles";
+// BF_CLIENT_QA_FLOW_FIXES_v1
+import { useApplicationStore } from "@/state/useApplicationStore";
+import { isStartupPathKyc } from "@/wizard/wizardSchema";
 
 // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_DESIGN_v1 — Direction A "Refined Cards":
 // dark header band with a blue progress fill, labeled 6-dot stepper, blue
@@ -16,6 +19,10 @@ type StepHeaderProps = {
 export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeaderProps) {
   // BF_CLIENT_FIELD_TIPS_v1 - every wizard step renders StepHeader, so
   // mounting the tips decorator here covers all steps with one edit.
+  // BF_CLIENT_QA_FLOW_FIXES_v1 - on the SBA / Start-up path the wizard skips
+  // Product (2) and Docs (5); show them as skipped, not completed.
+  const { app } = useApplicationStore();
+  const skipped = new Set<number>(isStartupPathKyc(app.kyc as Record<string, unknown>) ? [2, 5] : []);
   const pct = Math.max(0, Math.min(1, (step - 1) / (totalSteps - 1))) * 100;
   return (
     <>
@@ -42,7 +49,8 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
         <div style={{ display: "flex", alignItems: "flex-start", marginBottom: tokens.spacing.lg }}>
           {STEP_LABELS.slice(0, totalSteps).map((label, i) => {
             const n = i + 1;
-            const done = n < step;
+            const isSkipped = skipped.has(n);
+            const done = !isSkipped && n < step;
             const cur = n === step;
             const on = done || cur;
             return (
@@ -57,7 +65,7 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
                   color: on ? tokens.colors.surface : tokens.colors.textSecondary,
                   border: `2px solid ${on ? tokens.colors.primary : tokens.colors.border}`,
                   boxShadow: cur ? tokens.shadows.focus : "none",
-                }}>{done ? "\u2713" : n}</div>
+                }}>{isSkipped ? "\u2013" : done ? "\u2713" : n}</div>
                 <div style={{ fontSize: 10, fontWeight: 600, textAlign: "center", color: on ? tokens.colors.textPrimary : tokens.colors.textSecondary }}>{label}</div>
               </div>
             );
