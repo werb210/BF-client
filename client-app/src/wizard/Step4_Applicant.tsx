@@ -1000,6 +1000,10 @@ export function Step4_Applicant() {
                   }}
                   aria-disabled={!isValid}
                 >{onSba ? "Continue to Review →" : "Continue to Documents →"}</Button>
+                  {/* BF_CLIENT_UX6_SBA_DOCS_NOTE_v1 */}
+                  {onSba && (
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 8, textAlign: "center" }}>On the SBA path, documents are collected after you submit &mdash; you&rsquo;ll see the checklist on your portal.</div>
+                  )}
               </div>
             </div>
           </div>

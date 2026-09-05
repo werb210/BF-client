@@ -1126,6 +1126,8 @@ export function Step1_KYC(): JSX.Element {
               }
               if (intent === "BOTH") {
                 return (<>
+                  {/* BF_CLIENT_UX2_DUAL_AMOUNT_HELP_v1 */}
+                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>Enter the two amounts separately &mdash; the working-capital portion and the equipment cost. They don&rsquo;t need to add up to a single total.</div>
                               <div data-error={showErrors && fieldErrors.fundingAmount}>
               {/* BF_CLIENT_BOTH_INTENT_LABELS_v1 - combined intent must split
                   the two amounts unambiguously: capital here, equipment below. */}
