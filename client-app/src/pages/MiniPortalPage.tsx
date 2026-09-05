@@ -560,7 +560,9 @@ export default function MiniPortalPage() {
     const amtStr = Number.isFinite(amt) && amt > 0 ? ` \u00b7 $${amt.toLocaleString()}` : "";
     const stageRaw = String(a?.pipeline_state ?? "").trim();
     const stage = /^draft$/i.test(stageRaw) ? "Draft" : stageRaw;
-    return `${cat ? prettyCategory(cat) : "Application"}${amtStr}${stage ? ` \u2014 ${stage}` : ""}`;
+    const biz = String(a?.business_name ?? a?.businessName ?? a?.legal_business_name ?? "").trim();
+    const idSuffix = String(a?.id ?? "").slice(-4).toUpperCase();
+    return `${biz ? biz + " \u00b7 " : ""}${cat ? prettyCategory(cat) : "Application"}${amtStr}${stage ? ` \u2014 ${stage}` : ""}${idSuffix ? " \u00b7 #" + idSuffix : ""}`;
   };
   const shortId = applicationId
     ? applicationId.length > 8
