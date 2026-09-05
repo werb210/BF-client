@@ -129,7 +129,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
       {isAccordLOC && (
         <div><label style={L}>Title / Role</label>
           <select value={data.title || ""} onChange={(e) => setField("title", e.target.value)}>
-            <option value="">—</option><option value="Owner/Operator">Owner/Operator</option><option value="Partner">Partner</option><option value="President">President</option><option value="Director">Director</option><option value="Officer">Officer</option><option value="CEO">CEO</option><option value="CFO">CFO</option><option value="Secretary">Secretary</option><option value="Treasurer">Treasurer</option><option value="Other">Other</option>
+            <option value="">Select a title...</option><option value="Owner/Operator">Owner/Operator</option><option value="Partner">Partner</option><option value="President">President</option><option value="Director">Director</option><option value="Officer">Officer</option><option value="CEO">CEO</option><option value="CFO">CFO</option><option value="Secretary">Secretary</option><option value="Treasurer">Treasurer</option><option value="Other">Other</option>
           </select>
         </div>
       )}
