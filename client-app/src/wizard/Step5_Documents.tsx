@@ -49,6 +49,8 @@ import { enqueueUploadFromFile } from "../lib/uploadQueue";
 import AccountantReferralModal, {
   type AccountantDetails,
 } from "@/components/AccountantReferralModal";
+import { Capacitor } from "@capacitor/core";
+import { scanDocumentAsPdf } from "../native/documentScanner";
 
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 // The hardcoded "every applicant must upload contracts/invoices/tax_returns"
@@ -69,6 +71,7 @@ const RequirementRow = memo(function RequirementRow({
   progress,
   onPick,
   onDrop,
+  onScan,
   docStatus,
   submitAttempted,
 }) {
@@ -137,6 +140,18 @@ const RequirementRow = memo(function RequirementRow({
             that the picker accepts multiple files at once. */}
           Upload files
         </Button>
+        {Capacitor.isNativePlatform() ? (
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={isUploading}
+            onClick={() => onScan(docType)}
+            style={{ width: "100%" }}
+            aria-label={`Scan ${formatDocumentLabel(docType)}`}
+          >
+            Scan
+          </Button>
+        ) : null}
         {isUploading ? <div style={components.form.helperText}>Upload progress: {progress}%</div> : null}
         {app.documents[docType] && (() => {
           const files = ((app.documents[docType] as any)?.files) as Array<{ name: string }> | undefined;
@@ -725,6 +740,16 @@ export function Step5_Documents() {
     setUploadProgress((prev) => ({ ...prev, [docType]: 0 }));
   }
 
+  async function handleScan(docType: string) {
+    try {
+      const file = await scanDocumentAsPdf(docType);
+      if (file) await handleFile(docType, file);
+    } catch {
+      // Cancellation, an unavailable scanner, and native plugin failures leave
+      // the existing picker and any previously uploaded document untouched.
+    }
+  }
+
 
   function next() {
     setSubmitAttempted(true);
@@ -967,6 +992,7 @@ export function Step5_Documents() {
                     submitAttempted={submitAttempted}
                     onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
                     onDrop={handleFile}
+                    onScan={handleScan}
                   />
                 );
               })}
@@ -986,6 +1012,7 @@ export function Step5_Documents() {
               docStatus={getDocStatus("other")}
               onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
               onDrop={handleFile}
+              onScan={handleScan}
             />
           </div>
         </div>
