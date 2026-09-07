@@ -47,7 +47,8 @@
     "@capacitor/status-bar": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
     "@capacitor/keyboard": "^8.0.0",
-    "@aparajita/capacitor-biometric-auth": "^8.0.0"
+    "@aparajita/capacitor-biometric-auth": "^8.0.0",
+    "@herefishyfish/capacitor-plugin-ml-kit-document-scanner": "8.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.0",
