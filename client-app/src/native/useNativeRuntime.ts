@@ -5,6 +5,7 @@ import { Network } from "@capacitor/network";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { useLocation, useNavigate } from "react-router-dom";
 import { parseNativeUrl } from "./deepLinks";
+import { apiPost } from "../lib/api"; // BF_CLIENT_PUSH_REGISTER_v1
 
 /** Owns native listeners in one mount and removes them as a unit on teardown. */
 export function useNativeRuntime(): void {
@@ -38,10 +39,18 @@ export function useNativeRuntime(): void {
       }));
       handles.push(await PushNotifications.addListener("registration", ({ value }) => {
         window.dispatchEvent(new CustomEvent("boreal:push-token", { detail: { token: value } }));
+        // BF_CLIENT_PUSH_REGISTER_v1 - persist the device token so the server can reach this device.
+        void apiPost("/api/push/register-token", { token: value, platform: Capacitor.getPlatform() }).catch(() => {});
       }));
       handles.push(await PushNotifications.addListener("registrationError", (error) => {
         console.error("Native push registration failed", error);
       }));
+      // BF_CLIENT_PUSH_REGISTER_v1 - trigger registration so a device token is issued.
+      try {
+        const perm = await PushNotifications.checkPermissions();
+        const permResult = perm.receive === "prompt" ? await PushNotifications.requestPermissions() : perm;
+        if (permResult.receive === "granted") await PushNotifications.register();
+      } catch { /* non-fatal */ }
       if (disposed) await Promise.all(handles.map((handle) => handle.remove()));
     };
     void add();
