@@ -1,4 +1,5 @@
 import AppRoutes from "./AppRoutes";
+import BiometricGate from "../native/BiometricGate"; // BF_CLIENT_BIOMETRIC_LOCK_v1
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — banner now lives only in
 // WizardLayout. App-level mount removed to prevent doubling.
 // import { OfflineBanner } from "../components/OfflineBanner";
@@ -21,7 +22,9 @@ export default function App() {
       <InstallPromptBanner />
       {/* BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — see import comment */}
       <SessionRefreshOverlay />
-      <AppRoutes />
+      <BiometricGate>
+        <AppRoutes />
+      </BiometricGate>
       <MayaWidget />
     </ErrorBoundary>
   );
