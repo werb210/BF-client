@@ -24,6 +24,7 @@
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@boreal/shared-contract": "file:../shared-contract",
+    "@capacitor-mlkit/document-scanner": "^8.1.1",
     "@capacitor/android": "^8.4.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/app-launcher": "^8.0.0",
