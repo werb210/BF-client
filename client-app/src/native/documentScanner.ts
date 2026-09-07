@@ -1,4 +1,5 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor } from "@capacitor/core";
+import { DocumentScanner } from "@capacitor-mlkit/document-scanner";
 
 type ScanResult = {
   scannedImages?: string[];
@@ -7,11 +8,6 @@ type ScanResult = {
   pdfPath?: string;
 };
 
-type DocumentScannerPlugin = {
-  scanDocument(): Promise<ScanResult>;
-};
-
-const DocumentScanner = registerPlugin<DocumentScannerPlugin>("DocumentScanner");
 const encoder = new TextEncoder();
 
 function appendBytes(parts: Uint8Array[], value: string | Uint8Array) {
