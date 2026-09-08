@@ -1,13 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { DocumentScanner } from "@capacitor-mlkit/document-scanner";
 
-type ScanResult = {
-  scannedImages?: string[];
-  images?: string[];
-  pdf?: string;
-  pdfPath?: string;
-};
-
 const encoder = new TextEncoder();
 
 function appendBytes(parts: Uint8Array[], value: string | Uint8Array) {
@@ -101,9 +94,8 @@ async function imagesToPdf(images: string[]) {
 export async function scanDocumentAsPdf(docType: string): Promise<File | null> {
   if (!Capacitor.isNativePlatform()) return null;
 
-  const result = await DocumentScanner.scanDocument();
-  const pdfLocation = result.pdf ?? result.pdfPath;
-  const pdf = pdfLocation ? await readNativeAsset(pdfLocation) : await imagesToPdf(result.scannedImages ?? result.images ?? []);
+  const result = await DocumentScanner.scanDocument({ pageLimit: 10 });
+  const pdf = await imagesToPdf(result.scannedImages ?? []);
   const safeName = docType.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "document";
   return new File([pdf], `${safeName}-scan.pdf`, { type: "application/pdf" });
 }
