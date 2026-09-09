@@ -1,3 +1,3 @@
-# BF_CLIENT_FLINKS_EMBED_DEMO_v1
+# BF_CLIENT_NOINDEX_v1
 User-agent: *
-Disallow: /flinks-demo
+Disallow: /
