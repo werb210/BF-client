@@ -1,0 +1,47 @@
+// BF_CLIENT_SPLASH_REMOVE_v1
+import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import config from "../../capacitor.config";
+
+const root = path.resolve(__dirname, "../..");
+const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
+
+describe("splash-screen plugin is removed", () => {
+  it("is not a dependency", () => {
+    // SplashScreenPlugin.load() reads bridge?.viewController?.view, which
+    // builds a new CapacitorBridge, which loads the plugin again. No config
+    // value breaks that: showOnLaunch() calls buildViews() before it checks
+    // launchShowDuration.
+    const pkg = JSON.parse(read("package.json"));
+    expect(pkg.dependencies?.["@capacitor/splash-screen"]).toBeUndefined();
+  });
+
+  it("is not imported by any source file", () => {
+    const walk = (dir: string): string[] =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = path.join(dir, e.name);
+        return e.isDirectory() ? walk(full) : /\.tsx?$/.test(e.name) ? [full] : [];
+      });
+    const splashPackage = ["@capacitor", "splash-screen"].join("/");
+    const splashImport = new RegExp(`from\\s+["']${splashPackage}["']`);
+    const offenders = walk(path.join(root, "src"))
+      .filter((f) => splashImport.test(fs.readFileSync(f, "utf8")))
+      .map((f) => path.relative(root, f));
+    expect(offenders).toEqual([]);
+  });
+
+  it("is absent from the Capacitor config", () => {
+    expect(config.plugins?.SplashScreen).toBeUndefined();
+  });
+
+  it("is not registered in the generated native config", () => {
+    const generated = JSON.parse(read("ios/App/App/capacitor.config.json"));
+    expect(generated.packageClassList).not.toContain("SplashScreenPlugin");
+  });
+
+  it("keeps the generated config in step with the source", () => {
+    const generated = JSON.parse(read("ios/App/App/capacitor.config.json"));
+    expect(generated.appId).toBe(config.appId);
+  });
+});
