@@ -7,6 +7,12 @@ import config from "../../capacitor.config";
 const root = path.resolve(__dirname, "../..");
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
 
+// BF_CLIENT_SPLASH_REMOVE_v2
+// v1 copied two assertions from BI-Client that read
+// the generated native Capacitor config. BI-Client commits that file; this repo
+// gitignores it and regenerates it with `cap sync` at build time, so the reads
+// failed with ENOENT on a repo where the removal had in fact worked. The
+// generated-config check belongs only where the file is under version control.
 describe("splash-screen plugin is removed", () => {
   it("is not a dependency", () => {
     // SplashScreenPlugin.load() reads bridge?.viewController?.view, which
@@ -33,15 +39,5 @@ describe("splash-screen plugin is removed", () => {
 
   it("is absent from the Capacitor config", () => {
     expect(config.plugins?.SplashScreen).toBeUndefined();
-  });
-
-  it("is not registered in the generated native config", () => {
-    const generated = JSON.parse(read("ios/App/App/capacitor.config.json"));
-    expect(generated.packageClassList).not.toContain("SplashScreenPlugin");
-  });
-
-  it("keeps the generated config in step with the source", () => {
-    const generated = JSON.parse(read("ios/App/App/capacitor.config.json"));
-    expect(generated.appId).toBe(config.appId);
   });
 });
