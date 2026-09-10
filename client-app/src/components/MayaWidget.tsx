@@ -91,7 +91,13 @@ export default function MayaWidget() {
   // (phone preferred) before any talk-to-human handoff, so we never create an
   // anonymous "Website Visitor" lead from the client app.
   const [lead, setLead] = useState<{ name: string; phone: string; email: string } | null>(null);
+  // BF_CLIENT_MAYA_PREFILL_v1
+  // This form was written for the anonymous marketing site and the same
+  // component serves the signed-in mini-portal, where asking for a mobile
+  // number the client just authenticated with reads as broken. Seed it from
+  // the session; the fields stay editable.
   const [leadDraft, setLeadDraft] = useState<{ name: string; phone: string; email: string }>({ name: "", phone: "", email: "" });
+  const leadPrefilled = useRef(false);
   const [leadError, setLeadError] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [issue, setIssue] = useState("");
@@ -111,6 +117,20 @@ export default function MayaWidget() {
     }
   })();
   const { app } = useApplicationStore();
+  useEffect(() => {
+    if (leadPrefilled.current) return;
+    const me = app as { contactName?: string | null; phone?: string | null; email?: string | null } | null;
+    const name = String(me?.contactName ?? "").trim();
+    const phone = String(me?.phone ?? "").trim();
+    const email = String(me?.email ?? "").trim();
+    if (!name && !phone && !email) return;
+    leadPrefilled.current = true;
+    setLeadDraft((prev) => ({
+      name: prev.name || name,
+      phone: prev.phone || phone,
+      email: prev.email || email,
+    }));
+  }, [app]);
   const applicationId = app?.applicationId ?? app?.applicationToken ?? null;
   const userName =
     typeof (user as any)?.name === "string" ? ((user as any).name as string) : null;
@@ -237,9 +257,15 @@ export default function MayaWidget() {
 
   function requestHumanSupport() {
     if (lead) { void escalateNow(lead); return; }
-    const known = { name: (userName ?? "").trim(), phone: (userPhone ?? "").trim(), email: (userEmail ?? "").trim() };
-    // Signed-in client with name + a channel already on file: hand off directly.
-    if (known.name && (known.phone || known.email)) { void escalateNow(known); return; }
+    const session = app as { contactName?: string | null; phone?: string | null; email?: string | null } | null;
+    const known = {
+      name: (userName ?? session?.contactName ?? "").trim(),
+      phone: (userPhone ?? session?.phone ?? "").trim(),
+      email: (userEmail ?? session?.email ?? "").trim(),
+    };
+    // A verified session phone is enough to identify the signed-in client, so
+    // do not make them re-enter it. Email-only sessions still require a name.
+    if (known.phone || (known.name && known.email)) { void escalateNow(known); return; }
     setLeadDraft(known);
     setLeadError(null);
     setMode("lead");
