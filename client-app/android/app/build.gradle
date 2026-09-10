@@ -1,4 +1,10 @@
 apply plugin: 'com.android.application'
+// BF_CLIENT_ANDROID_FCM_v1
+// @capacitor/push-notifications resolves to FCM on Android and needs the
+// google-services plugin to read google-services.json. Without it the plugin
+// registers no token and PushNotifications.register() silently never fires
+// its registration listener.
+apply plugin: 'com.google.gms.google-services'
 
 android {
     namespace = "com.boreal.client"
