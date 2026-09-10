@@ -32,7 +32,7 @@ jobs:
       - name: Ensure google-services.json (v118-google-services)
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON_BF }}
-        run: node scripts/ensure-google-services.mjs
+        run: node "$GITHUB_WORKSPACE/scripts/ensure-google-services.mjs"
       - name: Build Android debug APK
         run: gradle assembleDebug
         working-directory: client-app/android
