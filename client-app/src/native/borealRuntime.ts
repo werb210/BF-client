@@ -3,7 +3,6 @@
 // background upload queue. Called once from the app entry. Every dependency
 // is resolved lazily and defensively—a missing token or unavailable plugin
 // degrades to a no-op rather than breaking app start.
-import { startUploadQueue, DISCOVERED_UPLOAD_ROUTE } from "./uploadQueueRuntime";
 
 export type RuntimeStatus = {
   uploadQueue: boolean;
@@ -72,23 +71,11 @@ export async function startBorealRuntime(options: StartOptions = {}): Promise<Ru
   started = true;
   const getToken = options.getToken || readToken;
 
-  try {
-    const stop = startUploadQueue({
-      transport: {
-        baseUrl: resolveBaseUrl(),
-        route: DISCOVERED_UPLOAD_ROUTE,
-        getToken,
-        readFile: readFileRef,
-      },
-      onChange: (items) => options.onQueueChange?.(
-        items.filter((item) => item.status === "pending" || item.status === "uploading").length,
-      ),
-    });
-    stopFns.push(stop);
-    status.uploadQueue = true;
-  } catch (error) {
-    status.errors.push("uploadQueue: " + String(error));
-  }
+  // v136: the upload queue is owned by BF_UPLOAD_QUEUE_v51
+  // (src/lib/uploadQueue + src/state/uploadQueueWatcher), which main.tsx already
+  // starts and Step5_Documents already enqueues into. Starting a second queue here
+  // meant two drains on the same "online" and interval triggers, risking duplicate
+  // uploads of the same document. This runtime now owns push listeners only.
 
   try {
     const { installPushListeners } = await import("./pushListener");
