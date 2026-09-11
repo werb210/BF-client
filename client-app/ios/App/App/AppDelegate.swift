@@ -9,6 +9,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     private var privacyCover: UIView?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // BF_CLIENT_PUSH_ACTIONS_v144
+        BorealPushCategories.register()
         // Override point for customization after application launch.
         return true
     }
