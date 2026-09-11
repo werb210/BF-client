@@ -50,7 +50,7 @@ import AccountantReferralModal, {
   type AccountantDetails,
 } from "@/components/AccountantReferralModal";
 import { Capacitor } from "@capacitor/core";
-import { scanDocumentAsPdf } from "../native/documentScanner";
+import { scanDocumentAsPdfWithQuality } from "../native/documentScanner";
 
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 // The hardcoded "every applicant must upload contracts/invoices/tax_returns"
@@ -68,6 +68,7 @@ const RequirementRow = memo(function RequirementRow({
   app,
   isUploading,
   docError,
+  docNotice,
   progress,
   onPick,
   onDrop,
@@ -168,6 +169,8 @@ const RequirementRow = memo(function RequirementRow({
         {docError && <div style={components.form.errorText}>{docError}</div>}
         {!docError && submitAttempted && docStatus === "missing" && entry.required && <div style={components.form.errorText}>This document is required.</div>}
         {docStatus === "rejected" && <div style={components.form.errorText}>{getRejectionMessage(app.documents[docType])}</div>}
+        {/* BF_CLIENT_DOC_QUALITY_v143 — advisory, never blocks submission. */}
+        {docNotice && <div style={components.form.helperText} role="status">{docNotice}</div>}
       </div>
     </FileUploadCard>
   );
@@ -235,6 +238,8 @@ export function Step5_Documents() {
   const [docError, setDocError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
+  // BF_CLIENT_DOC_QUALITY_v143 — deliberately separate from blocking errors.
+  const [docNotices, setDocNotices] = useState<Record<string, string>>({});
   const [uploadingDocs, setUploadingDocs] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false); // BF_CLIENT_AUDIT_FIX_v7
@@ -742,7 +747,13 @@ export function Step5_Documents() {
 
   async function handleScan(docType: string) {
     try {
-      const file = await scanDocumentAsPdf(docType);
+      const { file, quality } = await scanDocumentAsPdfWithQuality(docType);
+      setDocNotices((prev) => {
+        const next = { ...prev };
+        if (quality && !quality.ok) next[docType] = quality.message;
+        else delete next[docType];
+        return next;
+      });
       if (file) await handleFile(docType, file);
     } catch {
       // Cancellation, an unavailable scanner, and native plugin failures leave
@@ -988,6 +999,7 @@ export function Step5_Documents() {
                     isUploading={Boolean(uploadingDocs[docType])}
                     progress={uploadProgress[docType] || 0}
                     docError={docErrors[docType]}
+                    docNotice={docNotices[docType]}
                     docStatus={getDocStatus(docType)}
                     submitAttempted={submitAttempted}
                     onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
@@ -1009,6 +1021,7 @@ export function Step5_Documents() {
               isUploading={Boolean(uploadingDocs["other"])}
               progress={uploadProgress["other"] || 0}
               docError={docErrors["other"]}
+              docNotice={docNotices["other"]}
               docStatus={getDocStatus("other")}
               onPick={(entryId) => document.getElementById(`doc-${entryId}`)?.click()}
               onDrop={handleFile}

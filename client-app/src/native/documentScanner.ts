@@ -1,5 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { DocumentScanner } from "@capacitor-mlkit/document-scanner";
+// BF_CLIENT_DOC_QUALITY_v143
+import { measureBlob, worstOf, type QualityReport } from "./documentQuality";
 
 const encoder = new TextEncoder();
 
@@ -98,4 +100,31 @@ export async function scanDocumentAsPdf(docType: string): Promise<File | null> {
   const pdf = await imagesToPdf(result.scannedImages ?? []);
   const safeName = docType.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "document";
   return new File([pdf], `${safeName}-scan.pdf`, { type: "application/pdf" });
+}
+
+// BF_CLIENT_DOC_QUALITY_v143
+export type ScanWithQuality = {
+  file: File | null;
+  /** Worst page, or null when quality could not be measured. Advisory only. */
+  quality: QualityReport | null;
+};
+
+/** Scan a PDF and score every page without ever rejecting it for quality. */
+export async function scanDocumentAsPdfWithQuality(docType: string): Promise<ScanWithQuality> {
+  if (!Capacitor.isNativePlatform()) return { file: null, quality: null };
+  const result = await DocumentScanner.scanDocument({ pageLimit: 10 });
+  const images = result.scannedImages ?? [];
+  let quality: QualityReport | null = null;
+  try {
+    const blobs = await Promise.all(images.map((image) => readNativeAsset(image)));
+    const reports = (await Promise.all(blobs.map((blob) => measureBlob(blob)))).filter(
+      (report): report is QualityReport => report !== null,
+    );
+    quality = worstOf(reports);
+  } catch {
+    quality = null;
+  }
+  const pdf = await imagesToPdf(images);
+  const safeName = docType.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "document";
+  return { file: new File([pdf], `${safeName}-scan.pdf`, { type: "application/pdf" }), quality };
 }
