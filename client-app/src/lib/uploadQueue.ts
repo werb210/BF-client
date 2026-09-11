@@ -78,6 +78,17 @@ function base64ToFile(b64: string, filename: string, contentType: string): File 
   return new File([bytes], filename, { type: contentType || "application/octet-stream" });
 }
 
+// BF_CLIENT_BACKGROUND_SYNC_v151 — scheduling on enqueue is what lets the
+// upload finish after the applicant closes the tab.
+async function scheduleBackgroundSync(): Promise<void> {
+  try {
+    const { registerBackgroundSync } = await import("../pwa/backgroundSync");
+    await registerBackgroundSync();
+  } catch {
+    // The interval watcher is still the fallback.
+  }
+}
+
 export async function enqueueUploadFromFile(params: {
   applicationToken: string;
   applicationId: string | null | undefined;
@@ -105,6 +116,7 @@ export async function enqueueUploadFromFile(params: {
   }
   store.add(descriptor);
   await txDone(tx);
+  await scheduleBackgroundSync();
 }
 
 export async function queueLength(): Promise<number> {

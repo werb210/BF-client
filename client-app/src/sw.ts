@@ -106,10 +106,18 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
+// BF_CLIENT_BACKGROUND_SYNC_v151
+// Wake any client that exists. If there is no client, reject so the browser
+// retries with backoff instead of silently dropping the queued upload.
 self.addEventListener("sync", (event: any) => {
-  if (event.tag === "bf-client-bg-sync") {
-    event.waitUntil(self.clients.matchAll().then((cs) => {
-      cs.forEach((c) => c.postMessage({ type: "BG_SYNC_TRIGGER" }));
-    }));
-  }
+  if (event.tag !== "bf-client-bg-sync") return;
+  event.waitUntil(
+    self.clients.matchAll({ includeUncontrolled: true }).then((cs) => {
+      if (cs.length > 0) {
+        cs.forEach((c) => c.postMessage({ type: "BG_SYNC_TRIGGER" }));
+        return;
+      }
+      return Promise.reject(new Error("no_client_to_drain_queue"));
+    })
+  );
 });
