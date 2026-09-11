@@ -46,6 +46,16 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // BF_CLIENT_ANDROID_PUSH_ACTIONS_FIX_v162
+    // BorealMessagingService extends FirebaseMessagingService, which this
+    // module could not see: @capacitor/push-notifications declares
+    // firebase-messaging as `implementation`, so it is not exposed to
+    // consumers. Without it the base class is unresolved, and every use of
+    // `this` as a Context fails too - one missing dependency, ten errors.
+    // The BOM keeps the version in step with whatever the plugin resolves.
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-messaging'
 }
 
 apply from: 'capacitor.build.gradle'
