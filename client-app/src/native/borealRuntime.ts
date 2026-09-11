@@ -4,6 +4,8 @@
 // is resolved lazily and defensively—a missing token or unavailable plugin
 // degrades to a no-op rather than breaking app start.
 
+import { Capacitor } from "@capacitor/core";
+
 export type RuntimeStatus = {
   uploadQueue: boolean;
   push: boolean;
@@ -65,6 +67,19 @@ export type StartOptions = {
   getToken?: () => string | null;
 };
 
+/**
+ * The concrete platform the server needs to pick a push transport. Capacitor
+ * reports "ios" / "android" / "web"; anything else is reported as-is so a
+ * surprise value shows up in the data rather than being silently coerced.
+ */
+export function devicePlatform(): string {
+  try {
+    return Capacitor.getPlatform();
+  } catch {
+    return "web";
+  }
+}
+
 export async function startBorealRuntime(options: StartOptions = {}): Promise<RuntimeStatus> {
   const status: RuntimeStatus = { uploadQueue: false, push: false, errors: [] };
   if (started) return status;
@@ -84,13 +99,18 @@ export async function startBorealRuntime(options: StartOptions = {}): Promise<Ru
       onRegistrationToken: async (token) => {
         try {
           const auth = getToken();
-          await fetch(resolveBaseUrl() + "/api/push/register", {
+          // BF_CLIENT_PUSH_ACTIONS_v144 — two corrections to the v131 call:
+          // the route is /api/push/register-token (the bare /register path
+          // does not exist and silently 404'd every registration), and the
+          // server selects APNs vs FCM off `platform`, so it has to be the
+          // real platform, not "capacitor".
+          await fetch(resolveBaseUrl() + "/api/push/register-token", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               ...(auth ? { Authorization: "Bearer " + auth } : {}),
             },
-            body: JSON.stringify({ token, platform: "capacitor" }),
+            body: JSON.stringify({ token, platform: devicePlatform() }),
           });
         } catch {
           // Registration retries on next app start.
