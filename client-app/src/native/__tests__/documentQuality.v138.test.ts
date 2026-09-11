@@ -145,3 +145,30 @@ describe('BF_CLIENT_DOC_QUALITY_v138', () => {
     expect(worstOf([])).toBeNull();
   });
 });
+
+describe('BF_CLIENT_DOC_QUALITY_v143 mounting contract', () => {
+  it('withTrueDimensions judges resolution on the original, not the downsample', async () => {
+    const { withTrueDimensions, assessGray } = await import('../documentQuality');
+    // Scored on a 900px downsample, but the page was really 400px wide.
+    const scored = assessGray(sharpPage(900, 900));
+    expect(scored.issues).not.toContain('low_resolution');
+    const restated = withTrueDimensions(scored, 400, 400);
+    expect(restated.issues).toContain('low_resolution');
+    expect(restated.width).toBe(400);
+    expect(restated.ok).toBe(false);
+  });
+
+  it('withTrueDimensions clears the flag when the original was large enough', async () => {
+    const { withTrueDimensions, assessGray } = await import('../documentQuality');
+    const scored = assessGray(sharpPage(300, 300));
+    expect(scored.issues).toContain('low_resolution');
+    const restated = withTrueDimensions(scored, 2400, 3200);
+    expect(restated.issues).not.toContain('low_resolution');
+    expect(restated.ok).toBe(true);
+  });
+
+  it('measureBlob returns null rather than throwing where it cannot run', async () => {
+    const { measureBlob } = await import('../documentQuality');
+    expect(await measureBlob(new Blob(['not an image']))).toBeNull();
+  });
+});

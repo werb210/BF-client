@@ -145,11 +145,43 @@ export async function measureImage(src: string, maxEdge = 900): Promise<QualityR
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     ctx.drawImage(img, 0, 0, w, h);
-    const report = assessRgba(ctx.getImageData(0, 0, w, h).data, w, h);
-    const issues: QualityIssue[] = report.issues.filter((issue) => issue !== 'low_resolution');
-    if (Math.min(trueW, trueH) < MIN_EDGE_PX) issues.push('low_resolution');
-    return { ...report, width: trueW, height: trueH, issues, ok: issues.length === 0, message: describe(issues) };
+    // Report the real dimensions, not the downsampled ones.
+    return withTrueDimensions(assessRgba(ctx.getImageData(0, 0, w, h).data, w, h), trueW, trueH);
   } catch {
     return null;
   }
+}
+
+/** Browser-only scoring for an already-decoded scanned page Blob. */
+export async function measureBlob(blob: Blob, maxEdge = 900): Promise<QualityReport | null> {
+  if (typeof document === 'undefined' || typeof createImageBitmap === 'undefined') return null;
+  let bitmap: ImageBitmap | null = null;
+  try {
+    bitmap = await createImageBitmap(blob);
+    const trueW = bitmap.width;
+    const trueH = bitmap.height;
+    if (!trueW || !trueH) return null;
+    const scale = Math.min(1, maxEdge / Math.max(trueW, trueH));
+    const w = Math.max(3, Math.round(trueW * scale));
+    const h = Math.max(3, Math.round(trueH * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    return withTrueDimensions(assessRgba(ctx.getImageData(0, 0, w, h).data, w, h), trueW, trueH);
+  } catch {
+    // Quality checking is advisory. If it cannot run, the upload proceeds.
+    return null;
+  } finally {
+    if (bitmap && typeof bitmap.close === 'function') bitmap.close();
+  }
+}
+
+/** Re-state downsampled scoring against the page's real pixel dimensions. */
+export function withTrueDimensions(report: QualityReport, trueW: number, trueH: number): QualityReport {
+  const issues: QualityIssue[] = report.issues.filter((issue) => issue !== 'low_resolution');
+  if (Math.min(trueW, trueH) < MIN_EDGE_PX) issues.push('low_resolution');
+  return { ...report, width: trueW, height: trueH, issues, ok: issues.length === 0, message: describe(issues) };
 }
