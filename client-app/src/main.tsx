@@ -22,7 +22,8 @@ import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
 // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
 import { startFormResponseQueueWatcher } from "./state/formResponseQueueWatcher";
 import { validateBootToken } from "./state/validateBootToken";
-import { hydrateToken } from "./auth/token";
+import { getToken, hydrateToken } from "./auth/token";
+import { startBorealRuntime } from "./native/borealRuntime";
 
 try {
   validateEnv();
@@ -54,6 +55,12 @@ startPendingSubmitWatcher();
 startUploadQueueWatcher();
 // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
 startFormResponseQueueWatcher();
+
+// v131-bootstrap — start native push and durable uploads once authentication is hydrated.
+void startBorealRuntime({
+  getToken,
+  navigate: (route) => window.location.assign(route),
+});
 
 void validateBootToken();
 
