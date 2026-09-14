@@ -8,7 +8,11 @@
   font-family: "Libre Caslon Text", Georgia, "Times New Roman", serif;
 }
 
-.mp-root { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+/* BF_CLIENT_CMP_MOBILE_WIDTH_v169 - max-width alone does not stop a child with
+   a larger min-content width from widening the page; the grid needs permission
+   to shrink its tracks, and the page needs a hard ceiling at the viewport. */
+.mp-root { max-width: 1100px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+.mp-root > * { min-width: 0; }
 .mp-app-header { display:flex; justify-content:space-between; font-size:12px; color:#51617D; }
 .mp-app-header__left,.mp-app-header__right{display:flex;gap:8px;align-items:center}
 .mp-app-header__id,.mp-app-header__stage-value{font-weight:600;color:#0B1F3A}
@@ -113,6 +117,18 @@
   .mp-app-header__right{flex-wrap:wrap;gap:6px}
   .mp-root{padding-bottom:84px}
   .mp-thread-card__composer{padding-right:64px}
+
+  /* BF_CLIENT_CMP_MOBILE_WIDTH_v169
+     .mp-actions__chips is grid-template-columns:1fr 1fr and was never
+     overridden here. A grid track sized 1fr still refuses to shrink below its
+     content's min-content width, so chips like "Personal Net Worth Statement"
+     and "CRA Authorization" forced the whole page wider than the viewport -
+     the panel appeared cut off on BOTH edges because the page was scrolled
+     into the middle of its own overflow. One column on a phone, and
+     min-width:0 so a long label wraps instead of pushing the track wider. */
+  .mp-actions__chips{grid-template-columns:1fr}
+  .mp-actions__chips > *{min-width:0}
+  .mp-chip--action{overflow-wrap:anywhere}
 }
 
 /* BF_CLIENT_OFFERS_IN_THREAD_v3 */

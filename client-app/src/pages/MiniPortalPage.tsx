@@ -331,7 +331,17 @@ export default function MiniPortalPage() {
       // and made r.json() throw "Unexpected token '<'". Use the API base.
       const voiceBase = (ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
       const tokenUrl = `${voiceBase}/api/client/voice/token?applicationId=${encodeURIComponent(applicationId)}`;
-      const r = await fetch(tokenUrl, { credentials: "include" });
+      // BF_CLIENT_CALLUS_AUTH_v169
+      // The server's callerOwnsApplication guard returns false unless the
+      // request carries an Authorization: Bearer header - it reads the phone
+      // claim out of the JWT to prove this applicant owns this application.
+      // credentials:"include" sends cookies, not that header, so every Call Us
+      // was rejected with 403 not_your_application before Twilio was reached.
+      // Other fetches in this file already send the token this way.
+      const r = await fetch(tokenUrl, {
+        credentials: "include",
+        headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+      });
       if (!r.ok) {
         const errBody = await r.json().catch(() => ({}));
         throw new Error(errBody?.error || `token fetch failed (${r.status})`);
