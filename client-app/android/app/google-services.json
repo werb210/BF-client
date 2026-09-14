@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "916401819751",
+    "project_id": "boreal-f404e",
+    "storage_bucket": "boreal-f404e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916401819751:android:2de3e7368473916d9644c2",
+        "android_client_info": {
+          "package_name": "com.boreal.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMCvw6PKzu8uMWV0IB1-GJJ2S9npDUFUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916401819751:android:a2a627cba3bd4cb89644c2",
+        "android_client_info": {
+          "package_name": "com.boreal.risk.client"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMCvw6PKzu8uMWV0IB1-GJJ2S9npDUFUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
