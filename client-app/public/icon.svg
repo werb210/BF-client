@@ -1,7 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0b1f35"/>
-  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-    fill="white" font-size="180" font-family="Arial">
-    BF
-  </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#0B1F35"/>
+  <polygon points="0,1024 0,760 250,545 470,760 640,620 1024,900 1024,1024" fill="#122A44"/>
+  <polygon points="0,1024 0,880 300,700 560,880 760,745 1024,960 1024,1024" fill="#163351"/>
+  <g fill="#C9A45C">
+    <polygon points="512,250 744,640 648,640 512,382.6 376,640 280,640"/>
+    <polygon points="330,400 480,640 406,640 330,481.6 254,640 180,640"/>
+    <polygon points="694,400 844,640 770,640 694,481.6 618,640 544,640"/>
+  </g>
 </svg>
