@@ -43,7 +43,9 @@ import { resolveStepGuard } from "./stepGuard";
 import { track } from "../utils/track";
 import { persistApplicationStep } from "./saveStepProgress";
 // BF_CLIENT_BLOCK_v99_STEP2_SELECT_AND_RULES_v1
-import { bucketFor, dedupeProductsByBucket, type BucketId } from "./categoryAliases";
+import { bucketFor, dedupeProductsByBucket, descriptionFor, type BucketId } from "./categoryAliases";
+// BF_CLIENT_STEP2_COMPARE_v187
+import { MAX_COMPARE, toggleCompare, canAddToCompare, buildCompareRows } from "./compareSelection";
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 import {
   computeAllowedCategories,
@@ -90,6 +92,9 @@ export function Step2_Product() {
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(
     app.selectedProductId ? [app.selectedProductId] : []
   );
+  // BF_CLIENT_STEP2_COMPARE_v187 - up to four products held for side-by-side comparison.
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
   const countryCode = useMemo(
     () => getCountryCode(app.kyc.businessLocation),
     [app.kyc.businessLocation]
@@ -662,8 +667,8 @@ export function Step2_Product() {
           const isSelected = selectedBucket === category || selectedCategory === category;
           const matchPct = app.matchPercentages?.[category] ?? null;
           return (
-            <div
-              key={bucket.bucket}
+            <div key={bucket.bucket}>
+              <div
               onClick={() => selectCategory(category, bucket.products.map((product) => product.id))}
               style={{
                 border: `1px solid ${isSelected ? tokens.colors.primary : tokens.colors.border}`,
@@ -693,7 +698,11 @@ export function Step2_Product() {
                     {bucket.products.length}
                   </span>
                 </div>
-                <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
+                {/* BF_CLIENT_STEP2_COMPARE_v187 - plain-language explanation. */}
+                <div style={{ color: "#4b5563", fontSize: 14, marginTop: 6, maxWidth: 640, lineHeight: 1.45 }}>
+                  {descriptionFor(category)}
+                </div>
+                <div style={{ color: "#6b7280", fontSize: 13, marginTop: 6 }}>
                   {bucket.products.length} product{bucket.products.length !== 1 ? "s" : ""} available
                   {matchPct !== null ? ` (Match score ${matchPct}%)` : ""}
                 </div>
@@ -723,10 +732,76 @@ export function Step2_Product() {
               >
                 {isSelected ? "Selected" : "Select"}
               </button>
+              </div>
+              {/* BF_CLIENT_STEP2_COMPARE_v187 - products in the chosen category. */}
+              {isSelected && bucket.products.length > 0 && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    border: `1px solid ${tokens.colors.border}`, borderTop: "none",
+                    borderRadius: "0 0 8px 8px", background: "#fff",
+                    padding: "12px 20px 16px", marginTop: -8, marginBottom: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 10 }}>
+                    Tick up to {MAX_COMPARE} to compare them side by side. This does not change your application.
+                  </div>
+                  {bucket.products.map((product) => {
+                    const ticked = compareIds.includes(product.id);
+                    const selectable = canAddToCompare(compareIds, product.id);
+                    return (
+                      <label key={product.id} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+                        borderBottom: `1px solid ${tokens.colors.border}`,
+                        cursor: selectable ? "pointer" : "not-allowed", opacity: selectable ? 1 : 0.5,
+                      }}>
+                        <Checkbox checked={ticked} disabled={!selectable} onChange={() => setCompareIds((prev) => toggleCompare(prev, product.id))} />
+                        <span style={{ fontSize: 14, color: "#111827" }}>{product.product_type || product.name}</span>
+                        <span style={{ fontSize: 13, color: "#6b7280", marginLeft: "auto" }}>
+                          {formatAmount(product.amount_min, countryCode)} – {formatAmount(product.amount_max, countryCode)}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}
       </Card>
+
+      {/* BF_CLIENT_STEP2_COMPARE_v187 - comparison table. */}
+      {compareIds.length > 0 && (() => {
+        const chosen = products.filter((product) => compareIds.includes(product.id));
+        const rows = buildCompareRows((n) => formatAmount(n, countryCode));
+        return (
+          <Card style={{ marginTop: tokens.spacing.md }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>Comparing {chosen.length} of {MAX_COMPARE}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button variant="secondary" onClick={() => setCompareOpen((open) => !open)}>{compareOpen ? "Hide comparison" : "Compare"}</Button>
+                <Button variant="secondary" onClick={() => { setCompareIds([]); setCompareOpen(false); }}>Clear</Button>
+              </div>
+            </div>
+            {compareOpen && (
+              <div style={{ overflowX: "auto", marginTop: 12 }}>
+                <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 480, fontSize: 14 }}>
+                  <thead><tr>
+                    <th style={{ textAlign: "left", padding: "8px 12px", borderBottom: `1px solid ${tokens.colors.border}` }} />
+                    {chosen.map((product) => <th key={product.id} style={{ textAlign: "left", padding: "8px 12px", color: "#111827", borderBottom: `1px solid ${tokens.colors.border}` }}>{product.name}</th>)}
+                  </tr></thead>
+                  <tbody>{rows.map((row) => (
+                    <tr key={row.key}>
+                      <td style={{ padding: "8px 12px", color: "#6b7280", whiteSpace: "nowrap", borderBottom: `1px solid ${tokens.colors.border}` }}>{row.label}</td>
+                      {chosen.map((product) => <td key={product.id} style={{ padding: "8px 12px", color: "#111827", borderBottom: `1px solid ${tokens.colors.border}` }}>{row.value(product as unknown as Record<string, unknown>)}</td>)}
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        );
+      })()}
       {/* BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
           Closing-costs checkbox is shown only for pure-Equipment
           applications (Q1 = equipment) AND only when at least one
