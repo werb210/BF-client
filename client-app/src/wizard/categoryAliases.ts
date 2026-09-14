@@ -12,18 +12,28 @@
 // Removed: MEDIA_FUNDING bucket (was aliased to "MCA", which is a
 // different category; the canonical MEDIA bucket below absorbs all
 // media-funding products correctly).
+// BF_CLIENT_STEP2_COMPARE_v187
+// Step 2 listed the ten categories by name and product count only, so an
+// applicant had to already know what "Factoring" or "ABL" meant to choose one.
+// The description travels on the bucket so the label and the explanation can
+// never drift apart, and is written for a borrower rather than a broker.
 export const CATEGORY_BUCKETS = [
-  { id: "LINE_OF_CREDIT", label: "Line of Credit", aliases: ["LOC"] },
-  { id: "TERM_LOAN", label: "Term Loan", aliases: ["TERM"] },
-  { id: "EQUIPMENT_FINANCE", label: "Equipment Financing", aliases: ["EQUIPMENT"] },
-  { id: "FACTORING", label: "Factoring", aliases: ["INVOICE_FACTORING"] },
-  { id: "PURCHASE_ORDER_FINANCE", label: "Purchase Order Financing", aliases: ["PO"] },
-  { id: "MERCHANT_CASH_ADVANCE", label: "Merchant Cash Advance", aliases: ["MCA"] },
-  { id: "MEDIA", label: "Media / Film Financing", aliases: ["MEDIA_FUNDING"] },
-  { id: "ASSET_BASED_LENDING", label: "Asset Based Lending", aliases: ["ABL"] },
-  { id: "SBA_GOVERNMENT", label: "SBA / Government", aliases: ["SBA"] },
-  { id: "STARTUP_CAPITAL", label: "Startup Capital", aliases: ["STARTUP"] },
+  { id: "LINE_OF_CREDIT", label: "Line of Credit", aliases: ["LOC"], description: "A revolving limit you draw from and repay as needed. You pay interest only on what you have drawn. Best for uneven cash flow and short-term gaps." },
+  { id: "TERM_LOAN", label: "Term Loan", aliases: ["TERM"], description: "One lump sum repaid on a fixed schedule over a set term. Predictable payments. Best for a specific one-time investment or expansion." },
+  { id: "EQUIPMENT_FINANCE", label: "Equipment Financing", aliases: ["EQUIPMENT"], description: "Funds the purchase of machinery or vehicles, with the equipment itself as the security. Usually needs a smaller deposit than a general loan." },
+  { id: "FACTORING", label: "Factoring", aliases: ["INVOICE_FACTORING"], description: "Sell your unpaid customer invoices for cash now instead of waiting 30 to 90 days. Approval leans on your customers' credit, not only yours." },
+  { id: "PURCHASE_ORDER_FINANCE", label: "Purchase Order Financing", aliases: ["PO"], description: "Pays your supplier so you can fill a confirmed customer order you could not otherwise afford. Repaid when your customer pays." },
+  { id: "MERCHANT_CASH_ADVANCE", label: "Merchant Cash Advance", aliases: ["MCA"], description: "An advance repaid as a percentage of your daily card sales, so payments flex with revenue. Fast to fund and typically the most expensive option." },
+  { id: "MEDIA", label: "Media / Film Financing", aliases: ["MEDIA_FUNDING"], description: "Production funding secured against tax credits, distribution agreements or presales. For film, television and content producers." },
+  { id: "ASSET_BASED_LENDING", label: "Asset Based Lending", aliases: ["ABL"], description: "A facility sized against assets you already own, such as receivables, inventory or equipment. Suits asset-heavy businesses wanting a larger limit." },
+  { id: "SBA_GOVERNMENT", label: "SBA / Government", aliases: ["SBA"], description: "Government-backed lending with longer terms and lower rates than most private options. More paperwork and a slower approval in exchange." },
+  { id: "STARTUP_CAPITAL", label: "Startup Capital", aliases: ["STARTUP"], description: "For businesses with little or no trading history, where approval rests on the owner's profile and the plan rather than past revenue." },
 ] as const;
+
+export function descriptionFor(bucketId: string): string {
+  const bucket = CATEGORY_BUCKETS.find((entry) => entry.id === bucketId);
+  return bucket ? bucket.description : "";
+}
 
 export type BucketId = (typeof CATEGORY_BUCKETS)[number]["id"];
 
