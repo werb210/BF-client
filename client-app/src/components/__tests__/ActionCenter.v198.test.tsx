@@ -35,7 +35,9 @@ describe("action center", () => {
 describe("mounting", () => {
   it("is on the mini portal", () => {
     expect(page).toContain("BF_CLIENT_ACTION_CENTER_v198");
-    expect(page).toContain("<ActionCenter applicationId={applicationId} />");
+    // BF_CLIENT_ACTION_CENTER_TEST_FIX_v242 - mounted with the id AND the action handler (v236).
+    expect(page).toMatch(/<ActionCenter applicationId=\{applicationId\}[^>]*\/>/);
+    expect(page).toContain("onAction={onActionCenterItem}");
   });
 });
 
