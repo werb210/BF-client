@@ -252,8 +252,30 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_53_v1 -- "upload" opens the DocPicker modal,
   // not a single-file native picker.
   const [showDocPicker, setShowDocPicker] = useState(false);
+  // BF_CLIENT_NATIVE_WIRING_v236 - the document the picker was opened for, if any.
+  const [pickerDoc, setPickerDoc] = useState<{ type: string; label: string } | null>(null);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa">(null);
+  // BF_CLIENT_NATIVE_WIRING_v236 - Action Center buttons. Document keys are
+  // "upload:<category>" and form keys "form:<name>" (BF-Server applicantActions).
+  const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string }) => {
+    const [prefix, rest] = String(item.key || "").split(":", 2);
+    if (item.kind === "document" && prefix === "upload" && rest) {
+      setPickerDoc({ type: rest, label: item.label });
+      setShowDocPicker(true);
+      return;
+    }
+    if (item.kind === "form" && prefix === "form" && rest) {
+      const forms = ["networth", "debt", "equipment", "realestate", "cra", "flinks", "advisors"] as const;
+      if ((forms as readonly string[]).includes(rest)) setOpenForm(rest as (typeof forms)[number]);
+    }
+  }, []);
+  useEffect(() => {
+    if (searchParams.get("section") === "documents" && applicationId) {
+      setPickerDoc(null);
+      setShowDocPicker(true);
+    }
+  }, [searchParams, applicationId]);
   const [hasOpenQa, setHasOpenQa] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   const [qaChecked, setQaChecked] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
@@ -595,7 +617,7 @@ export default function MiniPortalPage() {
   return (
     <>
       {/* BF_CLIENT_ACTION_CENTER_v198 */}
-      {applicationId ? <ActionCenter applicationId={applicationId} /> : null}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} /> : null}
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
       <InstallAppPrompt />
@@ -874,7 +896,9 @@ export default function MiniPortalPage() {
             {showDocPicker && (
               <DocPicker
                 applicationId={applicationId}
-                onClose={() => setShowDocPicker(false)}
+                documentType={pickerDoc?.type}
+                documentLabel={pickerDoc?.label}
+                onClose={() => { setShowDocPicker(false); setPickerDoc(null); }}
                 onUploaded={() => { void loadAll(); }}
               />
             )}

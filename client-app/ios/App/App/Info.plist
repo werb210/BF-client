@@ -35,6 +35,8 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Boreal uses Face ID to unlock your application securely.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Boreal uses the camera so you can photograph and upload documents for your application.</string>
 	<key>NSMicrophoneUsageDescription</key>
