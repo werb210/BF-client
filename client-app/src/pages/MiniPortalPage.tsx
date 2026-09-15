@@ -26,6 +26,8 @@ import LenderQaForm from "@/pages/mini-portal/forms/forms/LenderQaForm"; // BF_C
 import SlimHeader from "@/components/SlimHeader";
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
+// BF_CLIENT_ACTION_CENTER_v198
+import ActionCenter from "../components/ActionCenter";
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -592,6 +594,8 @@ export default function MiniPortalPage() {
 
   return (
     <>
+      {/* BF_CLIENT_ACTION_CENTER_v198 */}
+      {applicationId ? <ActionCenter applicationId={applicationId} /> : null}
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
       <InstallAppPrompt />
