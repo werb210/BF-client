@@ -51,6 +51,7 @@ import AccountantReferralModal, {
 } from "@/components/AccountantReferralModal";
 import { Capacitor } from "@capacitor/core";
 import { scanDocumentAsPdfWithQuality } from "../native/documentScanner";
+import { duplicateMessage, findUploadedDuplicate, fingerprintFile, isServerDuplicate, SERVER_DUPLICATE_MESSAGE } from "../lib/documentFingerprint"; // BF_CLIENT_DOCUMENT_DUPLICATE_CHECK_v258
 
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 // The hardcoded "every applicant must upload contracts/invoices/tax_returns"
@@ -632,6 +633,14 @@ export function Step5_Documents() {
       return;
     }
 
+    // BF_CLIENT_DOCUMENT_DUPLICATE_CHECK_v258 - one copy of each file per application.
+    const fileHash = await fingerprintFile(file);
+    const alreadyUploaded = findUploadedDuplicate(app.documents as any, fileHash);
+    if (alreadyUploaded) {
+      setDocErrors((prev) => ({ ...prev, [docType]: duplicateMessage(docType, alreadyUploaded, formatDocumentLabel) }));
+      return;
+    }
+
     setUploadingDocs((prev) => ({ ...prev, [docType]: true }));
     setUploadProgress((prev) => ({ ...prev, [docType]: 0 }));
 
@@ -668,7 +677,7 @@ export function Step5_Documents() {
               uploadedAt: new Date().toISOString(),
               files: [
                 ...((((app.documents[docType] as any)?.files) as Array<{ id: string | null; name: string; uploadedAt: string }>) ?? []),
-                { id: uploadedId, name: file.name, uploadedAt: new Date().toISOString() },
+                { id: uploadedId, name: file.name, uploadedAt: new Date().toISOString(), hash: fileHash }, // v258
               ],
             } as any,
           },
@@ -708,6 +717,11 @@ export function Step5_Documents() {
         // file (unsupported type / too large / bad request). Queueing it for
         // background retry can never succeed; tell the applicant what to fix.
         const st = (err as { status?: number })?.status;
+        // BF_CLIENT_DOCUMENT_DUPLICATE_CHECK_v258 - the server found this file already on the application.
+        if (isServerDuplicate(err)) {
+          setDocErrors((prev) => ({ ...prev, [docType]: SERVER_DUPLICATE_MESSAGE }));
+          break;
+        }
         if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429) {
           setDocErrors((prev) => ({
             ...prev,
