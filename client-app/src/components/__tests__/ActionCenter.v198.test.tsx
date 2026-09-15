@@ -15,7 +15,7 @@ describe("action center", () => {
 
   it("renders nothing rather than blanking the portal when the call fails", () => {
     expect(cmp).toMatch(/catch \{[\s\S]{0,120}setFailed\(true\)/);
-    expect(cmp).toContain("if (failed || !data) return null;");
+    expect(cmp).toContain("if (failed || !isActionCenter(data)) return null;");
   });
 
   it("tells the applicant plainly when a document was rejected", () => {
@@ -36,5 +36,30 @@ describe("mounting", () => {
   it("is on the mini portal", () => {
     expect(page).toContain("BF_CLIENT_ACTION_CENTER_v198");
     expect(page).toContain("<ActionCenter applicationId={applicationId} />");
+  });
+});
+
+// BF_CLIENT_ACTION_CENTER_SHAPE_v206
+describe("a response of the wrong shape", () => {
+  it("is rejected rather than read blindly", () => {
+    // The v198 crash: apiCall resolved with another endpoint's payload, so
+    // data.outstanding was undefined and .length threw inside render, taking
+    // MiniPortalPage down with it.
+    expect(cmp).toContain("const isActionCenter = ");
+    expect(cmp).toContain("Array.isArray((d as ActionCenterData).outstanding)");
+    expect(cmp).toContain("Array.isArray((d as ActionCenterData).completed)");
+  });
+
+  it("is checked before the data is stored", () => {
+    expect(cmp).toMatch(/if \(!isActionCenter\(d\)\) \{[\s\S]{0,80}setFailed\(true\);[\s\S]{0,40}return;/);
+  });
+
+  it("is checked again at the render site", () => {
+    expect(cmp).toContain("if (failed || !isActionCenter(data)) return null;");
+  });
+
+  it("no longer types the fetch as the shape it hopes for", () => {
+    expect(cmp).toContain("apiCall<unknown>(");
+    expect(cmp).not.toContain("apiCall<ActionCenterData>(");
   });
 });

@@ -38,12 +38,25 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
   const [data, setData] = useState<ActionCenterData | null>(null);
   const [failed, setFailed] = useState(false);
 
+  // BF_CLIENT_ACTION_CENTER_SHAPE_v206
+  // Accept the payload only if it is actually the shape we asked for. Resolving
+  // is not the same as being correct.
+  const isActionCenter = (d: unknown): d is ActionCenterData =>
+    !!d &&
+    typeof d === "object" &&
+    Array.isArray((d as ActionCenterData).outstanding) &&
+    Array.isArray((d as ActionCenterData).completed);
+
   const load = useCallback(async () => {
     if (!applicationId) return;
     try {
-      const d = await apiCall<ActionCenterData>(
+      const d = await apiCall<unknown>(
         `/api/client/documents-needed/action-center?applicationId=${encodeURIComponent(applicationId)}`,
       );
+      if (!isActionCenter(d)) {
+        setFailed(true);
+        return;
+      }
       setData(d);
       setFailed(false);
     } catch {
@@ -64,7 +77,7 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
     return () => window.removeEventListener("focus", onFocus);
   }, [load]);
 
-  if (failed || !data) return null;
+  if (failed || !isActionCenter(data)) return null;
 
   const { outstanding, completed } = data;
 
