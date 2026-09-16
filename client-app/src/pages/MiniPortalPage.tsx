@@ -23,6 +23,7 @@ import EquipmentCollateralForm from "@/pages/mini-portal/forms/forms/EquipmentCo
 // BF_CLIENT_BLOCK_v708_ADVISORS_MINIPORTAL_v1
 import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
 import LenderQaForm from "@/pages/mini-portal/forms/forms/LenderQaForm"; // BF_CLIENT_LENDER_QA_v1
+import ProductQuestionsForm from "@/pages/mini-portal/forms/forms/ProductQuestionsForm"; // BF_CLIENT_PRODUCT_QUESTIONS_v290
 import SlimHeader from "@/components/SlimHeader";
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
@@ -177,6 +178,12 @@ export default function MiniPortalPage() {
       }));
     } catch {}
     try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    // BF_CLIENT_PRODUCT_QUESTIONS_v290 - are product questions still outstanding?
+    try {
+      const pq = await apiCall<{ missing?: unknown[] }>(`/api/client/applications/${encodeURIComponent(applicationId)}/product-questions`).catch((): null => null);
+      if (!applicationId) return;
+      setProductQuestionsMissing(pq && Array.isArray((pq as any).missing) ? (pq as any).missing.length : null);
+    } catch {}
     // BF_CLIENT_QA_CHIP_GATE_v1 — learn whether lender questions are still outstanding
     // so the "Answer lender questions" chip hides once everything is answered.
     try {
@@ -255,7 +262,7 @@ export default function MiniPortalPage() {
   // BF_CLIENT_NATIVE_WIRING_v236 - the document the picker was opened for, if any.
   const [pickerDoc, setPickerDoc] = useState<{ type: string; label: string } | null>(null);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
-  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa">(null);
+  const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa" | "product_questions">(null);
   // BF_CLIENT_NATIVE_WIRING_v236 - Action Center buttons. Document keys are
   // "upload:<category>" and form keys "form:<name>" (BF-Server applicantActions).
   const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string }) => {
@@ -277,6 +284,8 @@ export default function MiniPortalPage() {
     }
   }, [searchParams, applicationId]);
   const [hasOpenQa, setHasOpenQa] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
+  // BF_CLIENT_PRODUCT_QUESTIONS_v290 - null until checked; hides the prompt once everything is answered.
+  const [productQuestionsMissing, setProductQuestionsMissing] = useState<number | null>(null);
   const [qaChecked, setQaChecked] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
@@ -547,6 +556,7 @@ export default function MiniPortalPage() {
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
+    if (ctaAction === "product_questions" || ctaAction.startsWith("product_questions:")) { setOpenForm("product_questions"); return; } // v290
     // BF_CLIENT_SBA_FORMS_ENTRY_v142 - accepts the canonical cta and the raw
     // doc types, so prompts already sitting in a thread start working too.
     if (/^(sba_forms|sba1919|sba413|sba_form_1919|sba_form_413(_owner_\d+)?)$/i.test(ctaAction)) {
@@ -747,6 +757,7 @@ export default function MiniPortalPage() {
               if (pastAdditionalSteps && typeof m.body === "string" && /few quick steps to finish/i.test(m.body)) return null;
               if (pastAdditionalSteps && isTaskPrompt(m.ctaAction)) return null;
               if (m.ctaAction === "lender_qa" && qaChecked && !hasOpenQa) return null; // BF_CLIENT_QA_CHIP_GATE_v1
+              if (typeof m.ctaAction === "string" && m.ctaAction.startsWith("product_questions") && productQuestionsMissing === 0) return null; // v290
               const outbound = m.authorRole === "self";
               const initial = (m.authorName ?? "S").trim().charAt(0).toUpperCase();
               return (
@@ -1061,6 +1072,17 @@ export default function MiniPortalPage() {
                 <AdvisorsForm
                   applicationId={applicationId}
                   onComplete={() => setOpenForm(null)}
+                />
+              )}
+              {openForm === "product_questions" && (
+                <ProductQuestionsForm
+                  applicationId={applicationId}
+                  onComplete={() => {
+                    setOpenForm(null);
+                    void apiCall<{ missing?: unknown[] }>(`/api/client/applications/${encodeURIComponent(applicationId)}/product-questions`)
+                      .then((pq) => setProductQuestionsMissing(Array.isArray((pq as any)?.missing) ? (pq as any).missing.length : null))
+                      .catch(() => {});
+                  }}
                 />
               )}
               {openForm === "lender_qa" && (
