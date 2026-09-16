@@ -11,6 +11,7 @@ import { ClientProfileStore } from "@/state/clientProfiles";
 import { tokens, components } from "@/styles";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { identifyClarity } from "@/utils/analytics"; // BF_CLIENT_CLARITY_IDENTIFY_v162
+import { biometryAvailable, enrollThisDevice, isEnrolled, phoneFromToken, PROMPTED_KEY, signInWithFaceId } from "@/native/deviceSignIn"; // BF_CLIENT_FACE_ID_SIGN_IN_v297
 
 type Step = "phone" | "code";
 
@@ -39,6 +40,49 @@ export default function OtpPage() {
   const sendInFlightRef = useRef(false);
   const lastSentAtRef = useRef<number>(0);
   const SEND_COOLDOWN_MS = 30_000;
+
+  // BF_CLIENT_FACE_ID_SIGN_IN_v297
+  const [faceIdReady, setFaceIdReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      const ready = (await biometryAvailable()) && (await isEnrolled());
+      if (alive) setFaceIdReady(ready);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  function routeAfterSignIn(formatted: string, verifyData: any) {
+    if (verifyData?.hasSubmittedApplication === true && typeof verifyData?.submittedApplicationId === "string" && verifyData.submittedApplicationId) {
+      ClientProfileStore.markSubmitted(formatted, verifyData.submittedApplicationId);
+    }
+    const next = resolveOtpNextStep(ClientProfileStore.getProfile(formatted));
+    navigate(next.action === "portal" ? "/portal" : "/apply/step-1", { replace: true });
+  }
+
+  async function handleFaceIdSignIn() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await signInWithFaceId();
+      const signedInPhone = phoneFromToken(data.token) ?? "";
+      try { sessionStorage.setItem("verified_phone", signedInPhone); identifyClarity(signedInPhone); } catch { /* storage unavailable */ }
+      routeAfterSignIn(signedInPhone, data);
+    } catch (e: any) {
+      if (e?.code === "expired" || e?.code === "not_enrolled") setFaceIdReady(false);
+      setError(e?.code === "expired" || e?.code === "not_enrolled" ? e.message : "Face ID didn't work. Sign in with a text code instead.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function offerFaceId() {
+    try {
+      if (localStorage.getItem(PROMPTED_KEY) || !(await biometryAvailable()) || (await isEnrolled())) return;
+      localStorage.setItem(PROMPTED_KEY, "1");
+      if (window.confirm("Use Face ID to sign in next time? You won't need a text code.")) await enrollThisDevice();
+    } catch { /* never block sign-in */ }
+  }
 
   useEffect(() => {
     const readinessToken = searchParams.get("readiness_token");
@@ -83,6 +127,7 @@ export default function OtpPage() {
     setError(null);
     try {
       const profile = await verifyOtp(formatted, otpCode);
+      await offerFaceId(); // BF_CLIENT_FACE_ID_SIGN_IN_v297
 
       // BF_CLIENT_v?_BLOCK_1_15_PHONE_BASED_READINESS_PREFILL — stash
       // verified phone for Step1_KYC to use on phone-based prefill lookup.
@@ -155,6 +200,20 @@ export default function OtpPage() {
 
         {step === "phone" ? (
           <div style={components.form.fieldStack}>
+            {faceIdReady && (
+              <>
+                <button
+                  type="button"
+                  data-testid="face-id-sign-in"
+                  onClick={() => void handleFaceIdSignIn()}
+                  disabled={loading}
+                  style={{ ...components.buttons.base, ...components.buttons.primary, width: "100%", marginBottom: tokens.spacing.md }}
+                >
+                  {loading ? "Signing in..." : "Sign in with Face ID"}
+                </button>
+                <p style={{ textAlign: "center", color: tokens.colors.textSecondary, margin: 0 }}>or get a text code</p>
+              </>
+            )}
             <label style={components.form.label}>Mobile Phone Number (E.164)</label>
             <input
               type="tel"
