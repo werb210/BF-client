@@ -56,6 +56,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
     }
 
+    // BF_CLIENT_BACKGROUND_UPLOAD_v307 - iOS relaunches the app to report finished background uploads.
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+        if identifier == BackgroundUploader.sessionIdentifier {
+            BackgroundUploader.shared.systemCompletion = completionHandler
+            _ = BackgroundUploader.shared.session
+        } else {
+            completionHandler()
+        }
+    }
+
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
@@ -101,5 +111,141 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+    }
+}
+
+// BF_CLIENT_BACKGROUND_UPLOAD_v307
+// A background URLSession lets iOS finish uploads after the app closes or the
+// phone locks, then records the outcome for the web layer to reconcile.
+final class BackgroundUploader: NSObject, URLSessionTaskDelegate {
+    static let shared = BackgroundUploader()
+    static let sessionIdentifier = "com.boreal.client.background-upload"
+    var systemCompletion: (() -> Void)?
+
+    private let resultsKey = "boreal.backgroundUpload.results"
+    private let lock = NSLock()
+
+    lazy var session: URLSession = {
+        let config = URLSessionConfiguration.background(withIdentifier: BackgroundUploader.sessionIdentifier)
+        config.sessionSendsLaunchEvents = true
+        config.isDiscretionary = false
+        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
+    }()
+
+    private var directory: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let dir = base.appendingPathComponent("BackgroundUploads", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    func enqueue(id: String, url: URL, fileData: Data, fileName: String, mimeType: String, fields: [String: String], headers: [String: String]) throws {
+        let boundary = "Boundary-\(UUID().uuidString)"
+        let safeName = fileName.replacingOccurrences(of: "\"", with: "")
+        var body = Data()
+        for (key, value) in fields {
+            body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(key)\"\r\n\r\n\(value)\r\n".utf8))
+        }
+        body.append(Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"file\"; filename=\"\(safeName)\"\r\nContent-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(fileData)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
+        let bodyFile = directory.appendingPathComponent("\(id).body")
+        try body.write(to: bodyFile, options: .atomic)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        for (key, value) in headers { request.setValue(value, forHTTPHeaderField: key) }
+        let task = session.uploadTask(with: request, fromFile: bodyFile)
+        task.taskDescription = id
+        task.resume()
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard let id = task.taskDescription else { return }
+        let status = (task.response as? HTTPURLResponse)?.statusCode ?? 0
+        record(id: id, status: error == nil ? status : 0, error: error?.localizedDescription)
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent("\(id).body"))
+    }
+
+    func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        DispatchQueue.main.async {
+            self.systemCompletion?()
+            self.systemCompletion = nil
+        }
+    }
+
+    private func record(id: String, status: Int, error: String?) {
+        lock.lock(); defer { lock.unlock() }
+        var all = UserDefaults.standard.dictionary(forKey: resultsKey) ?? [:]
+        all[id] = ["status": status, "error": error ?? ""]
+        UserDefaults.standard.set(all, forKey: resultsKey)
+    }
+
+    func results() -> [[String: Any]] {
+        lock.lock(); defer { lock.unlock() }
+        let all = UserDefaults.standard.dictionary(forKey: resultsKey) ?? [:]
+        return all.compactMap { key, value in
+            guard let entry = value as? [String: Any] else { return nil }
+            return ["id": key, "status": entry["status"] as? Int ?? 0, "error": entry["error"] as? String ?? ""]
+        }
+    }
+
+    func acknowledge(_ ids: [String]) {
+        lock.lock(); defer { lock.unlock() }
+        var all = UserDefaults.standard.dictionary(forKey: resultsKey) ?? [:]
+        for id in ids { all.removeValue(forKey: id) }
+        UserDefaults.standard.set(all, forKey: resultsKey)
+    }
+
+    func cancelAll() {
+        session.getAllTasks { tasks in tasks.forEach { $0.cancel() } }
+        try? FileManager.default.removeItem(at: directory)
+        lock.lock(); defer { lock.unlock() }
+        UserDefaults.standard.removeObject(forKey: resultsKey)
+    }
+}
+
+@objc(BackgroundUploadPlugin)
+public class BackgroundUploadPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "BackgroundUploadPlugin"
+    public let jsName = "BackgroundUpload"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "results", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "acknowledge", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelAll", returnType: CAPPluginReturnPromise)
+    ]
+
+    @objc func enqueue(_ call: CAPPluginCall) {
+        guard let id = call.getString("id"),
+              let urlString = call.getString("url"), let url = URL(string: urlString),
+              let base64 = call.getString("fileBase64"), let fileData = Data(base64Encoded: base64),
+              let fileName = call.getString("fileName") else {
+            call.reject("id, url, fileBase64 and fileName are required"); return
+        }
+        let mimeType = call.getString("mimeType") ?? "application/octet-stream"
+        let fields = (call.getObject("fields") ?? [:]).compactMapValues { $0 as? String }
+        let headers = (call.getObject("headers") ?? [:]).compactMapValues { $0 as? String }
+        do {
+            try BackgroundUploader.shared.enqueue(id: id, url: url, fileData: fileData, fileName: fileName, mimeType: mimeType, fields: fields, headers: headers)
+            call.resolve()
+        } catch {
+            call.reject("Could not start the background upload")
+        }
+    }
+
+    @objc func results(_ call: CAPPluginCall) {
+        call.resolve(["results": BackgroundUploader.shared.results()])
+    }
+
+    @objc func acknowledge(_ call: CAPPluginCall) {
+        BackgroundUploader.shared.acknowledge(call.getArray("ids", String.self) ?? [])
+        call.resolve()
+    }
+
+    @objc func cancelAll(_ call: CAPPluginCall) {
+        BackgroundUploader.shared.cancelAll()
+        call.resolve()
     }
 }

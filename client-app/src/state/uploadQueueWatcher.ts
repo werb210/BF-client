@@ -16,6 +16,11 @@ async function tick(): Promise<void> {
   if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   running = true;
   try {
+    // BF_CLIENT_BACKGROUND_UPLOAD_v307 - pick up work finished while closed.
+    try {
+      const { reconcileBackgroundUploads } = await import("../native/backgroundUpload");
+      await reconcileBackgroundUploads();
+    } catch { /* never block the in-app queue */ }
     const len = await queueLength();
     if (len > 0) await processQueue();
   } catch (err) {
@@ -34,6 +39,10 @@ export function startUploadQueueWatcher(): void {
   window.addEventListener("online", () => { void tick(); });
   // BF_CLIENT_UPLOAD_QUEUE_v278 - drain the moment the native app or tab comes back.
   window.addEventListener("boreal:native-resume", () => { void tick(); });
+  // BF_CLIENT_BACKGROUND_UPLOAD_v307 - hand queued work to the phone when leaving.
+  window.addEventListener("boreal:native-pause", () => {
+    void import("../native/backgroundUpload").then((module) => module.handOffQueuedUploads()).catch((): void => undefined);
+  });
   if (typeof document !== "undefined") {
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") void tick(); });
   }
