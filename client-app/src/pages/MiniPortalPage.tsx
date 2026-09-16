@@ -555,6 +555,8 @@ export default function MiniPortalPage() {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
+    // BF_CLIENT_SIGN_CTA_v294 - "Sign now" messages (e.g. after staff switch the application to Line of Credit) open signing.
+    if (ctaAction === "sign" || ctaAction === "sign_application") { onChip("sign"); return; }
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
     if (ctaAction === "product_questions" || ctaAction.startsWith("product_questions:")) { setOpenForm("product_questions"); return; } // v290
     // BF_CLIENT_SBA_FORMS_ENTRY_v142 - accepts the canonical cta and the raw
