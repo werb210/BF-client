@@ -32,6 +32,11 @@ export function startUploadQueueWatcher(): void {
   started = true;
   void tick(); // boot drain
   window.addEventListener("online", () => { void tick(); });
+  // BF_CLIENT_UPLOAD_QUEUE_v278 - drain the moment the native app or tab comes back.
+  window.addEventListener("boreal:native-resume", () => { void tick(); });
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") void tick(); });
+  }
   timer = setInterval(() => { void tick(); }, RETRY_INTERVAL_MS);
   // Ask the browser to drain the queue even once this page is gone, and drain
   // immediately if the worker wakes us.

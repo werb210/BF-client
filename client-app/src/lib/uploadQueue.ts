@@ -2,6 +2,40 @@
 // FormData isn't JSON-serializable so we can't store it in IndexedDB; we store
 // a descriptor instead and rebuild the FormData inside processQueue.
 import { ClientAppAPI } from "../api/clientApp";
+import { ENV } from "@/env";
+import { getToken } from "@/auth/token";
+
+// BF_CLIENT_UPLOAD_QUEUE_v278
+// Three gaps closed: (1) the mini-portal "Upload Now" picker never queued, so a
+// dropped connection lost the photo; (2) network errors counted as attempts,
+// so ~2.5 minutes offline silently deleted a queued file; (3) the native app
+// only drained on its 30s timer, not the moment it came back to the foreground.
+export type UploadMode = "public" | "session";
+
+/** Worth retrying later: no connection, timeout, rate limit, or a server error. */
+export function isRetryableUploadFailure(status: number | undefined, err?: unknown): boolean {
+  if (typeof status !== "number") return err === undefined || err instanceof TypeError || (err as { name?: string })?.name === "TypeError" || !(err instanceof Error) || /network|fetch|load failed/i.test(err.message);
+  return status >= 500 || status === 408 || status === 429;
+}
+
+export const UPLOAD_QUEUE_CHANGED = "boreal:upload-queue-changed";
+function notifyQueueChanged(): void {
+  try { if (typeof window !== "undefined") window.dispatchEvent(new Event(UPLOAD_QUEUE_CHANGED)); } catch { /* ignore */ }
+}
+
+async function uploadWithSession(item: QueuedUploadDescriptor, file: File): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("category", item.documentType);
+  form.append("document_type", item.documentType);
+  form.append("applicationId", String(item.applicationId ?? ""));
+  const res = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${getToken() ?? ""}` },
+    body: form,
+  });
+  if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
+}
 
 const DB_NAME = "bf-upload-queue";
 const STORE_NAME = "uploads";
@@ -11,7 +45,7 @@ const MAX_QUEUE_SIZE = 20;
 // times in a row. Without a cap the worker retries forever every 30s, which
 // produces the pre-login 401 spam in DevTools when stale items survive a
 // session boundary.
-const MAX_ATTEMPTS = 5;
+const MAX_ATTEMPTS = 12; // v278: only server errors count; offline time does not
 
 export interface QueuedUploadDescriptor {
   id?: number;
@@ -23,6 +57,7 @@ export interface QueuedUploadDescriptor {
   base64: string;        // file bytes encoded as base64 (data:...,<base64>)
   enqueuedAt: number;
   attempts: number;
+  mode?: UploadMode; // v278: "session" = signed-in mini-portal upload
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -94,6 +129,7 @@ export async function enqueueUploadFromFile(params: {
   applicationId: string | null | undefined;
   documentType: string;
   file: File;
+  mode?: UploadMode;
 }): Promise<void> {
   const base64 = await fileToBase64(params.file);
   const descriptor: QueuedUploadDescriptor = {
@@ -105,6 +141,7 @@ export async function enqueueUploadFromFile(params: {
     base64,
     enqueuedAt: Date.now(),
     attempts: 0,
+    mode: params.mode ?? "public",
   };
   const db = await openDB();
   const tx = db.transaction(STORE_NAME, "readwrite");
@@ -116,6 +153,7 @@ export async function enqueueUploadFromFile(params: {
   }
   store.add(descriptor);
   await txDone(tx);
+  notifyQueueChanged();
   await scheduleBackgroundSync();
 }
 
@@ -146,23 +184,29 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
   for (const item of all) {
     try {
       const file = base64ToFile(item.base64, item.filename, item.contentType);
-      await ClientAppAPI.uploadDocument({
-        applicationToken: item.applicationToken,
-        applicationId: item.applicationId ?? undefined,
-        documentType: item.documentType,
-        file,
-      });
+      if (item.mode === "session") {
+        await uploadWithSession(item, file);
+      } else {
+        await ClientAppAPI.uploadDocument({
+          applicationToken: item.applicationToken,
+          applicationId: item.applicationId ?? undefined,
+          documentType: item.documentType,
+          file,
+        });
+      }
       const wtx = db.transaction(STORE_NAME, "readwrite");
       if (item.id !== undefined) wtx.objectStore(STORE_NAME).delete(item.id);
       await txDone(wtx);
       succeeded += 1;
+      notifyQueueChanged();
     } catch (err) {
       // BF_CLIENT_QUEUE_PERMANENT_4XX_v1 - a 4xx (except 408/429) is permanent:
       // the server told us the file is rejected (415 unsupported type, 413 too
       // large, 404 gone). Retrying it every 30s forever just hammers the server
       // (observed: the same .docx re-posted for 12+ minutes). Drop it now.
       const st = (err as { status?: number })?.status;
-      if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429) {
+      // v278: a signed-in upload that hits 401 waits for the applicant to sign in again.
+      if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429 && !(st === 401 && item.mode === "session")) {
         try {
           const wtx = db.transaction(STORE_NAME, "readwrite");
           if (item.id !== undefined) wtx.objectStore(STORE_NAME).delete(item.id);
@@ -170,6 +214,8 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
         } catch { /* swallow */ }
         continue;
       }
+      // v278: no connection is not a failed attempt; leave it for the next drain.
+      if (typeof st !== "number" && isRetryableUploadFailure(undefined, err)) continue;
       // Bump attempts; leave in queue.
       try {
         const wtx = db.transaction(STORE_NAME, "readwrite");
