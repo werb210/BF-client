@@ -34,13 +34,13 @@ public class SecureCredentialsPlugin extends Plugin {
       String value = call.getString("value"); if (value == null) { call.reject("value required"); return; }
       Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); cipher.init(Cipher.ENCRYPT_MODE, key());
       String payload = Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP) + ":" + Base64.encodeToString(cipher.doFinal(value.getBytes(StandardCharsets.UTF_8)), Base64.NO_WRAP);
-      getContext().getSharedPreferences(PREFS, 0).edit().putString("token", payload).apply(); call.resolve();
+      getContext().getSharedPreferences(PREFS, 0).edit().putString(call.getString("key", "token"), payload).apply(); call.resolve(); // BF_CLIENT_FACE_ID_SIGN_IN_v297
     } catch (Exception error) { call.reject("Secure credential write failed", error); }
   }
   @PluginMethod public void get(PluginCall call) {
     JSObject result = new JSObject();
     try {
-      String payload = getContext().getSharedPreferences(PREFS, 0).getString("token", null);
+      String payload = getContext().getSharedPreferences(PREFS, 0).getString(call.getString("key", "token"), null);
       if (payload == null) { result.put("value", JSObject.NULL); call.resolve(result); return; }
       String[] parts = payload.split(":", 2); Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
       cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(parts[0], Base64.NO_WRAP)));
@@ -48,6 +48,6 @@ public class SecureCredentialsPlugin extends Plugin {
     } catch (Exception error) { call.reject("Secure credential read failed", error); }
   }
   @PluginMethod public void clear(PluginCall call) {
-    getContext().getSharedPreferences(PREFS, 0).edit().remove("token").apply(); call.resolve();
+    getContext().getSharedPreferences(PREFS, 0).edit().remove(call.getString("key", "token")).apply(); call.resolve();
   }
 }

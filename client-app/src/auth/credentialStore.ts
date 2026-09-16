@@ -2,9 +2,9 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 
 const KEY = "bf_jwt_token";
 interface SecureCredentialsPlugin {
-  get(): Promise<{ value: string | null }>;
-  set(options: { value: string }): Promise<void>;
-  clear(): Promise<void>;
+  get(options?: { key?: string }): Promise<{ value: string | null }>;
+  set(options: { value: string; key?: string }): Promise<void>;
+  clear(options?: { key?: string }): Promise<void>;
 }
 const SecureCredentials = registerPlugin<SecureCredentialsPlugin>("SecureCredentials");
 
@@ -26,5 +26,21 @@ export const credentialStore = {
   async clear(): Promise<void> {
     if (Capacitor.isNativePlatform()) await SecureCredentials.clear();
     else try { browserStorage()?.removeItem(KEY); } catch { /* storage may be blocked */ }
+  },
+};
+
+// BF_CLIENT_FACE_ID_SIGN_IN_v297 - a separate secure slot for the Face ID sign-in credential.
+export const namedCredentialStore = {
+  async get(key: string): Promise<string | null> {
+    if (Capacitor.isNativePlatform()) {
+      try { return (await SecureCredentials.get({ key })).value; } catch { return null; }
+    }
+    return null;
+  },
+  async set(key: string, value: string): Promise<void> {
+    if (Capacitor.isNativePlatform()) await SecureCredentials.set({ key, value });
+  },
+  async clear(key: string): Promise<void> {
+    if (Capacitor.isNativePlatform()) await SecureCredentials.clear({ key }).catch((): void => undefined);
   },
 };
