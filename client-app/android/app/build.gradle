@@ -56,6 +56,8 @@ dependencies {
     // The BOM keeps the version in step with whatever the plugin resolves.
     implementation platform('com.google.firebase:firebase-bom:33.7.0')
     implementation 'com.google.firebase:firebase-messaging'
+    // BF_CLIENT_BACKGROUND_UPLOAD_v307 - uploads that finish after the app is closed.
+    implementation 'androidx.work:work-runtime:2.9.1'
 }
 
 apply from: 'capacitor.build.gradle'

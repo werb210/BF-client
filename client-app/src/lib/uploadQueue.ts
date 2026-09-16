@@ -58,6 +58,7 @@ export interface QueuedUploadDescriptor {
   enqueuedAt: number;
   attempts: number;
   mode?: UploadMode; // v278: "session" = signed-in mini-portal upload
+  backgroundHandedAt?: number; // v307: handed to the phone to finish in the background
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -157,6 +158,33 @@ export async function enqueueUploadFromFile(params: {
   await scheduleBackgroundSync();
 }
 
+// BF_CLIENT_BACKGROUND_UPLOAD_v307 - helpers for the native background hand-off.
+export async function listQueuedUploads(): Promise<QueuedUploadDescriptor[]> {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, "readonly");
+    return await reqAsPromise(tx.objectStore(STORE_NAME).getAll() as IDBRequest<QueuedUploadDescriptor[]>);
+  } catch {
+    return [];
+  }
+}
+
+export async function updateQueuedUpload(item: QueuedUploadDescriptor): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).put(item);
+  await txDone(tx);
+  notifyQueueChanged();
+}
+
+export async function removeQueuedUpload(id: number): Promise<void> {
+  const db = await openDB();
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).delete(id);
+  await txDone(tx);
+  notifyQueueChanged();
+}
+
 export async function queueLength(): Promise<number> {
   try {
     const db = await openDB();
@@ -182,6 +210,8 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
     readTx.objectStore(STORE_NAME).getAll() as IDBRequest<QueuedUploadDescriptor[]>
   );
   for (const item of all) {
+    // BF_CLIENT_BACKGROUND_UPLOAD_v307 - the phone is already sending this item.
+    if (item.backgroundHandedAt) continue;
     try {
       const file = base64ToFile(item.base64, item.filename, item.contentType);
       if (item.mode === "session") {

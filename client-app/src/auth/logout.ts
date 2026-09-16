@@ -33,6 +33,8 @@ export async function unregisterServiceWorkers() {
 }
 
 export function clearClientStorage() {
+  // BF_CLIENT_BACKGROUND_UPLOAD_v307 - signing out stops phone-managed uploads.
+  void import("@/native/backgroundUpload").then((module) => module.cancelBackgroundUploads()).catch((): void => undefined);
   // BF_CLIENT_FACE_ID_SIGN_IN_v297 - signing out turns Face ID sign-in off for this phone.
   void import("@/native/deviceSignIn").then((m) => m.disableDeviceSignIn()).catch((): void => undefined);
   OfflineStore.clear();

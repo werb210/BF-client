@@ -28,6 +28,7 @@ export function useNativeRuntime(): void {
       handles.push(await CapacitorApp.addListener("appStateChange", ({ isActive }) => {
         document.documentElement.classList.toggle("native-backgrounded", !isActive);
         if (isActive) window.dispatchEvent(new Event("boreal:native-resume"));
+        else window.dispatchEvent(new Event("boreal:native-pause")); // BF_CLIENT_BACKGROUND_UPLOAD_v307
       }));
       handles.push(await Network.addListener("networkStatusChange", ({ connected }) => {
         window.dispatchEvent(new CustomEvent("boreal:native-network", { detail: { connected } }));
