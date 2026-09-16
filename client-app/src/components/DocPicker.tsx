@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
+import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQueue"; // BF_CLIENT_UPLOAD_QUEUE_v278
 
 type DocItem = { document_type: string; label: string };
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function DocPicker({ applicationId, onClose, onUploaded, documentType, documentLabel }: Props) {
+  const [notice, setNotice] = useState<string | null>(null); // BF_CLIENT_UPLOAD_QUEUE_v278
   const [data, setData] = useState<NeededResponse>({ stillNeeded: [], rejected: [] });
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
@@ -65,7 +67,14 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
       setError(null);
       let lastResp: Response | undefined;
       let failed = false;
+      let queued = 0; // BF_CLIENT_UPLOAD_QUEUE_v278
+      setNotice(null);
       for (const file of files) {
+        if (queued > 0) {
+          // Already offline: save the rest on the device instead of trying each one.
+          try { await enqueueUploadFromFile({ applicationToken: "", applicationId, documentType, file, mode: "session" }); queued += 1; continue; }
+          catch { failed = true; break; }
+        }
         const form = new FormData();
         form.append("file", file);
         // The live server /upload reads the `category` field; send both names so
@@ -81,6 +90,14 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
           });
           if (!lastResp.ok) throw new Error(String(lastResp.status));
         } catch (err) {
+          const status = lastResp && !lastResp.ok ? lastResp.status : undefined;
+          if (isRetryableUploadFailure(status, status === undefined ? err : undefined)) {
+            try {
+              await enqueueUploadFromFile({ applicationToken: "", applicationId, documentType, file, mode: "session" });
+              queued += 1;
+              continue;
+            } catch { /* fall through to the error message */ }
+          }
           failed = true;
           const detail = err instanceof Error ? err.message : "";
           console.error("[DocPicker upload] failed:", detail, lastResp?.status, lastResp?.statusText);
@@ -94,6 +111,11 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
           : lastResp?.status === 415 ? "That file type is not supported. Please upload a PDF, Word document, Excel file, or a photo (PNG/JPEG/HEIC)." // BF_CLIENT_STEP5_PERMANENT_4XX_v1
           : "Upload failed. Please try again.";
         setError(userMessage);
+        setUploading(null);
+        return;
+      }
+      if (queued > 0) {
+        setNotice(`No connection right now. ${queued} file${queued === 1 ? " is" : "s are"} saved on this device and will upload automatically when you're back online.`);
         setUploading(null);
         return;
       }
@@ -126,6 +148,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
 
         {loading && <p style={{ color: "#64748b" }}>Loading…</p>}
         {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
+        {notice && <p data-testid="docpicker-queued-notice" style={{ color: "#1e40af" }}>{notice}</p>}
         {empty && (
           <p style={{ color: "#16a34a" }}>You're all caught up — no documents needed right now.</p>
         )}
