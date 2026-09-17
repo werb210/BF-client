@@ -4,6 +4,7 @@
 // home-screen steps. Dismiss is permanent ("Don't show again").
 import { useEffect, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
+import { Capacitor } from "@capacitor/core"; // BF_CLIENT_INSTALL_CARD_NATIVE_v338
 
 type Platform = "ios" | "android" | "desktop" | "unknown";
 
@@ -22,7 +23,19 @@ function detectPlatform(): Platform {
   return "desktop";
 }
 
+// BF_CLIENT_INSTALL_CARD_NATIVE_v338
+// This card asks the client to add the site to their home screen and offers
+// "Download for iOS" / "Download for Android". Inside the installed app it was
+// telling clients to install the app they were already using.
+//
+// The old check was isStandalone() alone, which reads navigator.standalone and
+// the display-mode media query. Both are PWA signals. Capacitor runs the same
+// bundle inside a WKWebView where navigator.standalone is undefined and
+// display-mode never matches "standalone", so every native launch looked to
+// this component exactly like a fresh Safari tab. Ask Capacitor instead: it is
+// the only thing that knows the difference.
 function isStandalone(): boolean {
+  if (Capacitor.isNativePlatform()) return true;
   if (typeof window === "undefined") return false;
   const navAny = window.navigator as Navigator & { standalone?: boolean };
   if (navAny.standalone === true) return true;
@@ -86,7 +99,10 @@ export default function InstallAppPrompt() {
 
   const dismiss = useCallback(() => { try { window.localStorage.setItem(DISMISS_KEY, "1"); } catch {} setDismissed(true); }, []);
 
-  if (installed || dismissed) return null;
+  // BF_CLIENT_INSTALL_CARD_NATIVE_v338 - installed is seeded from isStandalone()
+  // on mount, but check the platform directly too. A render that happens before
+  // that effect runs would otherwise flash the card inside the native app.
+  if (Capacitor.isNativePlatform() || installed || dismissed) return null;
 
   const stepKey: StepKey = platform === "unknown" ? "desktop" : platform;
 
