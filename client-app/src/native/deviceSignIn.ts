@@ -82,3 +82,29 @@ export function phoneFromToken(token: string): string | null {
     return null;
   }
 }
+
+// BF_CLIENT_LOCK_SESSION_CHECK_v322
+// Renew the session from the Face ID sign-in credential without a second Face ID
+// prompt - used right after the lock screen's own Face ID succeeded. Plain fetch,
+// so a refused credential never signs the client out on its own.
+export async function renewSessionSilently(apiBase: string): Promise<boolean> {
+  const stored = parseStored(await namedCredentialStore.get(DEVICE_KEY));
+  if (!stored) return false;
+  try {
+    const res = await fetch(`${apiBase}/api/client/device-sign-in`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(stored),
+    });
+    if (res.status === 401) { await namedCredentialStore.clear(DEVICE_KEY); return false; }
+    if (!res.ok) return false;
+    const body = (await res.json()) as { token?: string; secret?: string; data?: { token?: string; secret?: string } };
+    const data = body?.data ?? body;
+    if (!data?.token || !data?.secret) return false;
+    await namedCredentialStore.set(DEVICE_KEY, JSON.stringify({ credentialId: stored.credentialId, secret: data.secret }));
+    setToken(data.token);
+    return true;
+  } catch {
+    return false;
+  }
+}
