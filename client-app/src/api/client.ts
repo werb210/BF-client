@@ -177,10 +177,22 @@ export async function startOtp(phone: string) {
   });
 }
 
+// BF_CLIENT_ONE_VERIFY_OTP_v343
+// There were two verifyOtp functions in this app - this one and the one in
+// api/auth.ts - posting to the same endpoint with different bodies. v335 added
+// userType:"client" to the other one only, so whichever call site imported THIS
+// one kept signing in without it. On a phone that also belongs to a staff user,
+// BF-Server then minted an Admin token (by design: BF_SERVER_CLIENT_USERTYPE_v334
+// only issues a client token when asked), and every client-scoped route answered
+// 401 - Face ID enrollment, device sign-in, the client voice token. The app was
+// correct in one file and wrong in the other, which is why it looked like the
+// server was ignoring the flag.
+//
+// Both now send it. The guard test below fails if a third one ever appears.
 export async function verifyOtp(phone: string, code: string) {
   return apiCall(endpoints.otpVerify, {
     method: "POST",
-    body: { phone, code },
+    body: { phone, code, userType: "client" },
   });
 }
 

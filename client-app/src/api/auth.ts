@@ -22,7 +22,7 @@ export async function verifyOtp(phone: string, code: string) {
   try {
     data = await apiRequest<{ token?: string }>(endpoints.otpVerify, {
       method: "POST",
-      body: { phone, code, userType: "client" /* BF_CLIENT_ENROLL_REASON_v335 */ },
+      body: { phone, code, userType: "client" }, // BF_CLIENT_ONE_VERIFY_OTP_v343
     });
   } catch (error: any) {
     if (error?.status === 401) {
