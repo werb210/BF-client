@@ -7,6 +7,7 @@ import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { type ThreadMessage } from "@/components/messaging/MessageThread";
 // BF_CLIENT_BLOCK_53_v1
+import FaceIdSignInToggle from "@/components/FaceIdSignInToggle"; // BF_CLIENT_FACE_ID_SETTING_v325
 import DocPicker from "@/components/DocPicker";
 import { Device } from "@twilio/voice-sdk";
 import "./MiniPortalPage.css";
@@ -906,6 +907,8 @@ export default function MiniPortalPage() {
                 </div>
               )}
             </div>
+            {/* BF_CLIENT_FACE_ID_SETTING_v325 - the only visible way to turn Face ID sign-in on or off. */}
+            <FaceIdSignInToggle />
             {showDocPicker && (
               <DocPicker
                 applicationId={applicationId}
