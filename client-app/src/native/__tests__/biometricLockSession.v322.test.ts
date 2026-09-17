@@ -22,8 +22,8 @@ describe("Face ID lock over a dead session", () => {
   it("never asks for Face ID over a dead session it cannot renew", () => {
     expect(shouldLock({ ...base, coldStart: true, sessionUsable: false, enrolled: false })).toBe(false);
     expect(shouldLock({ ...base, coldStart: true, sessionUsable: false, enrolled: true })).toBe(true);
-    expect(shouldLock({ ...base, coldStart: true })).toBe(true);
-    expect(shouldLock({ ...base, backgroundedAt: base.now - LOCK_AFTER_MS })).toBe(true);
+    expect(shouldLock({ ...base, coldStart: true, enrolled: true })).toBe(true);
+    expect(shouldLock({ ...base, backgroundedAt: base.now - LOCK_AFTER_MS, enrolled: true })).toBe(true);
   });
 
   it("asks the server whether the session is still accepted", async () => {
@@ -37,7 +37,7 @@ describe("Face ID lock over a dead session", () => {
 
   it("clears a dead session and renews after unlock", () => {
     const hook = readFileSync(join(__dirname, "..", "useBiometricLock.ts"), "utf8");
-    expect(hook).toContain("clearToken(); // nothing to unlock");
+    expect(hook).toContain("if (!enrolled) return; // v323");
     expect(hook).toContain("await renewSessionSilently(ENV.API_BASE)");
     expect(readFileSync(join(__dirname, "..", "deviceSignIn.ts"), "utf8")).toContain("export async function renewSessionSilently");
   });

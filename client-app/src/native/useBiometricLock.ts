@@ -20,6 +20,16 @@ import { isEnrolled, renewSessionSilently } from "@/native/deviceSignIn";
 //     client goes straight to sign-in, with no pointless Face ID prompt;
 //   - with Face ID sign-in turned on, a successful unlock also renews the
 //     session silently, so the client lands in the app, not on the code page.
+// BF_CLIENT_LOCK_ONLY_ENROLLED_v323 - v322 still showed Face ID and then the
+// text-code page. Its server check treated any answer except 401/403 as "session
+// fine" (the check URL answers 404), so a dead session left in the Keychain by an
+// earlier install still got the Face ID lock, and the first real request then
+// sent the client to sign in. The lock is now tied to the client's own choice:
+//   - Face ID sign-in NOT turned on -> no Face ID prompt at launch, ever. A live
+//     session opens the app; a dead one goes straight to the text-code page.
+//   - Face ID sign-in turned on -> one Face ID prompt, then the session is renewed
+//     from the device credential, so it can never be dead underneath. If that
+//     credential was revoked, the session is cleared and the client signs in once.
 const SESSION_KEY = "bf_jwt_token";
 export const LOCK_AFTER_MS = 60_000;
 
@@ -56,6 +66,7 @@ export async function sessionAccepted(token: string | null, apiBase: string, tim
 
 export function shouldLock(p: { session: boolean; sessionUsable?: boolean; enrolled?: boolean; biometry: boolean; coldStart: boolean; backgroundedAt: number | null; now: number }): boolean {
   if (!p.session || !p.biometry) return false;
+  if (p.enrolled === false) return false; // v323: only lock for clients who turned Face ID sign-in on
   if (p.sessionUsable === false && !p.enrolled) return false;
   if (p.coldStart) return true;
   return p.backgroundedAt !== null && p.now - p.backgroundedAt >= LOCK_AFTER_MS;
@@ -79,13 +90,8 @@ export function useBiometricLock() {
     try { biometry = Boolean((await BiometricAuth.checkBiometry()).isAvailable); } catch { biometry = false; }
     setAvailable(biometry);
     const enrolled = await isEnrolled().catch(() => false);
-    const token = getToken();
-    let usable = !tokenExpired(token);
-    if (usable && isColdStart) usable = (await sessionAccepted(token, ENV.API_BASE)) !== false;
-    if (!usable && !enrolled) {
-      clearToken(); // nothing to unlock: go straight to sign-in, no Face ID prompt
-      return;
-    }
+    if (!enrolled) return; // v323: no Face ID sign-in, no Face ID lock
+    const usable = !tokenExpired(getToken());
     if (shouldLock({ session: true, sessionUsable: usable, enrolled, biometry, coldStart: isColdStart, backgroundedAt: awayAt, now: Date.now() })) setLocked(true);
   }, []);
 
@@ -97,8 +103,10 @@ export function useBiometricLock() {
         allowDeviceCredential: true,
         iosFallbackTitle: "Use passcode",
       });
-      // The client just passed Face ID: refresh the session so it cannot be dead underneath.
-      if (await isEnrolled().catch(() => false)) await renewSessionSilently(ENV.API_BASE);
+      // The client just passed Face ID: renew the session so it cannot be dead underneath.
+      // v323: if the device credential was revoked, clear the dead session - sign in once.
+      const renewed = await renewSessionSilently(ENV.API_BASE);
+      if (!renewed && tokenExpired(getToken())) clearToken();
       setLocked(false);
       return true;
     } catch {
