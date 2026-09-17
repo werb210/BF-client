@@ -10,6 +10,7 @@
 import { useEffect, type PropsWithChildren } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { clearToken, hasToken } from "@/api/auth";
+import AccountBar from "@/components/AccountBar"; // BF_CLIENT_ACCOUNT_BAR_v341
 
 export function RequireOTP({ children }: PropsWithChildren) {
   const location = useLocation();
@@ -43,5 +44,13 @@ export function RequireOTP({ children }: PropsWithChildren) {
     return <Navigate to="/otp" replace />;
   }
 
-  return <>{children}</>;
+  // BF_CLIENT_ACCOUNT_BAR_v341 - this guard already wraps every signed-in route,
+  // which makes it the one place that puts the account controls in front of the
+  // client whichever screen they are on.
+  return (
+    <>
+      <AccountBar />
+      {children}
+    </>
+  );
 }
