@@ -30,12 +30,12 @@ describe("there is always a visible way to turn Face ID on", () => {
   it("offers both directions once biometry is usable", () => {
     expect(toggle).toContain("Turn on Face ID sign-in");
     expect(toggle).toContain("Turn off");
-    expect(toggle).toContain("await enrollThisDevice()");
+    expect(toggle).toContain("await enrollDeviceWithReason()");
     expect(toggle).toContain("await disableDeviceSignIn()");
   });
 
   it("says something when enrollment fails rather than silently doing nothing", () => {
-    expect(toggle).toContain("Face ID could not be turned on.");
+    expect(toggle).toContain("if (result.ok === false && result.message) setError(result.message);");
   });
 });
 

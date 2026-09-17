@@ -63,17 +63,46 @@ export async function isEnrolled(): Promise<boolean> {
   return !!parseStored(await namedCredentialStore.get(DEVICE_KEY));
 }
 
-export async function enrollThisDevice(): Promise<boolean> {
-  if (!(await biometryAvailable()) || !getToken()) return false;
+// BF_CLIENT_ENROLL_REASON_v335
+// Enrollment failures retain their stage and a useful, user-facing explanation
+// instead of being collapsed into a bare false.
+export type EnrollResult =
+  | { ok: true }
+  | { ok: false; stage: "biometry" | "session" | "cancelled" | "server"; message: string };
+
+export async function enrollDeviceWithReason(): Promise<EnrollResult> {
+  const status = await biometryStatus();
+  if (!status.available) return { ok: false, stage: "biometry", message: status.reason };
+  if (!getToken()) {
+    return { ok: false, stage: "session", message: "Sign in with a text code first, then turn Face ID on." };
+  }
   try {
     await BiometricAuth.authenticate({ reason: "Turn on Face ID sign-in", cancelTitle: "Not now", allowDeviceCredential: false });
-    const r = await apiRequest<Stored>("/api/client/device-sign-in/enroll", { method: "POST", body: { deviceLabel: Capacitor.getPlatform() } });
-    if (!r?.credentialId || !r?.secret) return false;
-    await namedCredentialStore.set(DEVICE_KEY, JSON.stringify({ credentialId: r.credentialId, secret: r.secret }));
-    return true;
-  } catch {
-    return false;
+  } catch (error: any) {
+    // Tapping "Not now" is a choice, not a failure - no error belongs on screen.
+    console.warn("face_id_enroll_prompt_dismissed", { message: String(error?.message ?? error) });
+    return { ok: false, stage: "cancelled", message: "" };
   }
+  try {
+    const r = await apiRequest<Stored>("/api/client/device-sign-in/enroll", { method: "POST", body: { deviceLabel: Capacitor.getPlatform() } });
+    if (!r?.credentialId || !r?.secret) {
+      console.error("face_id_enroll_bad_response", { got: r ? Object.keys(r) : null });
+      return { ok: false, stage: "server", message: "Boreal did not return a Face ID credential. Try again." };
+    }
+    await namedCredentialStore.set(DEVICE_KEY, JSON.stringify({ credentialId: r.credentialId, secret: r.secret }));
+    return { ok: true };
+  } catch (error: any) {
+    const raw = String(error?.message ?? error);
+    console.error("face_id_enroll_failed", { message: raw });
+    if (raw.includes("client_session_required") || raw.includes("401")) {
+      return { ok: false, stage: "server", message: "This sign-in is not a client session. Sign out, then sign in again with a text code." };
+    }
+    return { ok: false, stage: "server", message: `Boreal could not turn Face ID on: ${raw}` };
+  }
+}
+
+export async function enrollThisDevice(): Promise<boolean> {
+  return (await enrollDeviceWithReason()).ok;
 }
 
 export async function signInWithFaceId(): Promise<DeviceSignInData> {

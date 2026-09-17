@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   biometryStatus,
   disableDeviceSignIn,
-  enrollThisDevice,
+  enrollDeviceWithReason,
   HINT_KEY,
   isEnrolled,
   type BiometryStatus,
@@ -53,8 +53,10 @@ export default function FaceIdSignInToggle() {
     setBusy(true);
     setError(null);
     try {
-      const ok = await enrollThisDevice();
-      if (!ok) setError("Face ID could not be turned on. Try again, or sign in with a text code first.");
+      // BF_CLIENT_ENROLL_REASON_v335 - show the actual reason. A cancelled
+      // prompt carries no message, because choosing "Not now" is not an error.
+      const result = await enrollDeviceWithReason();
+      if (result.ok === false && result.message) setError(result.message);
       await refresh();
       clearHint();
     } finally {
