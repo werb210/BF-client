@@ -11,7 +11,7 @@ import { ClientProfileStore } from "@/state/clientProfiles";
 import { tokens, components } from "@/styles";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { identifyClarity } from "@/utils/analytics"; // BF_CLIENT_CLARITY_IDENTIFY_v162
-import { biometryAvailable, enrollThisDevice, isEnrolled, phoneFromToken, PROMPTED_KEY, signInWithFaceId } from "@/native/deviceSignIn"; // BF_CLIENT_FACE_ID_SIGN_IN_v297
+import { biometryAvailable, HINT_KEY, isEnrolled, phoneFromToken, PROMPTED_KEY, signInWithFaceId } from "@/native/deviceSignIn"; // BF_CLIENT_FACE_ID_SETTING_v325
 
 type Step = "phone" | "code";
 
@@ -76,11 +76,19 @@ export default function OtpPage() {
     }
   }
 
+  // BF_CLIENT_FACE_ID_SETTING_v325
+  // v297 asked exactly once, through window.confirm, and wrote PROMPTED_KEY
+  // BEFORE the answer came back. So a dialog that was dismissed - or, in
+  // WKWebView, never shown at all - burned the only chance that device would
+  // ever get, and there was no other way in. Turning Face ID on now lives on a
+  // visible row in the mini-portal (FaceIdSignInToggle). This clears the old
+  // flag so every device that was already burned recovers, and leaves a
+  // session-scoped hint the row uses to introduce itself once.
   async function offerFaceId() {
     try {
-      if (localStorage.getItem(PROMPTED_KEY) || !(await biometryAvailable()) || (await isEnrolled())) return;
-      localStorage.setItem(PROMPTED_KEY, "1");
-      if (window.confirm("Use Face ID to sign in next time? You won't need a text code.")) await enrollThisDevice();
+      localStorage.removeItem(PROMPTED_KEY);
+      if (!(await biometryAvailable()) || (await isEnrolled())) return;
+      sessionStorage.setItem(HINT_KEY, "1");
     } catch { /* never block sign-in */ }
   }
 

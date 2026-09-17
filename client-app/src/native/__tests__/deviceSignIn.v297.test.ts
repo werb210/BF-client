@@ -79,6 +79,10 @@ describe("wiring", () => {
     const otp = read("pages/OtpPage.tsx");
     expect(otp).toContain('data-testid="face-id-sign-in"');
     expect(otp).toContain("await offerFaceId();");
+    // BF_CLIENT_FACE_ID_SETTING_v325 - v297 enrolled from inside offerFaceId via
+    // window.confirm. Enrollment moved to the mini-portal settings row; what is
+    // left here must not be able to permanently silence itself again.
+    expect(otp).not.toContain("localStorage.setItem(PROMPTED_KEY");
     expect(read("auth/logout.ts")).toContain("disableDeviceSignIn()");
     expect(read("native/useBiometricLock.ts")).toContain("if (getToken()) return true;");
     const ios = readFileSync(join(src, "..", "ios", "App", "App", "SecureCredentialsPlugin.swift"), "utf8");

@@ -29,6 +29,36 @@ export async function biometryAvailable(): Promise<boolean> {
   try { return (await BiometricAuth.checkBiometry()).isAvailable; } catch { return false; }
 }
 
+// BF_CLIENT_FACE_ID_SETTING_v325
+// biometryAvailable() collapses every reason to false, which is why the v324
+// toggle - which only rendered when it returned true - could vanish with nothing
+// on screen to explain it. This keeps the reason so the settings row can always
+// render and say WHY it cannot be switched on.
+export type BiometryStatus = { native: boolean; available: boolean; reason: string };
+
+export async function biometryStatus(): Promise<BiometryStatus> {
+  if (!Capacitor.isNativePlatform()) {
+    return { native: false, available: false, reason: "Face ID needs the Boreal app on your phone or tablet." };
+  }
+  try {
+    const info: any = await BiometricAuth.checkBiometry();
+    if (info?.isAvailable) return { native: true, available: true, reason: "" };
+    return {
+      native: true,
+      available: false,
+      reason: String(info?.reason || "Face ID is not set up on this device. Turn it on in Settings, then come back."),
+    };
+  } catch (error: any) {
+    return { native: true, available: false, reason: String(error?.message || "Face ID is not available on this device.") };
+  }
+}
+
+// BF_CLIENT_FACE_ID_SETTING_v325 - set for this session only when the client has
+// just signed in with a text code and could be using Face ID instead. The
+// settings row reads it to explain itself once; it expires with the session, so
+// it can never permanently silence anything the way PROMPTED_KEY did.
+export const HINT_KEY = "bf_face_id_hint";
+
 export async function isEnrolled(): Promise<boolean> {
   return !!parseStored(await namedCredentialStore.get(DEVICE_KEY));
 }
