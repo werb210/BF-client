@@ -48,12 +48,13 @@ describe("Face ID enrollment reasons", () => {
   });
 
   it("explains when the server rejects a non-client session", async () => {
+    mocks.getToken.mockReturnValue(`header.${btoa(JSON.stringify({ role: "Admin" }))}.signature`);
     mocks.apiRequest.mockRejectedValue(new Error("401 client_session_required"));
     const result = await enrollDeviceWithReason();
     expect(result).toEqual({
       ok: false,
       stage: "server",
-      message: "This sign-in is not a client session. Sign out, then sign in again with a text code.",
+      message: 'Face ID could not be turned on. This sign-in is a "Admin" session, not a client one. Sign out, then sign in again with a text code.',
     });
   });
 

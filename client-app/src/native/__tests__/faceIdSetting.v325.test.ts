@@ -8,12 +8,14 @@ const read = (p: string) => readFileSync(join(src, p), "utf8");
 const toggle = read("components/FaceIdSignInToggle.tsx");
 const otp = read("pages/OtpPage.tsx");
 const portal = read("pages/MiniPortalPage.tsx");
+const accountBar = read("components/AccountBar.tsx");
 const device = read("native/deviceSignIn.ts");
 
 describe("there is always a visible way to turn Face ID on", () => {
-  it("the mini-portal renders the row", () => {
-    expect(portal).toContain("<FaceIdSignInToggle />");
-    expect(portal).toContain('import FaceIdSignInToggle from "@/components/FaceIdSignInToggle"');
+  it("the account bar renders the row instead of duplicating it in the mini-portal", () => {
+    expect(accountBar).toContain("<FaceIdSignInToggle />");
+    expect(accountBar).toContain('import FaceIdSignInToggle from "@/components/FaceIdSignInToggle"');
+    expect(portal).not.toContain("<FaceIdSignInToggle />");
   });
 
   it("the row survives an unavailable biometry check instead of disappearing", () => {

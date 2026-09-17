@@ -95,7 +95,10 @@ export async function enrollDeviceWithReason(): Promise<EnrollResult> {
     const raw = String(error?.message ?? error);
     console.error("face_id_enroll_failed", { message: raw });
     if (raw.includes("client_session_required") || raw.includes("401")) {
-      return { ok: false, stage: "server", message: "This sign-in is not a client session. Sign out, then sign in again with a text code." };
+      // BF_CLIENT_ACCOUNT_BAR_v341 - name the role, so this stops being a guess.
+      const role = roleFromToken(getToken());
+      const detail = role ? ` This sign-in is a "${role}" session, not a client one.` : "";
+      return { ok: false, stage: "server", message: `Face ID could not be turned on.${detail} Sign out, then sign in again with a text code.` };
     }
     return { ok: false, stage: "server", message: `Boreal could not turn Face ID on: ${raw}` };
   }
@@ -131,6 +134,23 @@ export async function disableDeviceSignIn(): Promise<void> {
     await apiRequest("/api/client/device-sign-in/revoke", { method: "POST", body: { credentialId: stored.credentialId } }).catch((): undefined => undefined);
   }
   await namedCredentialStore.clear(DEVICE_KEY);
+}
+
+// BF_CLIENT_ACCOUNT_BAR_v341
+// A 401 from the enroll route means the token's role is not "client". Which role
+// it IS decides where the fault lies: "Admin" means the server minted a staff
+// token despite userType:"client" (BF-Server v334 not running), anything else
+// means the app is holding a token from before that sign-in. Reading it from the
+// JWT turns a guess into a fact - the claim is already in the token the app is
+// sending, and no request is needed to see it.
+export function roleFromToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
 }
 
 export function phoneFromToken(token: string): string | null {
