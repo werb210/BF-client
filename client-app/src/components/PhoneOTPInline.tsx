@@ -170,7 +170,10 @@ export default function PhoneOTPInline() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ phone: phoneE164, code }),
+          // BF_CLIENT_INLINE_OTP_CLIENT_v346 - the landing page's own sign-in. Without
+          // userType the server treats a phone that is also a staff user as staff and
+          // mints a staff token, which the client app then can't use for Face ID.
+          body: JSON.stringify({ phone: phoneE164, code, userType: 'client' }),
         },
         15000,
         'verify',
