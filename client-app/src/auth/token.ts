@@ -3,8 +3,42 @@ import { Capacitor } from "@capacitor/core";
 import { credentialStore } from "./credentialStore";
 let token: string | null = null;
 
+// BF_CLIENT_TOKEN_WRITE_ORDER_v350 - Keychain writes used to be fire-and-forget,
+// so "sign out, then sign in" could let the background clear land after the new
+// token's write and wipe it; the next launch then restored nothing or a stale
+// session. Every native write now runs in call order, one at a time, and a failed write
+// never blocks the ones after it.
+let pendingWrite: Promise<void> = Promise.resolve();
+// Bumped on every set/clear so a slow hydrate never overwrites a newer session.
+let tokenGeneration = 0;
+
+function queueCredentialWrite(op: () => Promise<void>, failureMessage: string): void {
+  // Web writes are synchronous localStorage calls and getToken() reads localStorage
+  // directly, so delaying them would briefly resurrect a cleared token. Only the
+  // native Keychain bridge is asynchronous, so only it is queued.
+  if (!Capacitor.isNativePlatform()) {
+    void op().catch((error) => {
+      console.error(failureMessage, error);
+    });
+    return;
+  }
+  pendingWrite = pendingWrite
+    .then(op)
+    .catch((error) => {
+      console.error(failureMessage, error);
+    });
+}
+
+/** Resolves once every queued Keychain write has finished (or failed). */
+export function flushTokenWrites(): Promise<void> {
+  return pendingWrite;
+}
+
 export async function hydrateToken(): Promise<void> {
-  token = await credentialStore.get();
+  const generation = tokenGeneration;
+  await pendingWrite;
+  const stored = await credentialStore.get();
+  if (generation === tokenGeneration) token = stored;
 }
 
 export function getToken(): string | null {
@@ -33,9 +67,8 @@ export function getToken(): string | null {
 
 export function setToken(t: string): void {
   token = t;
-  void credentialStore.set(t).catch((error) => {
-    console.error("Secure credential persistence failed", error);
-  });
+  tokenGeneration += 1;
+  queueCredentialWrite(() => credentialStore.set(t), "Secure credential persistence failed");
   if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
@@ -49,9 +82,8 @@ export function setToken(t: string): void {
 
 export function clearToken(): void {
   token = null;
-  void credentialStore.clear().catch((error) => {
-    console.error("Secure credential clear failed", error);
-  });
+  tokenGeneration += 1;
+  queueCredentialWrite(() => credentialStore.clear(), "Secure credential clear failed");
   if (Capacitor.isNativePlatform()) return;
   if (typeof window !== "undefined") {
     try {
