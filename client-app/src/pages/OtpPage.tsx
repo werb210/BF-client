@@ -8,6 +8,7 @@ import { startOtp, verifyOtp } from "@/api/auth";
 // boot router reads it, so users with empty localStorage still land on
 // /portal when the server confirms they have a submitted application.
 import { ClientProfileStore } from "@/state/clientProfiles";
+import { useLeaveIfSignedIn } from "@/native/useLeaveIfSignedIn"; // BF_CLIENT_LOCK_ORDER_v364
 import { tokens, components } from "@/styles";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { identifyClarity } from "@/utils/analytics"; // BF_CLIENT_CLARITY_IDENTIFY_v162
@@ -36,6 +37,7 @@ export default function OtpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  useLeaveIfSignedIn();
   const [searchParams] = useSearchParams();
   const sendInFlightRef = useRef(false);
   const lastSentAtRef = useRef<number>(0);

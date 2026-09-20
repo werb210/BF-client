@@ -1,4 +1,5 @@
 import PhoneOTPInline from "@/components/PhoneOTPInline";
+import { useLeaveIfSignedIn } from "@/native/useLeaveIfSignedIn"; // BF_CLIENT_LOCK_ORDER_v364
 import LandingHeader from "@/components/landing/LandingHeader";
 import LandingFooter from "@/components/landing/LandingFooter";
 
@@ -12,6 +13,7 @@ const REASSURANCE = [
 ];
 
 export default function LandingPage() {
+  useLeaveIfSignedIn();
   return (
     <div className="flex min-h-screen flex-col bg-boreal-inkDeep font-sans text-white">
       <LandingHeader />
