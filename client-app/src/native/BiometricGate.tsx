@@ -4,8 +4,10 @@ import { useBiometricLock } from "./useBiometricLock";
 // BF_CLIENT_BIOMETRIC_LOCK_v1 - full-screen unlock overlay shown while the
 // session is biometric-locked. Renders children unchanged when unlocked.
 export function BiometricGate({ children }: { children: ReactNode }) {
-  const { locked, unlock } = useBiometricLock();
+  const { locked, ready, unlock } = useBiometricLock();
   useEffect(() => { if (locked) void unlock(); }, [locked, unlock]);
+  // BF_CLIENT_LOCK_ORDER_v364 - hold the app back until the lock has decided.
+  if (!ready) return <div role="status" aria-label="Loading" style={{ position: "fixed", inset: 0, background: "#0b1f3a" }} />;
   if (!locked) return <>{children}</>;
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#0b1f3a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>

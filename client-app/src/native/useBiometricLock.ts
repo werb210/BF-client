@@ -75,10 +75,12 @@ export function shouldLock(p: { session: boolean; sessionUsable?: boolean; enrol
 export function useBiometricLock() {
   const [locked, setLocked] = useState(false);
   const [available, setAvailable] = useState(false);
+  // BF_CLIENT_LOCK_ORDER_v364 - nothing renders until the first check has decided.
+  const [ready, setReady] = useState(!Capacitor.isNativePlatform());
   const coldStart = useRef(true);
   const backgroundedAt = useRef<number | null>(null);
 
-  const evaluate = useCallback(async () => {
+  const evaluate = useCallback(async () => { try {
     const isColdStart = coldStart.current;
     coldStart.current = false;
     const awayAt = backgroundedAt.current;
@@ -93,7 +95,7 @@ export function useBiometricLock() {
     if (!enrolled) return; // v323: no Face ID sign-in, no Face ID lock
     const usable = !tokenExpired(getToken());
     if (shouldLock({ session: true, sessionUsable: usable, enrolled, biometry, coldStart: isColdStart, backgroundedAt: awayAt, now: Date.now() })) setLocked(true);
-  }, []);
+  } finally { setReady(true); } }, []);
 
   const unlock = useCallback(async () => {
     try {
@@ -107,6 +109,7 @@ export function useBiometricLock() {
       // v323: if the device credential was revoked, clear the dead session - sign in once.
       const renewed = await renewSessionSilently(ENV.API_BASE);
       if (!renewed && tokenExpired(getToken())) clearToken();
+      if (renewed) window.dispatchEvent(new Event("boreal:session-renewed")); // BF_CLIENT_LOCK_ORDER_v364
       setLocked(false);
       return true;
     } catch {
@@ -126,5 +129,5 @@ export function useBiometricLock() {
     };
   }, [evaluate]);
 
-  return { locked, available, unlock };
+  return { locked, available, ready, unlock };
 }
