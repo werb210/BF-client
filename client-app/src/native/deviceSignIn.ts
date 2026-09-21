@@ -8,6 +8,7 @@ import { BiometricAuth } from "@aparajita/capacitor-biometric-auth";
 import { apiRequest } from "@/lib/api";
 import { getToken, setToken } from "@/auth/token";
 import { namedCredentialStore } from "@/auth/credentialStore";
+import { ClientProfileStore } from "@/state/clientProfiles"; // BF_CLIENT_FACE_ID_SUBMISSION_v367
 
 export const DEVICE_KEY = "device-sign-in";
 export const PROMPTED_KEY = "bf_face_id_prompted";
@@ -177,11 +178,21 @@ export async function renewSessionSilently(apiBase: string): Promise<boolean> {
     });
     if (res.status === 401) { await namedCredentialStore.clear(DEVICE_KEY); return false; }
     if (!res.ok) return false;
-    const body = (await res.json()) as { token?: string; secret?: string; data?: { token?: string; secret?: string } };
+    type Answer = { token?: string; secret?: string; hasSubmittedApplication?: boolean; submittedApplicationId?: string | null };
+    const body = (await res.json()) as Answer & { data?: Answer };
     const data = body?.data ?? body;
     if (!data?.token || !data?.secret) return false;
     await namedCredentialStore.set(DEVICE_KEY, JSON.stringify({ credentialId: stored.credentialId, secret: data.secret }));
     setToken(data.token);
+    // BF_CLIENT_FACE_ID_SUBMISSION_v367 - record the server's answer the way a
+    // text-code sign-in does, so both sign-ins land in the same place.
+    const phone = phoneFromToken(data.token);
+    if (phone) {
+      ClientProfileStore.setLastUsedPhone(phone);
+      if (data.hasSubmittedApplication && data.submittedApplicationId) {
+        ClientProfileStore.markSubmitted(phone, data.submittedApplicationId);
+      }
+    }
     return true;
   } catch {
     return false;
