@@ -76,6 +76,9 @@ export interface ApplicationData {
   // Insurance). The value lives in app state already; this declares
   // it on the type so buildSubmissionPayload can include it.
   pgiOptIn?: "yes" | "no";
+  // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402 - optional; lets BF-Server send hashed
+  // email/phone with Google Ads conversions (enhanced conversions for leads).
+  adMeasurementConsent?: boolean;
 }
 
 export interface ApplicationPayload {

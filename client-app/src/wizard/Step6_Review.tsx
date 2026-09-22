@@ -960,6 +960,29 @@ export function Step6_Review(): JSX.Element {
           </label>
         ))}
 
+        {/* BF_CLIENT_AD_MEASUREMENT_CONSENT_v402 - optional, unticked by default, never required to submit */}
+        <label
+          data-testid="ad-measurement-consent"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: tokens.spacing.sm,
+            padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+            marginBottom: tokens.spacing.xs,
+            borderRadius: tokens.radii.md,
+            border: `1px dashed ${tokens.colors.border}`,
+            background: tokens.colors.surface,
+            cursor: "pointer",
+            fontSize: tokens.typography.label.fontSize,
+            color: tokens.colors.textSecondary,
+          }}
+        >
+          <Checkbox checked={Boolean(app.adMeasurementConsent)} onChange={() => update({ adMeasurementConsent: !app.adMeasurementConsent })} />
+          <span>
+            Optional: Boreal may share a scrambled (hashed) copy of my email and phone number with advertising partners such as Google, only to measure which of its ads lead to applications. You can withdraw this at any time.
+          </span>
+        </label>
+
         {openClause !== null && (
           <div
             onClick={() => setOpenClause(null)}
