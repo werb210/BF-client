@@ -9,6 +9,7 @@
 //   3. Auto-submit: once the user types 6 digits in the code field, we
 //      verifyAndStart() automatically — no second button press.
 import React, { useState, useEffect, useRef } from 'react';
+import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from 'react-router-dom';
 import { setToken } from '@/auth/token';
 // BF_CLIENT_OTP_ATTRIBUTION_v1
@@ -206,7 +207,7 @@ export default function PhoneOTPInline() {
         null;
       if (hasSubmitted && typeof submittedApplicationId === 'string' && submittedApplicationId.length > 0) {
         try {
-          localStorage.setItem('bf_application_token', submittedApplicationId);
+          setApplicationToken(submittedApplicationId);
           localStorage.removeItem('bf_application_pending_submit');
         } catch { /* storage blocked — token already in memory via setToken */ }
         // eslint-disable-next-line no-console
@@ -277,7 +278,7 @@ export default function PhoneOTPInline() {
         throw new Error('Application start response missing token');
       }
       try {
-        localStorage.setItem('bf_application_token', String(appToken));
+        setApplicationToken(String(appToken));
         localStorage.removeItem('bf_application_pending_submit');
       } catch { /* storage blocked — token already in memory via setToken */ }
       try {

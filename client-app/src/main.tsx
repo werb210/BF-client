@@ -1,4 +1,5 @@
 import "./bootStorageSafe"; // BF_CLIENT_BLOCK_v867_STORAGE_SHIM — must be first
+import { hydrateApplicationToken } from "@/auth/applicationToken";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
@@ -36,7 +37,7 @@ try {
 // first so captureAttribution finds the id and forwards it to the server at start.
 async function boot() {
 try {
-  await hydrateToken();
+  await hydrateToken().then(() => hydrateApplicationToken());
 } catch (error) {
   console.error(
     "Native credential hydration failed; continuing unauthenticated",

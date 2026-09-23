@@ -1,4 +1,5 @@
 import { ENV } from "@/env";
+import { clearApplicationToken, getApplicationToken } from "@/auth/applicationToken";
 
 const APPLICATION_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -21,6 +22,7 @@ const PREFIXED_DRAFT_KEYS = ["client:draft:", "client:step:"];
 
 export function clearAllApplicationDrafts(): void {
   if (typeof window === "undefined") return;
+  clearApplicationToken();
   try {
     for (const k of FULL_DRAFT_KEYS) {
       try {
@@ -59,7 +61,7 @@ export async function validateBootToken(
 
   const stored = (() => {
     try {
-      return localStorage.getItem("bf_application_token");
+      return getApplicationToken();
     } catch {
       return null;
     }

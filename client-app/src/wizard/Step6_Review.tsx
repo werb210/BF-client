@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
+import { setApplicationToken } from "@/auth/applicationToken";
 import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
@@ -490,7 +491,7 @@ export function Step6_Review(): JSX.Element {
         );
         if (!fresh) throw submitErr;
         try {
-          localStorage.setItem("bf_application_token", fresh);
+          setApplicationToken(fresh);
         } catch {
           /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */
         }
