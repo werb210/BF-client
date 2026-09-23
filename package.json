@@ -21,12 +21,14 @@
     "prebuild": "test -f client-app/index.html",
     "build": "npm --prefix client-app run build",
     "test": "CI=1 npm --prefix client-app run test",
+    "test:ci": "CI=1 npm --prefix client-app run test:ci",
     "dev": "npm --prefix client-app run dev",
     "preview:ci": "npm --prefix client-app run preview:ci",
     "verify:no-raw-fetch": "node -e \"process.exit(0)\"",
     "verify:no-alt-api": "rg -n \"fetch\\(|axios\\(\" src | rg -v \"api.ts\" && exit 1 || exit 0",
     "typecheck": "npm --prefix client-app run typecheck",
-    "test:e2e": "bash -lc 'set -a; source .env.test; set +a; npm run dev >/tmp/bf-e2e-dev.log 2>&1 & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT; sleep 5; npm --prefix client-app exec vitest run src/e2e/applicationFlow.test.ts'"
+    "test:e2e": "bash -lc 'set -a; source .env.test; set +a; npm run dev >/tmp/bf-e2e-dev.log 2>&1 & DEV_PID=$!; trap \"kill $DEV_PID\" EXIT; sleep 5; npm --prefix client-app exec vitest run src/e2e/applicationFlow.test.ts'",
+    "verify:test-wiring": "node scripts/verify-test-wiring.mjs"
   },
   "type": "module",
   "devDependencies": {
