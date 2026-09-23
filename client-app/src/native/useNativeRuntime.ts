@@ -17,6 +17,23 @@ export function useNativeRuntime(): void {
     let disposed = false;
     const handles: Array<{ remove: () => Promise<void> }> = [];
     const add = async () => {
+      // BF_CLIENT_COLD_LAUNCH_DEEPLINK_v426 - iOS delivers the URL that launched a
+      // terminated app through launch options, never through appUrlOpen. Without
+      // this, tapping a link or a push with the app closed landed on "/" and the
+      // destination was lost. Read it BEFORE attaching listeners so a live
+      // appUrlOpen during startup wins over the stale launch URL.
+      try {
+        const launch = await CapacitorApp.getLaunchUrl();
+        const route = launch?.url ? parseNativeUrl(launch.url) : null;
+        // Only redirect when it actually resolves somewhere - parseNativeUrl
+        // returns the fallback route for anything it does not recognise, and
+        // forcing that would fight the app's own initial route.
+        if (!disposed && route && route !== pathRef.current && launch?.url) {
+          navigate(route, { replace: true });
+        }
+      } catch {
+        /* no launch URL - ordinary start */
+      }
       handles.push(await CapacitorApp.addListener("appUrlOpen", ({ url }) => navigate(parseNativeUrl(url))));
       handles.push(await CapacitorApp.addListener("backButton", ({ canGoBack }) => {
         const modal = document.querySelector<HTMLElement>('[role="dialog"], [aria-modal="true"]');
