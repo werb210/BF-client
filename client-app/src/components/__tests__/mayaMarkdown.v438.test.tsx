@@ -4,6 +4,30 @@ import { render, screen } from "@testing-library/react";
 import { MayaMessage, toBlocks } from "../mayaMarkdown";
 
 describe("v438 Maya's replies render instead of showing markup", () => {
+  // v447 - regression from run 3, Q5.
+  it("does not turn a hyphen in a company name into a bullet", () => {
+    const blocks = toBlocks(`You are applying on behalf of "Test - Todd's Gym."`);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].kind).toBe("p");
+  });
+
+  it("leaves other mid-sentence dashes alone", () => {
+    expect(toBlocks("Coca-Cola - Western Division is on file.")).toHaveLength(1);
+    expect(toBlocks("We fund Series A - Series C companies.")).toHaveLength(1);
+  });
+
+  it("still splits a dashed run that follows a colon", () => {
+    const blocks = toBlocks("Features: - **Fast funding**: days - **No collateral**: usually");
+    const ul = blocks.find((b) => b.kind === "ul");
+    expect(ul && "items" in ul ? ul.items.length : 0).toBe(2);
+  });
+
+  it("still treats a line-leading dash as a bullet", () => {
+    const blocks = toBlocks("Options:\n- First\n- Second");
+    const ul = blocks.find((b) => b.kind === "ul");
+    expect(ul && "items" in ul ? ul.items.length : 0).toBe(2);
+  });
+
   it("renders bold instead of asterisks", () => {
     render(<MayaMessage message="**Lines of Credit (LOC)**: $3,000 to $20,000,000" />);
     expect(screen.getByText("Lines of Credit (LOC)").tagName).toBe("STRONG");

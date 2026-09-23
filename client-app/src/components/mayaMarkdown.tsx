@@ -52,8 +52,12 @@ export function toBlocks(message: string): Block[] {
   const text = String(message ?? "")
     // Break an inline numbered run apart: " 2. " becomes a new line.
     .replace(/\s+(\d{1,2})\.\s+/g, "\n$1. ")
-    // Same for inline dashes used as bullets.
-    .replace(/\s+-\s+(?=[A-Z*])/g, "\n- ");
+    // BF_CLIENT_MAYA_HYPHEN_v447 - an inline " - " is far more often a hyphen in
+    // a name ("Test - Todd's Gym") than a list bullet, and there is no way to
+    // tell them apart mid-sentence. Only split when the dash follows a colon,
+    // which is how Maya actually introduces an inline run.
+    .replace(/:\s+-\s+/g, ":\n- ")
+    .replace(/\s+-\s+(?=\*\*)/g, "\n- ");
 
   const blocks: Block[] = [];
   for (const raw of text.split("\n")) {
