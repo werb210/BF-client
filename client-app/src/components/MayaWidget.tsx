@@ -13,6 +13,7 @@
 //     BF-Server CRM contact is built/linked immediately. SMS notify of
 //     staff is server-side and unchanged.
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { MayaMessage } from "./mayaMarkdown";
 import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
 import { apiRequest } from "@/lib/api";
@@ -420,7 +421,9 @@ export default function MayaWidget() {
                 key={item.id}
                 className={`rounded-lg px-3 py-2 ${item.from === "user" ? "ml-8 bg-blue-600 text-white" : "mr-8 bg-[#0f1d3a] text-slate-100"}`}
               >
-                {item.message}
+                {/* BF_CLIENT_MAYA_MARKDOWN_v438 - was raw text, so clients saw
+                    **bold** and [here](url) literally. */}
+                {item.from === "user" ? item.message : <MayaMessage message={item.message} />}
               </div>
             ))}
             {sending ? <p className="text-xs text-slate-400">Maya is typing…</p> : null}
