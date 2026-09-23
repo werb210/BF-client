@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useState, useRef } from "react";
+import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate, useParams } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { StepHeader } from "../components/StepHeader";
@@ -907,7 +908,7 @@ export function Step1_KYC(): JSX.Element {
             throw new Error('startApplication response missing token');
           }
           try {
-            localStorage.setItem('bf_application_token', String(__token));
+            setApplicationToken(String(__token));
             localStorage.removeItem('bf_application_pending_submit');
           } catch {
             /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */

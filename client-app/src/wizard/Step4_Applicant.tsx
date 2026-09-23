@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
+import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { ClientAppAPI } from "../api/clientApp";
@@ -715,7 +716,7 @@ export function Step4_Applicant() {
           null;
         if (applicationId) {
           update({ applicationToken: applicationId, applicationId: applicationId });
-          try { localStorage.setItem("bf_application_token", String(applicationId)); } catch {}
+          try { setApplicationToken(String(applicationId)); } catch {}
         }
       }).catch((err) => {
         // eslint-disable-next-line no-console
