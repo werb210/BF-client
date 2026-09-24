@@ -178,9 +178,8 @@ const RequirementRow = memo(function RequirementRow({
 });
 
 
-// BF_CLIENT_STEP5_OPTIONS_v174
-// A plain "Or" between the three document options. Rendered as a hairline with
-// the word centred on it, so the choice is visible at a glance on a long page.
+// BF_CLIENT_BLOCK_v470_STEP5_SIDE_BY_SIDE - the options sit in one row, so the
+// separator is just the word "Or" between them (the row wraps on phones).
 function OptionSeparator() {
   return (
     <div
@@ -188,12 +187,11 @@ function OptionSeparator() {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        maxWidth: 420,
-        margin: "0 auto",
+        justifyContent: "center",
+        alignSelf: "center",
+        padding: "0 4px",
       }}
     >
-      <span style={{ flex: 1, height: 1, background: tokens.colors.border }} />
       <span
         style={{
           fontSize: 13,
@@ -205,7 +203,6 @@ function OptionSeparator() {
       >
         Or
       </span>
-      <span style={{ flex: 1, height: 1, background: tokens.colors.border }} />
     </div>
   );
 }
@@ -930,38 +927,37 @@ export function Step5_Documents() {
               later and finalize the application now, or have your accountant
               upload the required documents.
             </p>
-            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+            {/* BF_CLIENT_BLOCK_v470_STEP5_SIDE_BY_SIDE - three options in one row. Supply
+                later goes straight to Step 6; the accountant option opens its form
+                and, once sent, also goes straight to Step 6. */}
+            <div data-testid="step5-options-row" style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", justifyContent: "center", gap: 12, margin: `${tokens.spacing.md} 0` }}>
               <Button
                 variant="secondary"
                 data-testid="step5-choose-now"
                 onClick={() => setDocChoice("now")}
                 disabled={isLoading}
-                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
               >
                 Upload my documents now
               </Button>
-            </div>
-            <OptionSeparator />
-            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+              <OptionSeparator />
               <Button
                 variant="secondary"
                 data-testid="step5-choose-later"
-                onClick={() => setDocChoice("later")}
-                disabled={isLoading}
-                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                onClick={() => { void uploadLater(); }}
+                disabled={isLoading || hasUploadsInFlight}
+                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
               >
                 I will supply all required documents at a later time
               </Button>
-            </div>
-            <OptionSeparator />
-            {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
-            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+              <OptionSeparator />
+              {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
               <Button
                 variant="secondary"
                 data-testid="step5-accountant-btn"
                 onClick={() => setAccountantOpen(true)}
                 disabled={isLoading}
-                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
               >
                 Have my accountant upload the documents
               </Button>
