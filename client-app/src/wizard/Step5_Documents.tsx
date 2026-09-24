@@ -248,6 +248,13 @@ export function Step5_Documents() {
   const [accountantBusy, setAccountantBusy] = useState(false);
   // BF_CLIENT_ACCOUNTANT_SURFACE_FAILURE_v1
   const [accountantError, setAccountantError] = useState<string | null>(null);
+  // BF_CLIENT_BLOCK_v463_STEP5_CHOOSE_FIRST - the applicant picks how documents
+  // will arrive before seeing any upload fields. "now" shows the upload list;
+  // "later" shows a finalize confirmation; the accountant route opens its form.
+  const [docChoice, setDocChoice] = useState<null | "now" | "later">(() => {
+    if (app.documentsDeferred) return "later";
+    return Object.values(app.documents ?? {}).some(Boolean) ? "now" : null;
+  });
   const selectedCategory =
     app.productCategory ||
     app.selectedProductType ||
@@ -907,6 +914,100 @@ export function Step5_Documents() {
             <div style={components.form.errorText}>{docError}</div>
           </Card>
         )}
+        {/* BF_CLIENT_BLOCK_v463_STEP5_CHOOSE_FIRST - choose first, then see only that path. */}
+        {missingRequiredDocs.length > 0 && docChoice === null && (
+          <>
+            <p
+              data-testid="step5-options-intro"
+              style={{
+                margin: 0,
+                fontSize: 15,
+                lineHeight: 1.6,
+                color: tokens.colors.textSecondary,
+              }}
+            >
+              You have three options. You can supply documents now, supply them
+              later and finalize the application now, or have your accountant
+              upload the required documents.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+              <Button
+                variant="secondary"
+                data-testid="step5-choose-now"
+                onClick={() => setDocChoice("now")}
+                disabled={isLoading}
+                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+              >
+                Upload my documents now
+              </Button>
+            </div>
+            <OptionSeparator />
+            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+              <Button
+                variant="secondary"
+                data-testid="step5-choose-later"
+                onClick={() => setDocChoice("later")}
+                disabled={isLoading}
+                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+              >
+                I will supply all required documents at a later time
+              </Button>
+            </div>
+            <OptionSeparator />
+            {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
+            <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
+              <Button
+                variant="secondary"
+                data-testid="step5-accountant-btn"
+                onClick={() => setAccountantOpen(true)}
+                disabled={isLoading}
+                style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+              >
+                Have my accountant upload the documents
+              </Button>
+            </div>
+          </>
+        )}
+
+        {missingRequiredDocs.length > 0 && docChoice === "later" && (
+          <div data-testid="step5-later" style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, alignItems: "center", textAlign: "center" }}>
+            <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: tokens.colors.textSecondary }}>
+              Your application will be finalized now without the documents. You can
+              upload them any time from your client portal, and we will remind you
+              which ones are still needed.
+            </p>
+            <Button
+              data-testid="step5-finalize-later"
+              onClick={uploadLater}
+              disabled={isLoading || hasUploadsInFlight}
+              style={{ width: "100%", maxWidth: "420px", minHeight: "48px", fontWeight: 600 }}
+            >
+              Finalize my application
+            </Button>
+          </div>
+        )}
+
+        {missingRequiredDocs.length > 0 && docChoice !== null && (
+          <button
+            type="button"
+            data-testid="step5-change-option"
+            onClick={() => setDocChoice(null)}
+            style={{ alignSelf: "center", background: "none", border: "none", padding: 0, cursor: "pointer", color: tokens.colors.primary, textDecoration: "underline", fontSize: 14 }}
+          >
+            Choose a different option
+          </button>
+        )}
+
+        <AccountantReferralModal
+          open={accountantOpen}
+          busy={accountantBusy}
+          onCancel={() => setAccountantOpen(false)}
+          onSubmit={(details) => { void referAccountant(details); }}
+          submitError={accountantError}
+        />
+
+        {(missingRequiredDocs.length === 0 || docChoice === "now") && (
+        <>
         {missingRequiredDocs.length > 0 && (
           <Card
             variant="muted"
@@ -921,82 +1022,6 @@ export function Step5_Documents() {
             />
           </Card>
         )}
-        {/* BF_CLIENT_STEP5_OPTIONS_v174 - the two buttons below are
-          ALTERNATIVES to uploading, not extra steps. Without this line a user
-          reads them as more work rather than a way out. */}
-        {missingRequiredDocs.length > 0 && (
-          <p
-            data-testid="step5-options-intro"
-            style={{
-              margin: `${tokens.spacing.md} 0 0`,
-              fontSize: 15,
-              lineHeight: 1.6,
-              color: tokens.colors.textSecondary,
-            }}
-          >
-            You have three options. You can supply documents now, supply them
-            later and finalize the application now, or have your accountant
-            upload the required documents.
-          </p>
-        )}
-        {/* BF_CLIENT_STEP5_OPTIONS_v174 - "Or" between each option, so the
-          three read as a choice rather than a sequence. */}
-        {/* BF_CLIENT_WIZARD_STEP5_DEFER_BTN_v59 — defer-upload action
-          placed under the missing-documents banner and above the
-          upload list, where users see it before they've scrolled past
-          the upload section. The duplicate at the bottom of the
-          sticky CTA bar was removed. */}
-        {/* BF_CLIENT_BLOCK_v158 — defer-upload action upgraded from a
-          subtle right-aligned ghost link to a prominent centered
-          secondary button. Per Todd: "needs to be an obvious button
-          entered in the window". Full-width on mobile, 420px cap on
-          desktop. 48px tap target, visible border. */}
-        <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
-          <Button
-            variant="secondary"
-            onClick={uploadLater}
-            disabled={isLoading || hasUploadsInFlight}
-            style={{
-              width: "100%",
-              maxWidth: "420px",
-              minHeight: "48px",
-              fontWeight: 600,
-              // BF_CLIENT_STEP5_OPTIONS_v174 - the hairline border read as an
-              // inert panel. Navy makes it look pressable without competing
-              // with the gold primary action.
-              border: `2px solid ${tokens.colors.primary}`,
-            }}
-          >
-            I will supply all required documents at a later time
-          </Button>
-        </div>
-        <OptionSeparator />
-        {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
-        <div style={{ display: "flex", justifyContent: "center", margin: `${tokens.spacing.md} 0` }}>
-          <Button
-            variant="secondary"
-            data-testid="step5-accountant-btn"
-            onClick={() => setAccountantOpen(true)}
-            disabled={isLoading || hasUploadsInFlight}
-            style={{
-              width: "100%",
-              maxWidth: "420px",
-              minHeight: "48px",
-              fontWeight: 600,
-              border: `2px solid ${tokens.colors.primary}`,
-            }}
-          >
-            Have my accountant upload the documents
-          </Button>
-        </div>
-        <OptionSeparator />
-        <AccountantReferralModal
-          open={accountantOpen}
-          busy={accountantBusy}
-          onCancel={() => setAccountantOpen(false)}
-          onSubmit={(details) => { void referAccountant(details); }}
-          submitError={accountantError}
-        />
         <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
           {groupedRequirements.map(([category, entries]) => (
             <div key={category} style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.sm }}>
@@ -1043,6 +1068,8 @@ export function Step5_Documents() {
             />
           </div>
         </div>
+        </>
+        )}
       </Card>
 
       <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
@@ -1054,6 +1081,7 @@ export function Step5_Documents() {
           >
             Back
           </Button>
+          {(missingRequiredDocs.length === 0 || docChoice === "now") && (
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
             onClick={next}
@@ -1061,6 +1089,7 @@ export function Step5_Documents() {
           >
             Continue
           </Button>
+          )}
           {/* BF_CLIENT_WIZARD_STEP5_DEFER_BTN_v59 — the old "Supply
             Documents Later" button that lived here was moved up to
             sit under the missing-docs banner. Search this file for
