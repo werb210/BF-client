@@ -322,6 +322,11 @@ export default function MiniPortalPage() {
   }, [applicationId, fetchSigningSession, loadAll]);
   // Block 6 — learn signing readiness on load so the Sign chip gates on it, not stage.
   useEffect(() => { if (applicationId) { void fetchSigningSession(); void markSigningComplete(); } }, [applicationId, fetchSigningSession, markSigningComplete]);
+  // BF_CLIENT_BLOCK_v467_SIGN_ANY_APP - arriving from the "ready for your signature"
+  // banner (?sign=1) opens signing as soon as the session is ready.
+  useEffect(() => {
+    if (searchParams.get("sign") === "1" && signSession?.status === "ready") setShowSign(true);
+  }, [searchParams, signSession?.status]);
   useEffect(() => {
     if (!showSign) return;
     const onMsg = (ev: MessageEvent) => {
@@ -633,6 +638,29 @@ export default function MiniPortalPage() {
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
       <InstallAppPrompt />
+      {/* BF_CLIENT_BLOCK_v467_SIGN_ANY_APP - a signature waiting on another of the
+          applicant's applications was invisible unless they picked that one in the
+          switcher. Show it here whichever application is open. */}
+      {myApps
+        .filter((a) => a?.signature_needed === true && String(a.id) !== String(applicationId))
+        .map((a) => (
+          <div
+            key={`sign-${String(a.id)}`}
+            data-testid="cmp-sign-other-app"
+            style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#fef9c3", border: "1px solid #facc15", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#713f12" }}
+          >
+            <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 600 }}>
+              Your application {fmtApp(a)} is ready for your signature.
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/application/${encodeURIComponent(String(a.id))}?sign=1`)}
+              style={{ padding: "8px 16px", fontSize: 14, fontWeight: 700, color: "#0f172a", background: "#facc15", border: "none", borderRadius: 6, cursor: "pointer" }}
+            >
+              Sign now
+            </button>
+          </div>
+        ))}
       {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
       {myApps.length > 1 && (
         <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -644,7 +672,7 @@ export default function MiniPortalPage() {
             style={{ flex: 1, minWidth: 0, maxWidth: 520, padding: "8px 10px", fontSize: 13, color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
           >
             {myApps.map((a) => (
-              <option key={String(a.id)} value={String(a.id)}>{fmtApp(a)}</option>
+              <option key={String(a.id)} value={String(a.id)}>{fmtApp(a)}{a?.signature_needed === true ? " - signature needed" : ""}</option>
             ))}
           </select>
         </div>
