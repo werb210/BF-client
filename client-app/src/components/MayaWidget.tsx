@@ -199,9 +199,16 @@ export default function MayaWidget() {
     return () => { active = false; clearInterval(timer); };
   }, [conversationId]);
 
+  // BF_CLIENT_BLOCK_v485_MAYA_WIDGET_SCROLL - a smooth scroll started before the
+  // new reply finished laying out (markdown lists, the typing line disappearing)
+  // stopped short, so after several turns the widget sat a few answers up.
+  // Jump after layout, and again when the typing line toggles.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    const el = scrollRef.current;
+    if (!el) return;
+    const frame = requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    return () => cancelAnimationFrame(frame);
+  }, [messages, sending]);
 
   async function handleSend(e?: FormEvent) {
     e?.preventDefault();
