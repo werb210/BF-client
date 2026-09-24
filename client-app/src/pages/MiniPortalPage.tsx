@@ -150,7 +150,7 @@ export default function MiniPortalPage() {
 
   const loadAll = useCallback(async () => {
     if (!applicationId) return;
-    try { const appData = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}`); if (!applicationId) return; setAppDetail(appData); /* BF_CLIENT_BLOCK_v309_APPDETAIL_NESTING_v1 — GET /:id returns { data: { application } }; stage lives at data.application.pipeline_state */ const raw = String(appData?.data?.application?.pipeline_state ?? appData?.data?.application?.current_stage ?? appData?.data?.pipeline_state ?? appData?.data?.stage ?? appData?.pipeline_state ?? appData?.stage ?? "").toLowerCase().replace(/\s+/g, "_"); if (raw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[raw as StageKey]); } catch {}
+    // BF_CLIENT_BLOCK_v477_CMP_CLIENT_ENDPOINTS - removed the staff-only GET /api/applications/:id (403 for clients); stage + prefill come from /api/client/application-stage below.
     // BF_CLIENT_BLOCK_v310_CLIENT_STAGE_v1 — /api/applications/:id is staff-gated (401 for the
     // client mini-portal), so the read above silently fails and the tracker stuck at "Received".
     // Read the live stage from the client-accessible endpoint.
@@ -177,7 +177,7 @@ export default function MiniPortalPage() {
         };
       }));
     } catch {}
-    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/offers?applicationId=${encodeURIComponent(applicationId)}`).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/client/offers?applicationId=${encodeURIComponent(applicationId)}` /* BF_CLIENT_BLOCK_v477 */).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
     // BF_CLIENT_PRODUCT_QUESTIONS_v290 - are product questions still outstanding?
     try {
       const pq = await apiCall<{ missing?: unknown[] }>(`/api/client/applications/${encodeURIComponent(applicationId)}/product-questions`).catch((): null => null);
@@ -194,7 +194,7 @@ export default function MiniPortalPage() {
     } catch {}
     // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
     try {
-      const docsResp = await apiCall<any>(`/api/applications/${encodeURIComponent(applicationId)}/documents`).catch((): any => null);
+      const docsResp = await apiCall<any>(`/api/client/rejected-documents?applicationId=${encodeURIComponent(applicationId)}` /* BF_CLIENT_BLOCK_v477 */).catch((): any => null);
       if (!applicationId) return;
       const items: any[] = Array.isArray(docsResp) ? docsResp
         : Array.isArray(docsResp?.items) ? docsResp.items
