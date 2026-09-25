@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { layout, components } from "@/styles";
 import { OfflineBanner } from "./OfflineBanner";
+import { BrokerImportBanner } from "./BrokerImportBanner"; // BF_CLIENT_BLOCK_v523_BROKER_IMPORT
 
 type WizardLayoutProps = {
   children: ReactNode;
@@ -11,6 +12,7 @@ export function WizardLayout({ children }: WizardLayoutProps) {
     <div style={{ ...layout.page, display: "flex", justifyContent: "center" }}>
       <div style={layout.centerColumn}>
         <OfflineBanner />
+        <BrokerImportBanner />
         <div
           style={{
             ...components.card.base,
