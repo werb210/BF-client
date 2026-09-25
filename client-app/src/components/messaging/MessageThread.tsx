@@ -19,6 +19,7 @@ export type ThreadMessage = {
   ctaLabel?: string | null;
   ctaAction?: string | null;
   attachments?: Array<{ name: string; contentType?: string | null; dataUrl: string }> | null;
+  seen?: boolean; // BF_CLIENT_BLOCK_v509 - staff opened this message
 };
 
 type Props = {
