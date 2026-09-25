@@ -288,6 +288,16 @@ export default function PhoneOTPInline() {
       // BF_CLIENT_WIZARD_TOKEN_RECONCILE_v58_OTP_ANCHOR
       // eslint-disable-next-line no-console
       console.log('[otp] application.minted', { appToken });
+      // BF_CLIENT_BLOCK_v523_BROKER_IMPORT
+      const brokerStart = (startBody as any)?.data ?? startBody;
+      if (brokerStart?.brokerImport) {
+        try {
+          const { applyBrokerImport } = await import("../wizard/brokerPrefill");
+          applyBrokerImport(String(appToken), brokerStart.brokerPrefill ?? null, brokerStart.brokerName ?? null);
+        } catch (e) { console.warn('[otp] broker prefill failed; opening the wizard anyway', e); }
+        navigate('/apply/step-1');
+        return;
+      }
 
       // v163: route to mini-portal if the phone already has a non-draft
       // application. Falls through to /apply/step-1 on lookup failure so
