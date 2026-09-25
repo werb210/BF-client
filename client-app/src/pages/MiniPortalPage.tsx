@@ -174,6 +174,7 @@ export default function MiniPortalPage() {
           ctaLabel: typeof item.cta_label === "string" ? item.cta_label : (typeof item.ctaLabel === "string" ? item.ctaLabel : null),
           ctaAction: typeof item.cta_action === "string" ? item.cta_action : (typeof item.ctaAction === "string" ? item.ctaAction : null),
           attachments: Array.isArray(item.attachments) ? item.attachments : null,
+          seen: role === "self" && Boolean(item.read_at ?? item.readAt), // BF_CLIENT_BLOCK_v509_CLIENT_SEEN
         };
       }));
     } catch {}
@@ -814,7 +815,7 @@ export default function MiniPortalPage() {
                       {m.ctaLabel && m.ctaAction ? <button className="mp-msg-cta" type="button" onClick={() => handleMessageCta(m.ctaAction)}>{m.ctaLabel}</button> : null}
                     </div>
                   </div>
-                  <div className="mp-msg-time">{safeParseDate(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</div>
+                  <div className="mp-msg-time">{safeParseDate(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}{m.authorRole === "self" && m.seen ? " \u00b7 Seen" : ""}{/* BF_CLIENT_BLOCK_v509 */}</div>
                 </div>
               );
             })}
