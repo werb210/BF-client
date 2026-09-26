@@ -17,3 +17,17 @@ export function safeParseDate(value: unknown): Date {
   const iso = trimmed.replace(/^(\d{4}-\d{2}-\d{2}) (\d{2}:)/, "$1T$2");
   return new Date(iso);
 }
+
+// BF_CLIENT_BLOCK_v546 - message timestamps. A time alone ("6:48 PM" above
+// "1:36 PM") reads as out of order when the messages are days apart. Today shows
+// the time; any other day adds the date; another year adds the year.
+export function formatMessageTime(value: unknown, now: Date = new Date()): string {
+  const d = safeParseDate(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  if (d.toDateString() === now.toDateString()) return time;
+  const date = d.toLocaleDateString([], d.getFullYear() === now.getFullYear()
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+  return `${date}, ${time}`;
+}

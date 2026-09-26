@@ -4,7 +4,7 @@
 // actually render as bubbles, not vertical text. Without this the mini-portal
 // looks like "Y / You / message text / 10:47 AM" stacked vertically.
 import "./MessageThread.css";
-import { safeParseDate } from "@/utils/safeDate";
+import { formatMessageTime, safeParseDate } from "@/utils/safeDate";
 import React, { useMemo } from "react";
 import type { JSX } from "react";
 
@@ -174,7 +174,7 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
                 </button>
               ) : null}
             </div>
-            <div className="msg-time">{safeParseDate(m.createdAt).toLocaleTimeString()}</div>
+            <div className="msg-time">{formatMessageTime(m.createdAt)}</div>
           </div>
         </li>
       ))}
