@@ -249,3 +249,25 @@ public class BackgroundUploadPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve()
     }
 }
+
+// BF_CLIENT_BLOCK_v553_APP_BADGE - app icon shows the client's to-do count.
+@objc(AppBadgePlugin)
+public class AppBadgePlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "AppBadgePlugin"
+    public let jsName = "AppBadge"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "set", returnType: CAPPluginReturnPromise)
+    ]
+
+    @objc func set(_ call: CAPPluginCall) {
+        let count = max(0, call.getInt("count") ?? 0)
+        DispatchQueue.main.async {
+            if #available(iOS 16.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(count) { _ in call.resolve() }
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = count
+                call.resolve()
+            }
+        }
+    }
+}
