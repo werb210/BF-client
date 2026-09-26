@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { Network } from "@capacitor/network";
 import { useLocation, useNavigate } from "react-router-dom";
 import { parseNativeUrl } from "./deepLinks";
+import { collectAndroidShares, isSharedFileUrl, receiveSharedUrl } from "./sharedFiles"; // BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL
 
 /** Owns native listeners in one mount and removes them as a unit on teardown. */
 export function useNativeRuntime(): void {
@@ -28,13 +29,15 @@ export function useNativeRuntime(): void {
         // Only redirect when it actually resolves somewhere - parseNativeUrl
         // returns the fallback route for anything it does not recognise, and
         // forcing that would fight the app's own initial route.
-        if (!disposed && route && route !== pathRef.current && launch?.url) {
+        if (launch?.url && isSharedFileUrl(launch.url)) void receiveSharedUrl(launch.url);
+        else if (!disposed && route && route !== pathRef.current && launch?.url) {
           navigate(route, { replace: true });
         }
       } catch {
         /* no launch URL - ordinary start */
       }
-      handles.push(await CapacitorApp.addListener("appUrlOpen", ({ url }) => navigate(parseNativeUrl(url))));
+      handles.push(await CapacitorApp.addListener("appUrlOpen", ({ url }) => (isSharedFileUrl(url) ? void receiveSharedUrl(url) : navigate(parseNativeUrl(url)))));
+      void collectAndroidShares();
       handles.push(await CapacitorApp.addListener("backButton", ({ canGoBack }) => {
         const modal = document.querySelector<HTMLElement>('[role="dialog"], [aria-modal="true"]');
         const close = modal?.querySelector<HTMLElement>('[aria-label*="Close" i], [data-dismiss]');
@@ -44,7 +47,7 @@ export function useNativeRuntime(): void {
       }));
       handles.push(await CapacitorApp.addListener("appStateChange", ({ isActive }) => {
         document.documentElement.classList.toggle("native-backgrounded", !isActive);
-        if (isActive) window.dispatchEvent(new Event("boreal:native-resume"));
+        if (isActive) { window.dispatchEvent(new Event("boreal:native-resume")); void collectAndroidShares(); }
         else window.dispatchEvent(new Event("boreal:native-pause")); // BF_CLIENT_BACKGROUND_UPLOAD_v307
       }));
       handles.push(await Network.addListener("networkStatusChange", ({ connected }) => {

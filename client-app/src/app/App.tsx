@@ -1,4 +1,5 @@
 import AppRoutes from "./AppRoutes";
+import ShareInbox from "@/components/ShareInbox";
 import BiometricGate from "../native/BiometricGate"; // BF_CLIENT_BIOMETRIC_LOCK_v1
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1 — banner now lives only in
 // WizardLayout. App-level mount removed to prevent doubling.
@@ -17,6 +18,7 @@ export default function App() {
   return (
     <ErrorBoundary fallback={<FatalErrorScreen />}>
       <NativeRuntime />
+      <ShareInbox />{/* BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL */}
       <RetryBanner />
       <UpdatePromptBanner />
       <InstallPromptBanner />
