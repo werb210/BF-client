@@ -29,6 +29,7 @@ import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
+import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -639,6 +640,15 @@ export default function MiniPortalPage() {
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
       <InstallAppPrompt />
+      {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
+      <ReactivateHeldFiles
+        apps={myApps}
+        onReactivated={(id) => {
+          setMyApps((prev) => prev.map((a) => (String(a.id) === id ? { ...a, pipeline_state: "In Review" } : a)));
+          if (id === String(applicationId)) void loadAll();
+          else navigate(`/application/${encodeURIComponent(id)}`);
+        }}
+      />
       {/* BF_CLIENT_BLOCK_v467_SIGN_ANY_APP - a signature waiting on another of the
           applicant's applications was invisible unless they picked that one in the
           switcher. Show it here whichever application is open. */}
