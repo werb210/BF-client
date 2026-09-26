@@ -80,14 +80,15 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
 
   if (failed || !isActionCenter(data)) return null;
 
-  const { outstanding, completed } = data;
+  const { outstanding } = data;
 
-  if (outstanding.length === 0 && completed.length === 0) return null;
+  // BF_CLIENT_BLOCK_v562 - nothing to do means nothing to show: no "Completed"
+  // list and no "nothing outstanding" banner. The panel exists only for work left.
+  if (outstanding.length === 0) return null;
 
   return (
     <div style={wrap} data-testid="action-center">
-      {outstanding.length > 0 ? (
-        <>
+      <>
           <div style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}>What you need to do</div>
           <div style={{ fontSize: 14, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
             {outstanding.length} item{outstanding.length === 1 ? "" : "s"} remaining
@@ -137,29 +138,8 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
               )}
             </div>
           ))}
-        </>
-      ) : (
-        <div style={{ fontSize: 16, fontWeight: 600, color: "#15803d" }}>
-          Nothing outstanding — we have everything we asked for.
-        </div>
-      )}
+      </>
 
-      {completed.length > 0 && (
-        <div style={{ marginTop: outstanding.length > 0 ? 20 : 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>
-            Completed
-          </div>
-          {completed.map((item) => (
-            <div
-              key={item.key}
-              style={{ fontSize: 14, color: "#6b7280", padding: "3px 0" }}
-            >
-              <span style={{ color: "#15803d", marginRight: 8 }}>✓</span>
-              {item.label}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
