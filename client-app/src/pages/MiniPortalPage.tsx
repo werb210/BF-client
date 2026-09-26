@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { safeParseDate } from "@/utils/safeDate";
+import { formatMessageTime, safeParseDate } from "@/utils/safeDate";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { apiCall } from "@/api/client";
@@ -815,7 +815,7 @@ export default function MiniPortalPage() {
                       {m.ctaLabel && m.ctaAction ? <button className="mp-msg-cta" type="button" onClick={() => handleMessageCta(m.ctaAction)}>{m.ctaLabel}</button> : null}
                     </div>
                   </div>
-                  <div className="mp-msg-time">{safeParseDate(m.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}{m.authorRole === "self" && m.seen ? " \u00b7 Seen" : ""}{/* BF_CLIENT_BLOCK_v509 */}</div>
+                  <div className="mp-msg-time">{formatMessageTime(m.createdAt)}{m.authorRole === "self" && m.seen ? " \u00b7 Seen" : ""}{/* BF_CLIENT_BLOCK_v509 */}</div>
                 </div>
               );
             })}
