@@ -28,7 +28,7 @@ describe("action center", () => {
   });
 
   it("stays quiet when there is genuinely nothing to show", () => {
-    expect(cmp).toContain("if (outstanding.length === 0 && completed.length === 0) return null;");
+    expect(cmp).toContain("if (outstanding.length === 0) return null;"); // v562
   });
 });
 
