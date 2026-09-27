@@ -59,6 +59,7 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
       }
       setData(d);
       void import("@/native/appBadge").then((m) => m.setAppBadge(d.outstandingCount)); // BF_CLIENT_BLOCK_v553_APP_BADGE
+      void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: d.outstandingCount })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET
       setFailed(false);
     } catch {
       // Render nothing on failure so the rest of the portal can carry on.

@@ -8,5 +8,6 @@ final class BorealBridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(DocumentScannerPlugin())
         bridge?.registerPluginInstance(BackgroundUploadPlugin()) // BF_CLIENT_BACKGROUND_UPLOAD_v307
         bridge?.registerPluginInstance(AppBadgePlugin()) // BF_CLIENT_BLOCK_v553_APP_BADGE
+        bridge?.registerPluginInstance(ClientWidgetPlugin()) // BF_CLIENT_BLOCK_v590_HOME_WIDGET
     }
 }

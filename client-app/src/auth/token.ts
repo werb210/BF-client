@@ -83,6 +83,7 @@ export function setToken(t: string): void {
 export function clearToken(): void {
   token = null;
   void import("@/native/appBadge").then((m) => m.clearAppBadge()).catch((): void => undefined); // BF_CLIENT_BLOCK_v553_APP_BADGE
+  void import("@/native/clientWidget").then((m) => m.clearClientWidget()).catch((): void => undefined); // BF_CLIENT_BLOCK_v590_HOME_WIDGET
   tokenGeneration += 1;
   queueCredentialWrite(() => credentialStore.clear(), "Secure credential clear failed");
   if (Capacitor.isNativePlatform()) return;
