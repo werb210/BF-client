@@ -1,6 +1,6 @@
 // BF_CLIENT_BLOCK_v590_HOME_WIDGET
 // Feeds the iPhone/iPad home-screen widget: application stage, business name and the
-// "What you need to do" count. Native iOS only; a no-op everywhere else.
+// "What you need to do" count. Native iOS and Android only; a no-op everywhere else.
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export type ClientWidgetUpdate = { applicationId?: string | null; stage?: string | null; todo?: unknown; business?: string | null };
@@ -25,7 +25,8 @@ export function widgetPayload(u: ClientWidgetUpdate): { applicationId?: string; 
   return out;
 }
 
-const available = (): boolean => Capacitor.getPlatform() === "ios" && Capacitor.isPluginAvailable("ClientWidget");
+// BF_CLIENT_BLOCK_v591_ANDROID_WIDGET - iOS (v590) and Android.
+const available = (): boolean => Capacitor.isNativePlatform() && Capacitor.isPluginAvailable("ClientWidget");
 
 export async function updateClientWidget(u: ClientWidgetUpdate): Promise<void> {
   if (!available()) return;

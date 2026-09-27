@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     registerPlugin(SecureCredentialsPlugin.class);
     registerPlugin(BackgroundUploadPlugin.class); // BF_CLIENT_BACKGROUND_UPLOAD_v307
     registerPlugin(SharedFilesPlugin.class); // BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL
+    registerPlugin(ClientWidgetPlugin.class); // BF_CLIENT_BLOCK_v591_ANDROID_WIDGET
     super.onCreate(savedInstanceState);
   }
 }

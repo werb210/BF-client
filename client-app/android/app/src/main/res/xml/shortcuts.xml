@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BF_CLIENT_BLOCK_v591_APP_SHORTCUTS - long-press the app icon. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="application" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_application" android:shortcutLongLabel="@string/shortcut_application">
+        <intent android:action="android.intent.action.VIEW" android:data="borealclient://home"
+            android:targetPackage="com.boreal.client" android:targetClass="com.boreal.client.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="documents" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_documents" android:shortcutLongLabel="@string/shortcut_documents">
+        <intent android:action="android.intent.action.VIEW" android:data="borealclient://documents"
+            android:targetPackage="com.boreal.client" android:targetClass="com.boreal.client.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="messages" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_messages" android:shortcutLongLabel="@string/shortcut_messages">
+        <intent android:action="android.intent.action.VIEW" android:data="borealclient://messages"
+            android:targetPackage="com.boreal.client" android:targetClass="com.boreal.client.MainActivity" />
+    </shortcut>
+</shortcuts>

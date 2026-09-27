@@ -4,4 +4,10 @@
     <string name="title_activity_main">Boreal Financial</string>
     <string name="package_name">com.boreal.client</string>
     <string name="custom_url_scheme">com.boreal.client</string>
+    <!-- BF_CLIENT_BLOCK_v591 -->
+    <string name="client_widget_label">My application</string>
+    <string name="client_widget_description">Where your application is and what you still need to do.</string>
+    <string name="shortcut_application">My application</string>
+    <string name="shortcut_documents">Upload documents</string>
+    <string name="shortcut_messages">Messages</string>
 </resources>
