@@ -13,6 +13,7 @@ import { tokens, components } from "@/styles";
 import { normalizePhone } from "@/utils/normalizePhone";
 import { identifyClarity } from "@/utils/analytics"; // BF_CLIENT_CLARITY_IDENTIFY_v162
 import { biometryAvailable, HINT_KEY, isEnrolled, phoneFromToken, PROMPTED_KEY, signInWithFaceId } from "@/native/deviceSignIn"; // BF_CLIENT_FACE_ID_SETTING_v325
+import { passkeysSupported, signInWithPasskey, PasskeyError } from "@/auth/passkeys"; // BF_CLIENT_BLOCK_v600
 
 type Step = "phone" | "code";
 
@@ -60,6 +61,23 @@ export default function OtpPage() {
     }
     const next = resolveOtpNextStep(ClientProfileStore.getProfile(formatted));
     navigate(next.action === "portal" ? "/portal" : "/apply/step-1", { replace: true });
+  }
+
+  // BF_CLIENT_BLOCK_v600 - passkey sign-in (browser only; the app uses Face ID sign-in).
+  const [passkeyReady] = useState(passkeysSupported);
+  async function handlePasskeySignIn() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await signInWithPasskey();
+      const signedInPhone = phoneFromToken(data.token) ?? "";
+      try { sessionStorage.setItem("verified_phone", signedInPhone); identifyClarity(signedInPhone); } catch { /* storage unavailable */ }
+      routeAfterSignIn(signedInPhone, data);
+    } catch (e) {
+      setError(e instanceof PasskeyError ? e.message : "Passkey sign-in didn't work. Sign in with a text code instead.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleFaceIdSignIn() {
@@ -220,6 +238,20 @@ export default function OtpPage() {
                   style={{ ...components.buttons.base, ...components.buttons.primary, width: "100%", marginBottom: tokens.spacing.md }}
                 >
                   {loading ? "Signing in..." : "Sign in with Face ID"}
+                </button>
+                <p style={{ textAlign: "center", color: tokens.colors.textSecondary, margin: 0 }}>or get a text code</p>
+              </>
+            )}
+            {passkeyReady && !faceIdReady && (
+              <>
+                <button
+                  type="button"
+                  data-testid="passkey-sign-in"
+                  onClick={() => void handlePasskeySignIn()}
+                  disabled={loading}
+                  style={{ ...components.buttons.base, ...components.buttons.ghost, width: "100%", marginBottom: tokens.spacing.md }}
+                >
+                  {loading ? "Signing in..." : "Sign in with a passkey"}
                 </button>
                 <p style={{ textAlign: "center", color: tokens.colors.textSecondary, margin: 0 }}>or get a text code</p>
               </>

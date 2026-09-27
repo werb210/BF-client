@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FaceIdSignInToggle from "@/components/FaceIdSignInToggle";
+import PasskeySignInToggle from "@/components/PasskeySignInToggle"; // BF_CLIENT_BLOCK_v600
 import { clearToken } from "@/api/auth"; // BF_CLIENT_SIGN_OUT_v345
 
 export default function AccountBar() {
@@ -56,6 +57,7 @@ export default function AccountBar() {
       }}
     >
       <FaceIdSignInToggle />
+      <PasskeySignInToggle />
       {/* BF_CLIENT_SIGN_OUT_v345 - pushed to the far end so it is never the
           thing a client hits by accident while reaching for Face ID. */}
       <button
