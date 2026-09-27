@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import UserNotifications
+import WidgetKit // BF_CLIENT_BLOCK_v590_HOME_WIDGET
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -269,5 +270,43 @@ public class AppBadgePlugin: CAPPlugin, CAPBridgedPlugin {
                 call.resolve()
             }
         }
+    }
+}
+
+// BF_CLIENT_BLOCK_v590_HOME_WIDGET - hands the portal's stage + to-do count to the widget.
+
+@objc(ClientWidgetPlugin)
+public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "ClientWidgetPlugin"
+    public let jsName = "ClientWidget"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise)
+    ]
+    private let group = "group.com.boreal.client"
+    private let key = "boreal.client.widget"
+
+    @objc func update(_ call: CAPPluginCall) {
+        guard let defaults = UserDefaults(suiteName: group) else { call.resolve(); return }
+        var current: [String: Any] = [:]
+        if let data = defaults.data(forKey: key),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] { current = obj }
+        let incomingId = call.getString("applicationId")
+        // A different application replaces the old snapshot instead of mixing the two.
+        if let id = incomingId, let old = current["applicationId"] as? String, old != id { current = [:] }
+        if let id = incomingId { current["applicationId"] = id }
+        if let stage = call.getString("stage") { current["stage"] = stage }
+        if let business = call.getString("business") { current["business"] = business }
+        if let todo = call.getInt("todo") { current["todo"] = max(0, todo) }
+        current["updatedAt"] = Date().timeIntervalSince1970
+        if let data = try? JSONSerialization.data(withJSONObject: current) { defaults.set(data, forKey: key) }
+        WidgetCenter.shared.reloadAllTimelines()
+        call.resolve()
+    }
+
+    @objc func clear(_ call: CAPPluginCall) {
+        UserDefaults(suiteName: group)?.removeObject(forKey: key)
+        WidgetCenter.shared.reloadAllTimelines()
+        call.resolve()
     }
 }
