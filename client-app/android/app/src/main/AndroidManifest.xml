@@ -22,6 +22,9 @@
             android:launchMode="singleTask"
             android:exported="true">
 
+            <!-- BF_CLIENT_BLOCK_v591_APP_SHORTCUTS -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -58,6 +61,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- BF_CLIENT_BLOCK_v591_ANDROID_WIDGET -->
+        <receiver android:name=".ClientWidgetProvider" android:exported="false" android:label="@string/client_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/client_widget_info" />
+        </receiver>
+
         <!-- BF_CLIENT_ANDROID_PUSH_ACTIONS_v157 -->
         <service
             android:name=".BorealMessagingService"
