@@ -106,6 +106,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
         }
     }
+    func sceneDidBecomeActive(_ scene: UIScene) { SharedInboxDelivery.deliver() } // BOREAL_SHARE_EXTENSION_v640
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
         _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])
@@ -309,5 +310,39 @@ public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         UserDefaults(suiteName: group)?.removeObject(forKey: key)
         WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
+    }
+}
+
+// BOREAL_SHARE_EXTENSION_v640 - files saved by the share extension (Photos, Files, Mail...)
+// are handed to the app's existing "shared file" screen the same way iOS delivers an
+// "Open in" file. Called whenever the app comes to the front. The first delivery after a
+// launch waits a moment so the web layer is listening.
+enum SharedInboxDelivery {
+    static var deliveredOnce = false
+    static func deliver() {
+        let fm = FileManager.default
+        guard let base = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.boreal.client") else { return }
+        let inbox = base.appendingPathComponent("SharedInbox", isDirectory: true)
+        guard let folders = try? fm.contentsOfDirectory(at: inbox, includingPropertiesForKeys: nil), !folders.isEmpty else { return }
+        let outDir = fm.temporaryDirectory.appendingPathComponent("Shared", isDirectory: true)
+        try? fm.createDirectory(at: outDir, withIntermediateDirectories: true)
+        var moved: [URL] = []
+        for folder in folders {
+            let files = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+            for file in files {
+                let destFolder = outDir.appendingPathComponent(folder.lastPathComponent, isDirectory: true)
+                try? fm.createDirectory(at: destFolder, withIntermediateDirectories: true)
+                let dest = destFolder.appendingPathComponent(file.lastPathComponent)
+                try? fm.removeItem(at: dest)
+                if (try? fm.moveItem(at: file, to: dest)) != nil { moved.append(dest) }
+            }
+            try? fm.removeItem(at: folder)
+        }
+        if moved.isEmpty { return }
+        let delay: Double = deliveredOnce ? 0.4 : 2.5
+        deliveredOnce = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            for url in moved { _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:]) }
+        }
     }
 }
