@@ -46,8 +46,8 @@ export default function AppRouter() {
         <Route path="/apply/step-4" element={<RequireOTP><Wizard /></RequireOTP>} />
         <Route path="/apply/step-5" element={<RequireOTP><Wizard /></RequireOTP>} />
         <Route path="/apply/step-6" element={<RequireOTP><Wizard /></RequireOTP>} />
-        <Route path="/portal" element={<RequireOTP><MiniPortalPage /></RequireOTP>} />
-        <Route path="/application/:id" element={<RequireOTP><MiniPortalPage /></RequireOTP>} />
+        <Route path="/portal" element={<RequireOTP accountBarInPage><MiniPortalPage /></RequireOTP>} /> {/* BF_CLIENT_CMP_LAYOUT_v631 */}
+        <Route path="/application/:id" element={<RequireOTP accountBarInPage><MiniPortalPage /></RequireOTP>} />
         {/* BF_CLIENT_BLOCK_TWO_STAGE_v1 */}
         <Route path="/mini-portal/forms/:applicationId" element={<RequireOTP><Stage2Page /></RequireOTP>} />
         <Route path="*" element={<Navigate to="/" replace />} />

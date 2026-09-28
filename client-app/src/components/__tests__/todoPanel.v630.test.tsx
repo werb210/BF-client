@@ -8,7 +8,7 @@ vi.mock("../../api/client", () => ({
   apiCall: vi.fn(async () => { calls.n += 1; return { outstanding: calls.items, completed: [], outstandingCount: calls.items.length }; }),
 }));
 vi.mock("@/native/appBadge", () => ({ setAppBadge: vi.fn() }));
-vi.mock("@/native/clientWidget", () => ({ updateClientWidget: vi.fn() }));
+vi.mock("@/native/clientWidget", () => ({ updateClientWidget: vi.fn(), actionLine: () => "Nothing to do" }));
 
 import ActionCenter from "../ActionCenter";
 
@@ -33,9 +33,8 @@ describe("v630 what you need to do", () => {
     expect(panel).toBeLessThan(page.indexOf('<section className="mp-thread-card">'));
   });
 
-  it("is refreshed after uploads and on every poll; What's Next no longer offers Upload", () => {
+  it("is refreshed after uploads and on every poll", () => {
     expect(page).toContain("refreshKey={todoRefresh}");
     expect(page).toContain("setTodoRefresh((n) => n + 1); }}");
-    expect(page).toContain('.filter((c) => c.id !== "upload")');
   });
 });

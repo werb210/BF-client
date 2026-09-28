@@ -25,6 +25,7 @@ import AdvisorsForm from "@/pages/mini-portal/forms/forms/AdvisorsForm";
 import LenderQaForm from "@/pages/mini-portal/forms/forms/LenderQaForm"; // BF_CLIENT_LENDER_QA_v1
 import ProductQuestionsForm from "@/pages/mini-portal/forms/forms/ProductQuestionsForm"; // BF_CLIENT_PRODUCT_QUESTIONS_v290
 import SlimHeader from "@/components/SlimHeader";
+import AccountBar from "@/components/AccountBar"; // BF_CLIENT_CMP_LAYOUT_v631
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
@@ -62,6 +63,8 @@ function expirationColor(expiresAt?: string): "ok" | "warn" | "danger" { if (!ex
 // BF_CLIENT_BLOCK_53_v1 -- final 7-pill spec. Media dropped per
 // product decision (2026-05-17). Upload Documents is the first pill
 // and opens DocPicker, not the file input.
+// BF_CLIENT_CMP_LAYOUT_v631
+const ALWAYS_CHIPS = new Set<string>(["upload", "new", "networth", "debt", "advisors"]);
 const ACTION_CHIPS = [
   { id: "upload",     label: "Upload Documents" },
   { id: "new",        label: "New Application" },
@@ -123,6 +126,12 @@ export default function MiniPortalPage() {
   // BF_CLIENT_TODO_PANEL_v630 - bumped on every refresh and after an upload so
   // "What you need to do" never shows a stale list (the app's WebView rarely fires "focus").
   const [todoRefresh, setTodoRefresh] = useState(0);
+  // BF_CLIENT_CMP_LAYOUT_v631 - forms staff requested for this application (from the to-do panel's data).
+  const [requestedForms, setRequestedForms] = useState<Set<string>>(new Set());
+  const onTodoData = useCallback((d: { outstanding: Array<{ key: string; kind: string }>; completed: Array<{ key: string; kind: string }> }) => {
+    const keys = [...d.outstanding, ...d.completed].filter((i) => i.kind === "form").map((i) => String(i.key).replace(/^form:/, ""));
+    setRequestedForms(new Set(keys));
+  }, []);
   const [docsChecked, setDocsChecked] = useState(false);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
@@ -639,6 +648,8 @@ export default function MiniPortalPage() {
   return (
     <>
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
+      {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
+      <AccountBar />
       <div className="mp-root">
       <InstallAppPrompt />
       {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
@@ -768,10 +779,10 @@ export default function MiniPortalPage() {
       </div>
       {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
-      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} /> : null}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} /> : null}
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
-          <header className="mp-thread-card__header">Client</header>
+          <header className="mp-thread-card__header">Chat with Boreal Staff</header>
           <div className="mp-thread-card__body">
             {signSession?.status === "ready" ? (
               <div data-testid="sign-prompt-note" style={{ margin: "0 0 10px", padding: "12px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, color: "#1e3a8a", fontSize: 13 }}>
@@ -898,12 +909,10 @@ export default function MiniPortalPage() {
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
               {ACTION_CHIPS
-                // BF_CLIENT_TODO_PANEL_v630 - uploads are started from "What you need to do" only.
-                .filter((c) => c.id !== "upload")
-                // BF_CLIENT_SBA_FORMS_ENTRY_v142
-                .filter((c) => c.id !== "sba_forms" || isSbaApplication)
-                .filter((c) => c.id !== "cra" || countryIsCanada)
-                .filter((c) => (c.id !== "equipment" && c.id !== "realestate") || collateralRelevant)
+                // BF_CLIENT_CMP_LAYOUT_v631 - always: Upload Documents, New Application, Personal Net
+                // Worth, Debt Stack, Professional Advisors. CRA, Connect Bank and the collateral forms
+                // (LOC / Accord-specific) appear only once staff request them in the portal.
+                .filter((c) => ALWAYS_CHIPS.has(c.id) || requestedForms.has(c.id) || (c.id === "sba_forms" && isSbaApplication))
                 .map((c) => (
                 <button key={c.id} type="button" className="mp-chip mp-chip--action" onClick={() => onChip(c.id)}>
                   {c.label}
