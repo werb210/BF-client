@@ -41,7 +41,9 @@ describe("MiniPortalPage", () => {
     expect(chips).toContain("Debt Stack");
   });
 
-  it("shows the Upload Documents chip only when documents are outstanding", async () => {
+  // BF_CLIENT_TODO_PANEL_v630 - uploads start from "What you need to do"; What's Next no longer
+  // repeats the Upload Documents button even while documents are outstanding.
+  it("never shows an Upload Documents chip in What's Next", async () => {
     (apiCall as any).mockImplementation(async (url: string) => {
       if (typeof url === "string" && url.includes("/documents-needed/needed")) {
         return { stillNeeded: [{ document_type: "bank_statements", label: "Bank statements" }], rejected: [] as any[] };
@@ -51,7 +53,8 @@ describe("MiniPortalPage", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
     await waitFor(() => {
       const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
-      expect(chips).toContain("Upload Documents");
+      expect(chips).toContain("New Application");
+      expect(chips).not.toContain("Upload Documents");
     });
   });
 });

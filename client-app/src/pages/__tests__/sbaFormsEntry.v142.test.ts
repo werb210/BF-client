@@ -51,6 +51,6 @@ describe("the chip only appears where it means something", () => {
   });
 
   it("does not disturb the existing upload-chip rule", () => {
-    expect(page).toContain('c.id !== "upload" || hasOutstandingDocs');
+    expect(page).toContain('.filter((c) => c.id !== "upload")'); // BF_CLIENT_TODO_PANEL_v630
   });
 });

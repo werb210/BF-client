@@ -120,6 +120,9 @@ export default function MiniPortalPage() {
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
   // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — outstanding-docs gating + received confirmation.
   const [hasOutstandingDocs, setHasOutstandingDocs] = useState(false);
+  // BF_CLIENT_TODO_PANEL_v630 - bumped on every refresh and after an upload so
+  // "What you need to do" never shows a stale list (the app's WebView rarely fires "focus").
+  const [todoRefresh, setTodoRefresh] = useState(0);
   const [docsChecked, setDocsChecked] = useState(false);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
@@ -222,7 +225,7 @@ export default function MiniPortalPage() {
       if (!applicationId) return;
       const outstanding = (Array.isArray(needed?.stillNeeded) ? needed!.stillNeeded.length : 0) + (Array.isArray(needed?.rejected) ? needed!.rejected.length : 0);
       setHasOutstandingDocs(outstanding > 0);
-    } catch {} finally { setDocsChecked(true); }
+    } catch {} finally { setDocsChecked(true); setTodoRefresh((n) => n + 1); }
   }, [applicationId]);
 
   // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — poll the
@@ -635,8 +638,6 @@ export default function MiniPortalPage() {
 
   return (
     <>
-      {/* BF_CLIENT_ACTION_CENTER_v198 */}
-      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} /> : null}
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       <div className="mp-root">
       <InstallAppPrompt />
@@ -765,6 +766,9 @@ export default function MiniPortalPage() {
           </div>
         ))}
       </div>
+      {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
+          above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} /> : null}
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Client</header>
@@ -894,7 +898,8 @@ export default function MiniPortalPage() {
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
               {ACTION_CHIPS
-                .filter((c) => c.id !== "upload" || hasOutstandingDocs)
+                // BF_CLIENT_TODO_PANEL_v630 - uploads are started from "What you need to do" only.
+                .filter((c) => c.id !== "upload")
                 // BF_CLIENT_SBA_FORMS_ENTRY_v142
                 .filter((c) => c.id !== "sba_forms" || isSbaApplication)
                 .filter((c) => c.id !== "cra" || countryIsCanada)
@@ -952,7 +957,7 @@ export default function MiniPortalPage() {
                 applicationId={applicationId}
                 documentType={pickerDoc?.type}
                 documentLabel={pickerDoc?.label}
-                onClose={() => { setShowDocPicker(false); setPickerDoc(null); }}
+                onClose={() => { setShowDocPicker(false); setPickerDoc(null); setTodoRefresh((n) => n + 1); }}
                 onUploaded={() => { void loadAll(); }}
               />
             )}
