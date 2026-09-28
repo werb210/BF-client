@@ -33,17 +33,15 @@ describe("MiniPortalPage", () => {
   it("renders the action chips", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
     const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
-    // BF_CLIENT_DOCS_BUBBLE_GATE_v1 — Upload Documents chip is gated on outstanding docs;
-    // with none outstanding (default mock) it is hidden.
-    expect(chips).not.toContain("Upload Documents");
-    expect(chips).toContain("Personal Net Worth Statement");
-    expect(chips).toContain("CRA Authorization");
-    expect(chips).toContain("Debt Stack");
+    // BF_CLIENT_CMP_LAYOUT_v631 - the five always-on chips; CRA / Connect Bank / collateral
+    // only when staff request them (none requested in the default mock).
+    expect(chips).toEqual(expect.arrayContaining(["Upload Documents", "New Application", "Personal Net Worth Statement", "Debt Stack", "Professional Advisors"]));
+    expect(chips).not.toContain("CRA Authorization");
+    expect(chips).not.toContain("Connect Bank (View-Only)");
   });
 
-  // BF_CLIENT_TODO_PANEL_v630 - uploads start from "What you need to do"; What's Next no longer
-  // repeats the Upload Documents button even while documents are outstanding.
-  it("never shows an Upload Documents chip in What's Next", async () => {
+  // BF_CLIENT_CMP_LAYOUT_v631 - Upload Documents is one of the always-on What's Next chips.
+  it("shows the Upload Documents chip in What's Next", async () => {
     (apiCall as any).mockImplementation(async (url: string) => {
       if (typeof url === "string" && url.includes("/documents-needed/needed")) {
         return { stillNeeded: [{ document_type: "bank_statements", label: "Bank statements" }], rejected: [] as any[] };
@@ -54,7 +52,7 @@ describe("MiniPortalPage", () => {
     await waitFor(() => {
       const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
       expect(chips).toContain("New Application");
-      expect(chips).not.toContain("Upload Documents");
+      expect(chips).toContain("Upload Documents");
     });
   });
 });

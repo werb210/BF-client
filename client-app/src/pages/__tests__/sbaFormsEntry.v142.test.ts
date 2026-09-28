@@ -41,7 +41,7 @@ describe("prompts already in the thread start working", () => {
 
 describe("the chip only appears where it means something", () => {
   it("is hidden on non-SBA applications", () => {
-    expect(page).toContain('c.id !== "sba_forms" || isSbaApplication');
+    expect(page).toContain('(c.id === "sba_forms" && isSbaApplication)'); // BF_CLIENT_CMP_LAYOUT_v631
   });
 
   it("detects SBA the same way the server does - category, then purpose", () => {
@@ -50,7 +50,7 @@ describe("the chip only appears where it means something", () => {
     expect(page).toContain('purpose.includes("start up")');
   });
 
-  it("does not disturb the existing upload-chip rule", () => {
-    expect(page).toContain('.filter((c) => c.id !== "upload")'); // BF_CLIENT_TODO_PANEL_v630
+  it("keeps Upload Documents among the always-on chips", () => {
+    expect(page).toContain('const ALWAYS_CHIPS = new Set<string>(["upload", "new", "networth", "debt", "advisors"]);'); // BF_CLIENT_CMP_LAYOUT_v631
   });
 });

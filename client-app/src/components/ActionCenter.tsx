@@ -26,6 +26,8 @@ type Props = {
   onAction?: (item: ActionItem) => void;
   /** BF_CLIENT_TODO_PANEL_v630 - change this to make the panel re-read the server. */
   refreshKey?: number;
+  /** BF_CLIENT_CMP_LAYOUT_v631 - the page uses this to show only the forms staff requested. */
+  onData?: (d: { outstanding: ActionItem[]; completed: ActionItem[] }) => void;
 };
 
 const wrap: React.CSSProperties = {
@@ -36,7 +38,7 @@ const wrap: React.CSSProperties = {
   marginBottom: 20,
 };
 
-export default function ActionCenter({ applicationId, onAction, refreshKey }: Props) {
+export default function ActionCenter({ applicationId, onAction, refreshKey, onData }: Props) {
   const [data, setData] = useState<ActionCenterData | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -60,6 +62,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey }: Pr
         return;
       }
       setData(d);
+      onData?.(d); // BF_CLIENT_CMP_LAYOUT_v631
       void import("@/native/appBadge").then((m) => m.setAppBadge(d.outstandingCount)); // BF_CLIENT_BLOCK_v553_APP_BADGE
       void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: d.outstandingCount })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET
       setFailed(false);

@@ -12,7 +12,8 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { clearToken, hasToken } from "@/api/auth";
 import AccountBar from "@/components/AccountBar"; // BF_CLIENT_ACCOUNT_BAR_v341
 
-export function RequireOTP({ children }: PropsWithChildren) {
+// BF_CLIENT_CMP_LAYOUT_v631 - accountBarInPage: the page draws the account row itself (under its header).
+export function RequireOTP({ children, accountBarInPage = false }: PropsWithChildren<{ accountBarInPage?: boolean }>) {
   const location = useLocation();
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
@@ -49,7 +50,7 @@ export function RequireOTP({ children }: PropsWithChildren) {
   // client whichever screen they are on.
   return (
     <>
-      <AccountBar />
+      {accountBarInPage ? null : <AccountBar />}
       {children}
     </>
   );
