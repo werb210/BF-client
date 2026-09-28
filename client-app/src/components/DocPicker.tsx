@@ -8,6 +8,8 @@ import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQueue"; // BF_CLIENT_UPLOAD_QUEUE_v278
+import { Capacitor } from "@capacitor/core"; // BF_CLIENT_DOCPICKER_SCAN_v634
+import { scanDocumentAsPdfWithQuality } from "@/native/documentScanner"; // BF_CLIENT_DOCPICKER_SCAN_v634
 
 type DocItem = { document_type: string; label: string };
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
@@ -60,8 +62,25 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
     const input = document.createElement("input");
     input.type = "file";
     input.multiple = true;
-    input.onchange = async () => {
-      const files = Array.from(input.files ?? []);
+    input.onchange = () => { void uploadFiles(documentType, Array.from(input.files ?? [])); };
+    input.click();
+  }
+
+  // BF_CLIENT_DOCPICKER_SCAN_v634 - the phone's document scanner (already used in Step 5 of the
+  // application) now also works here: scan the pages, they are turned into one PDF and uploaded.
+  async function scanAndUpload(documentType: string, label: string) {
+    try {
+      const { file, quality } = await scanDocumentAsPdfWithQuality(label || documentType);
+      if (file) await uploadFiles(documentType, [file]);
+      // After the upload, which clears earlier notices: the scan went through, but say if it looks unreadable.
+      if (file && quality && !quality.ok) setNotice((prev) => (prev ? prev + " " : "") + quality.message);
+    } catch {
+      // Cancelled, or the scanner is unavailable - nothing to do.
+    }
+  }
+
+  async function uploadFiles(documentType: string, files: File[]) {
+    {
       if (files.length === 0) return;
       setUploading(documentType);
       setError(null);
@@ -126,8 +145,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
         rejected: cur.rejected.filter((d) => d.document_type !== documentType),
       }));
       setUploading(null);
-    };
-    input.click();
+    }
   }
 
   const empty = !loading && data.stillNeeded.length === 0 && data.rejected.length === 0;
@@ -159,9 +177,16 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
             {data.rejected.map((d) => (
               <div key={`r-${d.document_type}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 14 }}>{d.label}</span>
-                <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
-                  {uploading === d.document_type ? "Uploading…" : "Re-upload"}
-                </button>
+                <span style={{ display: "flex", gap: 8 }}>
+                  {Capacitor.isNativePlatform() && (
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: "1px solid #3b82f6", borderRadius: 6, background: "#fff", color: "#1d4ed8", cursor: "pointer", fontSize: 13 }}>
+                      Scan
+                    </button>
+                  )}
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
+                    {uploading === d.document_type ? "Uploading…" : "Re-upload"}
+                  </button>
+                </span>
               </div>
             ))}
           </section>
@@ -173,9 +198,16 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
             {data.stillNeeded.map((d) => (
               <div key={`n-${d.document_type}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 14 }}>{d.label}</span>
-                <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
-                  {uploading === d.document_type ? "Uploading…" : "Upload"}
-                </button>
+                <span style={{ display: "flex", gap: 8 }}>
+                  {Capacitor.isNativePlatform() && (
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: "1px solid #3b82f6", borderRadius: 6, background: "#fff", color: "#1d4ed8", cursor: "pointer", fontSize: 13 }}>
+                      Scan
+                    </button>
+                  )}
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
+                    {uploading === d.document_type ? "Uploading…" : "Upload"}
+                  </button>
+                </span>
               </div>
             ))}
           </section>
