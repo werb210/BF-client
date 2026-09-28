@@ -64,7 +64,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
       setData(d);
       onData?.(d); // BF_CLIENT_CMP_LAYOUT_v631
       void import("@/native/appBadge").then((m) => m.setAppBadge(d.outstandingCount)); // BF_CLIENT_BLOCK_v553_APP_BADGE
-      void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: d.outstandingCount })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET
+      void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: d.outstandingCount, action: m.actionLine(d.outstanding) })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET + BF_CLIENT_WIDGET_BRAND_v631
       setFailed(false);
     } catch {
       // Render nothing on failure so the rest of the portal can carry on.
