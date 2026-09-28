@@ -1,7 +1,8 @@
-// BF_CLIENT_BLOCK_v590_HOME_WIDGET
-// Home-screen and lock-screen widget: where the application is and how many things the
-// client still has to do. The app writes the snapshot (ClientWidgetPlugin) whenever the
-// client portal loads; until push exists it refreshes when the app is opened.
+// BF_CLIENT_BLOCK_v590_HOME_WIDGET + BF_CLIENT_WIDGET_BRAND_v631
+// Home-screen and lock-screen widget: Boreal Financial branding (navy, mountain mark),
+// the application's stage, and a plain action line - "Upload 1 document", "Fill in 1 form"
+// or "Nothing to do". The app writes the snapshot (ClientWidgetPlugin) every time the
+// "What you need to do" panel refreshes.
 import SwiftUI
 import WidgetKit
 
@@ -10,6 +11,7 @@ struct ClientWidgetSnapshot: Codable {
     var stage: String?
     var todo: Int?
     var business: String?
+    var action: String?
     var updatedAt: Double?
 
     static let group = "group.com.boreal.client"
@@ -28,7 +30,7 @@ struct ClientEntry: TimelineEntry {
 
 struct ClientProvider: TimelineProvider {
     func placeholder(in context: Context) -> ClientEntry {
-        ClientEntry(date: Date(), snapshot: ClientWidgetSnapshot(applicationId: nil, stage: "In Review", todo: 1, business: "Your business", updatedAt: nil))
+        ClientEntry(date: Date(), snapshot: ClientWidgetSnapshot(applicationId: nil, stage: "In Review", todo: 1, business: "Your business", action: "Upload 1 document", updatedAt: nil))
     }
     func getSnapshot(in context: Context, completion: @escaping (ClientEntry) -> Void) {
         completion(ClientEntry(date: Date(), snapshot: ClientWidgetSnapshot.load() ?? placeholder(in: context).snapshot))
@@ -48,16 +50,35 @@ func stageLabel(_ raw: String?) -> String {
         .joined(separator: " ")
 }
 
-func todoLine(_ n: Int?) -> String {
-    guard let n = n else { return "Open to check" }
+/// The app sends the action line; older snapshots only have a count.
+func actionText(_ s: ClientWidgetSnapshot?) -> String {
+    if let a = s?.action, !a.isEmpty { return a }
+    guard let n = s?.todo else { return "Open to check" }
     if n <= 0 { return "Nothing to do" }
     return n == 1 ? "1 thing to do" : "\(n) things to do"
 }
+
+func hasWork(_ s: ClientWidgetSnapshot?) -> Bool { (s?.todo ?? 0) > 0 }
 
 func openURL(_ s: ClientWidgetSnapshot?) -> URL {
     if let id = s?.applicationId?.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed), !id.isEmpty,
        let url = URL(string: "borealclient://application/\(id)") { return url }
     return URL(string: "borealclient://home")!
+}
+
+// Boreal Financial brand colours (portal / client header navy, CMP gold).
+let borealNavy = Color(red: 11 / 255, green: 31 / 255, blue: 58 / 255)
+let borealGold = Color(red: 201 / 255, green: 162 / 255, blue: 74 / 255)
+let borealGreen = Color(red: 134 / 255, green: 219 / 255, blue: 157 / 255)
+
+struct BrandRow: View {
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "mountain.2.fill").font(.caption.bold())
+            Text("Boreal Financial").font(.caption.bold())
+        }
+        .foregroundStyle(Color.white)
+    }
 }
 
 struct ClientWidgetView: View {
@@ -74,24 +95,29 @@ struct ClientWidgetView: View {
             }
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 1) {
-                Text("Boreal").font(.headline)
+                Text("Boreal Financial").font(.headline)
                 Text(stageLabel(s?.stage)).lineLimit(1)
-                Text(todoLine(s?.todo)).lineLimit(1)
+                Text(actionText(s)).lineLimit(1)
             }.frame(maxWidth: .infinity, alignment: .leading)
         default:
             VStack(alignment: .leading, spacing: 6) {
-                Text("Boreal").font(.caption.bold()).foregroundStyle(.secondary)
+                BrandRow()
                 if s == nil {
-                    Text("Sign in to see your application").font(.subheadline)
+                    Spacer(minLength: 0)
+                    Text("Sign in to see your application").font(.subheadline).foregroundStyle(Color.white)
                 } else {
-                    Text(stageLabel(s?.stage)).font(.headline).lineLimit(2)
+                    Text("STAGE").font(.system(size: 10, weight: .semibold)).foregroundStyle(Color.white.opacity(0.6)).padding(.top, 4)
+                    Text(stageLabel(s?.stage)).font(.headline).foregroundStyle(Color.white).lineLimit(2)
                     if family != .systemSmall, let b = s?.business, !b.isEmpty {
-                        Text(b).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                        Text(b).font(.caption).foregroundStyle(Color.white.opacity(0.7)).lineLimit(1)
                     }
                     Spacer(minLength: 0)
-                    Text(todoLine(s?.todo))
-                        .font(.subheadline.bold())
-                        .foregroundStyle((s?.todo ?? 0) > 0 ? Color.orange : Color.green)
+                    HStack(spacing: 6) {
+                        Image(systemName: hasWork(s) ? "arrow.up.doc.fill" : "checkmark.circle.fill")
+                        Text(actionText(s)).lineLimit(2)
+                    }
+                    .font(.subheadline.bold())
+                    .foregroundStyle(hasWork(s) ? borealGold : borealGreen)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -105,10 +131,10 @@ struct ClientStageWidget: Widget {
         StaticConfiguration(kind: kind, provider: ClientProvider()) { entry in
             ClientWidgetView(entry: entry)
                 .widgetURL(openURL(entry.snapshot))
-                .containerBackground(.background, for: .widget)
+                .containerBackground(borealNavy, for: .widget)
         }
         .configurationDisplayName("My application")
-        .description("Where your application is and what you still need to do.")
+        .description("Your stage and what you need to do next.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular])
     }
 }

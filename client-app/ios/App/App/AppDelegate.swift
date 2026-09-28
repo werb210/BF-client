@@ -298,6 +298,7 @@ public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         if let stage = call.getString("stage") { current["stage"] = stage }
         if let business = call.getString("business") { current["business"] = business }
         if let todo = call.getInt("todo") { current["todo"] = max(0, todo) }
+        if let action = call.getString("action") { current["action"] = action } // BF_CLIENT_WIDGET_BRAND_v631
         current["updatedAt"] = Date().timeIntervalSince1970
         if let data = try? JSONSerialization.data(withJSONObject: current) { defaults.set(data, forKey: key) }
         WidgetCenter.shared.reloadAllTimelines()
