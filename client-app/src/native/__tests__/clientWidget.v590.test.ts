@@ -12,7 +12,7 @@ describe("home-screen widget payload", () => {
     expect(widgetPayload({ stage: "", business: "undefined", todo: "x" })).toEqual({});
   });
   it("is fed by the portal (stage), the action centre (count) and cleared on sign-out", () => {
-    expect(readFileSync("src/components/ActionCenter.tsx", "utf8")).toContain("updateClientWidget({ applicationId, todo: d.outstandingCount, action: m.actionLine(d.outstanding) })"); // BF_CLIENT_WIDGET_BRAND_v631
+    expect(readFileSync("src/components/ActionCenter.tsx", "utf8")).toContain("updateClientWidget({ applicationId, todo: allOutstanding.length, action: m.actionLine(allOutstanding) })"); // BF_CLIENT_TODO_ACTIONS_v637 - includes signing
     expect(readFileSync("src/pages/MiniPortalPage.tsx", "utf8")).toContain("updateClientWidget({ applicationId, stage:");
     expect(readFileSync("src/auth/token.ts", "utf8")).toContain("clearClientWidget()");
   });

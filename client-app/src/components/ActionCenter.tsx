@@ -5,14 +5,16 @@
 // It renders the server's answer verbatim. It deliberately does NOT re-derive
 // "is this done" on the client - that second opinion is what let the chat thread
 // and the document picker disagree in the first place.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiCall } from "../api/client";
 
 type ActionItem = {
   key: string;
-  kind: "document" | "form";
+  kind: "document" | "form" | "action";
   label: string;
   urgent: boolean;
+  /** BF_CLIENT_TODO_ACTIONS_v637 - PGI link, "sba_forms", "sign": run by the page's button handler. */
+  action?: string;
 };
 
 type ActionCenterData = {
@@ -26,6 +28,8 @@ type Props = {
   onAction?: (item: ActionItem) => void;
   /** BF_CLIENT_TODO_PANEL_v630 - change this to make the panel re-read the server. */
   refreshKey?: number;
+  /** BF_CLIENT_TODO_ACTIONS_v637 - to-dos the page knows about (signing), listed first. */
+  extraItems?: ActionItem[];
   /** BF_CLIENT_CMP_LAYOUT_v631 - the page uses this to show only the forms staff requested. */
   onData?: (d: { outstanding: ActionItem[]; completed: ActionItem[] }) => void;
 };
@@ -38,7 +42,11 @@ const wrap: React.CSSProperties = {
   marginBottom: 20,
 };
 
-export default function ActionCenter({ applicationId, onAction, refreshKey, onData }: Props) {
+export default function ActionCenter({ applicationId, onAction, refreshKey, onData, extraItems }: Props) {
+  // BF_CLIENT_TODO_ACTIONS_v637 - the latest extras, for the badge/widget count inside load().
+  const extrasRef = useRef<ActionItem[]>(extraItems ?? []);
+  extrasRef.current = extraItems ?? [];
+  const extrasKey = (extraItems ?? []).map((i) => i.key).join(",");
   const [data, setData] = useState<ActionCenterData | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -63,8 +71,9 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
       }
       setData(d);
       onData?.(d); // BF_CLIENT_CMP_LAYOUT_v631
-      void import("@/native/appBadge").then((m) => m.setAppBadge(d.outstandingCount)); // BF_CLIENT_BLOCK_v553_APP_BADGE
-      void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: d.outstandingCount, action: m.actionLine(d.outstanding) })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET + BF_CLIENT_WIDGET_BRAND_v631
+      const allOutstanding = [...extrasRef.current, ...d.outstanding]; // BF_CLIENT_TODO_ACTIONS_v637
+      void import("@/native/appBadge").then((m) => m.setAppBadge(allOutstanding.length)); // BF_CLIENT_BLOCK_v553_APP_BADGE
+      void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, todo: allOutstanding.length, action: m.actionLine(allOutstanding) })); // BF_CLIENT_BLOCK_v590_HOME_WIDGET + BF_CLIENT_WIDGET_BRAND_v631
       setFailed(false);
     } catch {
       // Render nothing on failure so the rest of the portal can carry on.
@@ -74,7 +83,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
 
   useEffect(() => {
     void load();
-  }, [load, refreshKey]);
+  }, [load, refreshKey, extrasKey]);
   // BF_CLIENT_TODO_PANEL_v630 - also when the app comes back to the foreground.
   useEffect(() => {
     const onVisible = (): void => { if (document.visibilityState === "visible") void load(); };
@@ -92,7 +101,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
 
   if (failed || !isActionCenter(data)) return null;
 
-  const { outstanding } = data;
+  const outstanding = [...(extraItems ?? []), ...data.outstanding]; // BF_CLIENT_TODO_ACTIONS_v637
 
   // BF_CLIENT_BLOCK_v562 - nothing to do means nothing to show: no "Completed"
   // list and no "nothing outstanding" banner. The panel exists only for work left.
@@ -129,7 +138,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
               </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, color: "#111827" }}>{item.label}</div>
-                {item.urgent && (
+                {item.urgent && item.kind === "document" && (
                   <div style={{ fontSize: 13, color: "#b91c1c", marginTop: 2 }}>
                     Needs re-uploading — the last one was not accepted
                   </div>
@@ -145,7 +154,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
                     flexShrink: 0,
                   }}
                 >
-                  {item.kind === "document" ? "Upload" : "Review"}
+                  {item.kind === "document" ? "Upload" : item.key === "sign" ? "Sign" : item.kind === "form" ? "Fill in" : "Open"}
                 </button>
               )}
             </div>

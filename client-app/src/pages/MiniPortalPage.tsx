@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { formatMessageTime, safeParseDate } from "@/utils/safeDate";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
@@ -279,7 +279,11 @@ export default function MiniPortalPage() {
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa" | "product_questions">(null);
   // BF_CLIENT_NATIVE_WIRING_v236 - Action Center buttons. Document keys are
   // "upload:<category>" and form keys "form:<name>" (BF-Server applicantActions).
-  const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string }) => {
+  // BF_CLIENT_TODO_ACTIONS_v637 - items that carry an action (PGI link, SBA forms, signing) run it
+  // through the same handler the chat buttons use; handleMessageCta is defined further down.
+  const ctaRef = useRef<(a: string) => void>(() => undefined);
+  const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string; action?: string }) => {
+    if (item.action) { ctaRef.current(item.action); return; }
     const [prefix, rest] = String(item.key || "").split(":", 2);
     if (item.kind === "document" && prefix === "upload" && rest) {
       setPickerDoc({ type: rest, label: item.label });
@@ -307,6 +311,11 @@ export default function MiniPortalPage() {
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const [signSession, setSignSession] = useState<{ status: string; url?: string; reason?: string } | null>(null);
+  // BF_CLIENT_TODO_ACTIONS_v637 - signing is a to-do while the signing session is ready.
+  const todoExtras = useMemo(
+    () => (signSession?.status === "ready" ? [{ key: "sign", kind: "action" as const, label: "Sign your application documents", urgent: false, action: "sign" }] : []),
+    [signSession?.status],
+  );
   const [signLoading, setSignLoading] = useState(false);
   const fetchSigningSession = useCallback(async () => {
     if (!applicationId) return;
@@ -570,6 +579,7 @@ export default function MiniPortalPage() {
   // its task buttons are stale and contradict the green all-clear banner (gated on the
   // same stage). Hide them so the client is never told to do work no longer outstanding.
   const pastAdditionalSteps = stageIndex > STAGE_BY_KEY.additional_steps_required;
+  ctaRef.current = (a: string) => handleMessageCta(a); // BF_CLIENT_TODO_ACTIONS_v637
   const handleMessageCta = (ctaAction?: string | null) => {
     if (!ctaAction) return;
     if (isUrl(ctaAction)) { window.open(ctaAction, "_blank", "noopener,noreferrer"); return; }
@@ -779,21 +789,12 @@ export default function MiniPortalPage() {
       </div>
       {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
-      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} /> : null}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Chat with Boreal Staff</header>
           <div className="mp-thread-card__body">
-            {signSession?.status === "ready" ? (
-              <div data-testid="sign-prompt-note" style={{ margin: "0 0 10px", padding: "12px 14px", background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, color: "#1e3a8a", fontSize: 13 }}>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                  Your application package is now complete and ready to be sent to the Lender partner(s). The last step is for you to sign your application documents. Click the button below to do so now.
-                </div>
-                <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")} style={{ fontWeight: 600 }}>
-                  Sign Documents
-                </button>
-              </div>
-            ) : null}
+            {/* BF_CLIENT_TODO_ACTIONS_v637 - "Sign your application documents" is now a to-do item. */}
             {/* BF_CLIENT_ALL_RECEIVED_NOTE_v1 — positive confirmation once nothing is outstanding. */}
             {docsChecked && !hasOutstandingDocs && signSession?.status !== "ready"
               // BF_CLIENT_BLOCK_v_CMP_REQUIRED_BANNER_v1 — hasOutstandingDocs covers
@@ -918,11 +919,6 @@ export default function MiniPortalPage() {
                   {c.label}
                 </button>
               ))}
-              {signSession?.status === "ready" && (
-                <button type="button" className="mp-chip mp-chip--action" onClick={() => onChip("sign")}>
-                  Sign Documents
-                </button>
-              )}
               {/* BF_CLIENT_BLOCK_v_HIDE_SIGNING_REASON_v1 — never surface the raw
                   signing-readiness status/reason (e.g. "lender_not_finalized") to the
                   client. Those are internal staff-workflow gates, not errors, and the
