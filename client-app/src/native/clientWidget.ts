@@ -11,9 +11,11 @@ export function actionLine(items: Array<{ kind?: string }> | null | undefined): 
   const list = Array.isArray(items) ? items : [];
   const docs = list.filter((i) => i?.kind === "document").length;
   const forms = list.filter((i) => i?.kind === "form").length;
+  const steps = list.length - docs - forms; // BF_CLIENT_TODO_ACTIONS_v637 - signing, PGI
   const parts: string[] = [];
   if (docs > 0) parts.push(docs === 1 ? "Upload 1 document" : "Upload " + docs + " documents");
   if (forms > 0) parts.push(forms === 1 ? "Fill in 1 form" : "Fill in " + forms + " forms");
+  if (steps > 0) parts.push(steps === 1 ? "Complete 1 step" : "Complete " + steps + " steps");
   return parts.length ? parts.join(" · ") : "Nothing to do";
 }
 interface ClientWidgetPlugin {
