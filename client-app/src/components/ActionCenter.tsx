@@ -24,6 +24,8 @@ type ActionCenterData = {
 type Props = {
   applicationId: string;
   onAction?: (item: ActionItem) => void;
+  /** BF_CLIENT_TODO_PANEL_v630 - change this to make the panel re-read the server. */
+  refreshKey?: number;
 };
 
 const wrap: React.CSSProperties = {
@@ -34,7 +36,7 @@ const wrap: React.CSSProperties = {
   marginBottom: 20,
 };
 
-export default function ActionCenter({ applicationId, onAction }: Props) {
+export default function ActionCenter({ applicationId, onAction, refreshKey }: Props) {
   const [data, setData] = useState<ActionCenterData | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -69,6 +71,12 @@ export default function ActionCenter({ applicationId, onAction }: Props) {
 
   useEffect(() => {
     void load();
+  }, [load, refreshKey]);
+  // BF_CLIENT_TODO_PANEL_v630 - also when the app comes back to the foreground.
+  useEffect(() => {
+    const onVisible = (): void => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
 
   // Re-check when the applicant comes back to the tab, so finishing an upload
