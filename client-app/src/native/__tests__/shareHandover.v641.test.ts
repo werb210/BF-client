@@ -13,7 +13,8 @@ describe("share extension hand-over", () => {
     expect(read("BorealShare/ShareViewController.swift")).toContain('appGroup = "' + GROUP + '"');
     const app = read("App/AppDelegate.swift");
     expect(app).toContain('forSecurityApplicationGroupIdentifier: "' + GROUP + '"');
-    expect(app).toContain("func sceneDidBecomeActive(_ scene: UIScene) { SharedInboxDelivery.deliver() }");
+    expect(app).toContain("SharedInboxDelivery.deliver() // BOREAL_SHARE_EXTENSION_v640"); // BF_CLIENT_SCENE_PRIVACY_v675 - now inside a multi-line sceneDidBecomeActive
+    expect(app).toContain("func sceneWillResignActive(_ scene: UIScene) { PrivacyCover.show(on: window");
     expect(app).toContain("ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])");
   });
 });
