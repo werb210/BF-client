@@ -48,6 +48,7 @@ export type SubmissionPayload = {
   // BF-Server reads this on /submit to fire the BI handoff.
   pgi_opt_in?: "yes" | "no";
   ad_measurement_consent?: boolean; // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
+  audience_match_consent?: boolean; // BF_CLIENT_SMS_DISCLOSURE_v690 - same optional box
 };
 
 export function getMissingRequiredDocs(app: ApplicationData) {
@@ -132,6 +133,7 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
     // BF_CLIENT_BLOCK_v163_PGI_OPT_IN_PAYLOAD_v1 — propagate Step 6 choice.
     pgi_opt_in: app.pgiOptIn,
     ad_measurement_consent: app.adMeasurementConsent === true, // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
+    audience_match_consent: app.adMeasurementConsent === true, // BF_CLIENT_SMS_DISCLOSURE_v690
   };
 }
 

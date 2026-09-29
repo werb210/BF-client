@@ -92,7 +92,7 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
   {
     title: "Communication Consent (Email, SMS, Phone, Portal, and Client Messaging)",
     blocks: [
-      { p: "I/We expressly authorize Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and authorized third parties to communicate with me/us regarding this application, any related financing transaction, account administration, document requests, underwriting matters, servicing matters, marketing opportunities, and other business-related communications." },
+      { p: "I/We expressly authorize Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and authorized third parties to communicate with me/us regarding this application, any related financing transaction, account administration, document requests, underwriting matters, servicing matters, and other business-related communications." },
       { p: "This authorization includes communication through:" },
       { ul: ["Email", "SMS/Text Messages", "Telephone Calls", "Voicemail Messages", "Automated Calling Systems", "Client Portal Notifications", "In-Application Messaging", "Boreal Financial Client-to-Staff Messaging Systems", "Secure Document Portals", "Electronic Signature Platforms", "Other electronic communication methods provided now or in the future"] },
       { p: "This consent applies to all email addresses, telephone numbers, messaging accounts, portal accounts, and contact information provided now or in the future. I/We understand that message and data rates may apply and that electronic communications may not always be secure." },
@@ -925,41 +925,43 @@ export function Step6_Review(): JSX.Element {
           </p>
         </div>
 
-        {/* BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - three required consents, each with a popup */}
-        {TC_CLAUSES.map((clause, i) => (
-          <label
-            key={clause.title}
-            // BF_CLIENT_CONSENT_v175 - each consent sits in its own bordered
-            // row. Unticked it reads as an outstanding action; ticked it fills
-            // with mist so progress through the three is visible at a glance.
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: tokens.spacing.sm,
-              padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
-              marginBottom: tokens.spacing.xs,
-              borderRadius: tokens.radii.md,
-              border: `1px solid ${tcConsents[i].get() ? tokens.colors.accent : tokens.colors.border}`,
-              background: tcConsents[i].get() ? tokens.colors.background : tokens.colors.surface,
-              cursor: "pointer",
-              fontSize: tokens.typography.label.fontSize,
-              fontWeight: tokens.typography.label.fontWeight,
-              color: tokens.colors.textPrimary,
-            }}
-          >
-            <Checkbox checked={tcConsents[i].get()} onChange={tcConsents[i].toggle} />
-            <span>
-              {clause.title}{" "}
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setOpenClause(i); }}
-                style={{ background: "none", border: "none", padding: 0, color: tokens.colors.primary, textDecoration: "underline", cursor: "pointer", fontSize: "inherit" }}
-              >
-                View full terms
-              </button>
-            </span>
-          </label>
-        ))}
+        {/* BF_CLIENT_SMS_DISCLOSURE_v690 - one required checkbox covers the three agreements (each still
+            opens in full), plus one optional advertising checkbox. Was four separate boxes. */}
+        {(() => {
+          const allAgreed = tcConsents.every((c) => c.get());
+          const setAll = () => update({ termsAccepted: !allAgreed, shareAuthorization: !allAgreed, infoConfirmed: !allAgreed });
+          const linkStyle = { background: "none", border: "none", padding: 0, color: tokens.colors.primary, textDecoration: "underline", cursor: "pointer", fontSize: "inherit" } as const;
+          return (
+            <label
+              data-testid="agree-all-terms"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: tokens.spacing.sm,
+                padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+                marginBottom: tokens.spacing.xs,
+                borderRadius: tokens.radii.md,
+                border: `1px solid ${allAgreed ? tokens.colors.accent : tokens.colors.border}`,
+                background: allAgreed ? tokens.colors.background : tokens.colors.surface,
+                cursor: "pointer",
+                fontSize: tokens.typography.label.fontSize,
+                fontWeight: tokens.typography.label.fontWeight,
+                color: tokens.colors.textPrimary,
+              }}
+            >
+              <Checkbox checked={allAgreed} onChange={setAll} />
+              <span>
+                I have read and agree to the{" "}
+                {TC_CLAUSES.map((clause, i) => (
+                  <span key={clause.title}>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setOpenClause(i); }} style={linkStyle}>{clause.title}</button>
+                    {i < TC_CLAUSES.length - 2 ? ", " : i === TC_CLAUSES.length - 2 ? " and " : "."}
+                  </span>
+                ))}
+              </span>
+            </label>
+          );
+        })()}
 
         {/* BF_CLIENT_AD_MEASUREMENT_CONSENT_v402 - optional, unticked by default, never required to submit */}
         <label
@@ -980,7 +982,7 @@ export function Step6_Review(): JSX.Element {
         >
           <Checkbox checked={Boolean(app.adMeasurementConsent)} onChange={() => update({ adMeasurementConsent: !app.adMeasurementConsent })} />
           <span>
-            Optional: Boreal may share a scrambled (hashed) copy of my email and phone number with advertising partners such as Google, only to measure which of its ads lead to applications. You can withdraw this at any time.
+            Optional: Boreal Financial may share a scrambled (hashed) copy of my email and phone number with advertising platforms to measure its ads and to show me relevant Boreal Financial offers. My details are never sold. I can withdraw this at any time.
           </span>
         </label>
 

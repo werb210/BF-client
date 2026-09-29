@@ -411,8 +411,11 @@ export default function PhoneOTPInline() {
           >
             {busy ? 'Sending…' : 'Start Your Application →'}
           </button>
-          <p style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center' }}>
-            We&apos;ll text you a one-time code to verify.
+          {/* BF_CLIENT_SMS_DISCLOSURE_v690 - carrier-required text-message disclosure at the point of opt-in. */}
+          <p data-testid="sms-disclosure" style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
+            By entering your mobile number, you agree to receive text messages from Boreal Financial about your application: sign-in codes, status updates, document requests and signing reminders. Up to 10 messages per month. Message and data rates may apply. Reply STOP to opt out or HELP for help. See our{' '}
+            <a href="https://boreal.financial/terms" target="_blank" rel="noreferrer" style={{ color: '#1E3A8A' }}>Terms</a> and{' '}
+            <a href="https://boreal.financial/privacy" target="_blank" rel="noreferrer" style={{ color: '#1E3A8A' }}>Privacy Policy</a>.
           </p>
         </>
       )}

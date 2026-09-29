@@ -27,6 +27,6 @@ describe("each consent reads as a required action", () => {
   });
 
   it("changes state visibly when ticked", () => {
-    expect(STEP6).toContain("tcConsents[i].get() ? tokens.colors.accent : tokens.colors.border");
+    expect(STEP6).toContain("allAgreed ? tokens.colors.accent : tokens.colors.border"); // BF_CLIENT_SMS_DISCLOSURE_v690 - one combined box
   });
 });
