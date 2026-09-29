@@ -1,4 +1,5 @@
 // @ts-nocheck
+// BF_CLIENT_MAIN_LINE_866_v692 - call-us number is the 866 main line.
 import { useEffect, useMemo, useState, useRef } from "react";
 import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate, useParams } from "react-router-dom";
@@ -1581,7 +1582,7 @@ export function Step1_KYC(): JSX.Element {
               <>
                 <strong>We cannot match this one.</strong> Our Canadian lender panel
                 needs at least $10,000 in average monthly revenue. Change the answer
-                if it was a mistake, or call us on (825) 451-1768.
+                if it was a mistake, or call us on (866) 631-8939.
               </>
             ) : (
               <>
@@ -1673,7 +1674,7 @@ export function Step1_KYC(): JSX.Element {
             <p>
               If you think we have this wrong, or the last three months are not
               representative, call us on{" "}
-              <a href="tel:+18254511768">(825) 451-1768</a> and we will look at it
+              <a href="tel:+18666318939">(866) 631-8939</a> and we will look at it
               properly.
             </p>
             <Button type="button" onClick={() => setShowMinRevenueModal(false)}>

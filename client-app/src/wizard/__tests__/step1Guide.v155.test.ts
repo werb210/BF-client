@@ -62,6 +62,6 @@ describe("a refusal is not described as a missing answer", () => {
   });
 
   it("gives them a way to reach a person", () => {
-    expect(step1).toContain("(825) 451-1768");
+    expect(step1).toContain("(866) 631-8939"); // BF_CLIENT_MAIN_LINE_866_v692
   });
 });
