@@ -12,7 +12,7 @@ describe("formatPhoneNumber strips a leading NANP country code", () => {
 
   it("leaves a plain ten-digit number alone", () => {
     expect(formatPhoneNumber("7059300053", "CA")).toBe("(705) 930-0053");
-    expect(formatPhoneNumber("5878881837", "US")).toBe("(587) 888-1837");
+    expect(formatPhoneNumber("4035550123", "US")).toBe("(403) 555-0123");
   });
 
   it("does not strip a legitimate leading 1 from a ten-digit string", () => {
