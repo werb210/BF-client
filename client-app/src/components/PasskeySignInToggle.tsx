@@ -1,11 +1,18 @@
 // BF_CLIENT_BLOCK_v600 - a browser-only account-bar action for passkey enrollment.
-import { useState } from "react";
-import { createPasskey, PasskeyError, passkeysSupported } from "@/auth/passkeys";
+import { useEffect, useState } from "react";
+import { createPasskey, hasPasskey, PasskeyError, passkeysSupported } from "@/auth/passkeys";
 
 export default function PasskeySignInToggle() {
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // BF_CLIENT_PASSKEY_FIX_v691 - after a refresh, show "Ready" when the account already has a passkey.
+  useEffect(() => {
+    if (!passkeysSupported()) return;
+    let live = true;
+    void hasPasskey().then((yes) => { if (live && yes) setCreated(true); });
+    return () => { live = false; };
+  }, []);
 
   if (!passkeysSupported()) return null;
 
@@ -16,6 +23,7 @@ export default function PasskeySignInToggle() {
       await createPasskey();
       setCreated(true);
     } catch (cause) {
+      if (cause instanceof PasskeyError && (cause as { code?: string }).code === "exists") { setCreated(true); return; } // BF_CLIENT_PASSKEY_FIX_v691
       setError(cause instanceof PasskeyError ? cause.message : "Your passkey could not be created. Try again.");
     } finally {
       setBusy(false);
