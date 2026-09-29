@@ -19,7 +19,7 @@ export function actionLine(items: Array<{ kind?: string }> | null | undefined): 
   return parts.length ? parts.join(" · ") : "Nothing to do";
 }
 interface ClientWidgetPlugin {
-  update(options: { applicationId?: string; stage?: string; todo?: number; business?: string; action?: string }): Promise<void>;
+  update(options: { applicationId?: string; stage?: string; todo?: number; business?: string; action?: string; token?: string; apiBase?: string }): Promise<void>;
   clear(): Promise<void>;
 }
 const ClientWidget = registerPlugin<ClientWidgetPlugin>("ClientWidget");
@@ -46,7 +46,17 @@ const available = (): boolean => Capacitor.isNativePlatform() && Capacitor.isPlu
 
 export async function updateClientWidget(u: ClientWidgetUpdate): Promise<void> {
   if (!available()) return;
-  await ClientWidget.update(widgetPayload(u)).catch((): void => undefined);
+  // BF_CLIENT_WIDGET_SELF_REFRESH_v675 - the sign-in token and server address let the widget refresh itself.
+  const payload: Parameters<ClientWidgetPlugin["update"]>[0] = { ...widgetPayload(u) };
+  try {
+    const { getToken } = await import("@/auth/token");
+    const { ENV } = await import("@/env");
+    const token = getToken();
+    if (token) payload.token = token;
+    const base = String(ENV.API_BASE || "").replace(/[/]+$/, "");
+    if (base) payload.apiBase = base;
+  } catch { /* the widget still shows the app's last snapshot */ }
+  await ClientWidget.update(payload).catch((): void => undefined);
 }
 
 export async function clearClientWidget(): Promise<void> {

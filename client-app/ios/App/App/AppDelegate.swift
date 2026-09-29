@@ -106,13 +106,42 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
         }
     }
-    func sceneDidBecomeActive(_ scene: UIScene) { SharedInboxDelivery.deliver() } // BOREAL_SHARE_EXTENSION_v640
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        PrivacyCover.hide(on: window) // BF_CLIENT_SCENE_PRIVACY_v675
+        SharedInboxDelivery.deliver() // BOREAL_SHARE_EXTENSION_v640
+    }
+    // BF_CLIENT_SCENE_PRIVACY_v675 - the app switcher shows the Boreal cover, not the client's documents.
+    // The old AppDelegate hooks never fire under the scene lifecycle (iOS 26), so this lives here.
+    func sceneWillResignActive(_ scene: UIScene) { PrivacyCover.show(on: window, title: "Boreal Financial") }
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
         _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])
     }
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+    }
+}
+
+// BF_CLIENT_SCENE_PRIVACY_v675 - navy cover with the brand name while the app is not active.
+enum PrivacyCover {
+    static let tag = 0x0B0EA1
+    static func show(on window: UIWindow?, title: String) {
+        guard let window, window.viewWithTag(tag) == nil else { return }
+        let cover = UIView(frame: window.bounds)
+        cover.tag = tag
+        cover.backgroundColor = UIColor(red: 11 / 255, green: 31 / 255, blue: 58 / 255, alpha: 1)
+        cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        let label = UILabel(frame: cover.bounds)
+        label.text = title
+        label.textColor = .white
+        label.font = .boldSystemFont(ofSize: 24)
+        label.textAlignment = .center
+        label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        cover.addSubview(label)
+        window.addSubview(cover)
+    }
+    static func hide(on window: UIWindow?) {
+        window?.viewWithTag(tag)?.removeFromSuperview()
     }
 }
 
@@ -300,6 +329,11 @@ public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         if let business = call.getString("business") { current["business"] = business }
         if let todo = call.getInt("todo") { current["todo"] = max(0, todo) }
         if let action = call.getString("action") { current["action"] = action } // BF_CLIENT_WIDGET_BRAND_v631
+        // BF_CLIENT_WIDGET_SELF_REFRESH_v675 - the widget asks the server itself between app launches.
+        if let token = call.getString("token"), !token.isEmpty {
+            let auth: [String: Any] = ["token": token, "apiBase": call.getString("apiBase") ?? "https://server.boreal.financial"]
+            if let data = try? JSONSerialization.data(withJSONObject: auth) { defaults.set(data, forKey: "boreal.client.widget.auth") }
+        }
         current["updatedAt"] = Date().timeIntervalSince1970
         if let data = try? JSONSerialization.data(withJSONObject: current) { defaults.set(data, forKey: key) }
         WidgetCenter.shared.reloadAllTimelines()
@@ -308,6 +342,7 @@ public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func clear(_ call: CAPPluginCall) {
         UserDefaults(suiteName: group)?.removeObject(forKey: key)
+        UserDefaults(suiteName: group)?.removeObject(forKey: "boreal.client.widget.auth") // BF_CLIENT_WIDGET_SELF_REFRESH_v675
         WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
     }

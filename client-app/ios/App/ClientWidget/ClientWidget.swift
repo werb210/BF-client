@@ -36,8 +36,12 @@ struct ClientProvider: TimelineProvider {
         completion(ClientEntry(date: Date(), snapshot: ClientWidgetSnapshot.load() ?? placeholder(in: context).snapshot))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<ClientEntry>) -> Void) {
-        let entry = ClientEntry(date: Date(), snapshot: ClientWidgetSnapshot.load())
-        completion(Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(60 * 60))))
+        // BF_CLIENT_WIDGET_SELF_REFRESH_v675 - fetch the stage and to-do list from the server every
+        // 30 minutes, so a new request shows up without opening the app.
+        Task {
+            let snapshot = await ClientWidgetRefresher.refresh(ClientWidgetSnapshot.load())
+            completion(Timeline(entries: [ClientEntry(date: Date(), snapshot: snapshot)], policy: .after(Date().addingTimeInterval(30 * 60))))
+        }
     }
 }
 
@@ -142,4 +146,68 @@ struct ClientStageWidget: Widget {
 @main
 struct ClientWidgetBundle: WidgetBundle {
     var body: some Widget { ClientStageWidget() }
+}
+
+// BF_CLIENT_WIDGET_SELF_REFRESH_v675 - the widget's own server check (action centre + stage).
+struct ClientWidgetAuth: Codable {
+    var token: String
+    var apiBase: String
+    static let key = "boreal.client.widget.auth"
+    static func load() -> ClientWidgetAuth? {
+        guard let data = UserDefaults(suiteName: ClientWidgetSnapshot.group)?.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(ClientWidgetAuth.self, from: data)
+    }
+}
+
+enum ClientWidgetRefresher {
+    /// "Upload 2 documents · Fill in 1 form" - the same words the app uses.
+    static func actionLine(_ items: [[String: Any]]) -> String {
+        let docs = items.filter { ($0["kind"] as? String) == "document" }.count
+        let forms = items.filter { ($0["kind"] as? String) == "form" }.count
+        let steps = items.count - docs - forms
+        var parts: [String] = []
+        if docs > 0 { parts.append(docs == 1 ? "Upload 1 document" : "Upload \(docs) documents") }
+        if forms > 0 { parts.append(forms == 1 ? "Fill in 1 form" : "Fill in \(forms) forms") }
+        if steps > 0 { parts.append(steps == 1 ? "Complete 1 step" : "Complete \(steps) steps") }
+        return parts.isEmpty ? "Nothing to do" : parts.joined(separator: " \u{00B7} ")
+    }
+
+    static func get(_ url: String, token: String) async -> (status: Int, json: [String: Any]?) {
+        guard let u = URL(string: url) else { return (0, nil) }
+        var req = URLRequest(url: u, timeoutInterval: 10)
+        req.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        guard let result = try? await URLSession.shared.data(for: req) else { return (0, nil) }
+        let (data, resp) = result
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        return (status, try? JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    static func refresh(_ snapshot: ClientWidgetSnapshot?) async -> ClientWidgetSnapshot? {
+        guard var s = snapshot, let id = s.applicationId, !id.isEmpty, let auth = ClientWidgetAuth.load() else { return snapshot }
+        var base = auth.apiBase
+        while base.hasSuffix("/") { base.removeLast() }
+        let q = id.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? id
+        async let center = get(base + "/api/client/documents-needed/action-center?applicationId=" + q, token: auth.token)
+        async let stage = get(base + "/api/client/application-stage?applicationId=" + q, token: auth.token)
+        let (c, st) = await (center, stage)
+        if c.status == 401 || st.status == 401 {
+            UserDefaults(suiteName: ClientWidgetSnapshot.group)?.removeObject(forKey: ClientWidgetAuth.key)
+            return s
+        }
+        var changed = false
+        if c.status == 200, let outstanding = c.json?["outstanding"] as? [[String: Any]] {
+            s.todo = min(99, outstanding.count)
+            s.action = actionLine(outstanding)
+            changed = true
+        }
+        if st.status == 200, let obj = st.json {
+            let data = (obj["data"] as? [String: Any]) ?? obj
+            if let p = data["pipeline_state"] as? String, !p.isEmpty { s.stage = p; changed = true }
+        }
+        if changed {
+            s.updatedAt = Date().timeIntervalSince1970
+            if let data = try? JSONEncoder().encode(s) { UserDefaults(suiteName: ClientWidgetSnapshot.group)?.set(data, forKey: ClientWidgetSnapshot.key) }
+        }
+        return s
+    }
 }
