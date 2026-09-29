@@ -17,7 +17,7 @@ describe("all three Step 6 consents reach the server", () => {
 
   it("clause 3 is express CASL consent to marketing SMS", () => {
     expect(step6).toContain("expressly authorize");
-    expect(step6).toContain("marketing opportunities");
+    expect(step6).not.toContain("marketing opportunities"); // BF_CLIENT_SMS_DISCLOSURE_v690
     expect(step6).toContain("SMS/Text Messages");
   });
 
