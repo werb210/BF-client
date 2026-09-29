@@ -62,6 +62,10 @@ function requestOptions(options: PublicKeyCredentialRequestOptions): PublicKeyCr
 
 function explain(error: unknown, action: "create" | "sign in"): PasskeyError {
   if (error instanceof PasskeyError) return error;
+  // BF_CLIENT_PASSKEY_FIX_v691 - the browser refuses to make a second passkey for the same account on one device.
+  if (error instanceof DOMException && error.name === "InvalidStateError" && action === "create") {
+    return new PasskeyError("This device already has a passkey for your account.", "exists" as any);
+  }
   if (error instanceof DOMException && error.name === "NotAllowedError") {
     return new PasskeyError(
       action === "create" ? "Passkey setup was cancelled." : "Passkey sign-in was cancelled. Sign in with a text code instead.",
@@ -73,14 +77,24 @@ function explain(error: unknown, action: "create" | "sign in"): PasskeyError {
   );
 }
 
+/** BF_CLIENT_PASSKEY_FIX_v691 - true when this client account already has at least one passkey. */
+export async function hasPasskey(): Promise<boolean> {
+  try {
+    const r = await apiRequest<{ passkeys?: unknown[] }>("/api/client/passkeys", { method: "GET" });
+    return Array.isArray(r?.passkeys) && r.passkeys.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function createPasskey(): Promise<void> {
   if (!passkeysSupported()) throw new PasskeyError("Passkeys are not available in this browser.", "unsupported");
   try {
-    const options = await apiRequest<PublicKeyCredentialCreationOptions>("/api/client/passkeys/registration/options", { method: "POST" });
+    const options = await apiRequest<PublicKeyCredentialCreationOptions>("/api/client/passkeys/register/options" /* BF_CLIENT_PASSKEY_FIX_v691 */, { method: "POST" });
     const credential = await navigator.credentials.create({ publicKey: createOptions(options) }) as PublicKeyCredential | null;
     if (!credential) throw new PasskeyError("Passkey setup was cancelled.", "cancelled");
     const response = credential.response as AuthenticatorAttestationResponse;
-    await apiRequest("/api/client/passkeys/registration/verify", {
+    await apiRequest("/api/client/passkeys/register/verify", {
       method: "POST",
       body: {
         id: credential.id,
@@ -101,11 +115,11 @@ export async function createPasskey(): Promise<void> {
 export async function signInWithPasskey(): Promise<PasskeyResult> {
   if (!passkeysSupported()) throw new PasskeyError("Passkeys are not available in this browser.", "unsupported");
   try {
-    const options = await apiRequest<PublicKeyCredentialRequestOptions>("/api/client/passkeys/authentication/options", { method: "POST" });
+    const options = await apiRequest<PublicKeyCredentialRequestOptions>("/api/client/passkeys/login/options", { method: "POST" });
     const credential = await navigator.credentials.get({ publicKey: requestOptions(options) }) as PublicKeyCredential | null;
     if (!credential) throw new PasskeyError("Passkey sign-in was cancelled. Sign in with a text code instead.", "cancelled");
     const response = credential.response as AuthenticatorAssertionResponse;
-    const result = await apiRequest<PasskeyResult>("/api/client/passkeys/authentication/verify", {
+    const result = await apiRequest<PasskeyResult>("/api/client/passkeys/login/verify", {
       method: "POST",
       body: {
         id: credential.id,

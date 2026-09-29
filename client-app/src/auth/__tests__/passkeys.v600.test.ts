@@ -50,7 +50,7 @@ describe("browser passkeys (v600)", () => {
       publicKey: expect.objectContaining({ challenge: bytes([1, 2]), allowCredentials: [expect.objectContaining({ id: bytes([3]) })] }),
     });
     expect(apiRequest).toHaveBeenLastCalledWith(
-      "/api/client/passkeys/authentication/verify",
+      "/api/client/passkeys/login/verify", // BF_CLIENT_PASSKEY_FIX_v691 - the server route
       expect.objectContaining({ method: "POST" }),
     );
     expect(setToken).toHaveBeenCalledWith("jwt");
