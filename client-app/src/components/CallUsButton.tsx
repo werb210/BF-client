@@ -80,7 +80,7 @@ export default function CallUsButton() {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <button onClick={() => void placeCall()} style={{
-          background: "#16a34a", color: "#fff", border: "none", borderRadius: 8,
+          background: "#15803d", color: "#fff", border: "none", borderRadius: 8, // BF_CLIENT_READABILITY_v707
           padding: "12px 18px", fontSize: 15, fontWeight: 600, cursor: "pointer",
         }}>📞 Call us</button>
         {err && <div style={{ color: "#dc2626", fontSize: 12 }}>{err}</div>}

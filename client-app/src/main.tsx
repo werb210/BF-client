@@ -15,6 +15,7 @@ import App from "./App";
 import { captureAttribution } from "./lib/attribution";
 import { initClarity } from "./lib/clarity"; // BF_CLIENT_CLARITY_LOADER_v163
 import { startJourney } from "./lib/journey"; // BF_CLIENT_JOURNEY_BOOT_v185
+import { initClientBehaviour } from "./lib/clientBehaviour"; // BF_CLIENT_BEHAVIOUR_v707
 import { validateEnv } from "./env";
 import { registerClientSW } from "./pwa/registerSW";
 import { startPendingSubmitWatcher } from "./state/pendingSubmit";
@@ -45,6 +46,7 @@ try {
   );
 }
 startJourney();
+initClientBehaviour(); // BF_CLIENT_BEHAVIOUR_v707
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
 initClarity(); // BF_CLIENT_CLARITY_LOADER_v163 - start session recording early
 
