@@ -8,6 +8,8 @@ export const tokens = {
     primaryLight: "#F5F8FC",
     accent: "#BF9B49",
     accentHover: "#cfa953",
+    // BF_CLIENT_READABILITY_v707 - accessible gold for text on light surfaces.
+    accentInk: "#7A5C1B",
     success: "rgb(22 163 74)",
     warning: "rgb(245 158 11)",
     error: "#b3261e",

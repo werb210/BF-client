@@ -58,7 +58,7 @@ export const components = {
     },
     disabled: {
       background: tokens.colors.disabled,
-      color: tokens.colors.surface,
+      color: "#334155", // BF_CLIENT_READABILITY_v707 - white on light grey was 1.5:1
       border: `1px solid ${tokens.colors.disabled}`,
       cursor: "not-allowed",
     },
@@ -166,7 +166,7 @@ export const components = {
       letterSpacing: "0.14em",
       fontSize: "13px",
       fontWeight: 600,
-      color: tokens.colors.accent,
+      color: tokens.colors.accentInk, // BF_CLIENT_READABILITY_v707
     },
     title: {
       // BF_CLIENT_DESIGN_v172 - display serif, matching every heading on

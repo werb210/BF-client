@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { trackJourneyPageview } from "@/lib/journey"; // BF_CLIENT_JOURNEY_PAGEVIEW_v185
+import { clientBehaviourRoute } from "@/lib/clientBehaviour"; // BF_CLIENT_BEHAVIOUR_v707
 
 // #62 — fire a GTM page_view on every SPA route change.
 export default function RouteTracker(): null {
@@ -20,6 +21,7 @@ export default function RouteTracker(): null {
     // journey collector got nothing, so the CRM could show wizard steps and no pages. To
     // see what someone actually did before abandoning, every route has to be recorded.
     try { trackJourneyPageview(location.pathname, document.title); } catch { /* ignore */ }
+    try { clientBehaviourRoute(location.pathname); } catch { /* ignore */ } // BF_CLIENT_BEHAVIOUR_v707
   }, [location.pathname, location.search]);
   return null;
 }
