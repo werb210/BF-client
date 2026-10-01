@@ -9,7 +9,7 @@ import LandingFooter from "@/components/landing/LandingFooter";
 const REASSURANCE = [
   "About five minutes to start",
   "No cost, and no obligation",
-  "We never pull your credit",
+  "No credit pull to apply",
 ];
 
 export default function LandingPage() {

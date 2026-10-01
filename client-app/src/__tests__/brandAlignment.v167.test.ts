@@ -13,7 +13,7 @@ describe("landing page matches BF-Website positioning", () => {
   });
 
   it("repeats the locked claims at the point of hand-off", () => {
-    expect(LANDING).toContain("never pull your credit");
+    expect(LANDING).toContain("No credit pull to apply");
     expect(LANDING).toContain("No cost, and no obligation");
   });
 
