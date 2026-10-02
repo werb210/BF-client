@@ -30,6 +30,7 @@ import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
+import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
@@ -307,6 +308,7 @@ export default function MiniPortalPage() {
   const [qaChecked, setQaChecked] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
+  const [showFeeSign, setShowFeeSign] = useState(false); // BF_CLIENT_FEE_AGREEMENT_v709
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
@@ -586,6 +588,7 @@ export default function MiniPortalPage() {
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
     // BF_CLIENT_SIGN_CTA_v294 - "Sign now" messages (e.g. after staff switch the application to Line of Credit) open signing.
     if (ctaAction === "sign" || ctaAction === "sign_application") { onChip("sign"); return; }
+    if (ctaAction === "sign_fee_agreement") { setShowFeeSign(true); return; } // BF_CLIENT_FEE_AGREEMENT_v709
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
     if (ctaAction === "product_questions" || ctaAction.startsWith("product_questions:")) { setOpenForm("product_questions"); return; } // v290
     // BF_CLIENT_SBA_FORMS_ENTRY_v142 - accepts the canonical cta and the raw
@@ -1157,6 +1160,8 @@ export default function MiniPortalPage() {
           </div>
         </div>
       )}
+      {/* BF_CLIENT_FEE_AGREEMENT_v709 */}
+      <FeeAgreementSignModal applicationId={applicationId} open={showFeeSign} onClose={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} onSigned={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} />
       {showSign && (
         <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) { setShowSign(false); void markSigningComplete(); } }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
