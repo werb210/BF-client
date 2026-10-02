@@ -27,6 +27,17 @@ export default function ConsentBanner(): ReactElement | null {
   useEffect(() => {
     let stored: string | null = null;
     try { stored = localStorage.getItem(KEY); } catch { stored = null; }
+    // BF_CLIENT_CONSENT_CARRYOVER_v710 - boreal.financial adds ?consent=granted|denied
+    // to its Apply links. Different domains cannot share storage, so a choice
+    // already made on the website is carried over here instead of asking again.
+    if (stored !== "granted" && stored !== "denied") {
+      let carried: string | null = null;
+      try { carried = new URLSearchParams(window.location.search).get("consent"); } catch { carried = null; }
+      if (carried === "granted" || carried === "denied") {
+        try { localStorage.setItem(KEY, carried); } catch { /* ignore */ }
+        stored = carried;
+      }
+    }
     if (stored === "granted") { applyConsent(true); return; }
     if (stored === "denied") { applyConsent(false); return; }
     setShow(true);

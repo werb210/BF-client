@@ -33,12 +33,22 @@ export function identifyClarity(phone: string): void {
 
 // ---- Consent Sync Layer ----
 
-const CONSENT_KEY = "boreal_cookie_consent";
+// BF_CLIENT_CONSENT_KEY_FIX_v710 - the mounted banner (ConsentBanner.tsx) saves
+// the choice under boreal_consent_v1 as granted/denied. This gate read the key of
+// an older banner that is never shown ("boreal_cookie_consent" === "accepted"),
+// so trackEvent never fired: application_started and
+// client_application_submitted never reached GA4. Consent here is implied (the
+// same basis as the index.html Consent Mode default): track unless the visitor
+// declined. A legacy "declined" is still honoured.
+export const CONSENT_KEY = "boreal_consent_v1";
+const LEGACY_CONSENT_KEY = "boreal_cookie_consent";
 
-const hasTrackingConsent = (): boolean => {
+export const hasTrackingConsent = (): boolean => {
   if (typeof window === "undefined") return false;
   try {
-    return localStorage.getItem(CONSENT_KEY) === "accepted";
+    if (localStorage.getItem(CONSENT_KEY) === "denied") return false;
+    if (localStorage.getItem(LEGACY_CONSENT_KEY) === "declined") return false;
+    return true;
   } catch {
     return false;
   }
