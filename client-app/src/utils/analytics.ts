@@ -164,7 +164,8 @@ export const trackConversion = (
 };
 
 // ---- Client Revenue Modeling ----
-const COMMISSION_RATE = 0.03; // Adjust later if needed
+// BF_CLIENT_COMMISSION_DEFAULT_2PCT_v721 - Boreal's default commission is 2% (value sent to Google Analytics / Ads).
+const COMMISSION_RATE = 0.02;
 
 // BF_CLIENT_ADS_CONVERSION_VALUE_v2
 // Report estimated commission (our revenue), rather than the requested loan
