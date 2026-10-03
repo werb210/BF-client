@@ -31,6 +31,7 @@ import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
+import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
@@ -1161,6 +1162,7 @@ export default function MiniPortalPage() {
         </div>
       )}
       {/* BF_CLIENT_FEE_AGREEMENT_v709 */}
+      <FeatureTour />{/* BF_CLIENT_FEATURE_TOUR_v720 - once, first time in the mini-portal, app only */}
       <FeeAgreementSignModal applicationId={applicationId} open={showFeeSign} onClose={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} onSigned={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} />
       {showSign && (
         <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) { setShowSign(false); void markSigningComplete(); } }}
