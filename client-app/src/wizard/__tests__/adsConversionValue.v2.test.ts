@@ -15,7 +15,7 @@ describe("Google Ads conversion payload", () => {
 
   it("reports commission as the value, in CAD", () => {
     const payload = buildAdsConversionPayload(estimateClientCommission(500000));
-    expect(payload.value).toBe(15000);
+    expect(payload.value).toBe(10000); // BF_CLIENT_COMMISSION_DEFAULT_2PCT_v721 - 2% of 500,000
     expect(payload.currency).toBe("CAD");
   });
 
