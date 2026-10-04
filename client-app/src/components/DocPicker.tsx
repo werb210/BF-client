@@ -47,7 +47,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
     }
     apiCall<NeededResponse>(`/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`)
       .then((d) => { if (active) setData(d); })
-      .catch(() => { if (active) setError("Couldn't load required documents."); })
+      .catch(() => { if (active) setError("We couldn't load your document list. Check your connection and try again."); }) // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [applicationId, documentType, documentLabel]);
@@ -148,7 +148,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
     }
   }
 
-  const empty = !loading && data.stillNeeded.length === 0 && data.rejected.length === 0;
+  const empty = !loading && !error && data.stillNeeded.length === 0 && data.rejected.length === 0; // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728
 
   return (
     <div
@@ -165,7 +165,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
         </div>
 
         {loading && <p style={{ color: "#64748b" }}>Loading…</p>}
-        {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
+        {error && <p style={{ color: "#b91c1c" }}>{error} <button type="button" onClick={() => window.location.reload()} style={{ marginLeft: 6, border: "1px solid #b91c1c", background: "#fff", color: "#b91c1c", borderRadius: 6, padding: "2px 10px", cursor: "pointer" }}>Try again</button></p>}
         {notice && <p data-testid="docpicker-queued-notice" style={{ color: "#1e40af" }}>{notice}</p>}
         {empty && (
           <p style={{ color: "#16a34a" }}>You're all caught up — no documents needed right now.</p>

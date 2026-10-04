@@ -235,9 +235,14 @@ export default function MiniPortalPage() {
     try {
       const needed = await apiCall<{ stillNeeded?: any[]; rejected?: any[] }>(`/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`).catch((): any => null);
       if (!applicationId) return;
-      const outstanding = (Array.isArray(needed?.stillNeeded) ? needed!.stillNeeded.length : 0) + (Array.isArray(needed?.rejected) ? needed!.rejected.length : 0);
-      setHasOutstandingDocs(outstanding > 0);
-    } catch {} finally { setDocsChecked(true); setTodoRefresh((n) => n + 1); }
+      // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728 - a failed load is not "nothing outstanding": only a real
+      // answer from the server may clear the documents or show the all-received note.
+      if (needed && (Array.isArray(needed.stillNeeded) || Array.isArray(needed.rejected))) {
+        const outstanding = (Array.isArray(needed.stillNeeded) ? needed.stillNeeded.length : 0) + (Array.isArray(needed.rejected) ? needed.rejected.length : 0);
+        setHasOutstandingDocs(outstanding > 0);
+        setDocsChecked(true);
+      }
+    } catch {} finally { setTodoRefresh((n) => n + 1); }
   }, [applicationId]);
 
   // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — poll the

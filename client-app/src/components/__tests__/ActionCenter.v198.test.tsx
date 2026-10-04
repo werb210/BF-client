@@ -13,9 +13,9 @@ describe("action center", () => {
     expect(cmp).toContain("action-center?applicationId=");
   });
 
-  it("renders nothing rather than blanking the portal when the call fails", () => {
+  it("never blanks the portal when the call fails: keeps the last list or says it could not load", () => {
     expect(cmp).toMatch(/catch \{[\s\S]{0,120}setFailed\(true\)/);
-    expect(cmp).toContain("if (failed || !isActionCenter(data)) return null;");
+    expect(cmp).toContain('data-testid="action-center-failed"'); // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728
   });
 
   it("tells the applicant plainly when a document was rejected", () => {
@@ -57,7 +57,7 @@ describe("a response of the wrong shape", () => {
   });
 
   it("is checked again at the render site", () => {
-    expect(cmp).toContain("if (failed || !isActionCenter(data)) return null;");
+    expect(cmp).toContain("if (!isActionCenter(data)) {"); // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728
   });
 
   it("no longer types the fetch as the shape it hopes for", () => {
