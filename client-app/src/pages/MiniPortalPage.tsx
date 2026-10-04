@@ -311,6 +311,13 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v325 — embedded SignNow signing session rendered in-portal.
   const [showSign, setShowSign] = useState(false);
   const [showFeeSign, setShowFeeSign] = useState(false); // BF_CLIENT_FEE_AGREEMENT_v709
+  // BF_CLIENT_CHAT_AUTOSCROLL_v725 - the chat always opened at the oldest message; jump to the newest.
+  const threadBodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = threadBodyRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+  }, [messages.length]);
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
@@ -804,7 +811,7 @@ export default function MiniPortalPage() {
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Chat with Boreal Staff</header>
-          <div className="mp-thread-card__body">
+          <div className="mp-thread-card__body" ref={threadBodyRef}>
             {/* BF_CLIENT_TODO_ACTIONS_v637 - "Sign your application documents" is now a to-do item. */}
             {/* BF_CLIENT_ALL_RECEIVED_NOTE_v1 — positive confirmation once nothing is outstanding. */}
             {docsChecked && !hasOutstandingDocs && signSession?.status !== "ready"

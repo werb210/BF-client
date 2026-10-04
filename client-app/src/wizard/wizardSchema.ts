@@ -24,6 +24,20 @@ export function isStartupPathKyc(kyc?: Record<string, any>): boolean {
   return purpose === "Start up Funding" || purpose === "SBA / Start-up" || sales === "Zero"; // BF_CLIENT_SBA_STARTUP_v190
 }
 
+// BF_CLIENT_MEDIA_PATH_v725 - media / film / TV / game production files take a short path: Step 1 asks only
+// what matters, Step 2 is skipped (Media is picked automatically), Step 3 drops employees and yearly revenue.
+export const MEDIA_INDUSTRY = "Media, movies, TV shows, video game production";
+export function isMediaPathKyc(kyc?: Record<string, any>): boolean {
+  const purpose = String(kyc?.purposeOfFunds ?? "").trim();
+  const industry = String(kyc?.industry ?? "").trim();
+  return purpose === "Media Financing" || industry === MEDIA_INDUSTRY;
+}
+export function isMediaWizardPath(app?: Record<string, any>): boolean {
+  const candidates = [app?.productCategory, app?.selectedProductType, app?.selectedProduct?.category, app?.selectedProduct?.product_type];
+  for (const c of candidates) if (/^MEDIA/.test(String(c ?? "").toUpperCase())) return true;
+  return isMediaPathKyc((app?.kyc ?? {}) as Record<string, any>);
+}
+
 // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
 // The SBA path after Step 2, decided the way the server decides it: by the
 // product. Falls back to the Step 1 purpose text so a file that has not reached

@@ -38,6 +38,7 @@ import {
   getNextFieldKey,
   getWizardFieldId,
   isSbaWizardPath,
+  isMediaWizardPath, // BF_CLIENT_MEDIA_PATH_v725
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
@@ -50,6 +51,9 @@ export function Step3_Business() {
   // Step 3 therefore asks only for basic identity and contact details, all optional.
   // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
   const onSbaStartupPath = isSbaWizardPath(app as Record<string, unknown>);
+  // BF_CLIENT_MEDIA_PATH_v725 - employees and yearly revenue are not asked on a media file.
+  const onMediaPath = isMediaWizardPath(app as Record<string, unknown>);
+  const MEDIA_SKIP = new Set<string>(["employees", "estimatedRevenue"]);
   console.log("[wizard] Step3_Business RENDER", { currentStep: app.currentStep, applicationToken: app.applicationToken, businessLocation: app.kyc?.businessLocation });
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -217,7 +221,7 @@ export function Step3_Business() {
 
   const missingStep3 = onSbaStartupPath ? [] : [ // BF_CLIENT_SBA_REDUCED_v191
     ...REQUIRED_STEP3
-      .filter(([field]) => !Validate.required(values[field]))
+      .filter(([field]) => !(onMediaPath && MEDIA_SKIP.has(field)) && !Validate.required(values[field]))
       .map(([, label]) => label),
     // BF_CLIENT_STEP3_ACCORD_v180 - the Accord LOC branch adds up to six more.
     ...missingAccordFields(values),
@@ -228,7 +232,7 @@ export function Step3_Business() {
   async function next() {
     saveStepData(3, values);
     try {
-      if (!onSbaStartupPath) enforceV1StepSchema("step3", values);
+      if (!onSbaStartupPath) enforceV1StepSchema("step3", onMediaPath ? { ...values, employees: values.employees || 0, estimatedRevenue: values.estimatedRevenue || "0" } : values);
     } catch (zodErr: any) {
       // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
       // failures so the user sees what to fix instead of silently stuck.
@@ -266,7 +270,7 @@ export function Step3_Business() {
     ];
 
     const missing = !onSbaStartupPath && requiredFields.find(
-      (field) => !Validate.required(nextValues[field])
+      (field) => !(onMediaPath && MEDIA_SKIP.has(field)) && !Validate.required(nextValues[field])
     );
     if (missing) {
       setSaveError("Please complete all required business details.");
@@ -332,7 +336,7 @@ export function Step3_Business() {
       "startDate",
       "employees",
       "estimatedRevenue",
-    ].every((field) => Validate.required(nextValues[field])) && accordRequirementsMet(nextValues);
+    ].every((field) => (onMediaPath && MEDIA_SKIP.has(field)) || Validate.required(nextValues[field])) && accordRequirementsMet(nextValues);
 
   const handleAutoAdvance = (
     currentKey: string,
@@ -857,7 +861,7 @@ export function Step3_Business() {
           )}
 
           {/* BF_CLIENT_SBA_REDUCED_v191 */}
-          <div style={{ display: onSbaStartupPath ? "none" : undefined }}>
+          <div style={{ display: onSbaStartupPath || onMediaPath ? "none" : undefined }}>
             <label style={components.form.label}>Number of Employees</label>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
@@ -904,7 +908,7 @@ export function Step3_Business() {
           </div>
 
           {/* BF_CLIENT_SBA_REDUCED_v191 */}
-          <div style={{ display: onSbaStartupPath ? "none" : undefined }}>
+          <div style={{ display: onSbaStartupPath || onMediaPath ? "none" : undefined }}>
             <label style={components.form.label}>Estimated Yearly Revenue</label>
             <Input
               id={getWizardFieldId("step3", "estimatedRevenue")}

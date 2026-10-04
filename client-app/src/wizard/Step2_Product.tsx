@@ -51,7 +51,7 @@ import {
   mapKycToAnswers,
   bucketIdToCat,
 } from "./eligibilityRules";
-import { isStartupPathKyc } from "./wizardSchema";
+import { isStartupPathKyc, isMediaPathKyc } from "./wizardSchema";
 
 function formatAmount(amount: number | null | undefined, countryCode: string) {
   if (typeof amount !== "number") return "N/A";
@@ -560,10 +560,12 @@ export function Step2_Product() {
   useEffect(() => {
     if (sbaAutoRef.current !== "idle") return;
     if (isLoading || loadError) return;
-    if (!isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)) return;
     const buckets = visibleCategoryBuckets ?? [];
-    if (buckets.length !== 1) return;
-    const only = buckets[0];
+    const kycNow = (app?.kyc ?? {}) as Record<string, unknown>;
+    // BF_CLIENT_MEDIA_PATH_v725 - media files skip this step: pick the Media bucket and continue.
+    const only = isMediaPathKyc(kycNow)
+      ? buckets.find((b: any) => /^MEDIA/i.test(String(b.bucket)))
+      : isStartupPathKyc(kycNow) && buckets.length === 1 ? buckets[0] : undefined;
     if (!only) return;
     sbaAutoRef.current = "selecting";
     selectCategory(only.bucket, only.products.map((product: any) => product.id));
