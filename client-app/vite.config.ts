@@ -5,6 +5,8 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  // BF_CLIENT_APP_UPDATE_v723 - stamp each build so an installed phone app can tell it is out of date.
+  define: { 'import.meta.env.VITE_APP_BUILT_AT': JSON.stringify(new Date().toISOString()) },
   plugins: [
     react(),
     VitePWA({
