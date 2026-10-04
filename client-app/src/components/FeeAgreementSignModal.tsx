@@ -15,6 +15,13 @@ type Props = {
   onSigned: () => void;
 };
 
+// BF_CLIENT_FEE_REASON_v724
+export function feeReasonText(reason: string): string {
+  if (reason === "signer_email_missing") return "we don't have an email address for the person signing";
+  if (reason === "application_not_found") return "we couldn't find this application";
+  return reason.replace(/^session_failed: ?/, "") || reason;
+}
+
 export default function FeeAgreementSignModal({ applicationId, open, onClose, onSigned }: Props) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,7 +79,8 @@ export default function FeeAgreementSignModal({ applicationId, open, onClose, on
           )}
           {session?.status === "none" && <div style={{ padding: 24 }}>There is no fee agreement to sign on this application.</div>}
           {session?.status === "stub" && <div style={{ padding: 24 }}>Signing isn't enabled in this environment yet.</div>}
-          {session?.status === "error" && <div style={{ padding: 24 }}>We couldn't load your agreement. Please try again shortly, or call us.</div>}
+          {/* BF_CLIENT_FEE_REASON_v724 - say why, so the client (and staff on the phone) know what to fix. */}
+          {session?.status === "error" && <div style={{ padding: 24 }}>We couldn't load your agreement. Please try again shortly, or call us at (866) 631-8939.{session.reason ? <div style={{ marginTop: 10, fontSize: 13, color: "#51617D" }}>Reason: {feeReasonText(session.reason)}</div> : null}</div>}
         </div>
       </div>
     </div>
