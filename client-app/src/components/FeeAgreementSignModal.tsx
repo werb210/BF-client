@@ -53,7 +53,8 @@ export default function FeeAgreementSignModal({ applicationId, open, onClose, on
       if (/finish|complete|signed|document_signed/i.test(d)) void confirm();
     };
     window.addEventListener("message", onMsg);
-    const t = window.setInterval(() => { void confirm(); }, 15000);
+    // BF_CLIENT_FEE_CLOSE_FAST_v727 - check every 3 seconds so the window closes right after Finish (was 15).
+    const t = window.setInterval(() => { void confirm(); }, 3000);
     return () => { window.removeEventListener("message", onMsg); window.clearInterval(t); };
   }, [open, session?.status, confirm]);
 
