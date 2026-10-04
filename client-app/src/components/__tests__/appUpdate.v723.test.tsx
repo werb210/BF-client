@@ -15,7 +15,7 @@ describe("out-of-date phone app", () => {
   it("is shown on the mini-portal with a Book a call link", () => {
     const page = readFileSync("src/pages/MiniPortalPage.tsx", "utf8");
     expect(page).toContain("<AppUpdateBanner />");
-    expect(page).toContain('href="https://boreal.financial/book"');
+    expect(page).toContain('href="https://www.boreal.financial/book"'); // BF_CLIENT_WWW_LINKS_v726
     expect(readFileSync("vite.config.ts", "utf8")).toContain("VITE_APP_BUILT_AT");
   });
 });
