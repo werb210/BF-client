@@ -99,7 +99,17 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
     return () => window.removeEventListener("focus", onFocus);
   }, [load]);
 
-  if (failed || !isActionCenter(data)) return null;
+  // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728 - keep the last list if a refresh fails; with no list at all,
+  // say it could not load instead of silently showing nothing to do.
+  if (!isActionCenter(data)) {
+    if (!failed) return null;
+    return (
+      <div style={wrap} data-testid="action-center-failed">
+        <span style={{ color: "#b91c1c", fontWeight: 600 }}>We couldn't load your to-do list.</span>{" "}
+        <button type="button" onClick={() => void load()} style={{ marginLeft: 6, border: "1px solid #0B1F3A", background: "#fff", borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Try again</button>
+      </div>
+    );
+  }
 
   const outstanding = [...(extraItems ?? []), ...data.outstanding]; // BF_CLIENT_TODO_ACTIONS_v637
 
