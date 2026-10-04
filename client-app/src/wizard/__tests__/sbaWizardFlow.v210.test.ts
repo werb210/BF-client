@@ -10,11 +10,11 @@ const step4 = R("Step4_Applicant.tsx");
 
 describe("Step 2 auto-advance", () => {
   it("only fires on the SBA path", () => {
-    expect(step2).toContain("isStartupPathKyc((app?.kyc ?? {}) as Record<string, unknown>)");
+    expect(step2).toContain("isStartupPathKyc(kycNow) && buckets.length === 1 ? buckets[0] : undefined"); // BF_CLIENT_MEDIA_PATH_v725
   });
 
   it("refuses to choose when there is a real choice", () => {
-    expect(step2).toContain("if (buckets.length !== 1) return;");
+    expect(step2).toContain("isStartupPathKyc(kycNow) && buckets.length === 1"); // BF_CLIENT_MEDIA_PATH_v725
   });
 
   it("waits for the selection to land before advancing", () => {

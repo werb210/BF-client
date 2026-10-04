@@ -31,6 +31,8 @@ import {
   getNextFieldKey,
   getWizardFieldId,
   isStartupPathKyc,
+  isMediaPathKyc, // BF_CLIENT_MEDIA_PATH_v725
+  MEDIA_INDUSTRY,
 } from "./wizardSchema";
 import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { track } from "../utils/track";
@@ -331,6 +333,9 @@ export function Step1_KYC(): JSX.Element {
     () => isStartupPathKyc(app.kyc as Record<string, unknown>),
     [app.kyc],
   );
+  // BF_CLIENT_MEDIA_PATH_v725 - a media file needs only amount, location and purpose here.
+  const onMediaPath = useMemo(() => isMediaPathKyc(app.kyc as Record<string, unknown>), [app.kyc]);
+  const hideForPath = onSbaStartupPath || onMediaPath;
   const visibleSalesHistoryOptions = useMemo(() => {
     return SalesHistoryOptions.filter((opt) => opt !== "Zero" || startupAvailable);
   }, [startupAvailable]);
@@ -708,7 +713,7 @@ export function Step1_KYC(): JSX.Element {
         values.businessLocation === "Other",
       // BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA path, so it cannot gate
       // Continue there.
-      industry: !isStartupPathKyc(values) && !Validate.required(values.industry),
+      industry: !isStartupPathKyc(values) && !isMediaPathKyc(values) && !Validate.required(values.industry),
       // BF_CLIENT_STEP1_SPLIT_v169 - purpose is one of the five REQUIRED matching
       // questions.
       purposeOfFunds: !Validate.required(values.purposeOfFunds),
@@ -720,7 +725,7 @@ export function Step1_KYC(): JSX.Element {
       // BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - in Canada avg monthly revenue
       // is required (lender panel needs it; the <$10k floor can't be assessed
       // without it): blank OR the below-floor band both block. Optional in the US.
-      monthlyRevenue: countryCode === "CA"
+      monthlyRevenue: countryCode === "CA" && !isMediaPathKyc(values) // BF_CLIENT_MEDIA_PATH_v725
         ? (!Validate.required(values.monthlyRevenue) || values.monthlyRevenue === "Under $10,000")
         : false,
       accountsReceivable: false,
@@ -1301,8 +1306,11 @@ export function Step1_KYC(): JSX.Element {
                 id={getWizardFieldId("step1", "industry")}
                 value={app.kyc.industry || ""}
                 onChange={(e) => {
-                  const nextKyc = { ...app.kyc, industry: e.target.value };
+                  let nextKyc = { ...app.kyc, industry: e.target.value };
+                  // BF_CLIENT_MEDIA_PATH_v725 - a media industry means media financing; go straight on.
+                  if (e.target.value === MEDIA_INDUSTRY && visiblePurposeOptions.includes("Media Financing")) nextKyc = { ...nextKyc, purposeOfFunds: "Media Financing" };
                   update({ kyc: nextKyc });
+                  if (isMediaPathKyc(nextKyc) && Object.values(getStepErrors(nextKyc)).every((bad) => !bad)) { void startApplication(nextKyc); return; }
                   handleAutoAdvance("industry", nextKyc);
                 }}
                 style={{
@@ -1331,6 +1339,7 @@ export function Step1_KYC(): JSX.Element {
                 <option>Hospitality &amp; Lodging</option>
                 <option>Logistics &amp; Trucking</option>
                 <option>Manufacturing</option>
+                <option>{MEDIA_INDUSTRY}</option>
                 <option>Personal Services</option>
                 <option>Professional Services</option>
                 <option>Real Estate</option>
@@ -1352,8 +1361,11 @@ export function Step1_KYC(): JSX.Element {
                 id={getWizardFieldId("step1", "purposeOfFunds")}
                 value={app.kyc.purposeOfFunds || ""}
                 onChange={(e: unknown) => {
-                  const nextKyc = { ...app.kyc, purposeOfFunds: e.target.value };
+                  let nextKyc = { ...app.kyc, purposeOfFunds: e.target.value };
+                  // BF_CLIENT_MEDIA_PATH_v725 - media financing skips the rest of Step 1 and moves on.
+                  if (e.target.value === "Media Financing" && !nextKyc.industry) nextKyc = { ...nextKyc, industry: MEDIA_INDUSTRY };
                   update({ kyc: nextKyc });
+                  if (isMediaPathKyc(nextKyc)) { if (Object.values(getStepErrors(nextKyc)).every((bad) => !bad)) void startApplication(nextKyc); else setShowErrors(true); return; }
                   handleAutoAdvance("purposeOfFunds", nextKyc);
                 }}
                 hasError={showErrors && fieldErrors.purposeOfFunds}
@@ -1376,7 +1388,7 @@ export function Step1_KYC(): JSX.Element {
                 as it was before; optional in the US. */}
             <div
               data-error={showErrors && fieldErrors.monthlyRevenue}
-              style={{ display: onSbaStartupPath ? "none" : undefined }}
+              style={{ display: hideForPath ? "none" : undefined }}
             >
               <label style={components.form.label}>
                 Avg monthly revenue (last 3 months)
@@ -1417,7 +1429,7 @@ export function Step1_KYC(): JSX.Element {
             </div>
 
             {/* BF_CLIENT_STEP1_SPLIT_v169 - optional lender-routing questions */}
-            <div style={{ gridColumn: "1 / -1", display: onSbaStartupPath ? "none" : undefined }}>
+            <div style={{ gridColumn: "1 / -1", display: hideForPath ? "none" : undefined }}>
               <div style={{ ...components.form.label, fontWeight: 700, marginBottom: 0 }}>
                 Optional, but they help us get your application in front of the right lenders.
               </div>
@@ -1425,7 +1437,7 @@ export function Step1_KYC(): JSX.Element {
             {/* BF_CLIENT_SBA_REDUCED_v191 - retain answers when the path changes */}
             <div
               data-error={showErrors && fieldErrors.salesHistory}
-              style={{ display: onSbaStartupPath ? "none" : undefined }}
+              style={{ display: hideForPath ? "none" : undefined }}
             >
               <label style={components.form.label}>Years of sales history</label>
               <Select
@@ -1453,7 +1465,7 @@ export function Step1_KYC(): JSX.Element {
                 <div style={components.form.errorText}>Select sales history.</div>
               )}
             </div>
-            {!isStartupPathKyc(app.kyc) && (
+            {!isStartupPathKyc(app.kyc) && !onMediaPath && (
               <>
             <div data-error={showErrors && fieldErrors.revenueLast12Months}>
               <label style={components.form.label}>Revenue last 12 months</label>
@@ -1489,7 +1501,7 @@ export function Step1_KYC(): JSX.Element {
               {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}
               <div
                 data-error={showErrors && fieldErrors.accountsReceivable}
-                style={{ display: onSbaStartupPath ? "none" : undefined }}
+                style={{ display: hideForPath ? "none" : undefined }}
               >
                 <label style={components.form.label}>Current AR balance</label>
                 <Select
@@ -1532,7 +1544,7 @@ export function Step1_KYC(): JSX.Element {
               {/* BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA / Start-up path */}
               <div
                 data-error={showErrors && fieldErrors.fixedAssets}
-                style={{ display: onSbaStartupPath ? "none" : undefined }}
+                style={{ display: hideForPath ? "none" : undefined }}
               >
                 <label style={components.form.label}>Fixed assets value for loan security</label>
                 <Select
