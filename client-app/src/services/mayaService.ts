@@ -26,6 +26,12 @@ export async function escalateMayaChat() {
   return res;
 }
 
+// BF_CLIENT_UNDER_10K_WAITLIST_v722 - one endpoint for both lists; list picks the CRM tag.
+export async function joinWaitlist(data: { name: string; email: string; phone: string; list: "startup" | "under_10k"; consent: boolean }) {
+  const res = await apiCall("/api/crm/startup-waitlist", { method: "POST", body: JSON.stringify(data) });
+  return res;
+}
+
 export async function joinStartupWaitlist(data: { name: string; email: string; phone: string }) {
   const res = await apiCall("/api/crm/startup-waitlist", {
     method: "POST",

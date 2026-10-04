@@ -23,6 +23,7 @@ import {
   normalizeFundingIntent,
 } from "../constants/wizard";
 // BF_CLIENT_SBA_PATH_RULES_v204
+import Under10kWaitlist from "../components/Under10kWaitlist"; // BF_CLIENT_UNDER_10K_WAITLIST_v722
 import { isStartupAvailable } from "./eligibilityRules";
 import { components, layout, scrollToFirstError, tokens } from "@/styles";
 import { loadStepData, mergeDraft, saveStepData } from "../client/autosave";
@@ -1671,6 +1672,8 @@ export function Step1_KYC(): JSX.Element {
               revenue. That is a lender requirement, not a judgement on the business -
               come back to us once revenue is above that and we will take another look.
             </p>
+            {/* BF_CLIENT_UNDER_10K_WAITLIST_v722 */}
+            <Under10kWaitlist />
             <p>
               If you think we have this wrong, or the last three months are not
               representative, call us on{" "}
