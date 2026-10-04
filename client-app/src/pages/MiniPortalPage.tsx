@@ -30,6 +30,7 @@ import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
+import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UPDATE_v723
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
@@ -793,7 +794,13 @@ export default function MiniPortalPage() {
       </div>
       {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
+      <AppUpdateBanner />
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
+      {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
+      <div data-testid="book-call" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ color: "#0B1F3A", fontSize: 15 }}>Want to talk it through? Book a 30-minute call with an advisor.</span>
+        <a href="https://boreal.financial/book" target="_blank" rel="noreferrer" style={{ background: "#0B1F3A", color: "#ffffff", padding: "8px 16px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>Book a call</a>
+      </div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         <section className="mp-thread-card">
           <header className="mp-thread-card__header">Chat with Boreal Staff</header>
