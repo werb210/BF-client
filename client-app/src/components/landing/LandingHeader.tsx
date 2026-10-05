@@ -5,7 +5,8 @@
 // (#0B1320) backdrop-blur header, same mobile drawer.
 // BF_CLIENT_BLOCK_v102_LOGO_LOCAL_v1 — local logo asset to avoid
 // cross-origin fetch from boreal.financial in production.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom"; // BF_CLIENT_MENU_PORTAL_v729
 import "@/styles/container.css"; // BF_CLIENT_CHROME_v170
 import logoUrl from "@/assets/logo-boreal-mountains-white.svg";
 import { isNativeApp } from "@/lib/platform";
@@ -52,6 +53,13 @@ function MenuIcon({ open }: { open: boolean }) {
 
 export default function LandingHeader() {
   const [open, setOpen] = useState(false);
+  // BF_CLIENT_MENU_PORTAL_v729 - Escape closes the menu.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   // BF_CLIENT_CHROME_v168 - inside the app the nav links open an external
   // browser mid-application, so they are dropped. A logo-only bar stays: a
@@ -117,7 +125,8 @@ export default function LandingHeader() {
 
         <button
           type="button"
-          className="rounded-md p-2 text-white md:hidden"
+          aria-expanded={open}
+          className="flex h-11 w-11 items-center justify-center rounded-md text-white md:hidden"
           onClick={() => setOpen((prev) => !prev)}
           aria-label="Toggle navigation menu"
           data-testid="landing-mobile-toggle"
@@ -126,11 +135,15 @@ export default function LandingHeader() {
         </button>
       </div>
 
-      {open ? (
-        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+      {/* BF_CLIENT_MENU_PORTAL_v729 - the menu is rendered on document.body, not inside the
+          header. The header has backdrop-blur, and on iPhone (WebKit) a backdrop-filter makes
+          the header the containing block for position: fixed children, so the full-screen
+          menu was squeezed into the 80px header and hidden behind the page. */}
+      {open && typeof document !== "undefined" ? createPortal(
+        <div className="fixed inset-0 z-[1000] md:hidden" role="dialog" aria-modal="true" aria-label="Menu" data-testid="landing-mobile-menu">
           <button
             type="button"
-            aria-label="Close mobile navigation"
+            aria-label="Close menu"
             className="absolute inset-0 bg-black/55"
             onClick={() => setOpen(false)}
           />
@@ -141,7 +154,7 @@ export default function LandingHeader() {
                 type="button"
                 className="rounded-md p-2 text-white"
                 onClick={() => setOpen(false)}
-                aria-label="Close menu"
+                aria-label="Close mobile navigation"
               >
                 <MenuIcon open={true} />
               </button>
@@ -175,7 +188,8 @@ export default function LandingHeader() {
               </a>
             </nav>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </header>
   );
