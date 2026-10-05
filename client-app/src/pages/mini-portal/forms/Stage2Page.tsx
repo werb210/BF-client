@@ -6,6 +6,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import DocPicker from "@/components/DocPicker";
 import { listFormResponses, type FormResponse } from "@/lib/api";
+import { ENV } from "@/env"; // BF_CLIENT_SBA_FORMS_FIX_v731
+import { getToken } from "@/auth/token";
+
+// BF_CLIENT_SBA_FORMS_FIX_v731 - these two calls used a relative "/api/..." address, which goes to
+// client.boreal.financial and returns the app's own web page. JSON parsing then failed with
+// "Unexpected token '<'" and the SBA Forms page never loaded, so no SBA form could be filled in.
+export function serverUrl(path: string): string {
+  return String(ENV.API_BASE ?? "").replace(/[/]+$/, "") + path;
+}
+function authHeaders(): Record<string, string> {
+  const t = getToken();
+  return t ? { Authorization: "Bearer " + t } : {};
+}
 import PersonalNetWorthForm from "./forms/PersonalNetWorthForm";
 import DebtStackForm from "./forms/DebtStackForm";
 import CraAuthorizationForm from "./forms/CraAuthorizationForm";
@@ -77,9 +90,11 @@ export default function Stage2Page() {
         application_id: applicationId,
         stage: "2",
       });
-      const docsRes = await fetch(`/api/portal/lender-products/required-docs?${params}`, {
+      const docsRes = await fetch(serverUrl("/api/portal/lender-products/required-docs?" + params.toString()), {
         credentials: "include",
+        headers: authHeaders(),
       });
+      if (!docsRes.ok) throw new Error("We couldn't load your forms (" + docsRes.status + "). Please try again.");
       const docsJson = await docsRes.json();
       const stage2 = (Array.isArray(docsJson.items) ? docsJson.items : []).filter(
         (d: RequiredDoc) => d.stage === 2,
@@ -95,8 +110,8 @@ export default function Stage2Page() {
       // documents-needed no longer lists as still-needed has been satisfied.
       try {
         const needRes = await fetch(
-          `/api/client/documents-needed/needed?applicationId=${encodeURIComponent(applicationId)}`,
-          { credentials: "include" },
+          serverUrl("/api/client/documents-needed/needed?applicationId=" + encodeURIComponent(applicationId)),
+          { credentials: "include", headers: authHeaders() },
         );
         const needJson = await needRes.json();
         const outstanding = new Set<string>(
