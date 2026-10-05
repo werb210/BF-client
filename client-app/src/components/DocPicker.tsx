@@ -8,6 +8,7 @@ import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQueue"; // BF_CLIENT_UPLOAD_QUEUE_v278
+import { queuedMessage, reportUploadFailure } from "@/lib/docUpload"; // BF_CLIENT_DIRECT_UPLOAD_v730
 import { Capacitor } from "@capacitor/core"; // BF_CLIENT_DOCPICKER_SCAN_v634
 import { scanDocumentAsPdfWithQuality } from "@/native/documentScanner"; // BF_CLIENT_DOCPICKER_SCAN_v634
 
@@ -34,6 +35,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const aimedAt = documentType ?? null; // BF_CLIENT_DIRECT_UPLOAD_v730
 
   useEffect(() => {
     let active = true;
@@ -110,6 +112,9 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
           if (!lastResp.ok) throw new Error(String(lastResp.status));
         } catch (err) {
           const status = lastResp && !lastResp.ok ? lastResp.status : undefined;
+          // BF_CLIENT_DIRECT_UPLOAD_v730 - send the browser's own error to the server log.
+          reportUploadFailure({ applicationId, documentType, attempt: "picker", status: status ?? null, errorName: err instanceof Error ? err.name : typeof err,
+            errorMessage: err instanceof Error ? err.message : String(err), sizeBytes: file.size, contentType: file.type || null });
           if (isRetryableUploadFailure(status, status === undefined ? err : undefined)) {
             try {
               await enqueueUploadFromFile({ applicationToken: "", applicationId, documentType, file, mode: "session" });
@@ -134,11 +139,14 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
         return;
       }
       if (queued > 0) {
-        setNotice(`No connection right now. ${queued} file${queued === 1 ? " is" : "s are"} saved on this device and will upload automatically when you're back online.`);
+        setNotice(queuedMessage(queued)); // BF_CLIENT_DIRECT_UPLOAD_v730 - only says "No connection" when offline
         setUploading(null);
         return;
       }
       onUploaded?.();
+      // BF_CLIENT_DIRECT_UPLOAD_v730 - opened for one item, the list held only that item, so emptying it
+      // showed "You're all caught up" while other items were still outstanding. Close instead.
+      if (aimedAt) { setUploading(null); onClose(); return; }
       // All selected files uploaded: remove this doc type from both lists.
       setData((cur) => ({
         stillNeeded: cur.stillNeeded.filter((d) => d.document_type !== documentType),
