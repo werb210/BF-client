@@ -8,6 +8,8 @@ import { getToken } from "@/auth/token";
 import { type ThreadMessage } from "@/components/messaging/MessageThread";
 // BF_CLIENT_BLOCK_53_v1
 import DocPicker from "@/components/DocPicker";
+import { Capacitor } from "@capacitor/core"; // BF_CLIENT_DIRECT_UPLOAD_v730
+import { pickFiles, uploadDocumentFiles } from "@/lib/docUpload"; // BF_CLIENT_DIRECT_UPLOAD_v730
 import { Device } from "@twilio/voice-sdk";
 import "./MiniPortalPage.css";
 import PersonalNetWorthForm from "@/pages/mini-portal/forms/forms/PersonalNetWorthForm";
@@ -283,6 +285,9 @@ export default function MiniPortalPage() {
   const [showDocPicker, setShowDocPicker] = useState(false);
   // BF_CLIENT_NATIVE_WIRING_v236 - the document the picker was opened for, if any.
   const [pickerDoc, setPickerDoc] = useState<{ type: string; label: string } | null>(null);
+  // BF_CLIENT_DIRECT_UPLOAD_v730 - what happened to the last upload, shown above the to-do list.
+  const [uploadNotice, setUploadNotice] = useState<{ tone: "busy" | "ok" | "info" | "error"; text: string } | null>(null);
+  const directUploadRef = useRef<(type: string, label: string, files: File[]) => Promise<void>>(async () => undefined);
   // BF_CLIENT_BLOCK_v315_MINI_PORTAL_FORM_MODALS_v1
   const [openForm, setOpenForm] = useState<null | "networth" | "debt" | "equipment" | "realestate" | "cra" | "flinks" | "advisors" | "lender_qa" | "product_questions">(null);
   // BF_CLIENT_NATIVE_WIRING_v236 - Action Center buttons. Document keys are
@@ -290,10 +295,24 @@ export default function MiniPortalPage() {
   // BF_CLIENT_TODO_ACTIONS_v637 - items that carry an action (PGI link, SBA forms, signing) run it
   // through the same handler the chat buttons use; handleMessageCta is defined further down.
   const ctaRef = useRef<(a: string) => void>(() => undefined);
+  // BF_CLIENT_DIRECT_UPLOAD_v730 - refreshed every render so it always sees the current application.
+  directUploadRef.current = async (type: string, label: string, files: File[]) => {
+    if (!applicationId) return;
+    setUploadNotice({ tone: "busy", text: "Uploading " + label + "..." });
+    const r = await uploadDocumentFiles(String(applicationId), type, files);
+    if (r.status === "ok") setUploadNotice({ tone: "ok", text: label + " uploaded. Thank you." });
+    else if (r.status === "queued") setUploadNotice({ tone: "info", text: r.message });
+    else setUploadNotice({ tone: "error", text: r.message });
+    void loadAll();
+    setTodoRefresh((n) => n + 1);
+  };
   const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string; action?: string }) => {
     if (item.action) { ctaRef.current(item.action); return; }
     const [prefix, rest] = String(item.key || "").split(":", 2);
     if (item.kind === "document" && prefix === "upload" && rest) {
+      // BF_CLIENT_DIRECT_UPLOAD_v730 - on the web, Upload opens the file picker straight away (no pop-up).
+      // The phone apps keep the pop-up because it offers the document scanner.
+      if (!Capacitor.isNativePlatform()) { const label = item.label; pickFiles((files) => { void directUploadRef.current(rest, label, files); }); return; }
       setPickerDoc({ type: rest, label: item.label });
       setShowDocPicker(true);
       return;
@@ -807,6 +826,13 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
       <AppUpdateBanner />
+      {uploadNotice && (
+        <div role="status" data-testid="upload-notice" style={{ margin: "0 0 12px", padding: "10px 14px", borderRadius: 8, fontWeight: 600, fontSize: 14,
+          background: uploadNotice.tone === "error" ? "#fef2f2" : uploadNotice.tone === "ok" ? "#ecfdf5" : "#eff6ff",
+          color: uploadNotice.tone === "error" ? "#991b1b" : uploadNotice.tone === "ok" ? "#065f46" : "#1e3a8a" }}>
+          {uploadNotice.text}
+        </div>
+      )}
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
       {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
       <div data-testid="book-call" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
