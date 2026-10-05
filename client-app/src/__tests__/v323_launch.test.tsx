@@ -10,7 +10,8 @@ const otpPage = r("pages/OtpPage.tsx");
 const otpInput = r("components/OtpInput.tsx");
 const thread = r("components/messaging/MessageThread.tsx");
 const docPicker = r("components/DocPicker.tsx");
-const mobileHeader = r("components/MobileHeader.tsx");
+// BF_CLIENT_MENU_PORTAL_v729 - MobileHeader was never mounted; the live mobile menu is LandingHeader.
+const mobileHeader = r("components/landing/LandingHeader.tsx");
 
 describe("v323 — OTP pattern (C)", () => {
   it("OtpPage no longer passes \d{4,8}", () => {
@@ -47,13 +48,14 @@ describe("v323 — DocPicker error surfacing (D)", () => {
 });
 
 describe("v323 — Mobile header (A)", () => {
-  it("MobileHeader has a hamburger button", () => {
-    expect(mobileHeader).toMatch(/aria-label=\{open \? "Close menu" : "Open menu"\}/);
+  it("LandingHeader has a hamburger button", () => {
+    expect(mobileHeader).toMatch(/aria-label="Toggle navigation menu"/);
   });
   it("44x44px touch target on hamburger", () => {
-    expect(mobileHeader).toMatch(/h-11\s+w-11/);
+    expect(mobileHeader).toMatch(/h-11 w-11/);
   });
-  it("menu uses z-\\[70\\] above content", () => {
-    expect(mobileHeader).toMatch(/z-\[70\]/);
+  it("menu renders on document.body above content", () => {
+    expect(mobileHeader).toMatch(/createPortal\(/);
+    expect(mobileHeader).toMatch(/z-\[1000\]/);
   });
 });
