@@ -3,7 +3,7 @@
 // application. Items with a registered form component open in
 // place; everything else falls through to an upload row.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom"; // BF_CLIENT_SBA_FORMS_LISTED_v733
 import DocPicker from "@/components/DocPicker";
 import { listFormResponses, type FormResponse } from "@/lib/api";
 import { ENV } from "@/env"; // BF_CLIENT_SBA_FORMS_FIX_v731
@@ -69,6 +69,9 @@ export default function Stage2Page() {
   const [requiredDocs, setRequiredDocs] = useState<RequiredDoc[]>([]);
   const [responses, setResponses] = useState<Record<string, FormResponse>>({});
   const [activeForm, setActiveForm] = useState<string | null>(null);
+  // BF_CLIENT_SBA_FORMS_LISTED_v733 - "Fill in" on the to-do list opens that form directly (?form=sba_form_413).
+  const [searchParams] = useSearchParams();
+  const wantedForm = searchParams.get("form");
   // BF_CLIENT_BLOCK_v_STAGE2_UPLOAD_v1 — upload rows now open the real DocPicker.
   // BF_CLIENT_STAGE2_UPLOADS_v205 - which requirement the picker was opened for.
   const [uploadFor, setUploadFor] = useState<{ type: string; label: string } | null>(null);
@@ -99,6 +102,26 @@ export default function Stage2Page() {
       const stage2 = (Array.isArray(docsJson.items) ? docsJson.items : []).filter(
         (d: RequiredDoc) => d.stage === 2,
       );
+      // BF_CLIENT_SBA_FORMS_LISTED_v733 - the to-do list (BF-Server v757) lists Form 1919 and a 413 per owner on
+      // every SBA deal, but this page listed only what the lender products' required documents named, which was
+      // nothing for some SBA files: "Fill in" landed on "Nothing more needed right now". The forms the to-do list
+      // names are now always listed here too, so the two can never disagree.
+      try {
+        const acRes = await fetch(
+          serverUrl("/api/client/documents-needed/action-center?applicationId=" + encodeURIComponent(applicationId)),
+          { credentials: "include", headers: authHeaders() },
+        );
+        const ac = acRes.ok ? await acRes.json() : null;
+        const keys: string[] = [...(Array.isArray(ac?.outstanding) ? ac.outstanding : []), ...(Array.isArray(ac?.completed) ? ac.completed : [])]
+          .map((i: any) => String(i?.key ?? ""))
+          .filter((k: string) => k.startsWith("form:sba_form_"))
+          .map((k: string) => k.slice(5));
+        for (const k of keys) {
+          if (FORM_RENDERERS[k] && !stage2.some((d: RequiredDoc) => d.document_type === k)) stage2.push({ document_type: k, required: true, stage: 2 });
+        }
+      } catch {
+        // The lender-product list above still shows; a failure here only loses the extra SBA rows.
+      }
       setRequiredDocs(stage2);
 
       const items = await listFormResponses(applicationId);
@@ -140,6 +163,11 @@ export default function Stage2Page() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // BF_CLIENT_SBA_FORMS_LISTED_v733 - open the form the to-do list asked for.
+  useEffect(() => {
+    if (wantedForm && FORM_RENDERERS[wantedForm]) setActiveForm(wantedForm);
+  }, [wantedForm]);
 
   const progress = useMemo(() => {
     let done = 0;

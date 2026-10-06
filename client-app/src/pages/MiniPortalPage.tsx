@@ -313,8 +313,13 @@ export default function MiniPortalPage() {
     setTodoRefresh((n) => n + 1);
   };
   const onActionCenterItem = useCallback((item: { key: string; kind: string; label: string; action?: string }) => {
-    if (item.action) { ctaRef.current(item.action); return; }
     const [prefix, rest] = String(item.key || "").split(":", 2);
+    // BF_CLIENT_SBA_FORMS_LISTED_v733 - an SBA form on the to-do list opens that exact form.
+    if (prefix === "form" && rest && rest.startsWith("sba_form_") && applicationId) {
+      navigate(`/mini-portal/forms/${encodeURIComponent(applicationId)}?form=${encodeURIComponent(rest)}`);
+      return;
+    }
+    if (item.action) { ctaRef.current(item.action); return; }
     if (item.kind === "document" && prefix === "upload" && rest) {
       // BF_CLIENT_DIRECT_UPLOAD_v730 - on the web, Upload opens the file picker straight away (no pop-up).
       // The phone apps keep the pop-up because it offers the document scanner.
@@ -327,7 +332,7 @@ export default function MiniPortalPage() {
       const forms = ["networth", "debt", "equipment", "realestate", "cra", "flinks", "advisors"] as const;
       if ((forms as readonly string[]).includes(rest)) setOpenForm(rest as (typeof forms)[number]);
     }
-  }, []);
+  }, [applicationId, navigate]);
   useEffect(() => {
     if (searchParams.get("section") === "documents" && applicationId) {
       setPickerDoc(null);
