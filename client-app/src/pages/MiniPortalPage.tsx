@@ -173,8 +173,23 @@ export default function MiniPortalPage() {
     return out;
   }, [appDetail, app.applicant]);
 
+  // BF_CLIENT_APP_GONE_v736 - when the application this page points at no longer exists (deleted, or not this
+  // client's), every call answered 403/404 and the page kept polling them every 30 seconds behind an empty screen.
+  // Two polls in a row refused means it is gone: stop polling and say so.
+  const [appGone, setAppGone] = useState(false);
+  const appGoneRef = useRef(false);
+  const goneStrikes = useRef(0);
+  useEffect(() => { goneStrikes.current = 0; appGoneRef.current = false; setAppGone(false); }, [applicationId]);
+  const noteRefused = useCallback((e: unknown) => {
+    // apiCall errors carry the HTTP status on .status (their message is the server's text, e.g. "Application not found").
+    const status = (e as { status?: unknown } | null)?.status;
+    if (status !== 403 && status !== 404 && !/(API|HTTP) (403|404)\b/.test(String((e as Error)?.message ?? e))) return;
+    goneStrikes.current += 1;
+    if (goneStrikes.current >= 2) { appGoneRef.current = true; setAppGone(true); }
+  }, []);
+
   const loadAll = useCallback(async () => {
-    if (!applicationId) return;
+    if (!applicationId || appGoneRef.current) return;
     // BF_CLIENT_BLOCK_v477_CMP_CLIENT_ENDPOINTS - removed the staff-only GET /api/applications/:id (403 for clients); stage + prefill come from /api/client/application-stage below.
     // BF_CLIENT_BLOCK_v310_CLIENT_STAGE_v1 — /api/applications/:id is staff-gated (401 for the
     // client mini-portal), so the read above silently fails and the tracker stuck at "Received".
@@ -203,7 +218,7 @@ export default function MiniPortalPage() {
         };
       }));
     } catch {}
-    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/client/offers?applicationId=${encodeURIComponent(applicationId)}` /* BF_CLIENT_BLOCK_v477 */).catch((): null => null); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
+    try { const offerData = await apiCall<{ items?: ServerOffer[]; data?: ServerOffer[] } | ServerOffer[]>(`/api/client/offers?applicationId=${encodeURIComponent(applicationId)}` /* BF_CLIENT_BLOCK_v477 */).then((r) => { goneStrikes.current = 0; return r; }).catch((e: unknown): null => { noteRefused(e); return null; }); if (!applicationId) return; const incoming: ServerOffer[] = Array.isArray(offerData) ? offerData : Array.isArray((offerData as any)?.items) ? (offerData as any).items : Array.isArray((offerData as any)?.data) ? (offerData as any).data : []; setOffers(incoming.map(normalizeOffer)); } catch {}
     // BF_CLIENT_PRODUCT_QUESTIONS_v290 - are product questions still outstanding?
     try {
       const pq = await apiCall<{ missing?: unknown[] }>(`/api/client/applications/${encodeURIComponent(applicationId)}/product-questions`).catch((): null => null);
@@ -252,7 +267,7 @@ export default function MiniPortalPage() {
         setDocsChecked(true);
       }
     } catch {} finally { setTodoRefresh((n) => n + 1); }
-  }, [applicationId]);
+  }, [applicationId, noteRefused]);
 
   // BF_CLIENT_BLOCK_v323_MOBILE_FIRST_LAUNCH_v1 — poll the
   // conversation every 15s so staff replies surface without the user
@@ -703,6 +718,24 @@ export default function MiniPortalPage() {
       ? applicationId.slice(-8).toUpperCase()
       : applicationId.toUpperCase()
     : "";
+
+  // BF_CLIENT_APP_GONE_v736
+  if (appGone) {
+    return (
+      <>
+        <SlimHeader />
+        <AccountBar />
+        <div className="mp-root">
+          <div data-testid="mp-app-gone" style={{ maxWidth: 520, margin: "32px auto", padding: 24, border: "1px solid #E4EAF2", borderRadius: 16, background: "#fff", textAlign: "center" }}>
+            <h2 style={{ margin: "0 0 8px", fontSize: 20, color: "#0B1F3A" }}>We can't find this application</h2>
+            <p style={{ margin: "0 0 16px", fontSize: 15, color: "#51617D" }}>It may have been closed or removed. If you have another application, choose it from the menu at the top.</p>
+            <button type="button" onClick={() => { startNewApplication(); navigate("/apply/step-1"); }}
+              style={{ minHeight: 48, padding: "0 20px", border: 0, borderRadius: 10, background: "#0B1F3A", color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>Start a new application</button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
