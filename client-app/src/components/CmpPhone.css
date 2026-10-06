@@ -27,3 +27,8 @@
 .cmp-nextstep__title { margin-top: 6px; font-size: 18px; font-weight: 700; color: #0b1f3a; }
 .cmp-nextstep__sub { margin-top: 4px; font-size: 14px; color: #4b5563; }
 .cmp-nextstep__btn { margin-top: 12px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #0b1f3a; color: #fff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
+
+/* BF_CLIENT_CHAT_TAB_COMPOSER_v735 - on the phone Chat tab the message box stays on screen above the tab bar. */
+.cmp-phone.cmp-tab-chat .mp-thread-card { overflow: visible; }
+.cmp-phone.cmp-tab-chat .mp-thread-card__composer { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 40;
+  background: #fff; border-radius: 0 0 16px 16px; }

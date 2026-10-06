@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { flushSync } from "react-dom"; // BF_CLIENT_CHAT_TAB_COMPOSER_v735
 import { formatMessageTime, safeParseDate } from "@/utils/safeDate";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
@@ -348,6 +349,7 @@ export default function MiniPortalPage() {
   const [showFeeSign, setShowFeeSign] = useState(false); // BF_CLIENT_FEE_AGREEMENT_v709
   // BF_CLIENT_CHAT_AUTOSCROLL_v725 - the chat always opened at the oldest message; jump to the newest.
   const threadBodyRef = useRef<HTMLDivElement | null>(null);
+  const composerInputRef = useRef<HTMLInputElement | null>(null); // BF_CLIENT_CHAT_TAB_COMPOSER_v735
   useEffect(() => {
     const el = threadBodyRef.current;
     if (!el) return;
@@ -968,7 +970,7 @@ export default function MiniPortalPage() {
                 }}
               />
             </label>
-            <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Send a message…" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} style={{ flex: 1 }} />
+            <input ref={composerInputRef} data-testid="mp-chat-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Send a message…" onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} style={{ flex: 1 }} />
             <button onClick={() => void sendMessage()}>Send</button>
           </div>
         </section>
@@ -1251,7 +1253,20 @@ export default function MiniPortalPage() {
         </div>
       )}
       </div>
-      {isPhone ? <CmpTabBar tab={phoneTab} onTab={(t) => { setPhoneTab(t); window.scrollTo?.(0, 0); }} todoCount={todoOpen.count} /> : null}
+      {isPhone ? <CmpTabBar tab={phoneTab} onTab={(t) => {
+        // BF_CLIENT_CHAT_TAB_COMPOSER_v735 - Chat opens on the latest messages with the message box focused, so the
+        // keyboard comes up straight away. The tab is rendered synchronously (flushSync) so the focus happens inside
+        // the tap itself, which iOS requires before it will show the keyboard. Other tabs still start at the top.
+        if (t === "chat") {
+          flushSync(() => setPhoneTab(t));
+          const body = threadBodyRef.current;
+          if (body) body.scrollTop = body.scrollHeight;
+          const input = composerInputRef.current;
+          if (input) { input.focus({ preventScroll: true }); input.scrollIntoView?.({ block: "end" }); }
+          return;
+        }
+        setPhoneTab(t); window.scrollTo?.(0, 0);
+      }} todoCount={todoOpen.count} /> : null}
       </div>
     </>
   );
