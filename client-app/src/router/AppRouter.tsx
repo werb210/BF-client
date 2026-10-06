@@ -1,11 +1,17 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
 import { lazy, Suspense } from "react";
 import { RequireOTP } from "@/auth/RequireOTP";
 import { AppSpinner } from "@/components/ui/AppSpinner";
 
 const LandingPage        = lazy(() => import("@/pages/LandingPage"));
-const OtpPage            = lazy(() => import("@/pages/OtpPage"));
+// BF_CLIENT_ONE_SIGN_IN_v737 - there were two sign-in screens: the landing page (what the app opens on) and an
+// older stand-alone /otp page that sign-out, expired sessions and protected pages sent people to. /otp now opens the
+// landing page (query string kept), which has the text-code sign-in plus Face ID and passkey sign-in.
+function OtpToLanding() {
+  const location = useLocation();
+  return <Navigate to={{ pathname: "/", search: location.search }} replace />;
+}
 import Wizard from "@/wizard/Wizard";
 const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
 // BF_CLIENT_ACCOUNTANT_PORTAL_v1 - outside RequireOTP because that guard expects a client token.
@@ -24,7 +30,7 @@ export default function AppRouter() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/otp" element={<OtpPage />} />
+        <Route path="/otp" element={<OtpToLanding />} /> {/* BF_CLIENT_ONE_SIGN_IN_v737 - one sign-in screen: the landing page */}
         <Route path="/accountant" element={<AccountantPage />} />
         {/* BF_CLIENT_FLINKS_EMBED_DEMO_v1 */}
         <Route path="/flinks-demo" element={<FlinksDemoPage />} />
