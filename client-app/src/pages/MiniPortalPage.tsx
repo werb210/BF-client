@@ -511,7 +511,7 @@ export default function MiniPortalPage() {
   }, [applicationId, messages.length]);
 
   useEffect(() => {
-    if (!applicationId) return;
+    if (!applicationId || appGone) return; // BF_CLIENT_APP_GONE_v736 - no typing poll for an application that is gone
     let cancelled = false;
     const tick = async () => {
       if (typeof document !== "undefined" && document.hidden) return;
@@ -525,7 +525,7 @@ export default function MiniPortalPage() {
     // server read rate limit and produced a 429 storm. 10s + hidden-tab pause.
     const id = setInterval(tick, 20000); // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — was 10000
     return () => { cancelled = true; clearInterval(id); };
-  }, [applicationId]);
+  }, [applicationId, appGone]);
 
   useEffect(() => {
     if (!text || !applicationId) return;
