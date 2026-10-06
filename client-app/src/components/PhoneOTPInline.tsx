@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from 'react-router-dom';
+import QuickSignIn from './QuickSignIn'; // BF_CLIENT_ONE_SIGN_IN_v737
 import { setToken } from '@/auth/token';
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
@@ -216,6 +217,31 @@ export default function PhoneOTPInline() {
         return;
       }
 
+      // BF_CLIENT_ONE_SIGN_IN_v737 - look for the client's existing application BEFORE minting a new one; minting
+      // first left an empty draft behind every time a returning client signed in.
+      // v163: route to mini-portal if the phone already has a non-draft
+      // application. Falls through to /apply/step-1 on lookup failure so
+      // OTP success isn't blocked by an API hiccup.
+      try {
+        const lookup = await fetchWithTimeout(
+          (import.meta.env.VITE_API_BASE_URL || '') + '/api/client/applications/by-phone',
+          { method: 'GET', headers: { Authorization: 'Bearer ' + (localStorage.getItem('auth_token') ?? '') } },
+          5000,
+          'by-phone',
+        );
+        if (lookup.ok) {
+          const lb = await lookup.json().catch(() => ({} as any));
+          if (lb?.found && lb?.application?.id) {
+            // eslint-disable-next-line no-console
+            console.log('[otp] existing.application.found', { id: lb.application.id, state: lb.application.pipeline_state });
+            navigate('/application/' + String(lb.application.id)); // BF_CLIENT_ONE_SIGN_IN_v737 - /portal/<id> is not a route
+            return;
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[otp] by-phone lookup failed; falling through to wizard', e);
+      }
       // 2. Mint the application row. PUBLIC endpoint — DO NOT send
       // Authorization or credentials. Doing so triggers a CORS preflight
       // that the public endpoint isn't configured to satisfy, and the call
@@ -299,29 +325,6 @@ export default function PhoneOTPInline() {
         return;
       }
 
-      // v163: route to mini-portal if the phone already has a non-draft
-      // application. Falls through to /apply/step-1 on lookup failure so
-      // OTP success isn't blocked by an API hiccup.
-      try {
-        const lookup = await fetchWithTimeout(
-          (import.meta.env.VITE_API_BASE_URL || '') + '/api/client/applications/by-phone',
-          { method: 'GET', headers: { Authorization: 'Bearer ' + (localStorage.getItem('auth_token') ?? '') } },
-          5000,
-          'by-phone',
-        );
-        if (lookup.ok) {
-          const lb = await lookup.json().catch(() => ({} as any));
-          if (lb?.found && lb?.application?.id) {
-            // eslint-disable-next-line no-console
-            console.log('[otp] existing.application.found', { id: lb.application.id, state: lb.application.pipeline_state });
-            navigate('/portal/' + String(appToken));
-            return;
-          }
-        }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[otp] by-phone lookup failed; falling through to wizard', e);
-      }
       navigate('/apply/step-1');
     } catch (err: any) {
       setPhase('code');
@@ -379,6 +382,7 @@ export default function PhoneOTPInline() {
     >
       {phase === 'phone' && (
         <>
+          <QuickSignIn />
           <label style={{ display: 'block', fontSize: 14, color: '#334155', marginBottom: 6 }}>
             Mobile phone number
           </label>
