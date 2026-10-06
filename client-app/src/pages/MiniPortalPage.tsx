@@ -36,6 +36,7 @@ import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UP
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
+import { usePhoneLayout, CmpTabBar, CmpChatSwitch, CmpNextStep, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -133,7 +134,12 @@ export default function MiniPortalPage() {
   const [todoRefresh, setTodoRefresh] = useState(0);
   // BF_CLIENT_CMP_LAYOUT_v631 - forms staff requested for this application (from the to-do panel's data).
   const [requestedForms, setRequestedForms] = useState<Set<string>>(new Set());
+  // BF_CLIENT_CMP_PHONE_TABS_v732 - phone layout: active tab, to-do count for the badge, the next step for Home.
+  const isPhone = usePhoneLayout();
+  const [phoneTab, setPhoneTab] = useState<CmpTab>("home");
+  const [todoOpen, setTodoOpen] = useState<{ count: number; first: string | null }>({ count: 0, first: null });
   const onTodoData = useCallback((d: { outstanding: Array<{ key: string; kind: string }>; completed: Array<{ key: string; kind: string }> }) => {
+    setTodoOpen({ count: d.outstanding.length, first: String((d.outstanding[0] as { label?: string } | undefined)?.label ?? "") || null });
     const keys = [...d.outstanding, ...d.completed].filter((i) => i.kind === "form").map((i) => String(i.key).replace(/^form:/, ""));
     setRequestedForms(new Set(keys));
   }, []);
@@ -696,7 +702,9 @@ export default function MiniPortalPage() {
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
       <AccountBar />
-      <div className="mp-root">
+      <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + phoneTab : "")}>
+      {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
+      <div data-cmp-tab="home">
       <InstallAppPrompt />
       {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
       <ReactivateHeldFiles
@@ -833,14 +841,19 @@ export default function MiniPortalPage() {
           {uploadNotice.text}
         </div>
       )}
+      </div>
+      <CmpNextStep label={todoOpen.first} remaining={todoOpen.count} onOpen={() => setPhoneTab("todo")} />
+      <div data-cmp-tab="todo">
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
+      </div>
       {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
-      <div data-testid="book-call" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div data-testid="book-call" data-cmp-tab="home" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <span style={{ color: "#0B1F3A", fontSize: 15 }}>Want to talk it through? Book a 30-minute call with an advisor.</span>
         <a href="https://www.boreal.financial/book" target="_blank" rel="noreferrer" style={{ background: "#0B1F3A", color: "#ffffff", padding: "8px 16px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>Book a call</a>
       </div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
-        <section className="mp-thread-card">
+        <CmpChatSwitch />
+        <section className="mp-thread-card" data-cmp-tab="chat">
           <header className="mp-thread-card__header">Chat with Boreal Staff</header>
           <div className="mp-thread-card__body" ref={threadBodyRef}>
             {/* BF_CLIENT_TODO_ACTIONS_v637 - "Sign your application documents" is now a to-do item. */}
@@ -954,7 +967,7 @@ export default function MiniPortalPage() {
             <button onClick={() => void sendMessage()}>Send</button>
           </div>
         </section>
-        <aside className="mp-actions">
+        <aside className="mp-actions" data-cmp-tab="more">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
@@ -1233,6 +1246,7 @@ export default function MiniPortalPage() {
         </div>
       )}
       </div>
+      {isPhone ? <CmpTabBar tab={phoneTab} onTab={(t) => { setPhoneTab(t); window.scrollTo?.(0, 0); }} todoCount={todoOpen.count} /> : null}
       </div>
     </>
   );

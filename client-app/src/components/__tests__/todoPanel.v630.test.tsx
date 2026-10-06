@@ -30,7 +30,8 @@ describe("v630 what you need to do", () => {
     const panel = page.indexOf("<ActionCenter applicationId={applicationId}");
     expect(panel).toBeGreaterThan(page.indexOf("<SlimHeader />"));
     expect(panel).toBeGreaterThan(page.indexOf('className="mp-tracker"'));
-    expect(panel).toBeLessThan(page.indexOf('<section className="mp-thread-card">'));
+    // BF_CLIENT_CMP_PHONE_TABS_v732 - the chat section now also carries data-cmp-tab="chat".
+    expect(panel).toBeLessThan(page.indexOf('<section className="mp-thread-card"'));
   });
 
   it("is refreshed after uploads and on every poll", () => {
