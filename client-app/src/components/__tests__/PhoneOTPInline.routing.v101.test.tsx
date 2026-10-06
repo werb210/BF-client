@@ -11,7 +11,12 @@ vi.mock("react-router-dom", async () => {
 
 function mockFetchSequence(responses: Array<{ ok: boolean; body: any }>) {
   const seq = [...responses];
-  return vi.fn().mockImplementation(() => {
+  return vi.fn().mockImplementation((url: unknown) => {
+    // BF_CLIENT_OTP_TEST_BY_URL_v738 - v737 looks up the client's existing application before minting one. Answer
+    // that lookup by its URL (no existing application) so the rest of the sequence still lines up.
+    if (String(url).includes("/api/client/applications/by-phone")) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ found: false }) });
+    }
     const next = seq.shift();
     if (!next) return Promise.reject(new Error("unexpected fetch"));
     return Promise.resolve({ ok: next.ok, json: () => Promise.resolve(next.body) });
