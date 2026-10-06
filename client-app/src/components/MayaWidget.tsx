@@ -526,6 +526,7 @@ export default function MayaWidget() {
       <button
         type="button"
         aria-label={open ? "Close chat" : "Open chat"}
+        data-maya-launcher="true" /* BF_CLIENT_CMP_PHONE_TABS_v732 - hidden on the phone client portal (Chat > Ask Maya opens her) */
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
       >

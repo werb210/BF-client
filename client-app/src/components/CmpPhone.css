@@ -1,0 +1,29 @@
+/* BF_CLIENT_CMP_PHONE_TABS_v732 */
+.cmp-phone-only { display: none; }
+.cmp-phone .cmp-phone-only { display: block; }
+.cmp-phone .cmp-chatswitch { display: grid; }
+.cmp-phone { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.cmp-phone .mp-grid { display: block; }
+.cmp-phone.cmp-tab-home [data-cmp-tab]:not([data-cmp-tab="home"]),
+.cmp-phone.cmp-tab-todo [data-cmp-tab]:not([data-cmp-tab="todo"]),
+.cmp-phone.cmp-tab-chat [data-cmp-tab]:not([data-cmp-tab="chat"]),
+.cmp-phone.cmp-tab-more [data-cmp-tab]:not([data-cmp-tab="more"]) { display: none !important; }
+.cmp-phone-body [data-maya-launcher] { display: none !important; }
+
+.cmp-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: #fff; border-top: 1px solid #e3e6eb;
+  padding: 4px 8px calc(8px + env(safe-area-inset-bottom)); }
+.cmp-tabbar__tab { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-height: 56px; background: none; border: 0; color: #4b5563; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+.cmp-tabbar__tab--on { color: #0b1f3a; font-weight: 700; }
+.cmp-tabbar__badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 9px; background: #b42318; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+.cmp-chatswitch { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; margin: 0 0 12px; background: #e9ecf1; border-radius: 12px; }
+.cmp-chatswitch__btn { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: #4b5563; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.cmp-chatswitch__btn--on { background: #fff; color: #0b1f3a; font-weight: 700; }
+
+.cmp-nextstep { margin: 0 0 14px; padding: 16px; border: 1px solid #d9c08a; border-radius: 14px; background: #fffcf5; }
+.cmp-nextstep__eyebrow { font-size: 13px; font-weight: 700; color: #7a5c17; letter-spacing: 0.02em; }
+.cmp-nextstep__title { margin-top: 6px; font-size: 18px; font-weight: 700; color: #0b1f3a; }
+.cmp-nextstep__sub { margin-top: 4px; font-size: 14px; color: #4b5563; }
+.cmp-nextstep__btn { margin-top: 12px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #0b1f3a; color: #fff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
