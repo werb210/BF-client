@@ -86,7 +86,7 @@ describe("legacy and wiring", () => {
   it("triggers purge and adoption from OTP", async () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
-    const otp = readFileSync(resolve(__dirname, "..", "..", "pages", "OtpPage.tsx"), "utf-8");
+    const otp = readFileSync(resolve(__dirname, "..", "..", "components", "PhoneOTPInline.tsx"), "utf-8"); // BF_CLIENT_ONE_SIGNIN_ONLY_v743
     expect(otp).toContain("purgeLegacyDrafts()");
     expect(otp).toContain("adoptAnonDrafts(currentDraftScope())");
   });

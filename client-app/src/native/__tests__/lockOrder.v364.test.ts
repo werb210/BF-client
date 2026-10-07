@@ -8,7 +8,6 @@ const hook = read("useBiometricLock.ts");
 const gate = read("BiometricGate.tsx");
 const leave = read("useLeaveIfSignedIn.ts");
 const landing = read("..", "pages", "LandingPage.tsx");
-const otp = read("..", "pages", "OtpPage.tsx");
 
 describe("Face ID signs the client in", () => {
   it("the lock decides before the app renders", () => {
@@ -24,7 +23,6 @@ describe("Face ID signs the client in", () => {
   });
   it("the landing and text-code pages move a signed-in client on, in the app only", () => {
     expect(landing).toContain("useLeaveIfSignedIn();");
-    expect(otp).toContain("useLeaveIfSignedIn();");
     expect(leave).toContain("if (!Capacitor.isNativePlatform()) return;");
     expect(leave).toContain('return next.action === "portal" ? "/portal" : "/apply/step-1";');
     expect(leave).toContain('window.addEventListener("boreal:session-renewed", leave);');

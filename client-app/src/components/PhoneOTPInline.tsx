@@ -13,6 +13,7 @@ import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from 'react-router-dom';
 import QuickSignIn from './QuickSignIn'; // BF_CLIENT_ONE_SIGN_IN_v737
 import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TOKEN_v742 - getToken
+import { identifyClarity } from '@/utils/analytics'; // BF_CLIENT_ONE_SIGNIN_ONLY_v743
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
 
@@ -204,6 +205,17 @@ export default function PhoneOTPInline() {
       if (jwt) {
         setToken(String(jwt));
       }
+      // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - moved here from the old OtpPage (deleted): it was the only place these ran, and
+      // it stopped being used when this became the one sign-in screen (v737).
+      //  - verified_phone: Step 1 pre-fills from the Capital Readiness check by phone, and drafts are filed under it.
+      //  - Clarity: tag the session recording with the phone so staff can find it from the CRM record.
+      //  - drafts: adopt anything typed before signing in, and drop the old unscoped keys shared by everyone on this device.
+      try { sessionStorage.setItem('verified_phone', phoneE164); identifyClarity(phoneE164); } catch { /* storage unavailable */ }
+      try {
+        const { adoptAnonDrafts, currentDraftScope, purgeLegacyDrafts } = await import('@/client/autosave');
+        purgeLegacyDrafts();
+        adoptAnonDrafts(currentDraftScope());
+      } catch { /* never let draft housekeeping block a successful sign-in */ }
       // eslint-disable-next-line no-console
       console.log('[otp] verify.ok', { hasJwt: !!jwt });
 

@@ -6,7 +6,6 @@ import { join } from "node:path";
 const src = join(__dirname, "..", "..");
 const read = (p: string) => readFileSync(join(src, p), "utf8");
 const toggle = read("components/FaceIdSignInToggle.tsx");
-const otp = read("pages/OtpPage.tsx");
 const portal = read("pages/MiniPortalPage.tsx");
 const accountBar = read("components/AccountBar.tsx");
 const device = read("native/deviceSignIn.ts");
@@ -42,16 +41,7 @@ describe("there is always a visible way to turn Face ID on", () => {
 });
 
 describe("the one-shot prompt can no longer lock a device out", () => {
-  it("the OTP page no longer asks through window.confirm", () => {
-    expect(otp).not.toContain("window.confirm(\"Use Face ID");
-  });
-
-  it("it clears the old flag, so a device already burned by v297 recovers", () => {
-    expect(otp).toContain("localStorage.removeItem(PROMPTED_KEY);");
-  });
-
-  it("the replacement hint is session-scoped, so it can never be permanent", () => {
-    expect(otp).toContain("sessionStorage.setItem(HINT_KEY, \"1\");");
+  it("the hint key stays session-scoped", () => { // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - the old OtpPage is deleted
     expect(device).toContain('export const HINT_KEY = "bf_face_id_hint";');
   });
 });
