@@ -3,7 +3,7 @@
 // application. Items with a registered form component open in
 // place; everything else falls through to an upload row.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom"; // BF_CLIENT_SBA_FORMS_LISTED_v733
+import { useParams, useNavigate, useSearchParams } from "react-router-dom"; // BF_CLIENT_SBA_FORMS_LISTED_v733
 import DocPicker from "@/components/DocPicker";
 import { listFormResponses, type FormResponse } from "@/lib/api";
 import { ENV } from "@/env"; // BF_CLIENT_SBA_FORMS_FIX_v731
@@ -61,11 +61,13 @@ const FORM_RENDERERS: Record<string, React.ComponentType<{ applicationId: string
 };
 
 function humanLabel(docType: string): string {
-  return docType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  // BF_CLIENT_FORMS_PAGE_NAV_v739 - "sba_form_1919" read "Sba Form 1919"; SBA is an acronym.
+  return docType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).replace(/\bSba\b/g, "SBA");
 }
 
 export default function Stage2Page() {
   const { applicationId } = useParams<{ applicationId: string }>();
+  const navigate = useNavigate(); // BF_CLIENT_FORMS_PAGE_NAV_v739
   const [requiredDocs, setRequiredDocs] = useState<RequiredDoc[]>([]);
   const [responses, setResponses] = useState<Record<string, FormResponse>>({});
   const [activeForm, setActiveForm] = useState<string | null>(null);
@@ -210,6 +212,11 @@ export default function Stage2Page() {
 
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
+      {/* BF_CLIENT_FORMS_PAGE_NAV_v739 - the forms list had no way back; only Sign out. */}
+      <button type="button" data-testid="forms-back-to-portal" onClick={() => navigate("/portal")}
+        style={{ background: "none", border: 0, padding: "8px 0", marginBottom: 8, color: "#1e3a8a", fontSize: 15, fontWeight: 600, cursor: "pointer", minHeight: 44 }}>
+        &larr; Back to my application
+      </button>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Continue your application</h1>
       <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
         We've received your initial documents. The items below are needed
