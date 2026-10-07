@@ -12,7 +12,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from 'react-router-dom';
 import QuickSignIn from './QuickSignIn'; // BF_CLIENT_ONE_SIGN_IN_v737
-import { setToken } from '@/auth/token';
+import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TOKEN_v742 - getToken
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
 
@@ -233,7 +233,10 @@ export default function PhoneOTPInline() {
       try {
         const lookup = await fetchWithTimeout(
           (import.meta.env.VITE_API_BASE_URL || '') + '/api/client/applications/by-phone',
-          { method: 'GET', headers: { Authorization: 'Bearer ' + (localStorage.getItem('auth_token') ?? '') } },
+          // BF_CLIENT_SIGNIN_LOOKUP_TOKEN_v742 - read the token where setToken() keeps it. This read the old 'auth_token' key,
+          // which setToken() deletes, so the lookup always went out with no token, got a 401, and every sign-in made a new
+          // blank application instead of opening the client's existing one.
+          { method: 'GET', headers: { Authorization: 'Bearer ' + (getToken() ?? '') } },
           5000,
           'by-phone',
         );
