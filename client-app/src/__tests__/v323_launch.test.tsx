@@ -6,7 +6,6 @@ import * as path from "node:path";
 const root = path.resolve(__dirname, "..");
 const r = (p: string) => fs.readFileSync(path.resolve(root, p), "utf8");
 
-const otpPage = r("pages/OtpPage.tsx");
 const otpInput = r("components/OtpInput.tsx");
 const thread = r("components/messaging/MessageThread.tsx");
 const docPicker = r("components/DocPicker.tsx");
@@ -14,12 +13,6 @@ const docPicker = r("components/DocPicker.tsx");
 const mobileHeader = r("components/landing/LandingHeader.tsx");
 
 describe("v323 — OTP pattern (C)", () => {
-  it("OtpPage no longer passes \d{4,8}", () => {
-    expect(otpPage).not.toMatch(/pattern="\\d\{4,8\}"/);
-  });
-  it("OtpPage uses single-digit pattern", () => {
-    expect(otpPage).toMatch(/pattern="\\\\d"/);
-  });
   it("OtpInput defensively coerces multi-digit pattern", () => {
     expect(otpInput).toMatch(/effectivePattern/);
   });

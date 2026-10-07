@@ -6,7 +6,7 @@ const DISCLOSURE = "By entering your mobile number, you agree to receive text me
 
 describe("text-message disclosure and simpler Step 6", () => {
   it("shows the disclosure where the mobile number is entered, on both sign-in screens", () => {
-    for (const f of ["src/components/PhoneOTPInline.tsx", "src/pages/OtpPage.tsx"]) {
+    for (const f of ["src/components/PhoneOTPInline.tsx"]) { // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - the one sign-in screen
       const src = readFileSync(f, "utf8");
       expect(src).toContain(DISCLOSURE);
       expect(src).toContain("Reply STOP to opt out or HELP for help.");

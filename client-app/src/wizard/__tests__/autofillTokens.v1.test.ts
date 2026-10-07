@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const read = (...parts: string[]) => readFileSync(join(process.cwd(), "src", ...parts), "utf-8");
 const step3 = read("wizard", "Step3_Business.tsx");
-const otpPage = read("pages", "OtpPage.tsx");
+const otpPage = read("components", "PhoneOTPInline.tsx"); // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - the one sign-in screen
 const inline = read("components", "PhoneOTPInline.tsx");
 
 describe("BF_CLIENT_AUTOFILL_STEP3_OTP_v1", () => {

@@ -76,13 +76,8 @@ describe("wiring", () => {
   const src = join(__dirname, "..", "..");
   const read = (p: string) => readFileSync(join(src, p), "utf8");
   it("sign-in screen, sign-out, lock fix and native storage keys", () => {
-    const otp = read("pages/OtpPage.tsx");
-    expect(otp).toContain('data-testid="face-id-sign-in"');
-    expect(otp).toContain("await offerFaceId();");
-    // BF_CLIENT_FACE_ID_SETTING_v325 - v297 enrolled from inside offerFaceId via
-    // window.confirm. Enrollment moved to the mini-portal settings row; what is
-    // left here must not be able to permanently silence itself again.
-    expect(otp).not.toContain("localStorage.setItem(PROMPTED_KEY");
+    // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - Face ID sign-in lives on the one sign-in screen (landing, QuickSignIn).
+    expect(read("components/QuickSignIn.tsx")).toContain('data-testid="face-id-sign-in"');
     expect(read("auth/logout.ts")).toContain("disableDeviceSignIn()");
     expect(read("native/useBiometricLock.ts")).toContain("if (getToken()) return true;");
     const ios = readFileSync(join(src, "..", "ios", "App", "App", "SecureCredentialsPlugin.swift"), "utf8");
