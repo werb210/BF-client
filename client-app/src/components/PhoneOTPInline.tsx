@@ -67,6 +67,10 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: num
   }
 }
 
+// BF_CLIENT_OTP_GUARD_MESSAGES_v741 - codes whose server message is shown as-is on the sign-in screen:
+// landline / not a real number (BF-Server v771), outside Canada/US and too many codes (BF-Server v772).
+const SERVER_MESSAGE_CODES = ['landline_number', 'invalid_number', 'unsupported_country', 'otp_phone_daily_limit', 'otp_busy'];
+
 export default function PhoneOTPInline() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>('phone');
@@ -128,7 +132,7 @@ export default function PhoneOTPInline() {
         // BF_CLIENT_OTP_START_MESSAGE_v740 - the server says why a number cannot get a code (a landline, or a number
         // that does not exist); show that instead of the generic line.
         let serverMessage = '';
-        try { const parsed = JSON.parse(body); if (parsed && (parsed.error === 'landline_number' || parsed.error === 'invalid_number') && typeof parsed.message === 'string') serverMessage = parsed.message; } catch { /* not JSON */ }
+        try { const parsed = JSON.parse(body); if (parsed && SERVER_MESSAGE_CODES.includes(String(parsed.error)) && typeof parsed.message === 'string') serverMessage = parsed.message; } catch { /* not JSON */ }
         throw new Error(serverMessage || 'Could not send code. Please double-check your number and try again.');
       }
       // eslint-disable-next-line no-console
