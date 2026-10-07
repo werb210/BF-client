@@ -125,7 +125,11 @@ export default function PhoneOTPInline() {
         const body = await res.text().catch(() => String(res.status));
         // eslint-disable-next-line no-console
         console.warn('[otp] start.fail', { status: res.status, body });
-        throw new Error('Could not send code. Please double-check your number and try again.');
+        // BF_CLIENT_OTP_START_MESSAGE_v740 - the server says why a number cannot get a code (a landline, or a number
+        // that does not exist); show that instead of the generic line.
+        let serverMessage = '';
+        try { const parsed = JSON.parse(body); if (parsed && (parsed.error === 'landline_number' || parsed.error === 'invalid_number') && typeof parsed.message === 'string') serverMessage = parsed.message; } catch { /* not JSON */ }
+        throw new Error(serverMessage || 'Could not send code. Please double-check your number and try again.');
       }
       // eslint-disable-next-line no-console
       console.log('[otp] start.ok');
