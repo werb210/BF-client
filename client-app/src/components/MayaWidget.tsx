@@ -405,6 +405,10 @@ export default function MayaWidget() {
     setMode("chat");
   }
 
+  // BF_CLIENT_ASK_MAYA_v745 - on the client portal Maya has no floating bubble (it overlapped the portal's own controls),
+  // but she is still there: the "Ask Maya" buttons (What's Next on desktop, Chat on phones) open her. She used to be
+  // removed from these pages entirely, so both buttons did nothing.
+  const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/");
   const chatUi = (
     <>
       {open ? (
@@ -522,6 +526,7 @@ export default function MayaWidget() {
           )}
         </div>
       ) : null}
+      {!hideLauncher && (<>
       {/* BF_CLIENT_UI_CLUSTER_v1 — the floating button now toggles open AND close. */}
       <button
         type="button"
@@ -532,14 +537,13 @@ export default function MayaWidget() {
       >
         {open ? <CloseIcon /> : <ChatIcon />}
       </button>
+      </>)}
     </>
   );
 
   // BF_CLIENT_AUDIT_FIX_v9 -- Maya is redundant on the mini-portal thread (own composer +
   // Talk to a Human + Call Us); hide it there so the floating button never
   // overlaps those controls on mobile.
-  const __mayaPath = location.pathname;
-  if (__mayaPath === "/portal" || __mayaPath.startsWith("/application/")) return null;
   if (typeof document === "undefined") return null;
   return createPortal(chatUi, document.body);
 }

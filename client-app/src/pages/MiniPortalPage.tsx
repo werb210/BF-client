@@ -1021,6 +1021,10 @@ export default function MiniPortalPage() {
                   {c.label}
                 </button>
               ))}
+              {/* BF_CLIENT_ASK_MAYA_v745 - Maya knows this client's applications, documents and details. */}
+              <button type="button" className="mp-chip mp-chip--action" data-testid="ask-maya" onClick={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "chat" } }))}>
+                Ask Maya
+              </button>
               {/* BF_CLIENT_BLOCK_v_HIDE_SIGNING_REASON_v1 — never surface the raw
                   signing-readiness status/reason (e.g. "lender_not_finalized") to the
                   client. Those are internal staff-workflow gates, not errors, and the
