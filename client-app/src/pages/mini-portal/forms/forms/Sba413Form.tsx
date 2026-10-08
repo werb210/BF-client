@@ -138,6 +138,7 @@ export default function Sba413Form({
     try {
       await submitFormResponse(applicationId, FORM_KEY, { fields: data, totals });
       setSubmitted(true);
+      onComplete(); // BF_CLIENT_SBA_SUBMIT_CLOSES_v746
     } catch {
       setError("We could not save that. Please try again, or call us on (866) 631-8939.");
     } finally {

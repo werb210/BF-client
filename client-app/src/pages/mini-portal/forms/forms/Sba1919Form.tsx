@@ -63,6 +63,9 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
     try {
       await submitFormResponse(applicationId, FORM_KEY, { fields: data });
       setDone(true);
+      // BF_CLIENT_SBA_SUBMIT_CLOSES_v746 - Submit used to save and stay put; like every other form it now returns to the
+      // list, which shows the form as Completed.
+      onComplete();
     } catch {
       setError("We could not save that. Please try again, or call us on (866) 631-8939.");
     } finally { setSaving(false); }
