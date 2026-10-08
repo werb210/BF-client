@@ -216,6 +216,18 @@ function buildMatchPercentages(amount: number): Record<string, number> {
   }, {} as Record<string, number>);
 }
 
+// BF_CLIENT_AUTOFILL_v744 - copy prior answers only into fields that are still empty.
+export function fillEmpty(current: Record<string, unknown> | undefined, prior: unknown): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(current ?? {}) };
+  if (!prior || typeof prior !== "object") return out;
+  for (const [k, v] of Object.entries(prior as Record<string, unknown>)) {
+    const cur = out[k];
+    const empty = cur === undefined || cur === null || (typeof cur === "string" && cur.trim() === "");
+    if (empty && v !== null && v !== undefined && v !== "") out[k] = v;
+  }
+  return out;
+}
+
 export function Step1_KYC(): JSX.Element {
   const { app, update, autosaveError } = useApplicationStore();
   const readiness = useReadiness();
@@ -552,7 +564,9 @@ export function Step1_KYC(): JSX.Element {
               "",
           },
           business: {
-            ...app.business,
+            // BF_CLIENT_AUTOFILL_v744 - a returning client's business details from their last application fill the gaps
+            // (what is already typed always wins).
+            ...fillEmpty(app.business as Record<string, unknown>, p.business),
             companyName:
               (p.companyName as string) ?? app.business.companyName ?? "",
             businessName:
@@ -561,7 +575,7 @@ export function Step1_KYC(): JSX.Element {
               (p.companyName as string) ?? app.business.legalName ?? "",
           },
           applicant: {
-            ...app.applicant,
+            ...fillEmpty(app.applicant as Record<string, unknown>, p.applicant), // BF_CLIENT_AUTOFILL_v744 - owner details from the last application
             fullName: fullName || app.applicant.fullName || "",
             firstName: firstName || app.applicant.firstName || "",
             lastName: lastName || app.applicant.lastName || "",

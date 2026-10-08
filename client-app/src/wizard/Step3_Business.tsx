@@ -540,7 +540,7 @@ export function Step3_Business() {
             <label style={components.form.label}>Business Name (DBA)</label>
             <Input
               id={getWizardFieldId("step3", "businessName")}
-              autoComplete="organization"
+              autoComplete="section-business organization"
               value={values.businessName || ""}
               onChange={(e: unknown) => {
                 const businessName = e.target.value;
@@ -566,7 +566,7 @@ export function Step3_Business() {
             {/* BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legal name is optional now;
               if blank on continue we copy the DBA/business name into it. */}
             <label style={components.form.label}>Business Legal Name (if applicable)</label>
-            <Input
+            <Input autoComplete="section-business organization"
               id={getWizardFieldId("step3", "legalName")}
               value={values.legalName || ""}
               onChange={(e: unknown) => setField("legalName", e.target.value)}
@@ -605,7 +605,7 @@ export function Step3_Business() {
 
           <div>
             <label style={components.form.label}>Business Address</label>
-            <AddressAutocompleteInput
+            <AddressAutocompleteInput autoComplete="section-business address-line1"
               id={getWizardFieldId("step3", "address")}
               country={regionCountry}
               value={values.address || ""}
@@ -639,7 +639,7 @@ export function Step3_Business() {
             <label style={components.form.label}>City</label>
             <Input
               id={getWizardFieldId("step3", "city")}
-              autoComplete="address-level2"
+              autoComplete="section-business address-level2"
               value={values.city || ""}
               onChange={(e: unknown) => setField("city", e.target.value)}
               onKeyDown={(e: unknown) => {
@@ -651,7 +651,7 @@ export function Step3_Business() {
           </div>
           <div>
             <label style={components.form.label}>{regionLabel}</label>
-            <RegionSelect
+            <RegionSelect autoComplete="section-business address-level1"
               country={regionCountry}
               value={values.state || ""}
               id={getWizardFieldId("step3", "state")}
@@ -666,7 +666,7 @@ export function Step3_Business() {
             <label style={components.form.label}>{postalLabel}</label>
             <Input
               id={getWizardFieldId("step3", "zip")}
-              autoComplete="postal-code"
+              autoComplete="section-business postal-code"
               value={formatPostalCode(values.zip || "", countryCode)}
               onChange={(e: unknown) => {
                 const nextValues = {
@@ -708,7 +708,7 @@ export function Step3_Business() {
                 >
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={components.form.label}>Mailing Address</label>
-                    <AddressAutocompleteInput
+                    <AddressAutocompleteInput autoComplete="section-mailing address-line1"
                       country={regionCountry}
                       value={values.mailingAddress || ""}
                       onChange={(e: any) => setField("mailingAddress", e.target.value)}
@@ -731,14 +731,14 @@ export function Step3_Business() {
                   </div>
                   <div>
                     <label style={components.form.label}>City</label>
-                    <Input
+                    <Input autoComplete="section-mailing address-level2"
                       value={values.mailingCity || ""}
                       onChange={(e: any) => setField("mailingCity", e.target.value)}
                     />
                   </div>
                   <div>
                     <label style={components.form.label}>{regionLabel}</label>
-                    <RegionSelect
+                    <RegionSelect autoComplete="section-mailing address-level1"
                       country={regionCountry}
                       value={values.mailingState || ""}
                       onChange={(value: string) => setField("mailingState", value)}
@@ -746,7 +746,7 @@ export function Step3_Business() {
                   </div>
                   <div>
                     <label style={components.form.label}>{postalLabel}</label>
-                    <Input
+                    <Input autoComplete="section-mailing postal-code"
                       value={formatPostalCode(values.mailingZip || "", countryCode)}
                       onChange={(e: any) =>
                         setField("mailingZip", formatPostalCode(e.target.value, countryCode))
@@ -760,7 +760,7 @@ export function Step3_Business() {
 
           <div>
             <label style={components.form.label}>Business Phone</label>
-            <PhoneInput
+            <PhoneInput autoComplete="section-business tel"
               id={getWizardFieldId("step3", "phone")}
               value={formatPhoneNumber(values.phone || "", countryCode)}
               onChange={(e: unknown) => {

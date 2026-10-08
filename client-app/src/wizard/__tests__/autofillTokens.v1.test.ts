@@ -9,10 +9,10 @@ const inline = read("components", "PhoneOTPInline.tsx");
 
 describe("BF_CLIENT_AUTOFILL_STEP3_OTP_v1", () => {
   it("tags the business address so iOS can fill it", () => {
-    expect(step3).toContain('autoComplete="address-level2"');
-    expect(step3).toContain('autoComplete="postal-code"');
+    expect(step3).toContain('autoComplete="section-business address-level2"'); // BF_CLIENT_AUTOFILL_v744
+    expect(step3).toContain('autoComplete="section-business postal-code"');
     expect(step3).toContain('autoComplete="url"');
-    expect(step3).toContain('autoComplete="organization"');
+    expect(step3).toContain('autoComplete="section-business organization"');
   });
 
   it("gives the sign-in number field everything WebKit looks for", () => {
