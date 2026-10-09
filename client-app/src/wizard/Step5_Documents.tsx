@@ -207,6 +207,9 @@ function OptionSeparator() {
   );
 }
 
+// BF_CLIENT_AUDIT_v748 - the SBA early return used to sit above ~25 hooks, so when a resumed draft or a
+// product change flipped the path while this screen was open React crashed ("Rendered fewer hooks").
+// The guard is its own component now; the document screen always renders its hooks in the same order.
 export function Step5_Documents() {
   const { app, update } = useApplicationStore();
   const navigate = useNavigate();
@@ -230,6 +233,12 @@ export function Step5_Documents() {
     navigate("/apply/step-6", { replace: true });
   }, [onSbaPath]);
   if (onSbaPath) return null;
+  return <Step5DocumentsBody />;
+}
+
+function Step5DocumentsBody() {
+  const { app, update } = useApplicationStore();
+  const navigate = useNavigate();
   const [requirementsRaw, setRequirementsRaw] = useState<
     LenderProductRequirement[]
   >([]);
