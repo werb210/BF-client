@@ -408,6 +408,16 @@ export default function MiniPortalPage() {
   }, [applicationId, fetchSigningSession, loadAll]);
   // Block 6 — learn signing readiness on load so the Sign chip gates on it, not stage.
   useEffect(() => { if (applicationId) { void fetchSigningSession(); void markSigningComplete(); } }, [applicationId, fetchSigningSession, markSigningComplete]);
+  // BF_CLIENT_SIGN_POLL_v747 - the signing session was read only when the page opened, so a client who already had
+  // the portal open when staff sent the signing never saw "Sign your application documents" until they reloaded.
+  // Re-check while the page is visible (every 30 s), and stop once the documents are signed.
+  const signStatusRef = useRef<string | undefined>(undefined);
+  useEffect(() => { signStatusRef.current = signSession?.status; }, [signSession?.status]);
+  const pollSigningSession = useCallback(async () => {
+    if (signStatusRef.current === "signed") return;
+    await fetchSigningSession();
+  }, [fetchSigningSession]);
+  useVisiblePoll(pollSigningSession, 30000);
   // BF_CLIENT_BLOCK_v467_SIGN_ANY_APP - arriving from the "ready for your signature"
   // banner (?sign=1) opens signing as soon as the session is ready.
   useEffect(() => {
