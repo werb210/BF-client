@@ -29,7 +29,7 @@ jobs:
       # blocks the deploy instead of shipping unnoticed.
       # BF_CLIENT_AUDIT_v748 - lint (rules of hooks) was never run.
       - name: Lint
-        run: npm --prefix client-app run lint
+        run: npm run lint   # BF_CLIENT_LINT_STEP_v749 - steps already run inside client-app
       - name: Test
         run: npm run test:ci
 
