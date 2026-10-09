@@ -110,13 +110,8 @@ export default function MayaWidget() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null); // BF_CLIENT_MAYA_FOCUS_v1
 
-  const { user } = (() => {
-    try {
-      return useAuth();
-    } catch {
-      return { user: null as Record<string, unknown> | null };
-    }
-  })();
+  // BF_CLIENT_AUDIT_v748 - useAuth never throws; call it directly instead of inside a callback (rules of hooks).
+  const { user } = useAuth() as { user: Record<string, unknown> | null };
   const { app } = useApplicationStore();
   useEffect(() => {
     if (leadPrefilled.current) return;
