@@ -8,10 +8,9 @@ describe("phone polish", () => {
   it("the native shell no longer adds a second safe-area inset", () => {
     expect(readFileSync("capacitor.config.ts", "utf8")).toContain("contentInset: 'never'");
   });
-  it("the tab bar hides while the keyboard is up", () => {
-    const css = readFileSync("src/components/CmpPhone.css", "utf8");
-    expect(css).toContain(".kb-open .cmp-tabbar { display: none; }");
-    expect(readFileSync("src/components/CmpPhone.tsx", "utf8")).toContain('classList.toggle("kb-open"');
+  it("the tab bar stays visible while the keyboard is up (v752)", () => {
+    expect(readFileSync("src/components/CmpPhone.css", "utf8")).not.toContain(".kb-open .cmp-tabbar");
+    expect(readFileSync("capacitor.config.ts", "utf8")).toContain("Keyboard: { resize: 'native'");
   });
   it("More shows Delete account and the running build", () => {
     let deleted = false;
@@ -24,9 +23,9 @@ describe("phone polish", () => {
     expect(appBuildLabel("2026-10-10T17:05:00Z", "abc1234")).toMatch(/^build abc1234 · Oct 10, 11:05/);
     expect(appBuildLabel(undefined, undefined)).toBe("");
   });
-  it("the To do tab says when there is nothing to do, and the account row moved to More", () => {
+  it("the To do tab says when there is nothing to do, and the account row moved to Settings", () => {
     const page = readFileSync("src/pages/MiniPortalPage.tsx", "utf8");
     expect(page).toContain('data-testid="cmp-todo-empty"');
-    expect(page).toContain('{!isPhone || phoneTab === "more" ? <AccountBar /> : null}');
+    expect(page).toContain('{!isPhone || phoneTab === "settings" ? <AccountBar /> : null}');
   });
 });

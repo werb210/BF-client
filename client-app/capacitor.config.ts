@@ -10,6 +10,8 @@ const config: CapacitorConfig = {
   ios: { contentInset: 'never' },
   android: {},
   plugins: {
+    // BF_CLIENT_PHONE_TABS_v752 - resize the app above the keyboard so the tab bar stays visible on Chat.
+    Keyboard: { resize: 'native', resizeOnFullScreen: true },
   }
 };
 

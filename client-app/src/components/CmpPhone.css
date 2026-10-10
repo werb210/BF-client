@@ -7,7 +7,8 @@
 .cmp-phone.cmp-tab-home [data-cmp-tab]:not([data-cmp-tab="home"]),
 .cmp-phone.cmp-tab-todo [data-cmp-tab]:not([data-cmp-tab="todo"]),
 .cmp-phone.cmp-tab-chat [data-cmp-tab]:not([data-cmp-tab="chat"]),
-.cmp-phone.cmp-tab-more [data-cmp-tab]:not([data-cmp-tab="more"]) { display: none !important; }
+.cmp-phone.cmp-tab-more [data-cmp-tab]:not([data-cmp-tab="more"]),
+.cmp-phone.cmp-tab-settings [data-cmp-tab]:not([data-cmp-tab="settings"]) { display: none !important; }
 .cmp-phone-body [data-maya-launcher] { display: none !important; }
 
 .cmp-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: #fff; border-top: 1px solid #e3e6eb;
@@ -34,9 +35,6 @@
   background: #fff; border-radius: 0 0 16px 16px; }
 
 /* BF_CLIENT_PHONE_POLISH_v751 */
-.kb-open .cmp-tabbar { display: none; }
-.kb-open .cmp-phone { padding-bottom: 0; }
-.kb-open .cmp-phone.cmp-tab-chat .mp-thread-card__composer { bottom: 0; }
 .cmp-phone .mp-account-delete-link { display: none; }
 .cmp-empty { margin: 8px 0 16px; padding: 24px 20px; border: 1px solid #e3e6eb; border-radius: 14px; background: #fff; text-align: center; }
 .cmp-empty__title { font-size: 18px; font-weight: 700; color: #0b1f3a; }
@@ -44,3 +42,12 @@
 .cmp-more-footer { order: 99; margin: 20px 0 8px; padding-top: 16px; border-top: 1px solid #e3e6eb; text-align: center; }
 .cmp-more-footer__delete { background: none; border: 0; color: #6b7280; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
 .cmp-more-footer__version { margin-top: 10px; font-size: 13px; color: #6b7280; }
+
+/* BF_CLIENT_PHONE_TABS_v752 - Settings tab; Ask Maya lives in Chat, so it is not repeated on More. */
+.cmp-phone .mp-actions [data-testid="ask-maya"] { display: none; }
+.cmp-settings { margin: 0 0 16px; padding: 8px 16px 16px; border: 1px solid #e3e6eb; border-radius: 14px; background: #fff; }
+.cmp-settings__title { margin: 8px 0 4px; font-size: 18px; font-weight: 700; color: #0b1f3a; }
+.cmp-settings .cmp-more-footer { margin-top: 12px; }
+.cmp-settings .cmp-more-footer__delete { color: #b42318; font-weight: 600; }
+.cmp-settings .cmp-more-footer__version { color: #374151; }
+.cmp-tabbar__tab { font-size: 11px; }
