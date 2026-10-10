@@ -32,3 +32,15 @@
 .cmp-phone.cmp-tab-chat .mp-thread-card { overflow: visible; }
 .cmp-phone.cmp-tab-chat .mp-thread-card__composer { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 40;
   background: #fff; border-radius: 0 0 16px 16px; }
+
+/* BF_CLIENT_PHONE_POLISH_v751 */
+.kb-open .cmp-tabbar { display: none; }
+.kb-open .cmp-phone { padding-bottom: 0; }
+.kb-open .cmp-phone.cmp-tab-chat .mp-thread-card__composer { bottom: 0; }
+.cmp-phone .mp-account-delete-link { display: none; }
+.cmp-empty { margin: 8px 0 16px; padding: 24px 20px; border: 1px solid #e3e6eb; border-radius: 14px; background: #fff; text-align: center; }
+.cmp-empty__title { font-size: 18px; font-weight: 700; color: #0b1f3a; }
+.cmp-empty__sub { margin-top: 6px; font-size: 15px; color: #4b5563; }
+.cmp-more-footer { order: 99; margin: 20px 0 8px; padding-top: 16px; border-top: 1px solid #e3e6eb; text-align: center; }
+.cmp-more-footer__delete { background: none; border: 0; color: #6b7280; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.cmp-more-footer__version { margin-top: 10px; font-size: 13px; color: #6b7280; }
