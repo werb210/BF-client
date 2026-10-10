@@ -20,6 +20,21 @@ export function usePhoneLayout(): boolean {
     return () => mq.removeEventListener?.("change", on);
   }, []);
   // Maya's round floating button would sit on the tab bar; on a phone she opens from Chat > Ask Maya.
+  // BF_CLIENT_PHONE_POLISH_v751 - while the keyboard is up the tab bar hid the chat box. Hide the bar (and drop the
+  // space reserved for it) whenever the visible area shrinks by more than a keyboard's worth.
+  useEffect(() => {
+    if (!phone || typeof window === "undefined" || !window.visualViewport) return undefined;
+    const vv = window.visualViewport;
+    const full = { h: window.innerHeight };
+    const check = () => {
+      full.h = Math.max(full.h, window.innerHeight);
+      document.documentElement.classList.toggle("kb-open", vv.height < full.h - 150);
+    };
+    check();
+    vv.addEventListener("resize", check);
+    window.addEventListener("focusout", check);
+    return () => { vv.removeEventListener("resize", check); window.removeEventListener("focusout", check); document.documentElement.classList.remove("kb-open"); };
+  }, [phone]);
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
     document.body.classList.toggle("cmp-phone-body", phone);
@@ -82,3 +97,40 @@ export function CmpNextStep({ label, remaining, onOpen }: { label: string | null
     </section>
   );
 }
+
+// BF_CLIENT_PHONE_POLISH_v751 - bottom of the More tab: account deletion (moved off Home) and the running version,
+// so anyone can confirm which build an iPhone, iPad or browser is showing.
+export function appBuildLabel(builtAt: string | undefined, sha: string | undefined): string {
+  const d = builtAt ? new Date(builtAt) : null;
+  const when = d && !Number.isNaN(d.getTime())
+    ? d.toLocaleString("en-CA", { timeZone: "America/Edmonton", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : "";
+  return [sha ? "build " + sha : "", when].filter(Boolean).join(" · ");
+}
+
+export function CmpMoreFooter({ onDeleteAccount }: { onDeleteAccount: () => void }) {
+  const [native, setNative] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        const { App } = await import("@capacitor/app");
+        const info = await App.getInfo();
+        if (alive) setNative(`${info.version} (${info.build})`);
+      } catch { /* web: no native version */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+  const build = appBuildLabel(import.meta.env.VITE_APP_BUILT_AT as string | undefined, import.meta.env.VITE_APP_BUILD_SHA as string | undefined);
+  return (
+    <div className="cmp-more-footer" data-testid="cmp-more-footer">
+      <button type="button" className="cmp-more-footer__delete" onClick={onDeleteAccount}>Delete account</button>
+      <div className="cmp-more-footer__version" data-testid="cmp-version">
+        {native ? `App ${native}` : "Web app"}{build ? ` · ${build}` : ""}
+      </div>
+    </div>
+  );
+}
+

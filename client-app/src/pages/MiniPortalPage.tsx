@@ -37,7 +37,7 @@ import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UP
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
-import { usePhoneLayout, CmpTabBar, CmpChatSwitch, CmpNextStep, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
+import { usePhoneLayout, CmpTabBar, CmpChatSwitch, CmpNextStep, CmpMoreFooter, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -139,8 +139,10 @@ export default function MiniPortalPage() {
   const isPhone = usePhoneLayout();
   const [phoneTab, setPhoneTab] = useState<CmpTab>("home");
   const [todoOpen, setTodoOpen] = useState<{ count: number; first: string | null }>({ count: 0, first: null });
+  const [todoLoaded, setTodoLoaded] = useState(false); // BF_CLIENT_PHONE_POLISH_v751
   const onTodoData = useCallback((d: { outstanding: Array<{ key: string; kind: string }>; completed: Array<{ key: string; kind: string }> }) => {
     setTodoOpen({ count: d.outstanding.length, first: String((d.outstanding[0] as { label?: string } | undefined)?.label ?? "") || null });
+    setTodoLoaded(true);
     const keys = [...d.outstanding, ...d.completed].filter((i) => i.kind === "form").map((i) => String(i.key).replace(/^form:/, ""));
     setRequestedForms(new Set(keys));
   }, []);
@@ -751,7 +753,8 @@ export default function MiniPortalPage() {
     <>
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
-      <AccountBar />
+      {/* BF_CLIENT_PHONE_POLISH_v751 - on a phone the Face ID / Sign out row lives on the More tab only. */}
+      {!isPhone || phoneTab === "more" ? <AccountBar /> : null}
       <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + phoneTab : "")}>
       {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
       <div data-cmp-tab="home">
@@ -895,6 +898,13 @@ export default function MiniPortalPage() {
       <CmpNextStep label={todoOpen.first} remaining={todoOpen.count} onOpen={() => setPhoneTab("todo")} />
       <div data-cmp-tab="todo">
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
+      {/* BF_CLIENT_PHONE_POLISH_v751 - the To do tab was a blank page when nothing was outstanding. */}
+      {isPhone && todoLoaded && todoOpen.count === 0 ? (
+        <div className="cmp-empty" data-testid="cmp-todo-empty">
+          <div className="cmp-empty__title">You're all caught up</div>
+          <div className="cmp-empty__sub">Nothing to do right now. When we need something from you, it will appear here and we'll let you know.</div>
+        </div>
+      ) : null}
       </div>
       {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
       <div data-testid="book-call" data-cmp-tab="home" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -1018,6 +1028,7 @@ export default function MiniPortalPage() {
           </div>
         </section>
         <aside className="mp-actions" data-cmp-tab="more">
+            {isPhone ? <CmpMoreFooter onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} /> : null}
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
