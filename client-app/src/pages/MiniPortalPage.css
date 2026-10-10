@@ -169,3 +169,12 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
 }
+
+/* BF_CLIENT_TRACKER_FIT_v752 - on a phone all six stages fit across the screen: nothing scrolls off the left. */
+@media (max-width: 640px) {
+  .mp-tracker { overflow-x: visible; padding: 12px 6px; }
+  .mp-stage { min-width: 0; flex: 1 1 0; }
+  .mp-stage__bullet { width: 22px; height: 22px; font-size: 11px; }
+  .mp-stage:not(:last-child)::after { top: 10px; left: calc(50% + 11px); width: calc(100% - 22px); }
+  .mp-stage__label { font-size: 10.5px; line-height: 1.15; padding: 0 1px; overflow-wrap: anywhere; color: #0B1F3A; }
+}

@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import "./CmpPhone.css";
 
-export type CmpTab = "home" | "todo" | "chat" | "more";
+export type CmpTab = "home" | "todo" | "chat" | "more" | "settings";
 export const PHONE_QUERY = "(max-width: 640px)";
 
 export function usePhoneLayout(): boolean {
@@ -20,21 +20,8 @@ export function usePhoneLayout(): boolean {
     return () => mq.removeEventListener?.("change", on);
   }, []);
   // Maya's round floating button would sit on the tab bar; on a phone she opens from Chat > Ask Maya.
-  // BF_CLIENT_PHONE_POLISH_v751 - while the keyboard is up the tab bar hid the chat box. Hide the bar (and drop the
-  // space reserved for it) whenever the visible area shrinks by more than a keyboard's worth.
-  useEffect(() => {
-    if (!phone || typeof window === "undefined" || !window.visualViewport) return undefined;
-    const vv = window.visualViewport;
-    const full = { h: window.innerHeight };
-    const check = () => {
-      full.h = Math.max(full.h, window.innerHeight);
-      document.documentElement.classList.toggle("kb-open", vv.height < full.h - 150);
-    };
-    check();
-    vv.addEventListener("resize", check);
-    window.addEventListener("focusout", check);
-    return () => { vv.removeEventListener("resize", check); window.removeEventListener("focusout", check); document.documentElement.classList.remove("kb-open"); };
-  }, [phone]);
+  // BF_CLIENT_PHONE_TABS_v752 - the tab bar is no longer hidden while the keyboard is up: the app shrinks above the
+  // keyboard (Keyboard resize "native" in capacitor.config.ts), so the tabs stay reachable from Chat.
   useEffect(() => {
     if (typeof document === "undefined") return undefined;
     document.body.classList.toggle("cmp-phone-body", phone);
@@ -48,12 +35,14 @@ const ICONS: Record<CmpTab, JSX.Element> = {
   todo: <><path d="M9 6h11M9 12h11M9 18h11" /><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17" /></>,
   chat: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
+  settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>,
 };
 const TABS: Array<{ id: CmpTab; label: string }> = [
   { id: "home", label: "Home" },
   { id: "todo", label: "To do" },
   { id: "chat", label: "Chat" },
   { id: "more", label: "More" },
+  { id: "settings", label: "Settings" },
 ];
 
 export function CmpTabBar({ tab, onTab, todoCount }: { tab: CmpTab; onTab: (t: CmpTab) => void; todoCount: number }) {

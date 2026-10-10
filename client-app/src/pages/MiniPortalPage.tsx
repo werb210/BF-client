@@ -125,6 +125,18 @@ export default function MiniPortalPage() {
     })();
     return () => { cancelled = true; };
   }, [applicationId]);
+  // BF_CLIENT_PHONE_TABS_v752 - the phone app opens /portal with no application chosen, so Home showed "Application -",
+  // the stage read Received and To do was blank. Open the application that needs a signature, else the newest
+  // submitted one, else the newest draft.
+  useEffect(() => {
+    if (applicationId || myApps.length === 0) return;
+    const when = (a: any) => Date.parse(String(a?.updated_at ?? a?.created_at ?? "")) || 0;
+    const sorted = [...myApps].sort((a, b) => when(b) - when(a));
+    const pick = sorted.find((a) => a?.signature_needed === true)
+      ?? sorted.find((a) => !/^draft$/i.test(String(a?.pipeline_state ?? "")))
+      ?? sorted[0];
+    if (pick?.id) navigate("/application/" + encodeURIComponent(String(pick.id)), { replace: true });
+  }, [applicationId, myApps, navigate]);
   // BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1
   type RejectedDoc = { id: string; category: string | null; filename: string | null; rejection_reason: string | null; updated_at: string | null };
   const [rejectedDocs, setRejectedDocs] = useState<RejectedDoc[]>([]);
@@ -624,12 +636,8 @@ export default function MiniPortalPage() {
   }, [applicationId, navigate]);
 
   const stageRow = useMemo(() => STAGES.map((s, i) => ({ ...s, completed: i < stageIndex, current: i === stageIndex })), [stageIndex]);
-  // BF_CLIENT_AUDIT_FIX_v2 -- center the current stage in the horizontally-scrollable tracker (mobile)
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const el = document.querySelector(".mp-tracker .mp-stage--current") as HTMLElement | null;
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [stageIndex]);
+  // BF_CLIENT_TRACKER_FIT_v752 - the tracker fits the screen on a phone, so it is no longer scrolled to centre the
+  // current stage (that pushed Received and In Review off the left edge).
   // Show the offer view whenever the app actually has an offer, not only when
   // the stage read says "offer" — a lagging/stale pipeline_state must never hide
   // a real offer (and its Accept button) from the client.
@@ -754,7 +762,7 @@ export default function MiniPortalPage() {
       <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
       {/* BF_CLIENT_PHONE_POLISH_v751 - on a phone the Face ID / Sign out row lives on the More tab only. */}
-      {!isPhone || phoneTab === "more" ? <AccountBar /> : null}
+      {!isPhone || phoneTab === "settings" ? <AccountBar /> : null} {/* BF_CLIENT_PHONE_TABS_v752 */}
       <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + phoneTab : "")}>
       {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
       <div data-cmp-tab="home">
@@ -839,43 +847,6 @@ export default function MiniPortalPage() {
           </button>
         </div>
       </header>
-      {deleteStep > 0 && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: 20 }}
-        >
-          <div style={{ background: "var(--color-surface, #fff)", borderRadius: 14, maxWidth: 440, width: "100%", padding: 24, boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
-            <h2 style={{ margin: "0 0 12px", fontSize: 19, color: "#0f172a" }}>Delete your account?</h2>
-            {deleteStep === 1 && (
-              <>
-                <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
-                  If you delete your account, any active applications will also be deleted. This cannot be undone.
-                </p>
-                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Keep my account</button>
-                  <button type="button" onClick={() => setDeleteStep(2)} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Continue</button>
-                </div>
-              </>
-            )}
-            {deleteStep === 2 && (
-              <>
-                <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
-                  Once deleted, Boreal Financial will not be allowed to communicate with you regarding lender communications, offers to finance, or to assist you with completing your funding.
-                </p>
-                {deleteErr && <p style={{ margin: "0 0 12px", fontSize: 13, color: "#dc2626" }}>{deleteErr}</p>}
-                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                  <button type="button" onClick={() => void confirmDeleteAccount()} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Delete my account</button>
-                </div>
-              </>
-            )}
-            {deleteStep === 3 && (
-              <p style={{ margin: 0, fontSize: 14, color: "#374151" }}>Deleting your account…</p>
-            )}
-          </div>
-        </div>
-      )}
       <div className="mp-tracker" role="list" aria-label="Application progress">
         {stageRow.map((s) => (
           <div key={s.key} role="listitem" className={`mp-stage ${s.completed ? "mp-stage--done" : ""} ${s.current ? "mp-stage--current" : ""}`}>
@@ -896,10 +867,17 @@ export default function MiniPortalPage() {
       )}
       </div>
       <CmpNextStep label={todoOpen.first} remaining={todoOpen.count} onOpen={() => setPhoneTab("todo")} />
+      {/* BF_CLIENT_PHONE_TABS_v752 - Home says so when there is nothing to do. */}
+      {isPhone && todoLoaded && todoOpen.count + todoExtras.length === 0 ? (
+        <div className="cmp-empty" data-cmp-tab="home" data-testid="cmp-home-caught-up">
+          <div className="cmp-empty__title">You're all caught up</div>
+          <div className="cmp-empty__sub">We have everything we need from you right now. We'll let you know if anything else comes up.</div>
+        </div>
+      ) : null}
       <div data-cmp-tab="todo">
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
       {/* BF_CLIENT_PHONE_POLISH_v751 - the To do tab was a blank page when nothing was outstanding. */}
-      {isPhone && todoLoaded && todoOpen.count === 0 ? (
+      {isPhone && todoLoaded && todoOpen.count + todoExtras.length === 0 ? (
         <div className="cmp-empty" data-testid="cmp-todo-empty">
           <div className="cmp-empty__title">You're all caught up</div>
           <div className="cmp-empty__sub">Nothing to do right now. When we need something from you, it will appear here and we'll let you know.</div>
@@ -1028,7 +1006,6 @@ export default function MiniPortalPage() {
           </div>
         </section>
         <aside className="mp-actions" data-cmp-tab="more">
-            {isPhone ? <CmpMoreFooter onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} /> : null}
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
             <div className="mp-actions__chips">
@@ -1311,6 +1288,50 @@ export default function MiniPortalPage() {
         </div>
       )}
       </div>
+      {isPhone ? (
+        <section className="cmp-settings" data-cmp-tab="settings" data-testid="cmp-settings">
+          <div className="cmp-settings__title">Settings</div>
+          <CmpMoreFooter onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} />
+        </section>
+      ) : null}
+      {/* BF_CLIENT_PHONE_TABS_v752 - outside the tab sections, so it opens from Settings (a dialog inside a hidden tab never shows). */}
+      {deleteStep > 0 && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: 20 }}
+        >
+          <div style={{ background: "var(--color-surface, #fff)", borderRadius: 14, maxWidth: 440, width: "100%", padding: 24, boxShadow: "0 20px 50px rgba(0,0,0,0.25)" }}>
+            <h2 style={{ margin: "0 0 12px", fontSize: 19, color: "#0f172a" }}>Delete your account?</h2>
+            {deleteStep === 1 && (
+              <>
+                <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                  If you delete your account, any active applications will also be deleted. This cannot be undone.
+                </p>
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Keep my account</button>
+                  <button type="button" onClick={() => setDeleteStep(2)} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Continue</button>
+                </div>
+              </>
+            )}
+            {deleteStep === 2 && (
+              <>
+                <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                  Once deleted, Boreal Financial will not be allowed to communicate with you regarding lender communications, offers to finance, or to assist you with completing your funding.
+                </p>
+                {deleteErr && <p style={{ margin: "0 0 12px", fontSize: 13, color: "#dc2626" }}>{deleteErr}</p>}
+                <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                  <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                  <button type="button" onClick={() => void confirmDeleteAccount()} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Delete my account</button>
+                </div>
+              </>
+            )}
+            {deleteStep === 3 && (
+              <p style={{ margin: 0, fontSize: 14, color: "#374151" }}>Deleting your account…</p>
+            )}
+          </div>
+        </div>
+      )}
       {isPhone ? <CmpTabBar tab={phoneTab} onTab={(t) => {
         // BF_CLIENT_CHAT_TAB_COMPOSER_v735 - Chat opens on the latest messages with the message box focused, so the
         // keyboard comes up straight away. The tab is rendered synchronously (flushSync) so the focus happens inside
@@ -1324,7 +1345,7 @@ export default function MiniPortalPage() {
           return;
         }
         setPhoneTab(t); window.scrollTo?.(0, 0);
-      }} todoCount={todoOpen.count} /> : null}
+      }} todoCount={todoOpen.count + todoExtras.length} /> : null}
       </div>
     </>
   );
