@@ -16,7 +16,7 @@
   {
     "surface": "Application Portal",
     "route": "/application/:id",
-    "file": "src/pages/ApplicationPortalPage.tsx",
+    "file": "src/pages/MiniPortalPage.tsx",
     "fields": [
       "businessName",
       "stage",
