@@ -5,6 +5,7 @@
 // Persists via the generic form-responses endpoint, key "cra_view_only_authorization".
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "cra_view_only_authorization";
 const ACCORD_BN = "840554489";
@@ -118,7 +119,7 @@ export default function CraAuthorizationForm({
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
         Grant view-only (Level 1) access to {ACCORD_FIRM} (business number {ACCORD_BN}). This is read-only —
         Accord cannot file or change anything with the CRA.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Confirmed</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Confirmed</span>}
       </p>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>

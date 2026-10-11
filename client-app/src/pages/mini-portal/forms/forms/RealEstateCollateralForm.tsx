@@ -4,6 +4,7 @@
 // Persists via the generic form-responses endpoint, key "real_estate_collateral_disclosure".
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "real_estate_collateral_disclosure";
 
@@ -115,7 +116,7 @@ export default function RealEstateCollateralForm({
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Real Estate Collateral</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>
         Details on real estate offered as additional collateral. Complete one block per property.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
       {properties.map((_, idx) => (

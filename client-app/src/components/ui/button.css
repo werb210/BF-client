@@ -60,9 +60,11 @@
 
 /* A solid muted state reads as "not yet available". Half-opacity reads as
    broken, which is what opacity: 0.5 was doing on every step. */
+/* BF_CLIENT_v789_CONTRAST - #8593aa on #E4EAF2 was 2.6:1; #374151 is 8.5:1
+   (a11yColors.ts disabledText/disabledBg). */
 .bf-btn:disabled {
   background: #E4EAF2;
-  color: #8593aa;
+  color: #374151;
   border-color: #E4EAF2;
   cursor: not-allowed;
   transform: none;

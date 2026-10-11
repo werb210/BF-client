@@ -15,8 +15,12 @@ jobs:
       - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm }
       - run: npm ci
+      # BF_CLIENT_AUDIT_v110 - lint (rules of hooks) gates native builds too.
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm --prefix client-app run test:ci
+      - name: Source-grep test budget
+        run: node scripts/check-source-grep-tests.mjs
       - run: npm run build
       - name: Verify Capacitor web artifact
         run: test -f client-app/dist/index.html
@@ -32,6 +36,8 @@ jobs:
           -resolvePackageDependencies
           -project client-app/ios/App/App.xcodeproj
           -scheme App
+      # BF_CLIENT_BUILD_NUMBER_v8 - CFBundleVersion is $(CURRENT_PROJECT_VERSION);
+      # the project default stays 1 for local builds, CI uses the run number.
       - name: Build unsigned iOS Simulator app
         run: >-
           xcodebuild
@@ -42,4 +48,5 @@ jobs:
           -configuration Debug
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
+          CURRENT_PROJECT_VERSION=${{ github.run_number }}
           clean build

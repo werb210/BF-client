@@ -11,6 +11,7 @@ import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQue
 import { queuedMessage, reportUploadFailure } from "@/lib/docUpload"; // BF_CLIENT_DIRECT_UPLOAD_v730
 import { Capacitor } from "@capacitor/core"; // BF_CLIENT_DOCPICKER_SCAN_v634
 import { scanDocumentAsPdfWithQuality } from "@/native/documentScanner"; // BF_CLIENT_DOCPICKER_SCAN_v634
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 type DocItem = { document_type: string; label: string };
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
@@ -176,7 +177,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
         {error && <p style={{ color: "#b91c1c" }}>{error} <button type="button" onClick={() => window.location.reload()} style={{ marginLeft: 6, border: "1px solid #b91c1c", background: "#fff", color: "#b91c1c", borderRadius: 6, padding: "2px 10px", cursor: "pointer" }}>Try again</button></p>}
         {notice && <p data-testid="docpicker-queued-notice" style={{ color: "#1e40af" }}>{notice}</p>}
         {empty && (
-          <p style={{ color: "#16a34a" }}>You're all caught up — no documents needed right now.</p>
+          <p style={{ color: A11Y_COLORS.successText }}>You're all caught up — no documents needed right now.</p>
         )}
 
         {data.rejected.length > 0 && (
@@ -187,11 +188,11 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
                 <span style={{ fontSize: 14 }}>{d.label}</span>
                 <span style={{ display: "flex", gap: 8 }}>
                   {Capacitor.isNativePlatform() && (
-                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: "1px solid #3b82f6", borderRadius: 6, background: "#fff", color: "#1d4ed8", cursor: "pointer", fontSize: 13 }}>
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: `1px solid ${A11Y_COLORS.actionText}`, borderRadius: 6, background: "#fff", color: A11Y_COLORS.actionText, cursor: "pointer", fontSize: 13 }}>
                       Scan
                     </button>
                   )}
-                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: A11Y_COLORS.actionBg, color: "#fff", cursor: "pointer", fontSize: 13 }}>
                     {uploading === d.document_type ? "Uploading…" : "Re-upload"}
                   </button>
                 </span>
@@ -208,11 +209,11 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
                 <span style={{ fontSize: 14 }}>{d.label}</span>
                 <span style={{ display: "flex", gap: 8 }}>
                   {Capacitor.isNativePlatform() && (
-                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: "1px solid #3b82f6", borderRadius: 6, background: "#fff", color: "#1d4ed8", cursor: "pointer", fontSize: 13 }}>
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ padding: "6px 14px", border: `1px solid ${A11Y_COLORS.actionText}`, borderRadius: 6, background: "#fff", color: A11Y_COLORS.actionText, cursor: "pointer", fontSize: 13 }}>
                       Scan
                     </button>
                   )}
-                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: "#3b82f6", color: "#fff", cursor: "pointer", fontSize: 13 }}>
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={{ padding: "6px 14px", border: 0, borderRadius: 6, background: A11Y_COLORS.actionBg, color: "#fff", cursor: "pointer", fontSize: 13 }}>
                     {uploading === d.document_type ? "Uploading…" : "Upload"}
                   </button>
                 </span>

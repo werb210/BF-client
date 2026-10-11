@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { apiCall } from "@/api/client";
 import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_QA_UPLOAD_v1
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 type Question = {
   id: string;
@@ -57,8 +58,9 @@ const styles = {
     fontWeight: 600,
     border: 0,
     borderRadius: 8,
-    background: "#93c5fd",
-    color: "#fff",
+    // BF_CLIENT_v789_CONTRAST - white on #93c5fd was 1.8:1.
+    background: A11Y_COLORS.lenderQaDisabledBg,
+    color: A11Y_COLORS.lenderQaDisabledText,
     cursor: "not-allowed",
   } as const,
 };

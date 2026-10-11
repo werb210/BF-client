@@ -12,7 +12,13 @@ function buildSha(): string {
   catch { return ''; }
 }
 
-export default defineConfig({
+// BF_CLIENT_v789_NO_FORM_LOGS - production bundles carry no console.log/debug/info
+// calls (they printed form answers and tokens into any shared devtools capture).
+// console.warn and console.error stay so real failures are still reported.
+export const PRODUCTION_DROPPED_CONSOLE = ['console.log', 'console.debug', 'console.info']
+
+export default defineConfig(({ mode }) => ({
+  esbuild: mode === 'production' ? { pure: PRODUCTION_DROPPED_CONSOLE, drop: ['debugger'] } : {},
   // BF_CLIENT_APP_UPDATE_v723 - stamp each build so an installed phone app can tell it is out of date.
   define: {
     'import.meta.env.VITE_APP_BUILT_AT': JSON.stringify(new Date().toISOString()),
@@ -66,4 +72,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   }
-})
+}))

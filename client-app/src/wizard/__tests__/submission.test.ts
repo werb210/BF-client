@@ -18,7 +18,7 @@ vi.mock("../../state/clientProfiles", () => ({
 
 describe("submission payload", () => {
   const baseApp: ApplicationData = {
-    kyc: { fundingAmount: 4000 },
+    kyc: { fundingAmount: "4000" },
     productCategory: "Working Capital",
     matchPercentages: {},
     eligibleProducts: [],
@@ -77,7 +77,7 @@ describe("submission payload", () => {
   it("includes readinessLeadId in submission payload", () => {
     const payload = buildSubmissionPayload(baseApp);
     expect(payload.application.readiness_lead_id).toBe("lead-123");
-    expect(payload.kyc_answers).toEqual({ fundingAmount: 4000 });
+    expect(payload.kyc_answers).toEqual({ fundingAmount: "4000" });
     expect(payload.product_category).toBe("Working Capital");
     expect(payload.applicant_info).toEqual({ fullName: "Taylor Doe" });
     expect(payload.signature).toEqual({

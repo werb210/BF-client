@@ -56,17 +56,9 @@ describe("enhanced conversions user data", () => {
     );
   });
 
-  it("converts a ten-digit number to E.164", () => {
-    expect(buildAdsUserData(null, "403-555-0142").phone_number).toBe("+14035550142");
-  });
-
-  it("accepts a number already carrying the country code", () => {
-    expect(buildAdsUserData(null, "+1 403 555 0142").phone_number).toBe("+14035550142");
-  });
-
-  it("keeps the email when the phone is malformed, rather than throwing", () => {
-    const data = buildAdsUserData("todd@boreal.financial", "423-205-619");
-    expect(data.email).toBe("todd@boreal.financial");
+  it("never includes a phone number (BF_CLIENT_v789_ANALYTICS_GATES)", () => {
+    const data = buildAdsUserData("todd@boreal.financial") as Record<string, string>;
+    expect(data).toEqual({ email: "todd@boreal.financial" });
     expect(data.phone_number).toBeUndefined();
   });
 
@@ -75,13 +67,8 @@ describe("enhanced conversions user data", () => {
   });
 
   it("returns an empty object when nothing is available", () => {
-    const cases: Array<[string | null | undefined, string | null | undefined]> = [
-      [null, null],
-      [undefined, undefined],
-      ["", ""],
-    ];
-    for (const [email, phone] of cases) {
-      expect(Object.keys(buildAdsUserData(email, phone))).toHaveLength(0);
+    for (const email of [null, undefined, ""]) {
+      expect(Object.keys(buildAdsUserData(email))).toHaveLength(0);
     }
   });
 });

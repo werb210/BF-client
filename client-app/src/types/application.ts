@@ -11,6 +11,123 @@ export type SelectedProduct = {
   lender_id: string;
 };
 
+// BF_CLIENT_v789_TYPED_WIZARD_DATA - kyc, business and applicant were typed
+// `unknown`, so the six wizard steps carried // @ts-nocheck to read them. Form
+// inputs store their text as strings; the index signature keeps the sections
+// open for fields added by a single product path (Accord, SBA) without hiding
+// the type of the fields every step reads.
+
+/** Step 1 (financial profile) answers. */
+export interface KycData {
+  [field: string]: unknown;
+  lookingFor?: string;
+  country?: string;
+  fundingAmount?: string;
+  requestedAmount?: string;
+  equipmentAmount?: string;
+  capitalAmount?: string;
+  fundingType?: string;
+  purposeOfFunds?: string;
+  businessLocation?: string;
+  industry?: string;
+  companyName?: string;
+  businessName?: string;
+  legalName?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  yearsInBusiness?: string;
+  salesHistory?: string;
+  annualRevenue?: string;
+  revenueLast12Months?: string;
+  monthlyRevenue?: string;
+  accountsReceivable?: string;
+  arBalance?: string;
+  availableCollateral?: string;
+  fixedAssets?: string;
+  creditScore?: string;
+}
+
+/** Step 3 (business details) answers. */
+export interface BusinessData {
+  [field: string]: unknown;
+  businessName?: string;
+  companyName?: string;
+  legalName?: string;
+  industry?: string;
+  estimatedRevenue?: string;
+  startDate?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  province?: string;
+  zip?: string;
+  postalCode?: string;
+  phone?: string;
+  website?: string;
+  businessStructure?: string;
+}
+
+/** One owner: the applicant, the partner, or an additional shareholder. */
+export interface OwnerData {
+  [field: string]: unknown;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  homePhone?: string;
+  dob?: string;
+  ssn?: string;
+  sin?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  province?: string;
+  zip?: string;
+  ownership?: string;
+  creditScore?: string;
+  creditScoreRange?: string;
+  title?: string;
+  // Home and mailing address (Accord LOC and SBA Form 912).
+  addressSince?: string;
+  priorAddress?: string;
+  ownRent?: string;
+  mortgageBalance?: string;
+  propertyValue?: string;
+  mailingSameAsPhysical?: boolean;
+  mailingStreet?: string;
+  mailingCity?: string;
+  mailingState?: string;
+  mailingZip?: string;
+  // SBA Form 912 / 1919 personal questions.
+  formerNames?: string;
+  placeOfBirth?: string;
+  usCitizen?: string;
+  alienRegistrationNumber?: string;
+  bankruptcyWhen?: string;
+  sex?: string;
+  race?: string;
+  ethnicity?: string;
+  veteranStatus?: string;
+  sba912Q8?: string;
+  sba912Q8Detail?: string;
+  sba912Q9?: string;
+  sba912Q9Detail?: string;
+  sba912Q10?: string;
+  sba912Q10Detail?: string;
+  sba912Initials?: string;
+}
+
+/** Step 4 answers: the applicant, plus a partner and other shareholders. */
+export interface ApplicantData extends OwnerData {
+  hasMultipleOwners?: boolean;
+  partner?: OwnerData;
+  additionalShareholders?: OwnerData[];
+}
+
 export interface ApplicationData {
   applicationDraft?: {
     borrower: Record<string, unknown>;
@@ -19,14 +136,14 @@ export interface ApplicationData {
     application: Record<string, unknown>;
     documents: Array<Record<string, unknown>>;
   };
-  kyc: unknown;
+  kyc: KycData;
   productCategory: string | null;
   matchPercentages: Record<string, number>;
   eligibleProducts: NormalizedLenderProduct[];
   eligibleCategories: EligibilityCategorySummary[];
   eligibilityReasons: EligibilityReasonSummary[];
-  business: unknown;
-  applicant: unknown;
+  business: BusinessData;
+  applicant: ApplicantData;
   documents: Record<
     string,
     {
@@ -56,6 +173,9 @@ export interface ApplicationData {
   requires_closing_cost_funding?: boolean;
 
   termsAccepted: boolean;
+  // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - the other two Step 6 consents.
+  shareAuthorization?: boolean;
+  infoConfirmed?: boolean;
   typedSignature?: string;
   coApplicantSignature?: string;
   signatureDate?: string;

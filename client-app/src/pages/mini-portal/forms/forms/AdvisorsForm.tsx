@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
 import { formatPhoneNumber } from "@/utils/location"; // v_ADVISOR_PHONE_FMT_v1
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "professional_advisors";
 const FINANCIAL_ADVISOR_FIRM = "Boreal Financial";
@@ -119,7 +120,7 @@ export default function AdvisorsForm({
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
         Optional. If you work with any of the advisors below, add their details so Accord can coordinate with them.
         Leave blank any that don't apply.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

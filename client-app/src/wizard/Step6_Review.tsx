@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { setApplicationToken } from "@/auth/applicationToken";
 import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
 import { useNavigate } from "react-router-dom";
-import { useApplicationStore } from "../state/useApplicationStore";
+import { clearStoredApplication, useApplicationStore } from "../state/useApplicationStore";
 import { getAttribution } from "../lib/attribution"; // BF_CLIENT_SUBMIT_SESSIONID_v1
 import { ACCORD_RISK_QUESTIONS, isAccordLOCApp } from "./accordRisk";
 import { ClientAppAPI } from "../api/clientApp";
@@ -29,6 +28,7 @@ import { getFundingIntentLabel } from "../constants/wizard";
 import { bucketFor, CATEGORY_BUCKETS } from "./categoryAliases";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
+import { describeIncompleteStep, incompleteStepsForSubmit } from "./stepValidation";
 import { clearDraft } from "../client/autosave";
 import {
   clearSubmissionIdempotencyKey,
@@ -50,14 +50,9 @@ import {
   trackEvent,
 } from "../utils/analytics";
 import { apiCall } from "../api/client";
-// BF_CLIENT_WIZARD_STEP6_IMPORT_v59 - Step 6 references
-// API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT at runtime but the import
-// was missing. In production this threw ReferenceError on Step 6 mount,
-// blocking the user with "Application Error / A fatal error occurred."
-// after Step 5. The lender-count fetch is wrapped in .catch() so even
-// when the endpoint 404s the page still renders - but only if the
-// symbol is at least defined.
-import { API_ENDPOINTS_CONTRACT } from "@/contracts";
+// BF_CLIENT_WIZARD_STEP6_IMPORT_v59 - the lender-count fetch is wrapped in
+// .catch() so even when the endpoint 404s the page still renders.
+import { endpoints } from "@/lib/endpoints";
 import { clearStoredReadinessSession } from "@/api/website";
 import { parseCurrencyAmount } from "./productSelection";
 import { logError } from "@/lib/logger";
@@ -107,10 +102,12 @@ export function Step6_Review(): JSX.Element {
 
   // BF_CLIENT_STEP6_BACK_v151
   // Step 5 bounces straight back on the SBA path, so Back has to skip it.
-  const backTarget = isSbaWizardPath(app as Record<string, unknown>) // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+  const backTarget = isSbaWizardPath(app) // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
     ? "/apply/step-4"
     : "/apply/step-5";
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // BF_CLIENT_v789_STEP_GUARD - the step a failed re-check points back to.
+  const [incompleteStep, setIncompleteStep] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [docErrors, setDocErrors] = useState<Record<string, string>>({});
   const [uploadingDocs, setUploadingDocs] = useState<Record<string, boolean>>(
@@ -179,6 +176,7 @@ export function Step6_Review(): JSX.Element {
         try { clearSubmissionIdempotencyKey(); } catch {}
         try { clearStoredReadinessSession(); } catch {}
         try { localStorage.removeItem("creditPrefill"); } catch {}
+        clearStoredApplication(); // BF_CLIENT_v789_SENSITIVE_FIELDS
         navigate("/portal", { replace: true, state: { submitted: true } });
       }
     });
@@ -212,12 +210,12 @@ export function Step6_Review(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    apiCall<{ count?: number }>(API_ENDPOINTS_CONTRACT.PUBLIC.LENDER_COUNT)
+    apiCall<{ count?: number }>(endpoints.publicLenderCount)
       .then((data) => {
         const count = Number(data?.count || 0);
         if (count > 0) setLenderCount(count);
       })
-      .catch(() => undefined);
+      .catch((): void => undefined);
   }, []);
 
   // BF_CLIENT_v66_STATUS_NO_LOOP - see Step5_Documents for full rationale.
@@ -279,15 +277,12 @@ export function Step6_Review(): JSX.Element {
   }
 
   async function submit() {
-    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 - visible click ack + outer guard
-    console.info("[wizard] Step6 submit() invoked", {
-      applicationToken: app.applicationToken,
-      hasSig: Boolean(app.typedSignature?.trim()),
-      docsDeferred: Boolean(app.documentsDeferred),
-    });
+    // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 - outer guard.
+    // BF_CLIENT_v789_NO_FORM_LOGS - the click is no longer logged with the token.
     if (submitting) return;
     setSubmitting(true);
     setSubmitError(null);
+    setIncompleteStep(null);
     sendSubmitAttempt(app, "attempted"); // BF_CLIENT_BLOCK_v872
 
     const blockSubmit = (message: string) => {
@@ -308,6 +303,17 @@ export function Step6_Review(): JSX.Element {
 
     if (!idempotencyKey) {
       blockSubmit("We couldn't prepare your submission. Please refresh and try again.");
+      return;
+    }
+
+    // BF_CLIENT_v789_STEP_GUARD - re-check Steps 1-4 with the same rules their
+    // Continue buttons apply. The review screen can be reached by a deep link or
+    // a resumed session (sensitive answers are never stored, so a reload loses
+    // the SIN and date of birth), and nothing here used to notice.
+    const incomplete = incompleteStepsForSubmit(app);
+    if (incomplete.length > 0) {
+      setIncompleteStep(incomplete[0].step);
+      blockSubmit(describeIncompleteStep(incomplete[0]));
       return;
     }
 
@@ -430,10 +436,7 @@ export function Step6_Review(): JSX.Element {
         if (typeof window !== "undefined" && window.gtag) {
           // BF_CLIENT_ADS_ENHANCED_CONVERSIONS_v3 - explicitly provide contact
           // details because this review screen has no inputs for automatic mode.
-          const adsUserData = buildAdsUserData(
-            app.applicant?.email || app.kyc?.email,
-            app.applicant?.phone || app.kyc?.phone
-          );
+          const adsUserData = buildAdsUserData(app.applicant?.email || app.kyc?.email);
           if (Object.keys(adsUserData).length > 0) {
             window.gtag("set", "user_data", adsUserData);
           }
@@ -566,7 +569,10 @@ export function Step6_Review(): JSX.Element {
       clearDraft();
       clearSubmissionIdempotencyKey();
       clearStoredReadinessSession();
-      localStorage.removeItem("creditPrefill");
+      try { localStorage.removeItem("creditPrefill"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
+      // BF_CLIENT_v789_SENSITIVE_FIELDS - submitted: the application now lives on
+      // the server, so no copy of it (state, backup, cache, drafts, outbox) stays here.
+      clearStoredApplication();
       setTimeout(() => {
         if (nextApplicationId) {
           navigate(`/application/${nextApplicationId}`, { replace: true, state: { submitted: true } });
@@ -589,6 +595,7 @@ export function Step6_Review(): JSX.Element {
         clearSubmissionIdempotencyKey();
         clearStoredReadinessSession();
         try { localStorage.removeItem("creditPrefill"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
+        clearStoredApplication(); // BF_CLIENT_v789_SENSITIVE_FIELDS
         setTimeout(() => {
           if (resolveSubmissionId(data)) {
             navigate(`/application/${resolveSubmissionId(data)}`, { replace: true, state: { submitted: true, duplicate: true } });
@@ -639,13 +646,28 @@ export function Step6_Review(): JSX.Element {
         >
           <div style={components.form.eyebrow}>Submission incomplete</div>
           <h1 style={components.form.title}>We couldn't submit your application</h1>
-          <p style={components.form.subtitle}>{submitError}</p>
-          <Button
-            style={{ marginTop: tokens.spacing.sm, width: "100%", maxWidth: "260px" }}
-            onClick={() => { setSubmitError(null); void submit(); }}
-          >
-            Try Again
-          </Button>
+          <p style={components.form.subtitle} role="alert">{submitError}</p>
+          {incompleteStep ? (
+            <Button
+              style={{ marginTop: tokens.spacing.sm, width: "100%", maxWidth: "260px" }}
+              onClick={() => {
+                const step = incompleteStep;
+                setSubmitError(null);
+                setIncompleteStep(null);
+                update({ currentStep: step });
+                navigate(`/apply/step-${step}`);
+              }}
+            >
+              Go to Step {incompleteStep}
+            </Button>
+          ) : (
+            <Button
+              style={{ marginTop: tokens.spacing.sm, width: "100%", maxWidth: "260px" }}
+              onClick={() => { setSubmitError(null); void submit(); }}
+            >
+              Try Again
+            </Button>
+          )}
         </Card>
       </WizardLayout>
     );
@@ -1031,7 +1053,7 @@ export function Step6_Review(): JSX.Element {
             <Input
               placeholder="Type your full legal name"
               value={app.typedSignature || ""}
-              onChange={(e: unknown) => update({ typedSignature: e.target.value })}
+              onChange={(e) => update({ typedSignature: e.target.value })}
             />
             <p style={components.form.helperText}>
               By typing your name, you are providing a legally binding signature.
@@ -1044,7 +1066,7 @@ export function Step6_Review(): JSX.Element {
               <Input
                 placeholder="Type full legal name"
                 value={app.coApplicantSignature || ""}
-                onChange={(e: unknown) =>
+                onChange={(e) =>
                   update({ coApplicantSignature: e.target.value })
                 }
               />

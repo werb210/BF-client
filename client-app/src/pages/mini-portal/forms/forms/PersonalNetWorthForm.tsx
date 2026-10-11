@@ -5,6 +5,7 @@
 // Persists via the generic form-responses endpoint, key "net_worth_statement".
 import { useEffect, useMemo, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "net_worth_statement";
 
@@ -237,7 +238,7 @@ export default function PersonalNetWorthForm({
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Personal Statement of Affairs</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>
         Personal net worth declaration.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
       <label style={{ display: "block", fontSize: 14, margin: "8px 0" }}>

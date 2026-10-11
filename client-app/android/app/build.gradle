@@ -13,7 +13,9 @@ android {
         applicationId "com.boreal.client"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // BF_CLIENT_BUILD_NUMBER_v8 - CI sets GITHUB_RUN_NUMBER so every build
+        // uploads with a higher versionCode; local builds stay at 1.
+        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -24,8 +26,12 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // BF_CLIENT_ANDROID_R8_v119 - shrink/obfuscate release builds; keep rules
+            // for Capacitor and every installed plugin live in proguard-rules.pro.
+            // No signingConfig here: CI has no release keystore, so assembleRelease
+            // produces an unsigned APK. Sign for the store outside CI.
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

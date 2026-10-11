@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api";
+import { purgeSensitiveFromStorage, toStorableJson } from "@/state/sensitiveFields";
 
 export type Step = 1 | 3 | 4;
 export type StepData = Record<string, any>;
@@ -75,7 +76,10 @@ export function saveStepData(
 ) {
   if (!storage) return;
   try {
-    storage.setItem(getDraftKey(step), JSON.stringify(data));
+    // BF_CLIENT_v789_SENSITIVE_FIELDS - a draft never holds SIN/SSN, date of
+    // birth, home address or personal figures. Step 4's draft is the applicant
+    // record itself, so its address fields count as personal too.
+    storage.setItem(getDraftKey(step), toStorableJson(data, { person: step === 4 }));
   } catch {
     // ignore storage failures
   }
@@ -87,6 +91,7 @@ export function loadStepData(
 ): StepData | null {
   if (!storage) return null;
   try {
+    purgeSensitiveFromStorage(storage, getDraftKey(step), { person: step === 4 });
     const raw = storage.getItem(getDraftKey(step));
     if (!raw) return null;
     const parsed = JSON.parse(raw);

@@ -29,6 +29,9 @@ import LenderQaForm from "@/pages/mini-portal/forms/forms/LenderQaForm"; // BF_C
 import ProductQuestionsForm from "@/pages/mini-portal/forms/forms/ProductQuestionsForm"; // BF_CLIENT_PRODUCT_QUESTIONS_v290
 import SlimHeader from "@/components/SlimHeader";
 import AccountBar from "@/components/AccountBar"; // BF_CLIENT_CMP_LAYOUT_v631
+import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { ensureMicrophonePermission } from "@/lib/microphone"; // BF_CLIENT_v789_MIC_PERMISSION
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 // BF_CLIENT_ACTION_CENTER_v198
@@ -473,6 +476,14 @@ export default function MiniPortalPage() {
     if (!applicationId) return;
     setCallError(null);
     setCallState("connecting");
+    // BF_CLIENT_v789_MIC_PERMISSION - ask for the microphone before dialling, and
+    // say plainly what to do when it is refused.
+    const mic = await ensureMicrophonePermission();
+    if (!mic.ok) {
+      setCallError(mic.message);
+      setCallState("failed");
+      return;
+    }
     try {
       // BF_CLIENT_BLOCK_v308_CALLUS_TOKEN_URL_v1 — the token fetch was a relative
       // URL, which on the Static Web App host resolved to index.html (SPA fallback)
@@ -607,8 +618,56 @@ export default function MiniPortalPage() {
     }
   }
 
-  async function acceptOffer(offerId: string) { await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" }); setPendingOfferId(offerId); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o))); }
-  async function requestChanges(offerId: string) { const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : ""; if (reason === null) return; await apiCall(`/api/offers/${encodeURIComponent(offerId)}/request-changes`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }); setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o))); }
+  // BF_CLIENT_v789_OFFER_ACTIONS - Accept and Request Changes had no error
+  // handling: a failed call was an unhandled rejection, the button stayed live
+  // for a second (duplicate) tap, and the client was told nothing either way.
+  // One action per offer at a time; the result is said in words on the card.
+  const [offerBusy, setOfferBusy] = useState<{ id: string; action: "accept" | "changes" } | null>(null);
+  const [offerNotice, setOfferNotice] = useState<Record<string, { kind: "success" | "error"; text: string }>>({});
+  const offerBusyRef = useRef(false);
+  function offerErrorText(err: unknown, action: "accept" | "changes"): string {
+    const status = Number((err as { status?: unknown } | null)?.status ?? 0);
+    if (status === 401 || status === 403) return "Your session has ended. Please sign in again, then try once more.";
+    if (status === 409) return "This offer has changed since it was sent. Refresh the page to see the latest version.";
+    return action === "accept"
+      ? "We couldn't accept this offer just now. Please check your connection and try again, or message us."
+      : "We couldn't send your change request just now. Please check your connection and try again, or message us.";
+  }
+  async function acceptOffer(offerId: string) {
+    if (offerBusyRef.current) return;
+    offerBusyRef.current = true;
+    setOfferBusy({ id: offerId, action: "accept" });
+    setOfferNotice((cur) => { const next = { ...cur }; delete next[offerId]; return next; });
+    try {
+      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" });
+      setPendingOfferId(offerId);
+      setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o)));
+      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "success", text: "Offer accepted. We've sent it for staff confirmation." } }));
+    } catch (err) {
+      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "error", text: offerErrorText(err, "accept") } }));
+    } finally {
+      offerBusyRef.current = false;
+      setOfferBusy(null);
+    }
+  }
+  async function requestChanges(offerId: string) {
+    if (offerBusyRef.current) return;
+    const reason = typeof window !== "undefined" ? window.prompt("What changes would you like to request?") : "";
+    if (reason === null) return;
+    offerBusyRef.current = true;
+    setOfferBusy({ id: offerId, action: "changes" });
+    setOfferNotice((cur) => { const next = { ...cur }; delete next[offerId]; return next; });
+    try {
+      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/request-changes`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) });
+      setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o)));
+      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "success", text: "Change request sent. Your advisor will reply here." } }));
+    } catch (err) {
+      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "error", text: offerErrorText(err, "changes") } }));
+    } finally {
+      offerBusyRef.current = false;
+      setOfferBusy(null);
+    }
+  }
   async function sendMessage() {
     if ((!text.trim() && attachments.length === 0) || !applicationId) return;
     const next = text.trim();
@@ -627,8 +686,9 @@ export default function MiniPortalPage() {
     setDeleteStep(3);
     try {
       await apiCall("/api/client/account/delete", { method: "POST", body: { applicationId } });
-      try { window.localStorage.removeItem("client_session"); } catch { /* ignore */ }
-      navigate("/otp", { replace: true });
+      // BF_CLIENT_v789_SIGN_OUT_WIPE - a deleted account leaves nothing on the device either.
+      try { await wipeSession(); } catch { /* storage already cleared synchronously */ }
+      navigate("/", { replace: true });
     } catch {
       setDeleteErr("We couldn't delete your account just now. Please try again, or call us for help.");
       setDeleteStep(2);
@@ -1040,7 +1100,7 @@ export default function MiniPortalPage() {
               {(callState === "connecting" || callState === "ringing") && (
                 <div style={{ width: "100%", padding: 12, background: "#fef3c7", color: "#78350f", borderRadius: 10, textAlign: "center", fontSize: 14 }}>
                   {callState === "connecting" ? "Connecting…" : "Ringing staff…"}
-                  <button type="button" onClick={endCall} style={{ marginLeft: 12, padding: "4px 10px", border: 0, borderRadius: 6, background: "#ef4444", color: "#fff", cursor: "pointer" }}>Cancel</button>
+                  <button type="button" onClick={endCall} style={{ marginLeft: 12, padding: "4px 10px", border: 0, borderRadius: 6, background: A11Y_COLORS.dangerBg, color: A11Y_COLORS.dangerText, cursor: "pointer" }}>Cancel</button>
                 </div>
               )}
               {callState === "connected" && (
@@ -1125,13 +1185,22 @@ export default function MiniPortalPage() {
                           </label>
                         </div>
                       </div>
+                      {offerNotice[o.id] ? (
+                        <div
+                          data-testid="offer-notice"
+                          className={offerNotice[o.id].kind === "error" ? "mp-offer__notice mp-offer__notice--error" : "mp-offer__notice mp-offer__notice--success"}
+                          role={offerNotice[o.id].kind === "error" ? "alert" : "status"}
+                        >
+                          {offerNotice[o.id].text}
+                        </div>
+                      ) : null}
                       {expired ? null : o.status === "pending_acceptance" || pendingOfferId === o.id ? (
                         <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
                       ) : (
                         <div className="mp-offer__actions">
                           <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
-                          <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" onClick={() => void requestChanges(o.id)}>Request Changes</button>
-                          <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" onClick={() => void acceptOffer(o.id)}>Accept</button>
+                          <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "changes"} onClick={() => void requestChanges(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "changes" ? "Sending..." : "Request Changes"}</button>
+                          <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "accept"} onClick={() => void acceptOffer(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "accept" ? "Accepting..." : "Accept"}</button>
                         </div>
                       )}
                     </article>

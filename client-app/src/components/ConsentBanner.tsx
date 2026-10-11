@@ -1,6 +1,9 @@
 import { useEffect, useState, type ReactElement } from "react";
+import { initClarity } from "@/lib/clarity";
+import { isNativeBuild } from "@/lib/thirdPartyTags";
+import { CONSENT_KEY } from "@/utils/analytics";
 
-const KEY = "boreal_consent_v1";
+const KEY = CONSENT_KEY;
 
 function applyConsent(granted: boolean) {
   // BF_CLIENT_CONSENT_GTAG_FORMAT_FIX_v1 - Consent Mode commands MUST be pushed
@@ -25,6 +28,9 @@ export default function ConsentBanner(): ReactElement | null {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // BF_CLIENT_v789_ANALYTICS_GATES - the native apps load no analytics or
+    // advertising tags, so there is nothing to consent to.
+    if (isNativeBuild()) return;
     let stored: string | null = null;
     try { stored = localStorage.getItem(KEY); } catch { stored = null; }
     // BF_CLIENT_CONSENT_CARRYOVER_v710 - boreal.financial adds ?consent=granted|denied
@@ -38,7 +44,7 @@ export default function ConsentBanner(): ReactElement | null {
         stored = carried;
       }
     }
-    if (stored === "granted") { applyConsent(true); return; }
+    if (stored === "granted") { applyConsent(true); initClarity(); return; }
     if (stored === "denied") { applyConsent(false); return; }
     setShow(true);
   }, []);
@@ -48,6 +54,8 @@ export default function ConsentBanner(): ReactElement | null {
   const choose = (granted: boolean) => {
     try { localStorage.setItem(KEY, granted ? "granted" : "denied"); } catch { /* ignore */ }
     applyConsent(granted);
+    // BF_CLIENT_v789_ANALYTICS_GATES - session recording starts only on Accept.
+    if (granted) initClarity();
     setShow(false);
   };
 

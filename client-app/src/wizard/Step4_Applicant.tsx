@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { ApplicantData, OwnerData } from "../types/application";
 import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
@@ -80,15 +80,36 @@ export function underTenYearsAtAddress(since: unknown): boolean {
   return months < 120;
 }
 
-function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onSba = false, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }) {
+type FieldErrors = Record<string, string>;
+type TouchedFields = Record<string, boolean>;
+
+type OwnerFieldsProps = {
+  data: OwnerData;
+  setField: (key: string, value: unknown) => void;
+  setMany: (values: Partial<OwnerData>) => void;
+  deriveFullName?: boolean;
+  isAccordLOC: boolean;
+  onSba?: boolean;
+  countryCode: string;
+  regionCountry: "CA" | "US";
+  regionLabel: string;
+  postalLabel: string;
+  identityLabel: string;
+  errors?: FieldErrors;
+  touched?: TouchedFields;
+  onBlurField?: (key: string) => void;
+  fieldPrefix?: string;
+};
+
+function OwnerFields({ data, setField, setMany, deriveFullName = false, isAccordLOC, onSba = false, countryCode, regionCountry, regionLabel, postalLabel, identityLabel, errors = {}, touched = {}, onBlurField = () => {}, fieldPrefix = "" }: OwnerFieldsProps) {
   const L = components.form.label;
   // BF_CLIENT_STEP4_VALIDATION_v171 - an error shows only once the user has
   // left the field, so nothing turns red while they are still typing into it.
-  const showErr = (key) => (touched[key] && errors[key]) || "";
+  const showErr = (key: string) => (touched[key] && errors[key]) || "";
   const errStyle = { color: "#b3261e", fontSize: 13, marginTop: 4, lineHeight: 1.4 };
   // Field wrapper: labels the input for the scroll-to-first-error pass and
   // renders the message directly beneath it.
-  const F = (key, label, control) => (
+  const F = (key: string, label: string, control: ReactNode) => (
     <div data-field={`${fieldPrefix}${key}`}>
       <label style={L}>{label}</label>
       <div onBlur={() => onBlurField(key)}>{control}</div>
@@ -102,13 +123,13 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
   // full-width override on purpose: headings that span both columns read as
   // headings, and a wrapped address line is the field applicants mistype most.
   const grid = { display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr", gap: tokens.spacing.md };
-  const fmtMoney = (v) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
-  const yn = (key) => (
-    <select value={data[key] || ""} onChange={(e) => setField(key, e.target.value)}>
+  const fmtMoney = (v: unknown) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
+  const yn = (key: string) => (
+    <select value={String(data[key] ?? "")} onChange={(e) => setField(key, e.target.value)}>
       <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
     </select>
   );
-  const setName = (field, v) => {
+  const setName = (field: "firstName" | "lastName", v: string) => {
     if (deriveFullName) {
       const fn = field === "firstName" ? v : (data.firstName || "");
       const ln = field === "lastName" ? v : (data.lastName || "");
@@ -259,7 +280,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
                   onChange={(e) => setField("sba912Q8Detail", e.target.value)}
                   placeholder="Charge or offence, date, jurisdiction, and current status"
                   rows={3}
-                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                  style={{ ...components.inputs.base, width: "100%", resize: "vertical", fontFamily: "inherit" }}
                 />
               </div>
             )}
@@ -277,7 +298,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
                   onChange={(e) => setField("sba912Q9Detail", e.target.value)}
                   placeholder="Offence, date, jurisdiction, and the outcome"
                   rows={3}
-                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                  style={{ ...components.inputs.base, width: "100%", resize: "vertical", fontFamily: "inherit" }}
                 />
               </div>
             )}
@@ -294,7 +315,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
                   onChange={(e) => setField("sba912Q10Detail", e.target.value)}
                   placeholder="Amount outstanding, jurisdiction, and any arrangement in place"
                   rows={3}
-                  style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                  style={{ ...components.inputs.base, width: "100%", resize: "vertical", fontFamily: "inherit" }}
                 />
               </div>
             )}
@@ -347,12 +368,21 @@ function OwnerFields({ data, setField, setMany, deriveFullName, isAccordLOC, onS
 }
 
 // BF_CLIENT_BLOCK_v720_STEP4_REORDER_v1 — additional shareholders (3rd+).
-function AccordAdditionalShareholders({ list, onChange }) {
+type ShareholderRow = OwnerData & {
+  name?: string;
+  address?: string;
+  office?: string;
+  mobile?: string;
+  director?: string;
+  officer?: string;
+};
+
+function AccordAdditionalShareholders({ list, onChange }: { list: ShareholderRow[]; onChange: (next: ShareholderRow[]) => void }) {
   const L = components.form.label;
   const rows = Array.isArray(list) ? list : [];
-  const setRow = (i, k, v) => onChange(rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
+  const setRow = (i: number, k: keyof ShareholderRow, v: string) => onChange(rows.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
   const add = () => onChange([...rows, { name: "", address: "", office: "", mobile: "", email: "", ownership: "", director: "", officer: "" }]);
-  const remove = (i) => onChange(rows.filter((_, idx) => idx !== i));
+  const remove = (i: number) => onChange(rows.filter((_, idx) => idx !== i));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md }}>
       {rows.map((r, i) => (
@@ -377,7 +407,7 @@ function AccordAdditionalShareholders({ list, onChange }) {
 // BF_CLIENT_STEP4_VALIDATION_v171
 // Human labels so a message reads "Enter the date of birth" rather than
 // "dob is required".
-const LABELS = {
+const LABELS: Record<string, string> = {
   firstName: "first name",
   lastName: "last name",
   email: "email address",
@@ -391,8 +421,8 @@ const LABELS = {
   ownership: "ownership percentage",
 };
 
-function validateOwner(values, requiredFields, labels) {
-  const out = {};
+function validateOwner(values: OwnerData, requiredFields: readonly string[], labels: Record<string, string>): FieldErrors {
+  const out: FieldErrors = {};
   requiredFields.forEach((field) => {
     if (!Validate.required(values[field])) {
       out[field] = `Enter the ${labels[field] || field}.`;
@@ -409,14 +439,14 @@ function validateOwner(values, requiredFields, labels) {
 
 // Scrolling to the first problem matters most on mobile, where the summary
 // banner is off-screen by the time the user starts looking.
-function focusFirstError(errs, prefix) {
+function focusFirstError(errs: FieldErrors, prefix: string) {
   if (typeof document === "undefined") return;
   const first = Object.keys(errs)[0];
   if (!first) return;
   const el = document.querySelector(`[data-field="${prefix}${first}"]`);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
-  const input = el.querySelector("input, select, textarea");
+  const input = el.querySelector<HTMLElement>("input, select, textarea");
   if (input && typeof input.focus === "function") {
     window.setTimeout(() => input.focus({ preventScroll: true }), 300);
   }
@@ -430,14 +460,14 @@ export function Step4_Applicant() {
   const [saveError, setSaveError] = useState<string | null>(null);
   // BF_CLIENT_STEP4_VALIDATION_v171 - per-field errors, and which fields the
   // user has actually left. Nothing shows red until a field is touched.
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const handleBlurField = (key) => {
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<TouchedFields>({});
+  const handleBlurField = (key: string) => {
     setTouched((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
   };
 
-  const values = { ...app.applicant };
-  const partner = values.partner || {};
+  const values: ApplicantData = { ...app.applicant };
+  const partner: OwnerData = values.partner || {};
   const isAccordLOC = isAccordLOCApp(app); // BF_CLIENT_BLOCK_v710_ACCORD_STEP4_v1
   const countryCode = useMemo(
     () => getCountryCode(app.kyc.businessLocation),
@@ -445,7 +475,7 @@ export function Step4_Applicant() {
   );
   const identityLabel = getIdentityLabel(countryCode);
   // BF_CLIENT_SBA_912_STEP4_v197
-  const onSba = isSbaWizardPath(app as Record<string, unknown>); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+  const onSba = isSbaWizardPath(app); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
   const regionLabel = getRegionLabel(countryCode);
   const postalLabel = getPostalLabel(countryCode);
   const regionCountry = useMemo<"CA" | "US">(
@@ -582,7 +612,7 @@ export function Step4_Applicant() {
       // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
       // failures so the user sees what to fix instead of silently stuck.
       // eslint-disable-next-line no-console
-      console.error("[wizard] Step 4 schema validation failed", { values, zodErr });
+      console.error("[wizard] Step 4 schema validation failed", { fields: zodErr?.issues?.map((i: { path?: unknown[] }) => i.path?.join(".")) });
       const issue = zodErr?.issues?.[0];
       const field = Array.isArray(issue?.path) ? String(issue.path[0] ?? "") : "";
       const msg = field
@@ -737,7 +767,7 @@ export function Step4_Applicant() {
     // currentStep is set to 6 rather than 5 for a second reason: Step 6 runs
     // resolveStepGuard(app.currentStep, 6), and resolveStepGuard(4, 6) returns 5.
     // Leaving the step at 4 or 5 would bounce them straight back into Documents.
-    if (isSbaWizardPath(app as Record<string, unknown>)) { // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+    if (isSbaWizardPath(app)) { // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
       update({ currentStep: 6, documentsDeferred: true });
       navigate("/apply/step-6");
       return;
@@ -933,7 +963,7 @@ export function Step4_Applicant() {
               <OwnerFields errors={errors} touched={touched} onBlurField={handleBlurField}
                 data={values}
                 setField={setField}
-                setMany={(o) => update({ applicant: { ...values, ...o } })}
+                setMany={(o: Partial<OwnerData>) => update({ applicant: { ...values, ...o } })}
                 deriveFullName
                 isAccordLOC={isAccordLOC}
                 countryCode={countryCode}
@@ -960,7 +990,7 @@ export function Step4_Applicant() {
                 <OwnerFields
                   data={partner}
                   setField={setPartnerField}
-                  setMany={(o) => update({ applicant: { ...values, partner: { ...partner, ...o } } })}
+                  setMany={(o: Partial<OwnerData>) => update({ applicant: { ...values, partner: { ...partner, ...o } } })}
                   isAccordLOC={isAccordLOC}
                   countryCode={countryCode}
                   regionCountry={regionCountry}
@@ -975,7 +1005,7 @@ export function Step4_Applicant() {
             {impliesMultipleOwners(values) && (
               <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.md, marginTop: tokens.spacing.lg }}>
                 <div style={components.form.eyebrow}>Additional shareholders (optional)</div>
-                <AccordAdditionalShareholders list={values.additionalShareholders || []} onChange={(next) => setField("additionalShareholders", next)} />
+                <AccordAdditionalShareholders list={values.additionalShareholders || []} onChange={(next: ShareholderRow[]) => setField("additionalShareholders", next)} />
               </Card>
             )}
 

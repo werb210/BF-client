@@ -34,7 +34,7 @@
   {
     "step": 2,
     "title": "Product Category Selection",
-    "file": "src/wizard/Step2_ProductCategory.tsx",
+    "file": "src/wizard/Step2_Product.tsx",
     "fields": [
       "currentStep",
       "eligibleProducts",
@@ -59,7 +59,7 @@
   {
     "step": 3,
     "title": "Business Information",
-    "file": "src/wizard/Step3_BusinessDetails.tsx",
+    "file": "src/wizard/Step3_Business.tsx",
     "fields": [
       "currentStep",
       "business.businessName",
@@ -84,7 +84,7 @@
   {
     "step": 4,
     "title": "Applicant Information",
-    "file": "src/wizard/Step4_ApplicantInformation.tsx",
+    "file": "src/wizard/Step4_Applicant.tsx",
     "fields": [
       "currentStep",
       "applicant.firstName",
@@ -142,7 +142,7 @@
   {
     "step": 6,
     "title": "Terms & Typed Signature",
-    "file": "src/wizard/Step6_TermsSignature.tsx",
+    "file": "src/wizard/Step6_Review.tsx",
     "fields": [
       "currentStep",
       "signatureDate",

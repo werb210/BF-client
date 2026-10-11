@@ -4,6 +4,7 @@
 // Persists via the generic form-responses endpoint, key "equipment_list".
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "equipment_list";
 
@@ -118,7 +119,7 @@ export default function EquipmentCollateralForm({
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Equipment Collateral</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 12 }}>
         List the equipment offered as collateral. Include any existing lien and balance owing so the net value is clear.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
       <label style={lbl}>Business name</label>

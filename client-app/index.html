@@ -4,38 +4,10 @@
     <!-- BF_CLIENT_NOINDEX_v1 - the wizard is an app, not content. Google
          was indexing it as a duplicate of boreal.financial. -->
     <meta name="robots" content="noindex, nofollow" />
-    <!-- Consent Mode v2 — implied consent (CA); banner Decline revokes everything -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('consent', 'default', {
-        /* BF_CLIENT_ADS_CONSENT_v1: the ad keys used to default to 'denied'
-           while analytics_storage defaulted to 'granted' on the same implied-
-           consent basis - an inconsistency, not a decision. The Apply
-           conversion fires on wizard submit, before most applicants touch the
-           banner, so it landed in a denied state and Google recorded it as
-           modelled instead of attributed: 52 applications, 2 recorded
-           conversions. Declining in the banner still revokes all of these
-           (see ConsentBanner.tsx), and Quebec - where Law 25 applies - is
-           excluded from the Canada campaign. */
-        ad_storage: 'granted',
-        analytics_storage: 'granted',
-        ad_user_data: 'granted',
-        ad_personalization: 'denied', /* personalised remarketing stays off */
-        functionality_storage: 'granted',
-        security_storage: 'granted',
-        wait_for_update: 500
-      });
-    </script>
-    <!-- Google Tag Manager (GA4 G-D1Y4105RXP now configured inside the container) -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-W2WF8X9P');</script>
-    <!-- End Google Tag Manager -->
-    <!-- BF_CLIENT_ADS_CONVERSION_v1 - Google Ads base tag (AW-18248196538) for the Apply conversion. Coexists with GTM; consent-mode aware. -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18248196538"></script>
-    <script>
-      gtag('js', new Date());
-      gtag('config', 'AW-18248196538');
-    </script>
+    <!-- BF_CLIENT_v789_ANALYTICS_GATES - Consent Mode, Google Tag Manager and the
+         Google Ads tag are injected by src/lib/thirdPartyTags.ts, on the web only
+         (never in the native apps), so the Content-Security-Policy needs no inline
+         script. -->
     <meta charset="UTF-8" />
     <meta
       name="viewport"
@@ -46,15 +18,12 @@
          the apply step still paints immediately. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- display=swap keeps text visible while the faces load; the old
+         media="print" onload trick needed an inline handler the CSP forbids. -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Public+Sans:wght@400;500;600;700&display=swap"
-      media="print"
-      onload="this.media='all';this.onload=null;"
     />
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    </noscript>
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- BF_CLIENT_NOINDEX_v1
          Every route here is behind OTP, so there is nothing for Google to index, and
@@ -73,9 +42,6 @@
     <meta name="apple-mobile-web-app-title" content="Boreal" />
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W2WF8X9P" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

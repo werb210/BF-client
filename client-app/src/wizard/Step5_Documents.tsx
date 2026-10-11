@@ -1,9 +1,9 @@
-// @ts-nocheck
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 // BF_CLIENT_BLOCK_v106_DOC_REQUIREMENTS_UNION_v1
 import { fetchRequiredDocsUnion } from "../api/lenderProducts";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
+import type { ApplicationData } from "../types/application";
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
@@ -33,6 +33,7 @@ import { trackEvent } from "../utils/analytics";
 import { resolveStepGuard } from "./stepGuard";
 // BF_CLIENT_SBA_SKIP_2_AND_5_v213
 import { isSbaWizardPath } from "./wizardSchema";
+import { firstIncompleteStepBefore } from "./stepValidation";
 import { track } from "../utils/track";
 import { validateFile } from "@/utils/fileValidation";
 import { persistApplicationStep } from "./saveStepProgress";
@@ -60,9 +61,26 @@ import { duplicateMessage, findUploadedDuplicate, fingerprintFile, isServerDupli
 // product's required_documents array (unioned across legs in Step 5's
 // aggregateRequiredDocuments call). Bank statements and photo IDs are
 // added back globally by ensureAlwaysRequiredDocuments.
-function getDynamicRequirementRules() {
+function getDynamicRequirementRules(): LenderProductRequirement[] {
   return [];
 }
+
+// BF_CLIENT_BLOCK_v819_STEP5_OTHER - the optional catch-all upload row.
+const OTHER_DOCUMENT_ENTRY: LenderProductRequirement = { id: "other", document_type: "other", required: false };
+
+type RequirementRowProps = {
+  entry: LenderProductRequirement;
+  app: ApplicationData;
+  isUploading: boolean;
+  docError?: string;
+  docNotice?: string;
+  progress: number;
+  onPick: (entryId: string) => void;
+  onDrop: (docType: string, file: File | null) => Promise<void> | void;
+  onScan: (docType: string) => Promise<void> | void;
+  docStatus: DocumentStatus;
+  submitAttempted?: boolean;
+};
 
 const RequirementRow = memo(function RequirementRow({
   entry,
@@ -76,7 +94,7 @@ const RequirementRow = memo(function RequirementRow({
   onScan,
   docStatus,
   submitAttempted,
-}) {
+}: RequirementRowProps) {
   const docType = entry.document_type;
   return (
     <FileUploadCard
@@ -109,7 +127,7 @@ const RequirementRow = memo(function RequirementRow({
         multiple
         accept=".pdf,.docx,.xlsx,.png,.jpg"
         style={{ display: "none" }}
-        onChange={async (e: unknown) => {
+        onChange={async (e) => {
           // BF_CLIENT_WIZARD_STEP5_MULTIFILE_v60 — same logic as drop.
           const files = Array.from((e.target as HTMLInputElement).files || []);
           if (files.length === 0) {
@@ -224,15 +242,23 @@ export function Step5_Documents() {
   //
   // A guard at the destination also covers the routes Step 4 does not control -
   // a bookmark, a browser Back, or a resumed draft landing on /apply/step-5.
-  const onSbaPath = isSbaWizardPath(app as Record<string, unknown>); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+  const onSbaPath = isSbaWizardPath(app); // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
+  // BF_CLIENT_v789_STEP_GUARD - same guard as the wizard: Documents opens only
+  // once Steps 1-4 pass their own checks; otherwise go to the first incomplete one.
+  const blockedAt = firstIncompleteStepBefore(app, 5);
   useEffect(() => {
+    if (blockedAt == null) return;
+    navigate(`/apply/step-${blockedAt}`, { replace: true });
+  }, [blockedAt, navigate]);
+  useEffect(() => {
+    if (blockedAt != null) return;
     if (!onSbaPath) return;
     // Mirrors Step 4: documentsDeferred is what the Step 6 submit gate checks,
     // and currentStep must be 6 or resolveStepGuard bounces back to Documents.
     update({ currentStep: 6, documentsDeferred: true });
     navigate("/apply/step-6", { replace: true });
-  }, [onSbaPath]);
-  if (onSbaPath) return null;
+  }, [onSbaPath, blockedAt]);
+  if (blockedAt != null || onSbaPath) return null;
   return <Step5DocumentsBody />;
 }
 
@@ -323,13 +349,13 @@ function Step5DocumentsBody() {
     (async () => {
       try {
         const items = await fetchRequiredDocsUnion({
-          country: (app?.kyc as any)?.country || (app?.kyc as any)?.businessLocation,
-          product_category: (app?.productCategory as string | undefined) || (app?.kyc as any)?.lookingFor,
-          funding_amount: Number((app?.kyc as any)?.fundingAmount || 0) || undefined,
-          industry: (app?.kyc as any)?.industry,
-          revenue_last_12: Number((app?.kyc as any)?.annualRevenue || (app?.kyc as any)?.revenueLast12Months || 0) || undefined,
-          monthly_revenue: Number((app?.kyc as any)?.monthlyRevenue || 0) || undefined,
-          years_in_business: Number((app?.kyc as any)?.yearsInBusiness || 0) || undefined,
+          country: app?.kyc?.country || app?.kyc?.businessLocation,
+          product_category: (app?.productCategory as string | undefined) || app?.kyc?.lookingFor,
+          funding_amount: Number(app?.kyc?.fundingAmount || 0) || undefined,
+          industry: app?.kyc?.industry,
+          revenue_last_12: Number(app?.kyc?.annualRevenue || app?.kyc?.revenueLast12Months || 0) || undefined,
+          monthly_revenue: Number(app?.kyc?.monthlyRevenue || 0) || undefined,
+          years_in_business: Number(app?.kyc?.yearsInBusiness || 0) || undefined,
         });
         if (cancelled || items.length === 0) return;
         update({
@@ -386,13 +412,13 @@ function Step5DocumentsBody() {
       // BF_CLIENT_BLOCK_v89_ELIGIBILITY_RULES_AND_MULTI_LEG_v1
       // Multi-leg doc union: each leg of the application contributes
       // its own required-doc set; we union and dedupe.
-      const lookingFor = (app.kyc as any)?.lookingFor as
+      const lookingFor = app.kyc?.lookingFor as
         | "capital" | "equipment" | "capital_and_equipment" | undefined;
       const equipmentAmount = parseCurrencyAmount(
-        (app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount
+        app.kyc?.equipmentAmount ?? app.kyc.fundingAmount
       );
       const capitalAmount = parseCurrencyAmount(
-        (app.kyc as any)?.capitalAmount ?? app.kyc.fundingAmount
+        app.kyc?.capitalAmount ?? app.kyc.fundingAmount
       );
 
       type Leg = { category: string; amount: number };
@@ -451,19 +477,19 @@ function Step5DocumentsBody() {
         const commonParams = {
           country:
             countryCode ||
-            (app?.kyc as any)?.country ||
-            (app?.kyc as any)?.businessLocation,
-          industry: (app?.kyc as any)?.industry,
+            app?.kyc?.country ||
+            app?.kyc?.businessLocation,
+          industry: app?.kyc?.industry,
           revenue_last_12:
             Number(
-              (app?.kyc as any)?.annualRevenue ||
-                (app?.kyc as any)?.revenueLast12Months ||
+              app?.kyc?.annualRevenue ||
+                app?.kyc?.revenueLast12Months ||
                 0
             ) || undefined,
           monthly_revenue:
-            Number((app?.kyc as any)?.monthlyRevenue || 0) || undefined,
+            Number(app?.kyc?.monthlyRevenue || 0) || undefined,
           years_in_business:
-            Number((app?.kyc as any)?.yearsInBusiness || 0) || undefined,
+            Number(app?.kyc?.yearsInBusiness || 0) || undefined,
         };
         const legResults = await Promise.all(
           legs.map(async (leg) => {
@@ -1060,7 +1086,7 @@ function Step5DocumentsBody() {
             <div style={{ fontWeight: 600, color: tokens.colors.textSecondary }}>Other (optional)</div>
             <RequirementRow
               key="other"
-              entry={{ id: "other", document_type: "other", required: false } as any}
+              entry={OTHER_DOCUMENT_ENTRY}
               app={app}
               isUploading={Boolean(uploadingDocs["other"])}
               progress={uploadProgress["other"] || 0}

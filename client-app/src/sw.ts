@@ -1,9 +1,10 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { registerRoute, NavigationRoute } from "workbox-routing";
-import { NetworkFirst, StaleWhileRevalidate, CacheFirst } from "workbox-strategies";
+import { NetworkFirst, NetworkOnly, StaleWhileRevalidate, CacheFirst } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
+import { deleteAllCaches, isApiRequest, isPublicLenderProductsRequest } from "./pwa/swRoutes";
 
 declare const self: ServiceWorkerGlobalScope;
 const wbManifestToken = "__WB_MANIFEST";
@@ -22,16 +23,14 @@ registerRoute(new NavigationRoute(navHandler, {
   denylist: [/^\/api\//, /^\/_/, /\.\w+$/]
 }));
 
+// BF_CLIENT_v789_SW_NO_AUTH_CACHE
+// The public lender-products catalogue is the only API response kept on the
+// device. It gets its own cache: longer TTL (1h) + dedicated 50-entry pool.
+// StaleWhileRevalidate returns the cached catalog immediately and refreshes in
+// the background - applicants on slow mobile data never wait for it to load.
+// (BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1)
 registerRoute(
-  // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
-  // Lender-products gets its own cache: longer TTL (1h) + dedicated 50-entry
-  // pool so other /api GETs can't evict it. StaleWhileRevalidate returns the
-  // cached catalog immediately and refreshes in the background — applicants
-  // on slow / intermittent mobile data never wait for it to load.
-  ({ url, request }) =>
-    request.method === "GET" &&
-    (url.pathname === "/api/client/lender-products" ||
-      url.pathname.startsWith("/api/portal/lender-products")),
+  ({ url, request }) => isPublicLenderProductsRequest(url, request.method),
   new StaleWhileRevalidate({
     cacheName: "bf-client-lender-products",
     plugins: [
@@ -41,19 +40,10 @@ registerRoute(
   })
 );
 
-// Generic /api/* GET — every other backend GET. NetworkFirst with a 6s
-// network timeout, 100-entry cache, 5min TTL. Existing behavior preserved.
-registerRoute(
-  ({ url, request }) => request.method === "GET" && url.pathname.startsWith("/api/"),
-  new NetworkFirst({
-    cacheName: "bf-client-api",
-    networkTimeoutSeconds: 6,
-    plugins: [
-      new CacheableResponsePlugin({ statuses: [0, 200] }),
-      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 300 })
-    ]
-  })
-);
+// Registered before the image route so an authenticated image (a document
+// preview served from /api) is never cached either.
+// Workbox only routes GETs here; other methods are never cached by default.
+registerRoute(({ url }) => isApiRequest(url), new NetworkOnly(), "GET");
 
 registerRoute(
   ({ request }) => request.destination === "image",
@@ -71,8 +61,18 @@ registerRoute(
   new StaleWhileRevalidate({ cacheName: "bf-client-fonts" })
 );
 
+// BF_CLIENT_v789_SW_NO_AUTH_CACHE - sign-out posts CLEAR_CACHES so nothing the
+// signed-out client saw (including the precache and navigations) stays behind.
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+  if (event.data && event.data.type === "CLEAR_CACHES") {
+    const port = event.ports && event.ports[0];
+    event.waitUntil(
+      deleteAllCaches()
+        .then(() => port?.postMessage({ type: "CACHES_CLEARED" }))
+        .catch(() => port?.postMessage({ type: "CACHES_CLEAR_FAILED" }))
+    );
+  }
 });
 
 self.addEventListener("push", (event) => {

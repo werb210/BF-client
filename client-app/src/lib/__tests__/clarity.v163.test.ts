@@ -1,8 +1,15 @@
 // BF_CLIENT_CLARITY_LOADER_v163
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { initClarity } from "../clarity";
+import { CONSENT_KEY } from "@/utils/analytics";
+
+// BF_CLIENT_v789_ANALYTICS_GATES - recording needs an explicit Accept.
+beforeEach(() => {
+  localStorage.setItem(CONSENT_KEY, "granted");
+});
 
 afterEach(() => {
+  localStorage.clear();
   delete (window as any).clarity;
   document.querySelectorAll('script[src*="clarity.ms/tag"]').forEach((n) => n.remove());
   vi.restoreAllMocks();

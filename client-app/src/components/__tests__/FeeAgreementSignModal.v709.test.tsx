@@ -1,13 +1,20 @@
 // BF_CLIENT_FEE_AGREEMENT_v709
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 const apiCall = vi.fn();
 vi.mock("../../api/client", () => ({ apiCall: (...a: unknown[]) => apiCall(...a) }));
+vi.mock("@/auth/token", () => ({ getToken: () => "test" }));
+vi.mock("@/env", () => ({ ENV: { API_BASE: "http://localhost" } }));
+vi.mock("@/state/useApplicationStore", () => ({
+  useApplicationStore: () => ({ app: { applicationId: "app-1", applicationToken: "t" }, startNewApplication: vi.fn() }),
+}));
+vi.mock("@/native/appBadge", () => ({ setAppBadge: vi.fn(), clearAppBadge: vi.fn() }));
+vi.mock("@/native/clientWidget", () => ({ updateClientWidget: vi.fn(), clearClientWidget: vi.fn(), actionLine: () => "" }));
 
 import FeeAgreementSignModal from "../FeeAgreementSignModal";
+import MiniPortalPage from "@/pages/MiniPortalPage";
 
 beforeEach(() => { apiCall.mockReset(); });
 
@@ -43,9 +50,40 @@ describe("fee agreement signing window", () => {
     expect(apiCall).not.toHaveBeenCalled();
   });
 
-  it("the mini-portal opens it from the to-do action sign_fee_agreement", () => {
-    const src = readFileSync(join(process.cwd(), "src/pages/MiniPortalPage.tsx"), "utf-8");
-    expect(src).toContain('ctaAction === "sign_fee_agreement"');
-    expect(src).toContain("<FeeAgreementSignModal");
+  it("the mini-portal opens it from a sign_fee_agreement button", async () => {
+    apiCall.mockImplementation(async (url: string) => {
+      if (url.startsWith("/api/client/messages?")) {
+        return [{ id: "m1", direction: "outbound", body: "Please sign the fee agreement.", cta_label: "Review and sign", cta_action: "sign_fee_agreement" }];
+      }
+      if (url.startsWith("/api/client/fee-agreement/session")) return { status: "ready", url: "https://app.signnow.com/fee" };
+      return {};
+    });
+    render(
+      <MemoryRouter initialEntries={["/application/app-1"]}>
+        <Routes><Route path="/application/:id" element={<MiniPortalPage />} /></Routes>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByTitle("Sign your fee agreement")).toBeNull();
+    fireEvent.click(await screen.findByText("Review and sign"));
+    await waitFor(() => expect(screen.getByTitle("Sign your fee agreement")).toBeTruthy());
+    expect(apiCall.mock.calls.map((c) => c[0])).toContain("/api/client/fee-agreement/session?applicationId=app-1");
+  });
+
+  it("the mini-portal opens it from the to-do item whose action is sign_fee_agreement", async () => {
+    apiCall.mockImplementation(async (url: string) => {
+      if (url.includes("/action-center")) {
+        return { outstanding: [{ key: "fee_agreement", kind: "action", label: "Sign your fee agreement", urgent: false, action: "sign_fee_agreement" }], completed: [], outstandingCount: 1 };
+      }
+      if (url.startsWith("/api/client/fee-agreement/session")) return { status: "ready", url: "https://app.signnow.com/fee" };
+      return {};
+    });
+    render(
+      <MemoryRouter initialEntries={["/application/app-1"]}>
+        <Routes><Route path="/application/:id" element={<MiniPortalPage />} /></Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByTestId("action-center");
+    fireEvent.click(screen.getByText("Open"));
+    await waitFor(() => expect(screen.getByTitle("Sign your fee agreement")).toBeTruthy());
   });
 });

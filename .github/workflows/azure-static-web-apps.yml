@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  # BF_CLIENT_AUDIT_v110 - PRs run the same gates (lint, typecheck, tests,
+  # build, artifact checks); only the Deploy step is limited to push on main.
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
 
 jobs:
   build_and_deploy:
@@ -30,8 +36,12 @@ jobs:
       # BF_CLIENT_AUDIT_v748 - lint (rules of hooks) was never run.
       - name: Lint
         run: npm run lint   # BF_CLIENT_LINT_STEP_v749 - steps already run inside client-app
+      - name: Typecheck
+        run: npm run typecheck
       - name: Test
         run: npm run test:ci
+      - name: Source-grep test budget
+        run: node ../scripts/check-source-grep-tests.mjs
 
       - name: Build
         run: npm run build
@@ -40,10 +50,10 @@ jobs:
         working-directory: ./client-app
         run: |
           if [ ! -f dist/staticwebapp.config.json ]; then
-            echo "::error::dist/staticwebapp.config.json missing — SPA fallback will break (hard reloads will 404)."
+            echo "::error::dist/staticwebapp.config.json missing - SPA fallback will break (hard reloads will 404)."
             exit 1
           fi
-          echo "✓ staticwebapp.config.json present in dist/"
+          echo "OK staticwebapp.config.json present in dist/"
 
       - name: Check build size
         run: |
@@ -53,6 +63,7 @@ jobs:
           du -sh dist
 
       - name: Deploy (NO ORYX)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: Azure/static-web-apps-deploy@v1
         with:
           action: "upload"

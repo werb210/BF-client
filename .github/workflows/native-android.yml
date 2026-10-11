@@ -20,8 +20,12 @@ jobs:
         with:
           gradle-version: 8.14.3
       - run: npm ci
+      # BF_CLIENT_AUDIT_v110 - lint (rules of hooks) gates native builds too.
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm --prefix client-app run test:ci
+      - name: Source-grep test budget
+        run: node scripts/check-source-grep-tests.mjs
       - run: npm run build
       - run: npx cap sync android
         working-directory: client-app
@@ -33,6 +37,13 @@ jobs:
         env:
           GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON_BF }}
         run: node "$GITHUB_WORKSPACE/scripts/ensure-google-services.mjs"
+      # BF_CLIENT_BUILD_NUMBER_v8 - app/build.gradle reads versionCode from
+      # GITHUB_RUN_NUMBER (set by Actions); local builds default to 1.
       - name: Build Android debug APK
         run: gradle assembleDebug
+        working-directory: client-app/android
+      # BF_CLIENT_ANDROID_R8_v119 - build the minified release variant so R8 keep
+      # rules are exercised in CI. No release keystore in CI: output is unsigned.
+      - name: Build Android release APK (unsigned, R8)
+        run: gradle assembleRelease
         working-directory: client-app/android
