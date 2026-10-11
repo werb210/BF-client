@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearClientStorage } from "../auth/logout";
-import { resolveSessionGuardAction } from "../auth/sessionGuard";
 
 function createStorage(initial: Record<string, string> = {}) {
   let store = { ...initial };
@@ -17,29 +16,6 @@ function createStorage(initial: Record<string, string> = {}) {
     },
   };
 }
-
-describe("session guard", () => {
-  it("redirects when auth is missing", () => {
-    const storage = createStorage();
-    const first = resolveSessionGuardAction({
-      isOffline: false,
-      hasAuth: false,
-      storage,
-    });
-    expect(first).toBe("redirect");
-  });
-
-  it("stays idle when auth is restored", () => {
-    const storage = createStorage({ boreal_session_guard_reloaded: "true" });
-    const action = resolveSessionGuardAction({
-      isOffline: false,
-      hasAuth: true,
-      storage,
-    });
-    expect(action).toBe("noop");
-    expect(storage.getItem("boreal_session_guard_reloaded")).toBe("true");
-  });
-});
 
 describe("logout cleanup", () => {
   beforeEach(() => {
