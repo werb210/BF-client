@@ -236,7 +236,7 @@ export async function processQueue(): Promise<{ succeeded: number; remaining: nu
       // (observed: the same .docx re-posted for 12+ minutes). Drop it now.
       const st = (err as { status?: number })?.status;
       // v278: a signed-in upload that hits 401 waits for the applicant to sign in again.
-      if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429 && !(st === 401 && item.mode === "session")) {
+      if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429 && st !== 401 /* BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH */) {
         try {
           const wtx = db.transaction(STORE_NAME, "readwrite");
           if (item.id !== undefined) wtx.objectStore(STORE_NAME).delete(item.id);

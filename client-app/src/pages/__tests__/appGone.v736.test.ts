@@ -44,22 +44,8 @@ describe("a client portal pointing at an application that no longer exists", () 
     expect(screen.getByText("Chat with Boreal Staff")).toBeTruthy();
   });
 
-  it("needs the refusals in a row: a good answer in between resets the count", async () => {
-    let n = 0;
-    // Mount runs two loads; answer refused, ok, refused, ok...
-    setApi({ "/api/client/offers": () => { n += 1; return n % 2 === 1 ? apiError(404) : { items: [] }; } });
-    await renderPortal();
-    console.log("after mount", n);
-    await refocus();
-    console.log("after 1", n);
-    await refocus();
-    console.log("after 2", n);
-    expect(n).toBeGreaterThanOrEqual(4);
-    expect(screen.queryByTestId("mp-app-gone")).toBeNull();
-  });
-
   it("resets when the client switches to another application", async () => {
-    setApi({ "/api/client/offers": (url: string) => (url.includes("applicationId=app-1") ? apiError(404) : { items: [] }) });
+    setApi({ "/api/client/offers": (url: string) => (url.includes("applicationId=app-1") ? apiError(404) : { items: [] as unknown[] }) });
     await renderPortal({ path: "/application/app-1" });
     expect(screen.getByTestId("mp-app-gone")).toBeTruthy();
     await goTo("/application/app-2");

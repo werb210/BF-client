@@ -36,16 +36,16 @@ vi.mock("@/state/useApplicationStore", async () => {
     useApplicationStore: () => ({
       app: useSyncExternalStore(h.subscribe, () => h.state.app),
       update: h.update,
-      autosaveError: null,
+      autosaveError: null as string | null,
     }),
   };
 });
-vi.mock("@/auth/useAuth", () => ({ useAuth: () => ({ user: null, loading: false }) }));
+vi.mock("@/auth/useAuth", () => ({ useAuth: () => ({ user: null as unknown, loading: false }) }));
 vi.mock("@/api/clientApp", () => ({ ClientAppAPI: { update: vi.fn(async () => ({})), start: vi.fn(async () => ({})) } }));
 vi.mock("@/wizard/saveStepProgress", () => ({ persistApplicationStep: vi.fn(async () => undefined) }));
 vi.mock("@/utils/track", () => ({ track: vi.fn() }));
 vi.mock("@/utils/analytics", () => ({ trackEvent: vi.fn() }));
-vi.mock("@/components/StepHeader", () => ({ StepHeader: () => null }));
+vi.mock("@/components/StepHeader", () => ({ StepHeader: (): null => null }));
 vi.mock("@/components/WizardLayout", () => ({ WizardLayout: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
 
 import Step4_Applicant from "../Step4_Applicant";

@@ -24,8 +24,8 @@ describe("v325 — dead ErrorBoundaries removed (R5-#4)", () => {
 
 describe("v325 — Step 1 KYC token log gated to dev (R5-#5)", () => {
   const step1 = fs.readFileSync(path.resolve(root, "wizard/Step1_KYC.tsx"), "utf8");
-  it("token log is wrapped in import.meta.env.DEV check", () => {
-    expect(step1).toMatch(/if\s*\(\s*import\.meta\.env\.DEV\s*\)\s*\{[\s\S]+applicationToken/);
+  it("no longer logs the token at all (BF_CLIENT_v789 [105])", () => {
+    expect(step1).not.toMatch(/console\.(log|debug|info)\([^)]*(applicationToken|__token)/);
   });
   it("no bare console.log of applicationToken remains", () => {
     // Bare = not inside the DEV-guarded block. We approximate by

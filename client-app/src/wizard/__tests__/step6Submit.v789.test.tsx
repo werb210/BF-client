@@ -114,7 +114,7 @@ describe("Step 6 submit", () => {
     await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
 
     expect(api.submit).toHaveBeenCalledTimes(1);
-    const body = api.submit.mock.calls[0][1] as { app: { applicant: Record<string, unknown> } };
+    const body = (api.submit.mock.calls[0] as unknown[])[1] as { app: { applicant: Record<string, unknown> } };
     // The server still gets every answer, including the SIN.
     expect(body.app.applicant.ssn).toBe("046 454 286");
 

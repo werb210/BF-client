@@ -8,7 +8,7 @@ const apiRequest = vi.fn();
 vi.mock("@/lib/api", () => ({ apiRequest: (...args: unknown[]) => apiRequest(...args) }));
 vi.mock("react-router-dom", () => ({ useLocation: () => ({ pathname: "/apply/step-1" }) }));
 vi.mock("@/auth/useAuth", () => ({ useAuth: () => ({ user: { name: "Taylor Doe", phone: "4035551234", email: "t@example.com" } }) }));
-vi.mock("@/state/useApplicationStore", () => ({ useApplicationStore: () => ({ app: { applicationToken: null } }) }));
+vi.mock("@/state/useApplicationStore", () => ({ useApplicationStore: () => ({ app: { applicationToken: null as string | null } }) }));
 vi.mock("@/auth/token", () => ({ getToken: (): null => null }));
 
 import MayaWidget, { getOrCreateMayaSessionId, MAYA_SESSION_KEY } from "../MayaWidget";

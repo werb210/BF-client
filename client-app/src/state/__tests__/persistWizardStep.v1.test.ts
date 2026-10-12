@@ -63,6 +63,6 @@ describe("wizard step reaches the server", () => {
   });
 
   it("resets the guard for a new application", () => {
-    expect(src).toContain("_lastPersistedStep=undefined;");
+    expect(src).toMatch(/_lastPersistedStep\s*=\s*undefined;/);
   });
 });

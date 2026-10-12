@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
 import type { BusinessData } from "../types/application";
-import { missingAccordStep3Fields } from "./stepValidation";
+import { MEDIA_SKIP_STEP3, REQUIRED_STEP3, missingAccordStep3Fields } from "./stepValidation"; // BF_CLIENT_v790_SHARED_STEP_RULES
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
@@ -53,7 +53,7 @@ export function Step3_Business() {
   const onSbaStartupPath = isSbaWizardPath(app);
   // BF_CLIENT_MEDIA_PATH_v725 - employees and yearly revenue are not asked on a media file.
   const onMediaPath = isMediaWizardPath(app);
-  const MEDIA_SKIP = new Set<string>(["employees", "estimatedRevenue"]);
+  const MEDIA_SKIP = MEDIA_SKIP_STEP3; // BF_CLIENT_v790_SHARED_STEP_RULES
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -190,22 +190,8 @@ export function Step3_Business() {
   const isCompanyNameLocked = false;
   const isBusinessPhoneLocked = false;
 
-  const REQUIRED_STEP3 = [
-    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName removed from this
-    // list; it's optional on the form and is filled from businessName
-    // on continue when blank. companyName is mirrored from businessName
-    // on every keystroke, so requiring both is also redundant.
-    ["businessName", "business name"],
-    ["businessStructure", "business structure"],
-    ["address", "business address"],
-    ["city", "city"],
-    ["state", "province or state"],
-    ["zip", "postal or ZIP code"],
-    ["phone", "business phone"],
-    ["startDate", "business start date"],
-    ["employees", "number of employees"],
-    ["estimatedRevenue", "estimated yearly revenue"],
-  ] as const;
+  // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL - legalName stays optional. BF_CLIENT_v790_SHARED_STEP_RULES -
+  // REQUIRED_STEP3 now comes from stepValidation, the same list the URL guard and Step 6 use.
 
   const missingStep3 = onSbaStartupPath ? [] : [ // BF_CLIENT_SBA_REDUCED_v191
     ...REQUIRED_STEP3
@@ -243,19 +229,9 @@ export function Step3_Business() {
       nextValues = { ...nextValues, legalName: nextValues.businessName };
       update({ business: nextValues });
     }
-    const requiredFields = [
-      // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
-      "businessName",
-      "businessStructure",
-      "address",
-      "city",
-      "state",
-      "zip",
-      "phone",
-      "startDate",
-      "employees",
-      "estimatedRevenue",
-    ];
+    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
+    // BF_CLIENT_v790_SHARED_STEP_RULES - same list as the URL guard and Step 6.
+    const requiredFields: string[] = REQUIRED_STEP3.map(([field]) => field);
 
     const missing = !onSbaStartupPath && requiredFields.find(
       (field) => !(onMediaPath && MEDIA_SKIP.has(field)) && !Validate.required(nextValues[field])

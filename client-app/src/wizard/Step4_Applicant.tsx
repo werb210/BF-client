@@ -13,6 +13,9 @@ import { WizardLayout } from "../components/WizardLayout";
 import { RegionSelect } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
 import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_SBA_SKIP_DOCS_v192
+import { REQUIRED_OWNER_FIELDS } from "./stepValidation"; // BF_CLIENT_v790_SHARED_STEP_RULES
+
+const OWNER_FIELD_KEYS: string[] = REQUIRED_OWNER_FIELDS.map(([field]) => field);
 import {
   formatIdentityNumber,
   formatPhoneNumber,
@@ -623,22 +626,9 @@ export function Step4_Applicant() {
     }
     // BF_CLIENT_STEP4_VALIDATION_v171 - see validateOwner below; the banner is
     // kept as a summary but the field-level messages are what people act on.
-    const requiredFields = [
-      // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — fullName removed; first
-      // and last cover the same intent, and fullName is still
-      // auto-derived from them in the input onChange handlers.
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "street",
-      "city",
-      "state",
-      "zip",
-      "dob",
-      "ssn",
-      "ownership",
-    ];
+    // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — fullName removed; first and last cover
+    // the same intent. BF_CLIENT_v790_SHARED_STEP_RULES - shared with the URL guard.
+    const requiredFields: string[] = OWNER_FIELD_KEYS;
 
     // BF_CLIENT_STEP4_VALIDATION_v171 - collect EVERY problem, not just the
     // first, so the user fixes the form in one pass instead of submitting
@@ -777,34 +767,11 @@ export function Step4_Applicant() {
     // BF_CLIENT_WIZARD_LOCAL_FIRST_v58_STEP4_ANCHOR
   }
 
-  const baseRequiredFields = [
-    // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — see next() for rationale.
-    "firstName",
-    "lastName",
-    "email",
-    "phone",
-    "street",
-    "city",
-    "state",
-    "zip",
-    "dob",
-    "ssn",
-    "ownership",
-  ];
+  // BF_CLIENT_WIZARD_STEP4_FULLNAME_v59 — see next() for rationale.
+  // BF_CLIENT_v790_SHARED_STEP_RULES - same list the URL guard and Step 6 use.
+  const baseRequiredFields: string[] = OWNER_FIELD_KEYS;
 
-  const partnerRequiredFields = [
-    "firstName",
-    "lastName",
-    "email",
-    "phone",
-    "street",
-    "city",
-    "state",
-    "zip",
-    "dob",
-    "ssn",
-    "ownership",
-  ];
+  const partnerRequiredFields: string[] = OWNER_FIELD_KEYS; // BF_CLIENT_v790_SHARED_STEP_RULES
 
   // BF_CLIENT_DERIVE_MULTIPLE_OWNERS_v150
   // Owning less than all of it IS having other owners. A blank or zero field is

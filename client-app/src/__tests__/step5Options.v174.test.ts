@@ -25,7 +25,7 @@ vi.mock("@/api/clientApp", () => ({
     referAccountant: vi.fn(async () => ({})),
   },
 }));
-vi.mock("@/lender/productSync", () => ({ ProductSync: { load: () => [], sync: async () => [] } }));
+vi.mock("@/lender/productSync", () => ({ ProductSync: { load: (): unknown[] => [], sync: async (): Promise<unknown[]> => [] } }));
 vi.mock("@/wizard/saveStepProgress", () => ({ persistApplicationStep: vi.fn(async () => undefined) }));
 vi.mock("@/utils/analytics", () => ({ trackEvent: vi.fn() }));
 vi.mock("@/utils/track", () => ({ track: vi.fn() }));

@@ -168,7 +168,58 @@ function purgeStoredSensitiveData(): void {
   } catch { /* storage blocked */ }
 }
 
+// BF_CLIENT_v790_SESSION_SENSITIVE
+// SIN/SSN, date of birth and home address never go to localStorage (v789), but
+// the wizard has no way to fetch them back from the server, so a page refresh
+// on Step 5 or 6 sent the applicant back to Step 4 to type them again. A full
+// copy of the in-progress application is kept in sessionStorage instead: it
+// survives a refresh, is gone when the tab or app closes, and is removed on
+// submit and sign-out. It is only used when it belongs to the same application.
+export const SESSION_STATE_KEY = "application_state_session";
+
+function sessionStore(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionCopy(value: ApplicationData): void {
+  const store = sessionStore();
+  if (!store) return;
+  try { store.setItem(SESSION_STATE_KEY, JSON.stringify(value)); } catch { /* kept in memory */ }
+}
+
+export function clearSessionCopy(): void {
+  const store = sessionStore();
+  if (!store) return;
+  try { store.removeItem(SESSION_STATE_KEY); } catch { /* storage blocked */ }
+}
+
+function readSessionCopy(): ApplicationData | null {
+  const store = sessionStore();
+  if (!store) return null;
+  try {
+    const raw = store.getItem(SESSION_STATE_KEY);
+    return raw ? (JSON.parse(raw) as ApplicationData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function withSessionCopy(base: ApplicationData): ApplicationData {
+  const copy = readSessionCopy();
+  if (!copy || !base.applicationToken || copy.applicationToken !== base.applicationToken) return base;
+  return hydrateApplication(copy);
+}
+
 function loadInitialState(): ApplicationData {
+  return withSessionCopy(loadInitialStateFromDevice());
+}
+
+function loadInitialStateFromDevice(): ApplicationData {
   if (typeof window === "undefined") return emptyApp;
   purgeStoredSensitiveData();
   const bootToken = readBootToken();
@@ -207,6 +258,7 @@ let _persistSuspended = false;
 // storage goes through toStorableJson, which drops them.
 function _persist(): void {
   if (_persistSuspended) return;
+  writeSessionCopy(_state); // BF_CLIENT_v790_SESSION_SENSITIVE
   OfflineStore.save(_state);
   writeStored(APPLICATION_STATE_KEY, _state);
   writeStored(CLIENT_BACKUP_KEY, _state);
@@ -359,6 +411,7 @@ export function applyBrokerPrefill(token: string, part: Partial<ApplicationData>
  */
 export function clearStoredApplication(): void {
   _persistSuspended = true;
+  clearSessionCopy(); // BF_CLIENT_v790_SESSION_SENSITIVE
   OfflineStore.clear();
   const store = storage();
   if (store) {

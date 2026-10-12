@@ -6,6 +6,8 @@ import { join } from "node:path";
 const src = join(__dirname, "..", "..");
 const read = (p: string) => readFileSync(join(src, p), "utf8");
 const bar = read("components/AccountBar.tsx");
+// BF_CLIENT_v789_SIGN_OUT_WIPE - the token, Face ID and storage wipe lives in auth/logout.ts.
+const wipe = read("auth/logout.ts");
 
 const everySource = (dir: string): string[] =>
   readdirSync(join(src, dir), { withFileTypes: true }).flatMap((e) => {
@@ -18,22 +20,23 @@ describe("a client can end their session", () => {
   it("offers sign out on every signed-in screen", () => {
     // It lives in AccountBar, which RequireOTP renders above every guarded route.
     expect(bar).toContain("Sign out");
-    expect(bar).toContain("clearToken();");
+    expect(bar).toContain("await wipeSession();");
+    expect(wipe).toContain("clearToken();");
     expect(bar).toContain('navigate("/otp", { replace: true });');
   });
 
   it("revokes this device's Face ID credential too", () => {
     // Otherwise the next person taps "Sign in with Face ID" and is back inside
     // the account that just signed out.
-    expect(bar).toContain("disableDeviceSignIn()");
+    expect(wipe).toContain("disableDeviceSignIn()");
   });
 
   it("never lets a failed revoke keep someone signed in", () => {
-    const order = bar.indexOf("disableDeviceSignIn()");
-    const cleared = bar.indexOf("clearToken();");
+    const order = wipe.indexOf("disableDeviceSignIn()");
+    const cleared = wipe.indexOf("clearToken();");
     expect(order).toBeGreaterThan(-1);
     expect(cleared).toBeGreaterThan(order);
-    expect(bar).toContain(".catch(() => undefined)");
+    expect(wipe).toContain(".catch((): void => undefined)");
   });
 
   it("is reachable from somewhere a client actually goes", () => {

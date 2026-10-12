@@ -12,7 +12,7 @@ vi.mock("react-router-dom", async () => {
   return { ...actual, useNavigate: () => navigateMock };
 });
 // Face ID / passkey buttons are not part of the text-code flow.
-vi.mock("@/components/QuickSignIn", () => ({ default: () => null }));
+vi.mock("@/components/QuickSignIn", () => ({ default: (): null => null }));
 
 import PhoneOTPInline from "@/components/PhoneOTPInline";
 import { verifyAccountantOtp } from "../accountant";

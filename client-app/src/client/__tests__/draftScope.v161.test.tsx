@@ -8,7 +8,7 @@ vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { ...actual, useNavigate: () => navigateMock };
 });
-vi.mock("@/components/QuickSignIn", () => ({ default: () => null }));
+vi.mock("@/components/QuickSignIn", () => ({ default: (): null => null }));
 
 import PhoneOTPInline from "@/components/PhoneOTPInline";
 import {

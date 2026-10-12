@@ -88,7 +88,7 @@ describe("a response of the wrong shape", () => {
   it("is rejected rather than read blindly: no crash, it says it could not load", async () => {
     // The v198 crash: apiCall resolved with another endpoint's payload, so
     // data.outstanding was undefined and .length threw inside render.
-    for (const wrong of [{ items: [] }, { outstanding: [bank] }, null, "nope"]) {
+    for (const wrong of [{ items: [] as unknown[] }, { outstanding: [bank] }, null, "nope"]) {
       apiCall.mockReset();
       apiCall.mockResolvedValue(wrong);
       render(<ActionCenter applicationId="app-1" />);

@@ -10,7 +10,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 const getAttribution = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/attribution", () => ({ getAttribution }));
-vi.mock("../QuickSignIn", () => ({ default: () => null }));
+vi.mock("../QuickSignIn", () => ({ default: (): null => null }));
 vi.mock("@/client/autosave", () => ({ adoptAnonDrafts: vi.fn(), currentDraftScope: vi.fn(), purgeLegacyDrafts: vi.fn() }));
 vi.mock("../../state/useApplicationStore", () => ({ reconcileWithBootToken: vi.fn() }));
 

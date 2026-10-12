@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
-vi.mock("../QuickSignIn", () => ({ default: () => null }));
+vi.mock("../QuickSignIn", () => ({ default: (): null => null }));
 vi.mock("@/lib/attribution", () => ({ getAttribution: () => ({}) }));
 vi.mock("@/client/autosave", () => ({ adoptAnonDrafts: vi.fn(), currentDraftScope: vi.fn(), purgeLegacyDrafts: vi.fn() }));
 vi.mock("../../state/useApplicationStore", () => ({ reconcileWithBootToken: vi.fn() }));

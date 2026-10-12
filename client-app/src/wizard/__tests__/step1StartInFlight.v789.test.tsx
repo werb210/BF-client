@@ -45,7 +45,7 @@ vi.mock("../../client/autosave", () => ({
   clearDraft: vi.fn(),
 }));
 vi.mock("../../schemas/v1WizardSchema", () => ({ enforceV1StepSchema: vi.fn() }));
-vi.mock("../../lender/productSync", () => ({ ProductSync: { load: () => [], sync: async (): Promise<unknown[]> => [] } }));
+vi.mock("../../lender/productSync", () => ({ ProductSync: { load: (): unknown[] => [], sync: async (): Promise<unknown[]> => [] } }));
 
 import { Step1_KYC } from "../Step1_KYC";
 

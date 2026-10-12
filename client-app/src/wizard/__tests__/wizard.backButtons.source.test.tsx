@@ -11,15 +11,15 @@ vi.mock("react-router-dom", async () => ({
   useNavigate: () => h.navigate,
 }));
 vi.mock("@/state/useApplicationStore", () => ({
-  useApplicationStore: () => ({ app: h.app, update: h.update, autosaveError: null }),
+  useApplicationStore: () => ({ app: h.app, update: h.update, autosaveError: null as string | null }),
 }));
-vi.mock("@/auth/useAuth", () => ({ useAuth: () => ({ user: null, loading: false }) }));
+vi.mock("@/auth/useAuth", () => ({ useAuth: () => ({ user: null as unknown, loading: false }) }));
 vi.mock("@/api/clientApp", () => ({ ClientAppAPI: { update: vi.fn(async () => ({})), start: vi.fn(async () => ({})) } }));
 vi.mock("@/wizard/saveStepProgress", () => ({ persistApplicationStep: vi.fn(async () => undefined) }));
-vi.mock("@/wizard/NaicsPicker", () => ({ NaicsPicker: () => null }));
+vi.mock("@/wizard/NaicsPicker", () => ({ NaicsPicker: (): null => null }));
 vi.mock("@/utils/track", () => ({ track: vi.fn() }));
 vi.mock("@/utils/analytics", () => ({ trackEvent: vi.fn() }));
-vi.mock("@/components/StepHeader", () => ({ StepHeader: () => null }));
+vi.mock("@/components/StepHeader", () => ({ StepHeader: (): null => null }));
 vi.mock("@/components/WizardLayout", () => ({ WizardLayout: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
 
 import Step3_Business from "../Step3_Business";

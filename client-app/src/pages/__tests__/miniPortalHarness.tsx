@@ -107,12 +107,12 @@ vi.mock("@/components/AccountBar", async () => {
   const { createElement } = await import("react");
   return { default: () => createElement("div", { "data-testid": "account-bar" }, "Sign out") };
 });
-vi.mock("@/components/install/InstallAppPrompt", () => ({ default: () => null }));
-vi.mock("@/components/AppUpdateBanner", () => ({ default: () => null }));
-vi.mock("@/components/onboarding/FeatureTour", () => ({ default: () => null }));
-vi.mock("@/components/ReactivateHeldFiles", () => ({ default: () => null }));
+vi.mock("@/components/install/InstallAppPrompt", () => ({ default: (): null => null }));
+vi.mock("@/components/AppUpdateBanner", () => ({ default: (): null => null }));
+vi.mock("@/components/onboarding/FeatureTour", () => ({ default: (): null => null }));
+vi.mock("@/components/ReactivateHeldFiles", () => ({ default: (): null => null }));
 vi.mock("@/components/FeeAgreementSignModal", () => ({
-  default: (p: unknown) => { h.feeModal = p; return null; },
+  default: (p: unknown): null => { h.feeModal = p; return null; },
 }));
 vi.mock("@/components/ActionCenter", async () => {
   const { createElement } = await import("react");
@@ -220,7 +220,7 @@ export function currentLocation(): string {
   return h.location;
 }
 
-function LocationProbe() {
+function LocationProbe(): JSX.Element {
   const loc = useLocation();
   const navigate = useNavigate();
   h.location = loc.pathname + loc.search;

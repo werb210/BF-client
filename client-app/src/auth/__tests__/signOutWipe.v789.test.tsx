@@ -93,7 +93,7 @@ describe("Sign out", () => {
         <MemoryRouter initialEntries={["/portal"]}>
           <Routes>
             <Route path="/portal" element={<AccountBar />} />
-            <Route path="/" element={<div data-testid="landing">signed out</div>} />
+            <Route path="/otp" element={<div data-testid="landing">signed out</div>} />
           </Routes>
         </MemoryRouter>
       );

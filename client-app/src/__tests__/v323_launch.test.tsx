@@ -6,17 +6,12 @@ import * as path from "node:path";
 const root = path.resolve(__dirname, "..");
 const r = (p: string) => fs.readFileSync(path.resolve(root, p), "utf8");
 
-const otpInput = r("components/OtpInput.tsx");
 const thread = r("components/messaging/MessageThread.tsx");
 const docPicker = r("components/DocPicker.tsx");
 // BF_CLIENT_MENU_PORTAL_v729 - MobileHeader was never mounted; the live mobile menu is LandingHeader.
 const mobileHeader = r("components/landing/LandingHeader.tsx");
 
-describe("v323 — OTP pattern (C)", () => {
-  it("OtpInput defensively coerces multi-digit pattern", () => {
-    expect(otpInput).toMatch(/effectivePattern/);
-  });
-});
+// OtpInput.tsx was never imported anywhere and was deleted as dead code (BF_CLIENT_v789 [116]).
 
 describe("v323 — MessageThread auto-scroll (B)", () => {
   it("uses scrollIntoView on the last item", () => {

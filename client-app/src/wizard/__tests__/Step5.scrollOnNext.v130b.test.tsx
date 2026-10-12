@@ -87,7 +87,9 @@ describe("Step 5 does not scroll the page on upload", () => {
   });
 
   async function flush(): Promise<void> {
-    for (let i = 0; i < 6; i += 1) await act(async () => { await Promise.resolve(); });
+    // Uploads hash the file (crypto.subtle) before posting, which settles on a
+    // later macrotask than a bare microtask flush reaches.
+    for (let i = 0; i < 6; i += 1) await act(async () => { await new Promise((r) => setTimeout(r, 5)); });
   }
 
   async function renderUploadList(): Promise<void> {

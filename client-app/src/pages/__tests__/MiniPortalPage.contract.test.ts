@@ -10,7 +10,7 @@ import { apiCallsTo, jsonResponse, portalMocks, renderPortal, setApi, setFetch, 
 const SERVER_OFFER = {
   id: "off-7",
   lender_name: "Northern Bank",
-  lender_logo_url: null,
+  lender_logo_url: null as string | null,
   amount: 75000,
   rate_factor: "1.32",
   term: "3",

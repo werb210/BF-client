@@ -40,7 +40,7 @@ export default function AccountBar() {
       // A failed cache or push step must never keep someone signed in; the
       // tokens and storage are cleared synchronously before anything awaits.
     }
-    navigate("/", { replace: true });
+    navigate("/otp", { replace: true }); // BF_CLIENT_v790 - same destination as before v789
   };
 
   return (

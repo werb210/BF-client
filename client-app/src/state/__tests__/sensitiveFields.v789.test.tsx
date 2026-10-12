@@ -18,6 +18,7 @@ import { loadStepData, saveStepData } from "../../client/autosave";
 import {
   __resetSingletonForTests,
   clearStoredApplication,
+  SESSION_STATE_KEY,
   useApplicationStore,
 } from "../useApplicationStore";
 import type { ApplicationData } from "@/types/application";
@@ -26,12 +27,14 @@ const SIN = "046 454 286";
 const DOB = "1985-04-02";
 const HOME = "1 Home St";
 
+// BF_CLIENT_v790_SESSION_SENSITIVE - the one allowed copy is the session-only
+// application_state_session, which survives a refresh and dies with the tab.
 function everythingStored(): string {
   const parts: string[] = [];
   for (const storage of [localStorage, sessionStorage]) {
     for (let i = 0; i < storage.length; i += 1) {
       const key = storage.key(i);
-      if (key) parts.push(`${key}=${storage.getItem(key)}`);
+      if (key && !(storage === sessionStorage && key === SESSION_STATE_KEY)) parts.push(`${key}=${storage.getItem(key)}`);
     }
   }
   return parts.join("\n");
@@ -149,6 +152,44 @@ describe("the application store", () => {
     act(() => store().update({ documentReviewComplete: true }));
     expect(localStorage.getItem("application_state")).toBeNull();
     expect(everythingStored()).not.toContain("Taylor");
+    unmount();
+  });
+});
+
+describe("refresh mid-wizard (BF_CLIENT_v790_SESSION_SENSITIVE)", () => {
+  it("restores the SIN, birth date and home street after a reload in the same tab", () => {
+    const { store, unmount } = mountStore();
+    act(() =>
+      store().update({
+        applicationToken: "11111111-1111-4111-8111-111111111111",
+        applicant: { firstName: "Taylor", ssn: SIN, dob: DOB, street: HOME },
+      })
+    );
+    unmount();
+    __resetSingletonForTests();
+    const again = mountStore();
+    expect(again.store().app.applicant.ssn).toBe(SIN);
+    expect(again.store().app.applicant.dob).toBe(DOB);
+    expect(again.store().app.applicant.street).toBe(HOME);
+    expect(localStorage.getItem("application_state")).not.toContain(SIN);
+    again.unmount();
+  });
+
+  it("ignores a session copy that belongs to a different application", () => {
+    sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify({ applicationToken: "other", applicant: { ssn: SIN } }));
+    localStorage.setItem("application_state", JSON.stringify({ applicationToken: "mine", applicant: { firstName: "Taylor" }, kyc: {} }));
+    __resetSingletonForTests();
+    const { store, unmount } = mountStore();
+    expect(store().app.applicant.ssn).toBeUndefined();
+    unmount();
+  });
+
+  it("is removed on submit", () => {
+    const { store, unmount } = mountStore();
+    act(() => store().update({ applicationToken: "t", applicant: { ssn: SIN } }));
+    expect(sessionStorage.getItem(SESSION_STATE_KEY)).toContain(SIN);
+    act(() => clearStoredApplication());
+    expect(sessionStorage.getItem(SESSION_STATE_KEY)).toBeNull();
     unmount();
   });
 });
