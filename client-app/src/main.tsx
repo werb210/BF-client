@@ -14,6 +14,7 @@ import "./styles/global.css";
 import App from "./App";
 import { captureAttribution } from "./lib/attribution";
 import { initClarity } from "./lib/clarity"; // BF_CLIENT_CLARITY_LOADER_v163
+import { loadGoogleTags } from "./lib/thirdPartyTags"; // BF_CLIENT_v789_ANALYTICS_GATES
 import { startJourney } from "./lib/journey"; // BF_CLIENT_JOURNEY_BOOT_v185
 import { initClientBehaviour } from "./lib/clientBehaviour"; // BF_CLIENT_BEHAVIOUR_v707
 import { validateEnv } from "./env";
@@ -33,6 +34,10 @@ try {
   console.error("ENV ERROR IGNORED:", err);
 }
 
+// BF_CLIENT_v789_ANALYTICS_GATES - Consent Mode defaults, GTM and the Google Ads
+// tag, web only. Runs before anything can push to dataLayer.
+loadGoogleTags();
+
 // BF_CLIENT_JOURNEY_BOOT_v185 - ORDER MATTERS. startJourney mints and persists the
 // journey session id and creates the server-side visitor_sessions row. It must run
 // first so captureAttribution finds the id and forwards it to the server at start.
@@ -48,9 +53,9 @@ try {
 startJourney();
 initClientBehaviour(); // BF_CLIENT_BEHAVIOUR_v707
 captureAttribution(); // BF_CLIENT_BLOCK_v_ATTRIBUTION_v1 - first-touch, before render
-initClarity(); // BF_CLIENT_CLARITY_LOADER_v163 - start session recording early
-
-console.log("NEW BUILD LIVE:", new Date().toISOString());
+// BF_CLIENT_CLARITY_LOADER_v163 / BF_CLIENT_v789_ANALYTICS_GATES - starts only
+// when analytics were already accepted; ConsentBanner starts it on Accept.
+initClarity();
 
 // BF_LOCAL_FIRST_v35 — auto-retry pending submits on online/interval/boot.
 startPendingSubmitWatcher();

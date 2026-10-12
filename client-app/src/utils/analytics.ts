@@ -1,8 +1,7 @@
 import { getPersistedAttribution } from "./attribution";
-import { apiCall } from "@/api/client";
-import { API_ENDPOINTS_CONTRACT } from "@/contracts";
 import { isDevMode } from "@/config/env";
-import { normalizePhone } from "@/utils/normalizePhone";
+import { ENV } from "@/env";
+import { endpoints } from "@/lib/endpoints";
 
 export function track(event: string) {
   if (isDevMode()) {
@@ -10,24 +9,11 @@ export function track(event: string) {
   }
 }
 
-// BF_CLIENT_CLARITY_IDENTIFY_v162
-// Tag the Clarity session with the applicant's verified phone so staff can find
-// this person's recording in the Clarity dashboard from their CRM record.
-// `identify` sets the searchable custom id; `set` adds a filterable tag under a
-// stable key. No-op (and never throws) when Clarity is not loaded on the page.
-export function identifyClarity(phone: string): void {
-  try {
-    const c =
-      typeof window !== "undefined" ? (window as any).clarity : undefined;
-    if (typeof c !== "function") return;
-    const digits = String(phone ?? "").replace(/[^0-9]/g, "");
-    if (!digits) return;
-    c("identify", digits);
-    c("set", "phone", digits);
-  } catch {
-    // Analytics must never interrupt the applicant flow.
-  }
-}
+// BF_CLIENT_v789_ANALYTICS_GATES - identifyClarity (BF_CLIENT_CLARITY_IDENTIFY_v162)
+// tagged every Clarity recording with the applicant's phone number. It is gone:
+// no phone number is sent to Clarity or any other analytics. Staff reach a
+// recording from the CRM through the playback URL sent at application start
+// (BF_CLIENT_CLARITY_PLAYBACK_v170).
 
 // ---- Client Attribution Sync ----
 
@@ -137,22 +123,43 @@ export const trackEvent = (
     window.clarity("set", eventName, payload);
   }
 
-  void apiCall(API_ENDPOINTS_CONTRACT.ANALYTICS, {
-    method: "POST",
-    body: JSON.stringify({
-      event_name: eventName,
-      payload: {
-        session_id: getSessionId(),
-        ...attribution,
-        ...payload,
-      },
-    }),
-  }).catch((err) => {
-    if (isDevMode()) {
-      void err;
-    }
+  void postAnalyticsEvent({
+    event_name: eventName,
+    payload: {
+      session_id: getSessionId(),
+      ...attribution,
+      ...payload,
+    },
   });
 };
+
+// BF_CLIENT_v789_ANALYTICS_ENDPOINT - first-party events go to the API origin
+// (https://server.boreal.financial/api/analytics, mounted by BF-Server v789),
+// not to a path relative to wherever the app is served (the native apps serve
+// it from capacitor:// and https://localhost). A failure is never shown to the
+// applicant and never retried; in development it is logged with console.warn.
+export function analyticsUrl(): string {
+  const base = String(ENV.API_BASE || "https://server.boreal.financial").replace(/\/+$/, "");
+  return `${base}${endpoints.analytics}`;
+}
+
+export async function postAnalyticsEvent(body: Record<string, unknown>): Promise<void> {
+  try {
+    const res = await fetch(analyticsUrl(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      keepalive: true,
+    });
+    if (!res.ok && isDevMode()) {
+      console.warn("[analytics] event rejected", res.status);
+    }
+  } catch (err) {
+    if (isDevMode()) {
+      console.warn("[analytics] event not sent", err);
+    }
+  }
+}
 
 export const trackConversion = (
   eventName: string,
@@ -193,22 +200,12 @@ export const buildAdsConversionPayload = (
 
 // BF_CLIENT_ADS_ENHANCED_CONVERSIONS_v3
 // Google requires normalized contact data for enhanced conversion matching.
-// A malformed phone must not prevent the remaining user data from being sent.
-export const buildAdsUserData = (
-  email?: string | null,
-  phone?: string | null
-): Record<string, string> => {
+// BF_CLIENT_v789_ANALYTICS_GATES - the email only: a phone number is never sent
+// to Google Ads, Clarity or any other analytics.
+export const buildAdsUserData = (email?: string | null): Record<string, string> => {
   const userData: Record<string, string> = {};
   const cleanEmail = String(email || "").trim().toLowerCase();
   if (cleanEmail.includes("@")) userData.email = cleanEmail;
-
-  try {
-    const e164 = normalizePhone(String(phone || ""));
-    if (e164) userData.phone_number = e164;
-  } catch {
-    // Preserve valid fields when the optional phone number is malformed.
-  }
-
   return userData;
 };
 

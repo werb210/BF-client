@@ -31,12 +31,16 @@ describe("background uploads", () => {
     expect(publicRequest.url).toBe("https://s/api/documents/public-upload");
     expect(publicRequest.fields.application_token).toBe("tok");
     expect(publicRequest.headers.Authorization).toBeUndefined();
+    // BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH - a signed-in applicant's token rides along.
+    const signedIn = requestFor(item({ mode: "public" }) as any, "jwt-1", "https://s");
+    expect(signedIn.headers.Authorization).toBe("Bearer jwt-1");
   });
 
   it("classifies native upload outcomes", () => {
     expect(outcomeFor(200, "session")).toBe("done");
     expect(outcomeFor(409, "public")).toBe("done");
     expect(outcomeFor(401, "session")).toBe("retry");
+    expect(outcomeFor(401, "public")).toBe("retry"); // BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH
     expect(outcomeFor(415, "public")).toBe("drop");
     expect(outcomeFor(0, "public")).toBe("retry");
     expect(outcomeFor(503, "session")).toBe("retry");

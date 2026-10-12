@@ -9,15 +9,16 @@ describe("the error messages can now actually appear", () => {
   it("Continue is no longer disabled, so its click handler runs", () => {
     // disabled suppressed the click, and the click was the only thing that set
     // showErrors - so every per-field message was unreachable.
-    const i = step1.indexOf('console.log("[wizard] Continue clicked"');
-    const button = step1.slice(i, i + 1400);
-    expect(button).not.toMatch(/(?<!aria-)disabled=\{!isValid\}/);
-    expect(button).toContain("aria-disabled={!isValid}");
+    // BF_CLIENT_v789 - the click log was removed with the other debug logging.
+    const i = step1.indexOf('data-testid="step1-continue"');
+    const button = step1.slice(Math.max(0, i - 1400), i + 200);
+    expect(button).not.toMatch(/(?<!aria-)disabled=\{!isValid/);
+    expect(button).toContain("aria-disabled={!isValid || starting}");
   });
 
   it("still refuses to advance", () => {
     expect(step1).toContain("if (!isValid) {");
-    expect(step1).toContain('console.warn("[wizard] Continue blocked by isValid=false")');
+    expect(step1).toContain("setShowErrors(true);\n              if (!isValid) {");
   });
 
   it("still reveals the per-field messages", () => {

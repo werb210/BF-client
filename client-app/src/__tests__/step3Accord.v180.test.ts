@@ -3,7 +3,8 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 
-const SRC = fs.readFileSync("src/wizard/Step3_Business.tsx", "utf8");
+// BF_CLIENT_v789_STEP_GUARD - the Accord rules moved to stepValidation (shared with Step 3 and the URL guard).
+const SRC = fs.readFileSync("src/wizard/Step3_Business.tsx", "utf8") + fs.readFileSync("src/wizard/stepValidation.ts", "utf8");
 
 describe("Accord fields report like every other field", () => {
   it("returns what is missing, not just whether", () => {

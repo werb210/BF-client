@@ -34,9 +34,9 @@ describe("contrast on the new gold surfaces", () => {
 
 describe("semantic colours survive", () => {
   it("keeps call, hang-up, error and warning", () => {
-    expect(CSS).toContain("#16a34a");
-    expect(CSS).toContain("#ef4444");
-    expect(CSS).toContain("#dc2626");
+    expect(CSS).toContain("#047857"); // BF_CLIENT_v789 contrast: call green darkened to pass 4.5:1
+    expect(CSS).toContain("#b91c1c"); // BF_CLIENT_v789 contrast: hang-up red darkened
+    expect(CSS).toMatch(/\.mp-offer--danger \.mp-offer__expires\{color:#[0-9a-fA-F]{6}\}/); // BF_CLIENT_v789 contrast
     expect(CSS).toContain("#f59e0b");
   });
 });

@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FaceIdSignInToggle from "@/components/FaceIdSignInToggle";
 import PasskeySignInToggle from "@/components/PasskeySignInToggle"; // BF_CLIENT_BLOCK_v600
-import { clearToken } from "@/api/auth"; // BF_CLIENT_SIGN_OUT_v345
+import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
 
 export default function AccountBar() {
   // BF_CLIENT_SIGN_OUT_v345
@@ -25,22 +25,22 @@ export default function AccountBar() {
   // Signing out also revokes this device's Face ID credential. Leaving it behind
   // would let the next person press "Sign in with Face ID" and walk straight
   // back into the account that just signed out.
+  //
+  // BF_CLIENT_v789_SIGN_OUT_WIPE - and it removes everything else the session
+  // left on the device: application token, saved profiles, drafts, the outbox,
+  // the service worker caches and the push registration (auth/logout.ts).
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
   const signOut = async () => {
     setSigningOut(true);
     try {
-      const m = await import("@/native/deviceSignIn");
-      // Semantically equivalent to `.catch(() => undefined)`, with an explicit
-      // return type for projects that enable TypeScript's noImplicitAny check.
-      await m.disableDeviceSignIn().catch((): void => undefined);
+      await wipeSession();
     } catch {
-      // No credential to revoke, or the plugin is unavailable on this platform.
-      // Never let that keep someone signed in.
+      // A failed cache or push step must never keep someone signed in; the
+      // tokens and storage are cleared synchronously before anything awaits.
     }
-    clearToken();
-    navigate("/otp", { replace: true });
+    navigate("/otp", { replace: true }); // BF_CLIENT_v790 - same destination as before v789
   };
 
   return (

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -121,10 +120,10 @@ export function Step2_Product() {
   const amountValue = useMemo(() => {
     const fundingAmt = parseCurrencyAmount(app.kyc.fundingAmount);
     if (Number.isFinite(fundingAmt) && fundingAmt > 0) return fundingAmt;
-    const equipAmt = parseCurrencyAmount((app.kyc as any)?.equipmentAmount);
+    const equipAmt = parseCurrencyAmount(app.kyc?.equipmentAmount);
     if (Number.isFinite(equipAmt) && equipAmt > 0) return equipAmt;
     return 0;
-  }, [app.kyc.fundingAmount, (app.kyc as any)?.equipmentAmount]);
+  }, [app.kyc.fundingAmount, app.kyc?.equipmentAmount]);
   const amountValid = selectedProduct
     ? isAmountWithinRange(
         amountValue,
@@ -197,7 +196,7 @@ export function Step2_Product() {
         businessLocation: app.kyc.businessLocation,
         accountsReceivableBalance: app.kyc.accountsReceivable,
         // BF_CREDIT_BAND_v36 — pass through applicant's credit band.
-        creditScoreRange: (app.applicant as any)?.creditScoreRange ?? null,
+        creditScoreRange: app.applicant?.creditScoreRange ?? null,
       },
       app.matchPercentages
     );
@@ -258,7 +257,7 @@ export function Step2_Product() {
       setLoadError(null);
 
       try {
-        const rows = await getClientLenderProducts(((app?.kyc as any)?.country || (app?.kyc as any)?.businessLocation) as string | undefined);
+        const rows = await getClientLenderProducts((app?.kyc?.country || app?.kyc?.businessLocation) as string | undefined);
         const activeProducts = filterActiveProducts(
           rows as ActiveProduct[]
         ).sort((a, b) => a.name.localeCompare(b.name));
@@ -413,9 +412,7 @@ export function Step2_Product() {
     }).catch(() => {});
     setSaveError(null);
     track("step_completed", { step: 2 });
-    console.log("[wizard] Step2.goNext: about to advance", { selectedCategory, applicationToken: app.applicationToken, currentStep: app.currentStep });
     update({ currentStep: 3 });
-    console.log("[wizard] Step2.goNext: update({currentStep:3}) returned, calling navigate now");
     navigate("/apply/step-3", {
       state: {
         bucket: bucket || category,
@@ -783,8 +780,8 @@ export function Step2_Product() {
           Capital&Equipment users do not see this — their capital leg
           already serves the same purpose. */}
       {(() => {
-        const lf = String((app.kyc as any)?.lookingFor ?? "").toUpperCase();
-        const equipAmt = Number((app.kyc as any)?.equipmentAmount ?? app.kyc.fundingAmount ?? 0);
+        const lf = String(app.kyc?.lookingFor ?? "").toUpperCase();
+        const equipAmt = Number(app.kyc?.equipmentAmount ?? app.kyc.fundingAmount ?? 0);
         const isEquipmentOnly = lf === "EQUIPMENT" || lf === "EQUIPMENT_FINANCING";
         if (!isEquipmentOnly || equipAmt <= 0) return null;
         return (

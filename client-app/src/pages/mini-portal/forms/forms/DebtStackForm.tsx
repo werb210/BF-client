@@ -4,6 +4,7 @@
 // Persists via the generic form-responses endpoint, key "debt_stack".
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 const FORM_KEY = "debt_stack";
 
@@ -113,7 +114,7 @@ export default function DebtStackForm({
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Debt Schedule</h2>
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 12 }}>
         List the business's existing debts and obligations (term loans, lines of credit, leases, etc.).
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Submitted</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
       <label style={lbl}>Business / client name</label>

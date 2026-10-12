@@ -32,6 +32,10 @@ export function requestFor(item: QueuedUploadDescriptor, token: string | null, a
       headers,
     };
   }
+  // BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH - BF-Server v789 requires the applicant's
+  // sign-in token on /api/documents/public-upload; without it a queued wizard
+  // upload handed to the phone was refused (401) and dropped.
+  if (token) headers.Authorization = `Bearer ${token}`;
   const fields: Record<string, string> = {
     [DOCUMENT_CONTRACT.FIELDS.CATEGORY]: item.documentType,
     [DOCUMENT_CONTRACT.FIELDS.APPLICATION_ID]: String(item.applicationId ?? ""),
@@ -43,7 +47,7 @@ export function requestFor(item: QueuedUploadDescriptor, token: string | null, a
 /** done: received (including duplicate); drop: permanently refused; retry: return to the web queue. */
 export function outcomeFor(status: number, mode: QueuedUploadDescriptor["mode"]): "done" | "drop" | "retry" {
   if ((status >= 200 && status < 300) || status === 409) return "done";
-  if (status === 401 && mode === "session") return "retry";
+  if (status === 401) return "retry"; // BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH - wait for sign-in, never drop the file
   if (status >= 400 && status < 500 && status !== 408 && status !== 429) return "drop";
   return "retry";
 }

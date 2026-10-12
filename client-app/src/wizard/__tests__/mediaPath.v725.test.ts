@@ -18,7 +18,8 @@ describe("media files take the short path", () => {
     expect(MEDIA_INDUSTRY).toBe("Media, movies, TV shows, video game production");
     expect(s1).toContain("<option>{MEDIA_INDUSTRY}</option>");
     expect(s1).toContain("if (isMediaPathKyc(nextKyc)) { if (Object.values(getStepErrors(nextKyc)).every((bad) => !bad)) void startApplication(nextKyc);");
-    expect(s1).toContain("industry: !isStartupPathKyc(values) && !isMediaPathKyc(values)");
+    // BF_CLIENT_v789_STEP_GUARD - Step 1 rules moved to stepValidation (shared with the URL guard).
+    expect(read("src/wizard/stepValidation.ts")).toContain("industry: !isStartupPathKyc(values) && !isMediaPathKyc(values)");
     expect(s1).toContain("{!isStartupPathKyc(app.kyc) && !onMediaPath && (");
   });
   it("skips Step 2 by picking Media / Film Financing", () => {
@@ -26,7 +27,8 @@ describe("media files take the short path", () => {
   });
   it("does not ask a media file for employees or yearly revenue", () => {
     const s3 = read("src/wizard/Step3_Business.tsx");
-    expect(s3).toContain('const MEDIA_SKIP = new Set<string>(["employees", "estimatedRevenue"]);');
+    expect(read("src/wizard/stepValidation.ts")).toContain('export const MEDIA_SKIP_STEP3 = new Set<string>(["employees", "estimatedRevenue"]);'); // BF_CLIENT_v790 shared list
+    expect(s3).toContain("const MEDIA_SKIP = MEDIA_SKIP_STEP3;");
     expect((s3.match(/onSbaStartupPath \|\| onMediaPath \? "none"/g) || []).length).toBe(2);
   });
   it("the staff chat scrolls to the newest message", () => {

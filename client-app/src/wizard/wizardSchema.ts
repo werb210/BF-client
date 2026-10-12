@@ -32,10 +32,18 @@ export function isMediaPathKyc(kyc?: Record<string, any>): boolean {
   const industry = String(kyc?.industry ?? "").trim();
   return purpose === "Media Financing" || industry === MEDIA_INDUSTRY;
 }
-export function isMediaWizardPath(app?: Record<string, any>): boolean {
+// BF_CLIENT_v789_TYPED_WIZARD_DATA - the slice of application state the path checks read.
+export type WizardPathInput = {
+  productCategory?: string | null;
+  selectedProductType?: string;
+  selectedProduct?: { category?: string; product_type?: string; type?: string; name?: string };
+  kyc?: Record<string, unknown>;
+};
+
+export function isMediaWizardPath(app?: WizardPathInput): boolean {
   const candidates = [app?.productCategory, app?.selectedProductType, app?.selectedProduct?.category, app?.selectedProduct?.product_type];
   for (const c of candidates) if (/^MEDIA/.test(String(c ?? "").toUpperCase())) return true;
-  return isMediaPathKyc((app?.kyc ?? {}) as Record<string, any>);
+  return isMediaPathKyc(app?.kyc ?? {});
 }
 
 // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
@@ -45,7 +53,7 @@ export function isMediaWizardPath(app?: Record<string, any>): boolean {
 //
 // Use this from Step 3 onward. Step 1 and the schema conditionals below must
 // keep using isStartupPathKyc - they run before a product exists.
-export function isSbaWizardPath(app?: Record<string, any>): boolean {
+export function isSbaWizardPath(app?: WizardPathInput): boolean {
   const candidates = [
     app?.productCategory,
     app?.selectedProductType,
@@ -60,7 +68,7 @@ export function isSbaWizardPath(app?: Record<string, any>): boolean {
     // category reads in the product catalogue.
     if (v.includes("SBA")) return true;
   }
-  return isStartupPathKyc((app?.kyc ?? {}) as Record<string, any>);
+  return isStartupPathKyc(app?.kyc ?? {});
 }
 
 export const wizardSchema: Record<WizardStepKey, { fields: WizardFieldMeta[] }> = {

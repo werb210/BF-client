@@ -11,6 +11,7 @@
 // render swaps — see the EMBED seam marked below.
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 
 // Accord's hosted Flinks Connect instance (from the Accord credit application).
 const FLINKS_URL = "https://accordfinancial.flinksapp.io";
@@ -77,7 +78,7 @@ export default function FlinksConnectForm({
       <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
         Underwriting requires a secure, view-only connection to your business bank account. This is
         read-only — it cannot move money or make changes. The connection is provided by Flinks.
-        {submitted && <span style={{ marginLeft: 12, color: "#10b981", fontWeight: 600 }}>✓ Confirmed</span>}
+        {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Confirmed</span>}
       </p>
 
       <ol style={{ fontSize: 14, lineHeight: 1.6, color: "#111827", paddingLeft: 20 }}>

@@ -27,7 +27,8 @@ describe("queue behaviour", () => {
   it("sends signed-in mini-portal uploads with the session and keeps them through a 401", () => {
     expect(queue).toContain('if (item.mode === "session")');
     expect(queue).toContain("/api/client/documents/upload");
-    expect(queue).toContain('!(st === 401 && item.mode === "session")');
+    // BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH - every queued upload now waits through a 401.
+    expect(queue).toContain("st !== 401 /* BF_CLIENT_v790_PUBLIC_UPLOAD_AUTH */");
   });
   it("drains when the app comes back to the foreground", () => {
     const watcher = read("state/uploadQueueWatcher.ts");

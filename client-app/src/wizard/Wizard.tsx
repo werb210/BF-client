@@ -6,12 +6,13 @@ import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { OfflineStore } from "@/state/offline";
-import Step1 from "@/wizard/Step1_FinancialProfile";
-import Step2 from "@/wizard/Step2_ProductCategory";
-import Step3 from "@/wizard/Step3_BusinessDetails";
-import Step4 from "@/wizard/Step4_ApplicantInformation";
+import Step1 from "@/wizard/Step1_KYC";
+import Step2 from "@/wizard/Step2_Product";
+import Step3 from "@/wizard/Step3_Business";
+import Step4 from "@/wizard/Step4_Applicant";
 import Step5 from "@/wizard/Step5_Documents";
-import Step6 from "@/wizard/Step6_TermsSignature";
+import Step6 from "@/wizard/Step6_Review";
+import { firstIncompleteStepBefore } from "@/wizard/stepValidation";
 import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_STEP_PERSIST_v183
 import { trackEvent } from "@/utils/analytics";
 
@@ -29,12 +30,24 @@ export default function Wizard() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const stepFromUrl = useMemo<number | null>(() => {
+  const requestedStep = useMemo<number | null>(() => {
     const m = location.pathname.match(STEP_PATTERN);
     if (!m || !m[1]) return null;
     const n = Number(m[1]);
     return n >= 1 && n <= 6 ? n : null;
   }, [location.pathname]);
+
+  // BF_CLIENT_v789_STEP_GUARD - a step in the URL opens only when every step
+  // before it passes the same checks its Continue button applies. Otherwise the
+  // wizard goes to the first incomplete step, so /apply/step-6 cannot be reached
+  // with Steps 1-4 empty.
+  const blockedAt = requestedStep == null ? null : firstIncompleteStepBefore(app, requestedStep);
+  const stepFromUrl = blockedAt ?? requestedStep;
+
+  useEffect(() => {
+    if (blockedAt == null) return;
+    navigate(`/apply/step-${blockedAt}`, { replace: true });
+  }, [blockedAt, navigate]);
 
   const effectiveStep = clampStep(stepFromUrl ?? app.currentStep ?? 1);
 

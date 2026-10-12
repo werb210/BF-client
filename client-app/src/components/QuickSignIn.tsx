@@ -4,7 +4,6 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { resolveOtpNextStep } from "@/auth/otp";
 import { ClientProfileStore } from "@/state/clientProfiles";
-import { identifyClarity } from "@/utils/analytics";
 import { biometryAvailable, isEnrolled, phoneFromToken, signInWithFaceId } from "@/native/deviceSignIn";
 import { passkeysSupported, signInWithPasskey, PasskeyError } from "@/auth/passkeys";
 
@@ -26,7 +25,7 @@ export default function QuickSignIn() {
 
   function routeAfterSignIn(token: string, data: any) {
     const phone = phoneFromToken(token) ?? "";
-    try { sessionStorage.setItem("verified_phone", phone); identifyClarity(phone); } catch { /* storage unavailable */ }
+    try { sessionStorage.setItem("verified_phone", phone); } catch { /* storage unavailable */ } // BF_CLIENT_v789_ANALYTICS_GATES - never sent to Clarity
     const submittedId = typeof data?.submittedApplicationId === "string" ? data.submittedApplicationId : "";
     if (data?.hasSubmittedApplication === true && submittedId) {
       ClientProfileStore.markSubmitted(phone, submittedId);

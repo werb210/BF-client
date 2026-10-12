@@ -1,8 +1,9 @@
-// @ts-nocheck
 // BF_CLIENT_MAIN_LINE_866_v692 - call-us number is the 866 main line.
 import { useEffect, useMemo, useState, useRef } from "react";
 import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate, useParams } from "react-router-dom";
+import { step1FieldErrors } from "./stepValidation";
+import type { KycData } from "../types/application";
 import { useApplicationStore } from "../state/useApplicationStore";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
@@ -253,8 +254,8 @@ export function Step1_KYC(): JSX.Element {
         applicationToken: app.applicationToken ?? null,
         leadId: app.readinessLeadId ?? null,
         phone:
-          (app.kyc as any)?.phone ??
-          (app.applicant as any)?.phone ??
+          app.kyc?.phone ??
+          app.applicant?.phone ??
           // BF_CLIENT_STEP1_SPLIT_v169 - fall back to the OTP-verified phone so the
           // block reliably matches a contact and lands on the CRM timeline.
           (() => { try { return sessionStorage.getItem("verified_phone"); } catch { return null; } })() ??
@@ -537,7 +538,7 @@ export function Step1_KYC(): JSX.Element {
             equipmentAmount:
               p.requestedAmount != null && p.requestedAmount !== ""
                 ? String(p.requestedAmount)
-                : ((app.kyc as any).equipmentAmount ?? ""),
+                : (app.kyc.equipmentAmount ?? ""),
             purposeOfFunds:
               (p.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
             // financial profile (V1 bucket strings — these are exact matches
@@ -714,37 +715,10 @@ export function Step1_KYC(): JSX.Element {
   }, [showErrors]);
 
   // BF_CLIENT_BLOCK_v91_ELIGIBILITY_RULES_AND_STEP1_HARDSTOPS_v1
-  function getStepErrors(values: Record<string, any>) {
-    const intent = normalizeFundingIntent(values.lookingFor);
-    const capitalRequired = intent === "WORKING_CAPITAL" || intent === "BOTH";
-    const equipmentRequired = intent === "EQUIPMENT" || intent === "BOTH";
-    return {
-      lookingFor: !Validate.required(values.lookingFor),
-      fundingAmount: capitalRequired && !Validate.required(values.fundingAmount),
-      equipmentAmount: equipmentRequired && !Validate.required(values.equipmentAmount),
-      businessLocation:
-        !Validate.required(values.businessLocation) ||
-        values.businessLocation === "Other",
-      // BF_CLIENT_SBA_REDUCED_v191 - hidden on the SBA path, so it cannot gate
-      // Continue there.
-      industry: !isStartupPathKyc(values) && !isMediaPathKyc(values) && !Validate.required(values.industry),
-      // BF_CLIENT_STEP1_SPLIT_v169 - purpose is one of the five REQUIRED matching
-      // questions.
-      purposeOfFunds: !Validate.required(values.purposeOfFunds),
-      // BF_CLIENT_STEP1_SPLIT_v169 - the financial detail questions are OPTIONAL
-      // (they only help lender routing). Leaving them blank must not block
-      // Continue - that gate/schema mismatch was the reported Step 1 abandonment.
-      salesHistory: false,
-      revenueLast12Months: false,
-      // BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - in Canada avg monthly revenue
-      // is required (lender panel needs it; the <$10k floor can't be assessed
-      // without it): blank OR the below-floor band both block. Optional in the US.
-      monthlyRevenue: countryCode === "CA" && !isMediaPathKyc(values) // BF_CLIENT_MEDIA_PATH_v725
-        ? (!Validate.required(values.monthlyRevenue) || values.monthlyRevenue === "Under $10,000")
-        : false,
-      accountsReceivable: false,
-      fixedAssets: false,
-    };
+  // BF_CLIENT_v789_STEP_GUARD - the rules live in stepValidation so the URL guard
+  // and the Step 6 submit re-check apply exactly what this Continue button does.
+  function getStepErrors(values: KycData) {
+    return step1FieldErrors(values, countryCode);
   }
 
   const fieldErrors = getStepErrors(app.kyc);
@@ -775,7 +749,7 @@ export function Step1_KYC(): JSX.Element {
   // left: your average monthly revenue" to someone who has already answered it
   // reads as a broken form.
   const blockedByRevenueFloor =
-    countryCode === "CA" && String((app.kyc as any)?.monthlyRevenue ?? "") === "Under $10,000";
+    countryCode === "CA" && String(app.kyc?.monthlyRevenue ?? "") === "Under $10,000";
 
   // Expose live state on window for diagnostics — paste `__bfWizard` in console to inspect.
   if (typeof window !== "undefined") {
@@ -788,40 +762,24 @@ export function Step1_KYC(): JSX.Element {
     };
   }
 
+  // BF_CLIENT_v789_START_IN_FLIGHT - one /api/public/application/start per click
+  // sequence. The ref is the guard (state updates land a render late, so a fast
+  // double or triple tap would read a stale `starting`); the state disables the
+  // button. The old guard cleared itself on the second tap, so a third tap sent a
+  // second request and minted a second application.
   const startInFlightRef = useRef(false);
+  const [starting, setStarting] = useState(false);
   async function startApplication(kycSnapshot?: typeof app.kyc) {
-    console.log("[wizard] startApplication ENTRY", {
-      hasSnapshot: Boolean(kycSnapshot),
-      inFlight: startInFlightRef.current,
-    });
-    if (startInFlightRef.current) {
-      console.warn("[wizard] startApplication SKIPPED — in-flight guard tripped. Forcing reset in case it was stuck.");
-      // Stuck-guard recovery: if we got here with the flag set, clear it so the next
-      // click can proceed. The previous attempt either completed or threw past finally.
-      startInFlightRef.current = false;
-      return;
-    }
+    if (startInFlightRef.current) return;
     startInFlightRef.current = true;
-    // Safety timeout: hard-reset the in-flight flag after 10s no matter what.
-    const inFlightTimeout = setTimeout(() => {
-      if (startInFlightRef.current) {
-        console.warn("[wizard] startApplication safety timeout — resetting in-flight flag");
-        startInFlightRef.current = false;
-      }
-    }, 10_000);
+    setStarting(true);
     try {
       // Use the caller-supplied snapshot if provided (auto-advance path) so we
       // validate against the just-updated values, not a stale render closure. (Block 15)
       const kyc = kycSnapshot ?? app.kyc;
-      console.log("[wizard] Step 1 about to validate", { kyc });
       saveStepData(1, kyc);
-      try {
-        enforceV1StepSchema("step1", kyc);
-      } catch (zodErr) {
-        console.error("[wizard] Step 1 ZOD VALIDATION FAILED", { kyc, zodErr });
-        throw zodErr;
-      }
-      console.log("[wizard] Step 1 validation passed");
+      // BF_CLIENT_v789_NO_FORM_LOGS - a failure is reported without the answers.
+      enforceV1StepSchema("step1", kyc);
       const payload = kyc;
 
       // BF_CLIENT_BLOCK_v110_PARSECURRENCY_GUARD_v1 — Equipment-only flows
@@ -860,8 +818,6 @@ export function Step1_KYC(): JSX.Element {
           console.warn('[wizard] startApplication TIMEOUT — aborting after 20s');
           __startAbort.abort();
         }, 20000);
-        // eslint-disable-next-line no-console
-        console.log('[wizard] startApplication request begin', { url: __startUrl });
 
         let startRes: any;
         try {
@@ -906,16 +862,13 @@ export function Step1_KYC(): JSX.Element {
           });
           const __body = await __res.json().catch(() => ({}));
           if (!__res.ok) {
+            // BF_CLIENT_v789_NO_FORM_LOGS - status only; the body carries the token.
             // eslint-disable-next-line no-console
-            console.error('[wizard] startApplication response', {
-              status: __res.status, body: __body, elapsed_ms: Date.now() - __startTs,
+            console.error('[wizard] startApplication failed', {
+              status: __res.status, elapsed_ms: Date.now() - __startTs,
             });
             throw new Error('startApplication failed: ' + __res.status);
           }
-          // eslint-disable-next-line no-console
-          console.log('[wizard] startApplication response', {
-            status: __res.status, body: __body, elapsed_ms: Date.now() - __startTs,
-          });
           const __token =
             (__body as any)?.applicationToken ??
             (__body as any)?.applicationId ??
@@ -925,7 +878,7 @@ export function Step1_KYC(): JSX.Element {
             (__body as any)?.data?.id;
           if (!__token) {
             // eslint-disable-next-line no-console
-            console.error('[wizard] startApplication response missing token', __body);
+            console.error('[wizard] startApplication response missing token');
             throw new Error('startApplication response missing token');
           }
           try {
@@ -964,23 +917,15 @@ export function Step1_KYC(): JSX.Element {
       });
       persistApplicationStep({ ...app, applicationToken: token, applicationId: token }, 1, payloadBody).catch(() => {});
       track("step_completed", { step: 1 });
-      // BF_CLIENT_BLOCK_v325_TEST1_RUN5_v1 — gate token log to dev
-      // mode. Pre-fix the applicationToken was logged to production
-      // browser console where it survived in any user-shared
-      // devtools snapshot. JWTs are bearer credentials; never
-      // log them in prod.
-      if (import.meta.env.DEV) {
-        // applicationToken is a bearer credential — keep this log dev-only
-        console.log("[wizard] Step 1 advancing with real token", token);
-      }
+      // BF_CLIENT_BLOCK_v325_TEST1_RUN5_v1 / BF_CLIENT_v789_NO_FORM_LOGS - the
+      // application token is a bearer credential and is never logged.
       navigate("/apply/step-2");
     } catch (err) {
       console.error("[wizard] Step 1 unexpected error", err);
       setSubmitError("Something went wrong. Please try again.");
     } finally {
-      clearTimeout(inFlightTimeout);
       startInFlightRef.current = false;
-      console.log("[wizard] startApplication EXIT — flag cleared");
+      setStarting(false);
     }
   }
 
@@ -1095,7 +1040,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "lookingFor")}
                 value={normalizeFundingIntent(app.kyc.lookingFor) || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const nextIntent = normalizeFundingIntent(e.target.value);
                   // BF_CLIENT_BLOCK_v161_PURPOSE_OPTIONS_BY_INTENT_v1
                   // The visible Purpose-of-funds options shift with intent —
@@ -1141,7 +1086,7 @@ export function Step1_KYC(): JSX.Element {
                 return (
                   <div data-error={showErrors && fieldErrors.equipmentAmount}>
                     <label style={components.form.label}>How much equipment financing are you seeking?</label>
-                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={app.kyc.equipmentAmount || ""} onChange={(e) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!app.kyc.equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue(app.kyc.equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
                     {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
                   </div>
                 );
@@ -1158,7 +1103,7 @@ export function Step1_KYC(): JSX.Element {
                 id={getWizardFieldId("step1", "fundingAmount")}
                 inputMode="decimal"
                 value={app.kyc.fundingAmount || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const nextKyc = {
                     ...app.kyc,
                     fundingAmount: formatCurrencyOnInput(e.target.value, countryCode),
@@ -1185,7 +1130,7 @@ export function Step1_KYC(): JSX.Element {
                   update({ kyc: nextKyc });
                   handleAutoAdvance("fundingAmount", nextKyc);
                 }}
-                onKeyDown={(e: unknown) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const nextKyc = {
                       ...app.kyc,
@@ -1207,7 +1152,7 @@ export function Step1_KYC(): JSX.Element {
             </div>
                   <div data-error={showErrors && fieldErrors.equipmentAmount}>
                     <label style={components.form.label}>Equipment amount - Equipment Total only</label>
-                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={(app.kyc as any).equipmentAmount || ""} onChange={(e: unknown) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!(app.kyc as any).equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue((app.kyc as any).equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
+                    <Input id={getWizardFieldId("step1", "equipmentAmount")} inputMode="decimal" value={app.kyc.equipmentAmount || ""} onChange={(e) => { const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyOnInput(e.target.value, countryCode) }; update({ kyc: nextKyc }); }} onBlur={() => { if (!app.kyc.equipmentAmount) return; const nextKyc = { ...app.kyc, equipmentAmount: formatCurrencyValue(app.kyc.equipmentAmount, countryCode) }; update({ kyc: nextKyc }); handleAutoAdvance("equipmentAmount", nextKyc); }} hasError={showErrors && fieldErrors.equipmentAmount} placeholder={countryCode === "CA" ? "CA$" : "$"} />
                     {showErrors && fieldErrors.equipmentAmount && (<div style={components.form.errorText}>Please enter an equipment amount.</div>)}
                   </div>
                 </>);
@@ -1218,7 +1163,7 @@ export function Step1_KYC(): JSX.Element {
                 id={getWizardFieldId("step1", "fundingAmount")}
                 inputMode="decimal"
                 value={app.kyc.fundingAmount || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const nextKyc = {
                     ...app.kyc,
                     fundingAmount: formatCurrencyOnInput(e.target.value, countryCode),
@@ -1245,7 +1190,7 @@ export function Step1_KYC(): JSX.Element {
                   update({ kyc: nextKyc });
                   handleAutoAdvance("fundingAmount", nextKyc);
                 }}
-                onKeyDown={(e: unknown) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const nextKyc = {
                       ...app.kyc,
@@ -1272,7 +1217,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "businessLocation")}
                 value={app.kyc.businessLocation || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const value = e.target.value;
                   const nextKyc = { ...app.kyc, businessLocation: value };
                   update({
@@ -1374,7 +1319,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "purposeOfFunds")}
                 value={app.kyc.purposeOfFunds || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   let nextKyc = { ...app.kyc, purposeOfFunds: e.target.value };
                   // BF_CLIENT_MEDIA_PATH_v725 - media financing skips the rest of Step 1 and moves on.
                   if (e.target.value === "Media Financing" && !nextKyc.industry) nextKyc = { ...nextKyc, industry: MEDIA_INDUSTRY };
@@ -1410,7 +1355,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "monthlyRevenue")}
                 value={app.kyc.monthlyRevenue || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const value = e.target.value;
                   // BF_CLIENT_STEP1_HARDSTOPS_v187 - the under-$10K/month floor is a
                   // Canadian lender-panel constraint; US low-revenue applicants are
@@ -1457,7 +1402,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "salesHistory")}
                 value={app.kyc.yearsInBusiness || app.kyc.salesHistory || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const nextKyc = {
                     ...app.kyc,
                     yearsInBusiness: e.target.value,
@@ -1486,7 +1431,7 @@ export function Step1_KYC(): JSX.Element {
               <Select
                 id={getWizardFieldId("step1", "revenueLast12Months")}
                 value={app.kyc.annualRevenue || app.kyc.revenueLast12Months || ""}
-                onChange={(e: unknown) => {
+                onChange={(e) => {
                   const nextKyc = {
                     ...app.kyc,
                     annualRevenue: e.target.value,
@@ -1521,7 +1466,7 @@ export function Step1_KYC(): JSX.Element {
                 <Select
                   id={getWizardFieldId("step1", "accountsReceivable")}
                   value={app.kyc.arBalance || app.kyc.accountsReceivable || ""}
-                  onChange={(e: unknown) => {
+                  onChange={(e) => {
                     const nextKyc = {
                       ...app.kyc,
                       arBalance: e.target.value,
@@ -1564,7 +1509,7 @@ export function Step1_KYC(): JSX.Element {
                 <Select
                   id={getWizardFieldId("step1", "fixedAssets")}
                   value={app.kyc.availableCollateral || app.kyc.fixedAssets || ""}
-                  onChange={(e: unknown) => {
+                  onChange={(e) => {
                     const nextKyc = {
                       ...app.kyc,
                       availableCollateral: e.target.value,
@@ -1628,15 +1573,9 @@ export function Step1_KYC(): JSX.Element {
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
             onClick={() => {
-              console.log("[wizard] Continue clicked", {
-                isValid,
-                fieldErrors,
-                kycSnapshot: app.kyc,
-                inFlight: startInFlightRef.current,
-              });
+              if (startInFlightRef.current) return;
               setShowErrors(true);
               if (!isValid) {
-                console.warn("[wizard] Continue blocked by isValid=false");
                 // scrollToFirstError already runs off showErrors; the summary
                 // above the button names them all.
                 return;
@@ -1644,12 +1583,16 @@ export function Step1_KYC(): JSX.Element {
               setShowErrors(false);
               void startApplication();
             }}
-            // BF_CLIENT_STEP1_GUIDE_v155 - deliberately NOT disabled. Pressing it
-            // is how an applicant discovers what is missing; a disabled button
-            // answers nothing and suppressed the click that revealed the errors.
-            aria-disabled={!isValid}
+            // BF_CLIENT_STEP1_GUIDE_v155 - deliberately NOT disabled for missing
+            // answers. Pressing it is how an applicant discovers what is missing.
+            // BF_CLIENT_v789_START_IN_FLIGHT - it IS disabled while the
+            // application is being created, so a second tap cannot mint a second one.
+            aria-disabled={!isValid || starting}
+            disabled={starting}
+            aria-busy={starting}
+            data-testid="step1-continue"
           >
-            Continue →
+            {starting ? "Starting your application..." : "Continue →"}
           </Button>
         </div>
       </div>

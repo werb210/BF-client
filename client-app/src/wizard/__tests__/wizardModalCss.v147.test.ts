@@ -46,7 +46,7 @@ describe("the hard stops it explains", () => {
   it("the Canadian revenue floor still gates Continue - the fix is visibility, not policy", () => {
     // BF_CLIENT_STEP1_CA_REVENUE_REQUIRED_v171 - the gate is now a CA-required
     // ternary; the below-floor band still blocks in Canada (and blank does too).
-    expect(step1).toContain('values.monthlyRevenue === "Under $10,000"');
+    expect(readFileSync(resolve(root, "wizard", "stepValidation.ts"), "utf-8")).toContain('values.monthlyRevenue === "Under $10,000"'); // BF_CLIENT_v789 shared rules
     expect(step1).toContain('countryCode === "CA"');
   });
 

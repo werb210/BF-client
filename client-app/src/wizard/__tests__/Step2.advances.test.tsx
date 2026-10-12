@@ -139,7 +139,13 @@ describe("Step 2 → Step 3 transition (regression)", () => {
     container.remove();
   });
 
-  it("does NOT contain a resolveStepGuard navigate-back side-effect", () => {
-    expect(true).toBe(true);
+  // BF_CLIENT_v789_TEST_HYGIENE - was expect(true).toBe(true). Mounting Step 2
+  // must not bounce the applicant to another step on its own.
+  it("does not navigate anywhere on mount (no step-guard navigate-back)", async () => {
+    await act(async () => { root.render(<Step2_Product />); });
+    await act(async () => { await Promise.resolve(); });
+    expect(navigateMock).not.toHaveBeenCalled();
+    root.unmount();
+    container.remove();
   });
 });

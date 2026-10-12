@@ -47,12 +47,12 @@ describe("every step after product selection uses it", () => {
     ["Step5_Documents.tsx", "onSbaPath"],
     ["Step6_Review.tsx", "backTarget"],
   ])("%s", (file) => {
-    expect(read(file)).toContain("isSbaWizardPath(app as Record<string, unknown>)");
+    expect(read(file)).toContain("isSbaWizardPath(app)"); // BF_CLIENT_v789 typed wizard data: no cast needed
   });
 
   it("Step 5 still refuses to render on that path", () => {
     const s = read("Step5_Documents.tsx");
-    expect(s).toContain("if (onSbaPath) return null;");
+    expect(s).toContain("if (blockedAt != null || onSbaPath) return null;"); // BF_CLIENT_v789 step guard
     expect(s).toContain('navigate("/apply/step-6", { replace: true })');
   });
 });

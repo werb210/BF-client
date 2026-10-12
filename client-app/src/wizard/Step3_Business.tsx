@@ -1,8 +1,8 @@
-// @ts-nocheck
-if (typeof console !== "undefined") console.log("[wizard] Step3_Business module evaluated");
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApplicationStore } from "../state/useApplicationStore";
+import type { BusinessData } from "../types/application";
+import { MEDIA_SKIP_STEP3, REQUIRED_STEP3, missingAccordStep3Fields } from "./stepValidation"; // BF_CLIENT_v790_SHARED_STEP_RULES
 import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
@@ -50,11 +50,10 @@ export function Step3_Business() {
   // BF_CLIENT_SBA_REDUCED_v191 - start-ups have no operating history to report.
   // Step 3 therefore asks only for basic identity and contact details, all optional.
   // BF_CLIENT_SBA_PATH_FROM_PRODUCT_v160
-  const onSbaStartupPath = isSbaWizardPath(app as Record<string, unknown>);
+  const onSbaStartupPath = isSbaWizardPath(app);
   // BF_CLIENT_MEDIA_PATH_v725 - employees and yearly revenue are not asked on a media file.
-  const onMediaPath = isMediaWizardPath(app as Record<string, unknown>);
-  const MEDIA_SKIP = new Set<string>(["employees", "estimatedRevenue"]);
-  console.log("[wizard] Step3_Business RENDER", { currentStep: app.currentStep, applicationToken: app.applicationToken, businessLocation: app.kyc?.businessLocation });
+  const onMediaPath = isMediaWizardPath(app);
+  const MEDIA_SKIP = MEDIA_SKIP_STEP3; // BF_CLIENT_v790_SHARED_STEP_RULES
   const navigate = useNavigate();
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -113,26 +112,15 @@ export function Step3_Business() {
   // whether anything is, so the summary above Continue can name these fields
   // the same way it names the base ten. accordRequirementsMet is kept as a
   // thin wrapper because three call sites use it as a boolean.
-  function missingAccordFields(v: Record<string, any>): string[] {
-    if (!isAccordLOC) return [];
-    const out: string[] = [];
-    if (!Validate.required(v.fiscalYearEnd)) out.push("fiscal year end");
-    if (!Validate.required(v.inBusinessSince)) out.push("the month and year the business started");
-    if (v.mailingSameAsOperating === false) {
-      if (!Validate.required(v.mailingAddress)) out.push("mailing address");
-      if (!Validate.required(v.mailingCity)) out.push("mailing city");
-      if (!Validate.required(v.mailingState)) out.push("mailing province or state");
-      if (!Validate.required(v.mailingZip)) out.push("mailing postal or ZIP code");
-    }
-    return out;
+  function missingAccordFields(v: BusinessData): string[] {
+    return missingAccordStep3Fields(v, isAccordLOC);
   }
 
-  function accordRequirementsMet(v: Record<string, any>): boolean {
+  function accordRequirementsMet(v: BusinessData): boolean {
     return missingAccordFields(v).length === 0;
   }
 
   useEffect(() => {
-    console.log("[wizard] Step3_Business MOUNTED effect ran", { currentStep: app.currentStep });
     if (app.currentStep !== 3) {
       update({ currentStep: 3 });
     }
@@ -202,22 +190,8 @@ export function Step3_Business() {
   const isCompanyNameLocked = false;
   const isBusinessPhoneLocked = false;
 
-  const REQUIRED_STEP3 = [
-    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName removed from this
-    // list; it's optional on the form and is filled from businessName
-    // on continue when blank. companyName is mirrored from businessName
-    // on every keystroke, so requiring both is also redundant.
-    ["businessName", "business name"],
-    ["businessStructure", "business structure"],
-    ["address", "business address"],
-    ["city", "city"],
-    ["state", "province or state"],
-    ["zip", "postal or ZIP code"],
-    ["phone", "business phone"],
-    ["startDate", "business start date"],
-    ["employees", "number of employees"],
-    ["estimatedRevenue", "estimated yearly revenue"],
-  ] as const;
+  // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL - legalName stays optional. BF_CLIENT_v790_SHARED_STEP_RULES -
+  // REQUIRED_STEP3 now comes from stepValidation, the same list the URL guard and Step 6 use.
 
   const missingStep3 = onSbaStartupPath ? [] : [ // BF_CLIENT_SBA_REDUCED_v191
     ...REQUIRED_STEP3
@@ -237,7 +211,7 @@ export function Step3_Business() {
       // BF_CLIENT_BLOCK_1_16_SUBMIT_AND_SCHEMA_ERRORS — surface schema
       // failures so the user sees what to fix instead of silently stuck.
       // eslint-disable-next-line no-console
-      console.error("[wizard] Step 3 schema validation failed", { values, zodErr });
+      console.error("[wizard] Step 3 schema validation failed", { fields: zodErr?.issues?.map((i: { path?: unknown[] }) => i.path?.join(".")) });
       const issue = zodErr?.issues?.[0];
       const field = Array.isArray(issue?.path) ? String(issue.path[0] ?? "") : "";
       const msg = field
@@ -255,19 +229,9 @@ export function Step3_Business() {
       nextValues = { ...nextValues, legalName: nextValues.businessName };
       update({ business: nextValues });
     }
-    const requiredFields = [
-      // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
-      "businessName",
-      "businessStructure",
-      "address",
-      "city",
-      "state",
-      "zip",
-      "phone",
-      "startDate",
-      "employees",
-      "estimatedRevenue",
-    ];
+    // BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legalName is no longer required.
+    // BF_CLIENT_v790_SHARED_STEP_RULES - same list as the URL guard and Step 6.
+    const requiredFields: string[] = REQUIRED_STEP3.map(([field]) => field);
 
     const missing = !onSbaStartupPath && requiredFields.find(
       (field) => !(onMediaPath && MEDIA_SKIP.has(field)) && !Validate.required(nextValues[field])
@@ -442,7 +406,7 @@ export function Step3_Business() {
                     inputMode="numeric"
                     placeholder="12-3456789"
                     value={values.ein || ""}
-                    onChange={(e: any) => setField("ein", e.target.value)}
+                    onChange={(e) => setField("ein", e.target.value)}
                   />
                 </div>
 
@@ -464,7 +428,7 @@ export function Step3_Business() {
                     inputMode="numeric"
                     placeholder="2026"
                     value={values.startDate || ""}
-                    onChange={(e: any) => setField("startDate", e.target.value)}
+                    onChange={(e) => setField("startDate", e.target.value)}
                   />
                 </div>
 
@@ -474,7 +438,7 @@ export function Step3_Business() {
                     type="number"
                     min="0"
                     value={values.employees || ""}
-                    onChange={(e: any) => setField("employees", e.target.value)}
+                    onChange={(e) => setField("employees", e.target.value)}
                   />
                 </div>
 
@@ -488,7 +452,7 @@ export function Step3_Business() {
                   </label>
                   <Select
                     value={values.sbaQ4Criminal || ""}
-                    onChange={(e: any) => setField("sbaQ4Criminal", e.target.value)}
+                    onChange={(e) => setField("sbaQ4Criminal", e.target.value)}
                   >
                     <option value="">Select...</option>
                     <option value="no">No</option>
@@ -507,10 +471,10 @@ export function Step3_Business() {
                         <label style={components.form.label}>Please give the details</label>
                         <textarea
                           value={values.sbaQ4CriminalDetail || ""}
-                          onChange={(e: any) => setField("sbaQ4CriminalDetail", e.target.value)}
+                          onChange={(e) => setField("sbaQ4CriminalDetail", e.target.value)}
                           placeholder="Charge or offence, date, jurisdiction, and current status"
                           rows={3}
-                          style={{ ...components.form.input, width: "100%", resize: "vertical", fontFamily: "inherit" }}
+                          style={{ ...components.inputs.base, width: "100%", resize: "vertical", fontFamily: "inherit" }}
                         />
                       </div>
                     </>
@@ -525,7 +489,7 @@ export function Step3_Business() {
                   </label>
                   <Select
                     value={values.sbaCitizenOwned || ""}
-                    onChange={(e: any) => setField("sbaCitizenOwned", e.target.value)}
+                    onChange={(e) => setField("sbaCitizenOwned", e.target.value)}
                   >
                     <option value="">Select...</option>
                     <option value="yes">Yes</option>
@@ -542,7 +506,7 @@ export function Step3_Business() {
               id={getWizardFieldId("step3", "businessName")}
               autoComplete="section-business organization"
               value={values.businessName || ""}
-              onChange={(e: unknown) => {
+              onChange={(e) => {
                 const businessName = e.target.value;
                 const nextValues = {
                   ...values,
@@ -554,7 +518,7 @@ export function Step3_Business() {
                 update({ business: nextValues });
               }}
               disabled={isBusinessNameLocked}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("businessName", values);
                 }
@@ -569,9 +533,9 @@ export function Step3_Business() {
             <Input autoComplete="section-business organization"
               id={getWizardFieldId("step3", "legalName")}
               value={values.legalName || ""}
-              onChange={(e: unknown) => setField("legalName", e.target.value)}
+              onChange={(e) => setField("legalName", e.target.value)}
               disabled={isLegalNameLocked}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("legalName", values);
                 }
@@ -584,7 +548,7 @@ export function Step3_Business() {
             <Select
               id={getWizardFieldId("step3", "businessStructure")}
               value={values.businessStructure || ""}
-              onChange={(e: unknown) => {
+              onChange={(e) => {
                 const nextValues = {
                   ...values,
                   businessStructure: e.target.value,
@@ -609,7 +573,7 @@ export function Step3_Business() {
               id={getWizardFieldId("step3", "address")}
               country={regionCountry}
               value={values.address || ""}
-              onChange={(e: unknown) => setField("address", e.target.value)}
+              onChange={(e) => setField("address", e.target.value)}
               onSelect={(selection) => {
                 if (!("street" in selection)) return;
                 const nextValues = {
@@ -627,7 +591,7 @@ export function Step3_Business() {
                   handleAutoAdvance("address", nextValues, true);
                 }
               }}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("address", values);
                 }
@@ -641,8 +605,8 @@ export function Step3_Business() {
               id={getWizardFieldId("step3", "city")}
               autoComplete="section-business address-level2"
               value={values.city || ""}
-              onChange={(e: unknown) => setField("city", e.target.value)}
-              onKeyDown={(e: unknown) => {
+              onChange={(e) => setField("city", e.target.value)}
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("city", values);
                 }
@@ -668,14 +632,14 @@ export function Step3_Business() {
               id={getWizardFieldId("step3", "zip")}
               autoComplete="section-business postal-code"
               value={formatPostalCode(values.zip || "", countryCode)}
-              onChange={(e: unknown) => {
+              onChange={(e) => {
                 const nextValues = {
                   ...values,
                   zip: formatPostalCode(e.target.value, countryCode),
                 };
                 update({ business: nextValues });
               }}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("zip", values);
                 }
@@ -691,7 +655,7 @@ export function Step3_Business() {
                   type="checkbox"
                   style={{ width: "auto" }}
                   checked={values.mailingSameAsOperating !== false}
-                  onChange={(e: any) =>
+                  onChange={(e) =>
                     update({ business: { ...values, mailingSameAsOperating: e.target.checked } })
                   }
                 />
@@ -711,7 +675,7 @@ export function Step3_Business() {
                     <AddressAutocompleteInput autoComplete="section-mailing address-line1"
                       country={regionCountry}
                       value={values.mailingAddress || ""}
-                      onChange={(e: any) => setField("mailingAddress", e.target.value)}
+                      onChange={(e) => setField("mailingAddress", e.target.value)}
                       onSelect={(selection: any) => {
                         if (!("street" in selection)) return;
                         update({
@@ -733,7 +697,7 @@ export function Step3_Business() {
                     <label style={components.form.label}>City</label>
                     <Input autoComplete="section-mailing address-level2"
                       value={values.mailingCity || ""}
-                      onChange={(e: any) => setField("mailingCity", e.target.value)}
+                      onChange={(e) => setField("mailingCity", e.target.value)}
                     />
                   </div>
                   <div>
@@ -748,7 +712,7 @@ export function Step3_Business() {
                     <label style={components.form.label}>{postalLabel}</label>
                     <Input autoComplete="section-mailing postal-code"
                       value={formatPostalCode(values.mailingZip || "", countryCode)}
-                      onChange={(e: any) =>
+                      onChange={(e) =>
                         setField("mailingZip", formatPostalCode(e.target.value, countryCode))
                       }
                     />
@@ -763,7 +727,7 @@ export function Step3_Business() {
             <PhoneInput autoComplete="section-business tel"
               id={getWizardFieldId("step3", "phone")}
               value={formatPhoneNumber(values.phone || "", countryCode)}
-              onChange={(e: unknown) => {
+              onChange={(e) => {
                 const nextValues = {
                   ...values,
                   phone: formatPhoneNumber(e.target.value, countryCode),
@@ -772,7 +736,7 @@ export function Step3_Business() {
               }}
               disabled={isBusinessPhoneLocked}
               onBlur={() => handleAutoAdvance("phone", values)}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("phone", values);
                 }
@@ -788,8 +752,8 @@ export function Step3_Business() {
               type="url"
               autoComplete="url"
               value={values.website || ""}
-              onChange={(e: unknown) => setField("website", e.target.value)}
-              onKeyDown={(e: unknown) => {
+              onChange={(e) => setField("website", e.target.value)}
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleAutoAdvance("website", values);
                 }
@@ -806,8 +770,8 @@ export function Step3_Business() {
                 id={getWizardFieldId("step3", "startDate")}
                 type="date"
                 value={values.startDate || ""}
-                onChange={(e: unknown) => setField("startDate", e.target.value)}
-                onKeyDown={(e: unknown) => {
+                onChange={(e) => setField("startDate", e.target.value)}
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleAutoAdvance("startDate", values);
                   }
@@ -845,7 +809,7 @@ export function Step3_Business() {
           {isAccordLOC && (
             <div>
               <label style={components.form.label}>CRA Business Number <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
-              <Input value={values.craBusinessNumber || ""} onChange={(e: any) => setField("craBusinessNumber", e.target.value)} placeholder="e.g. 123456789 RC0001" />
+              <Input value={values.craBusinessNumber || ""} onChange={(e) => setField("craBusinessNumber", e.target.value)} placeholder="e.g. 123456789 RC0001" />
             </div>
           )}
           {/* BF_CLIENT_BLOCK_v710_ACCORD_STEP3_v1 — economic impact (optional) */}
@@ -853,9 +817,9 @@ export function Step3_Business() {
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={components.form.label}>As a result of this loan, the business expects to <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
               <div style={{ display: "grid", gridTemplateColumns: typeof window !== "undefined" && window.innerWidth < 600 ? "1fr" : "1fr 1fr 1fr", gap: tokens.spacing.md }}>
-                <div><label style={components.form.label}>Rehire laid-off (#)</label><Input type="number" min="0" value={values.econRehire || ""} onChange={(e: any) => setField("econRehire", e.target.value)} /></div>
-                <div><label style={components.form.label}>Retain at-risk (#)</label><Input type="number" min="0" value={values.econRetain || ""} onChange={(e: any) => setField("econRetain", e.target.value)} /></div>
-                <div><label style={components.form.label}>Hire new (#)</label><Input type="number" min="0" value={values.econHireNew || ""} onChange={(e: any) => setField("econHireNew", e.target.value)} /></div>
+                <div><label style={components.form.label}>Rehire laid-off (#)</label><Input type="number" min="0" value={values.econRehire || ""} onChange={(e) => setField("econRehire", e.target.value)} /></div>
+                <div><label style={components.form.label}>Retain at-risk (#)</label><Input type="number" min="0" value={values.econRetain || ""} onChange={(e) => setField("econRetain", e.target.value)} /></div>
+                <div><label style={components.form.label}>Hire new (#)</label><Input type="number" min="0" value={values.econHireNew || ""} onChange={(e) => setField("econHireNew", e.target.value)} /></div>
               </div>
             </div>
           )}
@@ -914,7 +878,7 @@ export function Step3_Business() {
               id={getWizardFieldId("step3", "estimatedRevenue")}
               inputMode="decimal"
               value={values.estimatedRevenue || ""}
-              onChange={(e: unknown) => {
+              onChange={(e) => {
                 const nextValues = {
                   ...values,
                   estimatedRevenue: formatCurrencyOnInput(e.target.value, countryCode),
@@ -936,7 +900,7 @@ export function Step3_Business() {
                 update({ business: nextValues });
                 handleAutoAdvance("estimatedRevenue", nextValues);
               }}
-              onKeyDown={(e: unknown) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   const nextValues = {
                     ...values,

@@ -13,7 +13,6 @@ import { setApplicationToken } from "@/auth/applicationToken";
 import { useNavigate } from 'react-router-dom';
 import QuickSignIn from './QuickSignIn'; // BF_CLIENT_ONE_SIGN_IN_v737
 import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TOKEN_v742 - getToken
-import { identifyClarity } from '@/utils/analytics'; // BF_CLIENT_ONE_SIGNIN_ONLY_v743
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
 
@@ -106,7 +105,6 @@ export default function PhoneOTPInline() {
     setBusy(true);
     try {
       // eslint-disable-next-line no-console
-      console.log('[otp] start.send.e164', { phone: e164 });
       // BF_CLIENT_BLOCK_v51_OTP_LONGER_TIMEOUT_v1
       // Azure App Service cold-start can take 30-45s on first hit after idle.
       // 15s was too tight and produced "Network is taking too long" errors
@@ -129,7 +127,7 @@ export default function PhoneOTPInline() {
       if (!res.ok) {
         const body = await res.text().catch(() => String(res.status));
         // eslint-disable-next-line no-console
-        console.warn('[otp] start.fail', { status: res.status, body });
+        console.warn('[otp] start.fail', { status: res.status });
         // BF_CLIENT_OTP_START_MESSAGE_v740 - the server says why a number cannot get a code (a landline, or a number
         // that does not exist); show that instead of the generic line.
         let serverMessage = '';
@@ -174,7 +172,6 @@ export default function PhoneOTPInline() {
     try {
       // 1. Verify the OTP.
       // eslint-disable-next-line no-console
-      console.log('[otp] verify.send', { phone: phoneE164 });
       const verifyRes = await fetchWithTimeout(
         API_BASE + '/api/auth/otp/verify',
         {
@@ -210,7 +207,7 @@ export default function PhoneOTPInline() {
       //  - verified_phone: Step 1 pre-fills from the Capital Readiness check by phone, and drafts are filed under it.
       //  - Clarity: tag the session recording with the phone so staff can find it from the CRM record.
       //  - drafts: adopt anything typed before signing in, and drop the old unscoped keys shared by everyone on this device.
-      try { sessionStorage.setItem('verified_phone', phoneE164); identifyClarity(phoneE164); } catch { /* storage unavailable */ }
+      try { sessionStorage.setItem('verified_phone', phoneE164); } catch { /* storage unavailable */ } // BF_CLIENT_v789_ANALYTICS_GATES - never sent to Clarity
       try {
         const { adoptAnonDrafts, currentDraftScope, purgeLegacyDrafts } = await import('@/client/autosave');
         purgeLegacyDrafts();
@@ -313,7 +310,7 @@ export default function PhoneOTPInline() {
       const startBody = await startRes.json().catch(() => ({}));
       if (!startRes.ok) {
         // eslint-disable-next-line no-console
-        console.warn('[otp] mint.fail', { status: startRes.status, body: startBody });
+        console.warn('[otp] mint.fail', { status: startRes.status });
         throw new Error((startBody as any)?.message || ('Could not start application: ' + startRes.status));
       }
       const appToken =
@@ -336,7 +333,6 @@ export default function PhoneOTPInline() {
       } catch { /* defensive — don't block OTP on store errors */ }
       // BF_CLIENT_WIZARD_TOKEN_RECONCILE_v58_OTP_ANCHOR
       // eslint-disable-next-line no-console
-      console.log('[otp] application.minted', { appToken });
       // BF_CLIENT_BLOCK_v523_BROKER_IMPORT
       const brokerStart = (startBody as any)?.data ?? startBody;
       if (brokerStart?.brokerImport) {

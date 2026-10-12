@@ -1,14 +1,15 @@
 import api from "../api/client";
+import type { ClientLenderProduct } from "../api/lenders";
 import { OfflineStore } from "../state/offline";
 
 export const ProductSync = {
-  load(): unknown[] {
+  load(): ClientLenderProduct[] {
     const cached = OfflineStore.load();
-    if (cached?.lenderProducts) return cached.lenderProducts;
-    return [];
+    const products = cached?.lenderProducts;
+    return Array.isArray(products) ? (products as ClientLenderProduct[]) : [];
   },
 
-  save(products: unknown[]) {
+  save(products: ClientLenderProduct[]) {
     const existing = OfflineStore.load() || {};
     OfflineStore.save({
       ...existing,
@@ -25,11 +26,11 @@ export const ProductSync = {
     }
   },
 
-  async sync() {
+  async sync(): Promise<ClientLenderProduct[]> {
     ProductSync.invalidateCache();
-    const res = await api.get("/api/client/lender-products");
+    const res = await api.get<unknown>("/api/client/lender-products");
     const { data } = res;
-    const products = Array.isArray(data) ? data : [];
+    const products = Array.isArray(data) ? (data as ClientLenderProduct[]) : [];
     if (!products.length) {
       throw new Error("No lender products returned from server.");
     }

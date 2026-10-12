@@ -13,13 +13,13 @@ describe("pendingSubmit pubsub", () => {
   it("emits 'queued' when savePendingSubmit is called", () => {
     const events: string[] = [];
     const unsub = subscribeRetry((e) => events.push(e.type));
-    savePendingSubmit("tok-123", { foo: 1 });
+    savePendingSubmit("tok-123", { app: { foo: 1 }, normalized: {} });
     expect(events).toContain("queued");
     unsub();
   });
 
   it("emits 'cleared' when clearPendingSubmit is called", () => {
-    savePendingSubmit("tok-123", { foo: 1 });
+    savePendingSubmit("tok-123", { app: { foo: 1 }, normalized: {} });
     const events: string[] = [];
     const unsub = subscribeRetry((e) => events.push(e.type));
     clearPendingSubmit();
@@ -28,7 +28,7 @@ describe("pendingSubmit pubsub", () => {
   });
 
   it("getRetryState reflects pending entry", () => {
-    savePendingSubmit("tok-123", { foo: 1 });
+    savePendingSubmit("tok-123", { app: { foo: 1 }, normalized: {} });
     const s = getRetryState();
     expect(s.pending).toBe(true);
     expect(s.attempts).toBe(0);

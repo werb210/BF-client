@@ -13,6 +13,7 @@
 // This row therefore ALWAYS renders inside the native app. When Face ID cannot
 // be used it says so, with the reason the plugin gave, instead of disappearing.
 import { useCallback, useEffect, useState } from "react";
+import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 import {
   biometryStatus,
   disableDeviceSignIn,
@@ -92,9 +93,10 @@ export default function FaceIdSignInToggle() {
   const button: React.CSSProperties = {
     padding: "8px 14px",
     borderRadius: 10,
-    border: "1px solid #1e3a5f",
-    background: busy ? "#94a3b8" : "#1e3a5f",
-    color: "#fff",
+    // BF_CLIENT_v789_CONTRAST - the busy state was white on #94a3b8 (2.6:1).
+    border: `1px solid ${busy ? A11Y_COLORS.faceIdBusyBg : "#1e3a5f"}`,
+    background: busy ? A11Y_COLORS.faceIdBusyBg : "#1e3a5f",
+    color: busy ? A11Y_COLORS.faceIdBusyText : "#fff",
     fontSize: 14,
     fontWeight: 600,
     cursor: busy ? "default" : "pointer",

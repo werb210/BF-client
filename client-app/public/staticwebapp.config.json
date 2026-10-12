@@ -1,1 +1,40 @@
-{"navigationFallback":{"rewrite":"/index.html","exclude":["/api/*","/assets/*","/icons/*","/*.png","/*.jpg","/*.jpeg","/*.svg","/*.ico","/manifest.webmanifest","/robots.txt","/sw.js"]},"routes":[{"route":"/api/*","rewrite":"https://server.boreal.financial/api/*","allowedRoles":["anonymous"]}],"responseOverrides":{"404":{"rewrite":"/index.html"}}}
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/api/*",
+      "/assets/*",
+      "/icons/*",
+      "/*.png",
+      "/*.jpg",
+      "/*.jpeg",
+      "/*.svg",
+      "/*.ico",
+      "/manifest.webmanifest",
+      "/robots.txt",
+      "/sw.js"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/api/*",
+      "rewrite": "https://server.boreal.financial/api/*",
+      "allowedRoles": [
+        "anonymous"
+      ]
+    }
+  ],
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' https://*.googletagmanager.com https://*.google-analytics.com https://*.googleadservices.com https://*.doubleclick.net https://www.google.com https://*.clarity.ms; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.googletagmanager.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://server.boreal.financial https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.googleadservices.com https://*.doubleclick.net https://www.google.com https://www.google.ca https://*.clarity.ms https://c.bing.com; connect-src 'self' https://server.boreal.financial wss://server.boreal.financial https://*.twilio.com wss://*.twilio.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.googleadservices.com https://*.doubleclick.net https://www.google.com https://www.google.ca https://*.clarity.ms https://c.bing.com; media-src 'self' blob: https://*.twilio.com https://*.twiliocdn.com; frame-src 'self' https://server.boreal.financial https://*.signnow.com https://signnow.com https://*.flinksapp.io https://*.googletagmanager.com https://*.doubleclick.net; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "microphone=(self), camera=(self)"
+  }
+}
