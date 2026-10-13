@@ -2,7 +2,7 @@
 // /otp page so the landing page is the one sign-in screen. Shows nothing when neither is available.
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { resolveOtpNextStep } from "@/auth/otp";
+import { resolveSignedInRoute } from "@/auth/signedInRoute"; // BF_CLIENT_v799_SIGNED_IN_ROUTE
 import { ClientProfileStore } from "@/state/clientProfiles";
 import { biometryAvailable, isEnrolled, phoneFromToken, signInWithFaceId } from "@/native/deviceSignIn";
 import { passkeysSupported, signInWithPasskey, PasskeyError } from "@/auth/passkeys";
@@ -23,7 +23,7 @@ export default function QuickSignIn() {
     return () => { alive = false; };
   }, []);
 
-  function routeAfterSignIn(token: string, data: any) {
+  async function routeAfterSignIn(token: string, data: any) {
     const phone = phoneFromToken(token) ?? "";
     try { sessionStorage.setItem("verified_phone", phone); } catch { /* storage unavailable */ } // BF_CLIENT_v789_ANALYTICS_GATES - never sent to Clarity
     const submittedId = typeof data?.submittedApplicationId === "string" ? data.submittedApplicationId : "";
@@ -32,8 +32,7 @@ export default function QuickSignIn() {
       navigate("/application/" + submittedId, { replace: true });
       return;
     }
-    const next = resolveOtpNextStep(ClientProfileStore.getProfile(phone));
-    navigate(next.action === "portal" ? "/portal" : "/apply/step-1", { replace: true });
+    navigate(await resolveSignedInRoute(token), { replace: true });
   }
 
   async function run(kind: "faceid" | "passkey") {
@@ -41,7 +40,7 @@ export default function QuickSignIn() {
     setError(null);
     try {
       const data = kind === "faceid" ? await signInWithFaceId() : await signInWithPasskey();
-      routeAfterSignIn(data.token, data);
+      await routeAfterSignIn(data.token, data);
     } catch (e: any) {
       if (kind === "faceid") {
         if (e?.code === "expired" || e?.code === "not_enrolled") setFaceIdReady(false);
