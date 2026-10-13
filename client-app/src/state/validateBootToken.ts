@@ -1,5 +1,6 @@
 import { ENV } from "@/env";
 import { clearApplicationToken, getApplicationToken } from "@/auth/applicationToken";
+import { getToken } from "@/auth/token"; // BF_CLIENT_v800_BOOT_CHECK_AUTH
 
 const APPLICATION_ID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -56,7 +57,7 @@ export interface ValidateBootTokenOptions {
 
 export async function validateBootToken(
   options: ValidateBootTokenOptions = {},
-): Promise<{ ok: true } | { ok: false; reason: "stale" | "no_token" | "invalid_shape" | "network" }> {
+): Promise<{ ok: true } | { ok: false; reason: "stale" | "no_token" | "invalid_shape" | "network" | "signed_out" }> {
   if (typeof window === "undefined") return { ok: false, reason: "no_token" };
 
   const stored = (() => {
@@ -79,9 +80,16 @@ export async function validateBootToken(
 
   let res: Response;
   try {
+    // BF_CLIENT_v800_BOOT_CHECK_AUTH - the status check needs the client's sign-in token since
+    // BF-Server v784 (only the owner may read an application). Sent without it, every launch got
+    // a 401, which this check read as "expired": it wiped the saved application and sent a
+    // signed-in client with a live application to Step 1.
+    const clientToken = (() => { try { return getToken(); } catch { return null; } })();
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (clientToken) headers.Authorization = "Bearer " + clientToken;
     res = await fetchImpl(url, {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers,
       credentials: "include",
     });
   } catch {
@@ -90,7 +98,10 @@ export async function validateBootToken(
 
   if (res.ok) return { ok: true };
 
-  const stale = res.status === 404 || res.status === 410 || res.status === 401 || res.status === 403;
+  // BF_CLIENT_v800_BOOT_CHECK_AUTH - only a missing or closed application is stale. 401/403 mean
+  // "not signed in as its owner right now", which sign-in handles; the saved application is kept.
+  if (res.status === 401 || res.status === 403) return { ok: false, reason: "signed_out" };
+  const stale = res.status === 404 || res.status === 410;
   if (!stale) return { ok: true };
 
   clearAllApplicationDrafts();

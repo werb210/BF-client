@@ -107,6 +107,29 @@ describe("validateBootToken", () => {
     expect(localStorage.getItem("bf_application_token")).toBe(VALID_UUID);
   });
 
+  // BF_CLIENT_v800_BOOT_CHECK_AUTH
+  it("sends the client's sign-in token with the status check", async () => {
+    seedAllKeys();
+    const tokenMod = await import("@/auth/token");
+    vi.spyOn(tokenMod, "getToken").mockReturnValue("client.jwt.token");
+    const fetchImpl = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    await validateBootToken({ fetchImpl: fetchImpl as any, redirect: vi.fn() });
+    const init = fetchImpl.mock.calls[0][1] as RequestInit;
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer client.jwt.token");
+  });
+
+  it("keeps the saved application and stays put on 401 or 403", async () => {
+    for (const status of [401, 403]) {
+      seedAllKeys();
+      const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status }));
+      const redirect = vi.fn();
+      const result = await validateBootToken({ fetchImpl: fetchImpl as any, redirect });
+      expect(result).toEqual({ ok: false, reason: "signed_out" });
+      expect(redirect).not.toHaveBeenCalled();
+      expect(localStorage.getItem("bf_application_token")).toBe(VALID_UUID);
+    }
+  });
+
   it("clearAllApplicationDrafts nukes prefixed keys", () => {
     seedAllKeys();
     clearAllApplicationDrafts();
