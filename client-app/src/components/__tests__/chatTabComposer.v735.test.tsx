@@ -19,5 +19,7 @@ describe("the phone Chat tab opens ready to type", () => {
   it("keeps the message box on screen above the tab bar", () => {
     expect(css).toContain(".cmp-phone.cmp-tab-chat .mp-thread-card__composer { position: sticky;");
     expect(css).toContain(".cmp-phone.cmp-tab-chat .mp-thread-card { overflow: visible; }");
+    // BF_CLIENT_v802_ONE_THREAD - the phone thread passes the same refs, so the focus above reaches its input.
+    expect(page).toContain("inputRef={composerInputRef} bodyRef={threadBodyRef}");
   });
 });

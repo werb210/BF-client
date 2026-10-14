@@ -28,24 +28,29 @@ describe("client portal stage tracker on a phone", () => {
 describe("phone tabs v752", () => {
   const cmp = readFileSync("src/components/CmpPhone.tsx", "utf8");
   const ccss = readFileSync("src/components/CmpPhone.css", "utf8");
+  const settings = readFileSync("src/components/cmp/CmpSettings.tsx", "utf8"); // BF_CLIENT_v802_SETTINGS
+  const home = readFileSync("src/components/cmp/CmpHome.tsx", "utf8");
   it("has a Settings tab holding Face ID / Sign out, Delete account and the version", () => {
     expect(cmp).toContain('{ id: "settings", label: "Settings" }');
-    expect(page).toContain('{!isPhone || phoneTab === "settings" ? <AccountBar /> : null}');
-    expect(page).toContain('data-cmp-tab="settings"');
+    expect(page).toContain("{!isPhone ? <AccountBar /> : null}");
+    expect(settings).toContain('data-cmp-tab="settings"');
+    expect(settings).toContain("<FaceIdSignInToggle />");
+    expect(settings).toContain("<CmpMoreFooter onDeleteAccount={p.onDeleteAccount} />");
     expect(ccss).toContain('.cmp-phone.cmp-tab-settings [data-cmp-tab]:not([data-cmp-tab="settings"])');
   });
   it("More no longer repeats Ask Maya on a phone", () => {
     expect(ccss).toContain('.cmp-phone .mp-actions [data-testid="ask-maya"] { display: none; }');
   });
-  it("Home and To do both say when there is nothing to do", () => {
-    expect(page).toContain('data-testid="cmp-home-caught-up"');
-    expect(page).toContain("isPhone && todoLoaded && todoOpen.count + todoExtras.length === 0 ? (");
+  it("Home says when there is nothing to do (v802: in the status card)", () => {
+    expect(home).toContain('data-testid="cmp-home-caught-up"');
+    expect(page).toContain("const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;");
   });
   it("opens an application when the app lands on /portal without one", () => {
     expect(page).toContain('navigate("/application/" + encodeURIComponent(String(pick.id)), { replace: true })');
   });
   it("the Delete account dialog sits outside the tab sections", () => {
-    expect(page.indexOf("{deleteStep > 0 && (")).toBeGreaterThan(page.indexOf('data-cmp-tab="settings"'));
+    expect(page.indexOf("{deleteStep > 0 && (")).toBeGreaterThan(page.indexOf("<CmpSettings"));
+    expect(page.indexOf("<CmpSettings")).toBeGreaterThan(-1);
   });
   it("the tab bar is not hidden while typing", () => {
     expect(cmp).not.toContain('classList.toggle("kb-open"');

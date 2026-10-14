@@ -10,10 +10,12 @@ type WizardLayoutProps = {
 export function WizardLayout({ children }: WizardLayoutProps) {
   return (
     <div style={{ ...layout.page, display: "flex", justifyContent: "center" }}>
-      <div style={layout.centerColumn}>
+      {/* BF_CLIENT_v802_WIZARD_PHONE - full width with 16px padding on a phone (styles/global.css .wiz-card rules). */}
+      <div style={layout.centerColumn} className="wiz-column">
         <OfflineBanner />
         <BrokerImportBanner />
         <div
+          className="wiz-card"
           style={{
             ...components.card.base,
             display: "flex",

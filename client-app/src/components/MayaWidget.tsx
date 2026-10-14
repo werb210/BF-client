@@ -93,6 +93,13 @@ export function getOrCreateMayaSessionId(): string {
 }
 
 const GREETING = "Hi — I'm Maya. How can I help?";
+// BF_CLIENT_v802_MAYA_LIGHT
+const MAYA_SUGGESTIONS = [
+  "What happens next with my application?",
+  "Which documents do I need?",
+  "How long does approval take?",
+  "Can I talk to an advisor?",
+];
 
 function CloseIcon() {
   return (
@@ -240,9 +247,10 @@ export default function MayaWidget() {
     return () => cancelAnimationFrame(frame);
   }, [messages, sending]);
 
-  async function handleSend(e?: FormEvent) {
+  // BF_CLIENT_v802_MAYA_LIGHT - a suggested question sends straight away (override).
+  async function handleSend(e?: FormEvent, override?: string) {
     e?.preventDefault();
-    const text = input.trim();
+    const text = (override ?? input).trim();
     if (!text || sending) return;
     setInput("");
     setMessages((prev) => [...prev, { id: uid("u"), from: "user", message: text }]);
@@ -453,16 +461,16 @@ export default function MayaWidget() {
   const chatUi = (
     <>
       {open ? (
-        <div className="chat-panel fixed inset-0 z-[70] flex h-[100dvh] max-w-[100vw] flex-col overflow-hidden border border-white/20 bg-[#08132a] text-white shadow-2xl pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:inset-auto md:bottom-20 md:right-4 md:h-[min(75vh,620px)] md:w-[min(90vw,420px)] md:rounded-2xl md:p-0">
-          <div className="chat-header flex items-center justify-between border-b border-white/10 px-4 py-3">
+        <div className="chat-panel fixed inset-0 z-[70] flex h-[100dvh] max-w-[100vw] flex-col overflow-hidden border border-slate-200 bg-white text-[#0B1F3A] shadow-2xl pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:inset-auto md:bottom-20 md:right-4 md:h-[min(75vh,620px)] md:w-[min(90vw,420px)] md:rounded-2xl md:p-0">
+          <div className="chat-header flex items-center justify-between border-b border-slate-200 px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Maya</p>
-              <p className="text-xs text-slate-300">Boreal Financial Support</p>
+              <p className="text-xs text-slate-600">AI assistant &middot; Boreal Financial</p>
             </div>
             <button
               aria-label="Close chat"
               onClick={() => setOpen(false)}
-              className="rounded p-1 hover:bg-white/10"
+              className="rounded p-2 hover:bg-slate-100"
             >
               <CloseIcon />
             </button>
@@ -471,26 +479,35 @@ export default function MayaWidget() {
             {messages.map((item) => (
               <div
                 key={item.id}
-                className={`rounded-lg px-3 py-2 ${item.from === "user" ? "ml-8 bg-blue-600 text-white" : "mr-8 bg-[#0f1d3a] text-slate-100"}`}
+                className={`rounded-lg px-3 py-2 ${item.from === "user" ? "ml-8 bg-[#0B1F3A] text-white" : "mr-8 border border-slate-200 bg-[#F5F8FC] text-[#0B1F3A]"}`}
               >
                 {/* BF_CLIENT_MAYA_MARKDOWN_v438 - was raw text, so clients saw
                     **bold** and [here](url) literally. */}
                 {item.from === "user" ? item.message : <MayaMessage message={item.message} />}
               </div>
             ))}
-            {sending ? <p className="text-xs text-slate-400">Maya is typing…</p> : null}
+            {sending ? <p className="text-xs text-slate-600">Maya is typing…</p> : null}
           </div>
+          {/* BF_CLIENT_v802_MAYA_LIGHT - three or four questions to start with, until the client has asked one. */}
+          {mode === "chat" && !messages.some((m) => m.from === "user") ? (
+            <div className="flex gap-2 overflow-x-auto px-3 pb-2 md:px-4" data-testid="maya-suggestions">
+              {MAYA_SUGGESTIONS.map((q) => (
+                <button key={q} type="button" onClick={() => void handleSend(undefined, q)}
+                  className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-sm text-[#0B1F3A] hover:bg-slate-50">{q}</button>
+              ))}
+            </div>
+          ) : null}
 
           {mode === "report" ? (
-            <div className="flex flex-col gap-2 border-t border-white/10 px-3 py-2 md:px-4">
+            <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2 md:px-4">
               <textarea
-                className="w-full rounded border border-white/20 bg-[#0f1d3a] p-2 text-sm text-white"
+                className="w-full rounded border border-slate-300 bg-white p-2 text-sm text-[#0B1F3A]"
                 rows={3}
                 value={issue}
                 onChange={(e) => setIssue(e.target.value)}
                 placeholder="Describe the issue…"
               />
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-slate-600">
                 {issueShotBusy
                   ? "Capturing screenshot…"
                   : issueShot
@@ -498,58 +515,58 @@ export default function MayaWidget() {
                   : "No screenshot captured — text-only report"}
               </div>
               {issueShot ? (
-                <img alt="" src={issueShot} style={{ maxHeight: 80, borderRadius: 4, border: "1px solid rgba(255,255,255,0.15)" }} />
+                <img alt="" src={issueShot} style={{ maxHeight: 80, borderRadius: 4, border: "1px solid #E2E8F0" }} />
               ) : null}
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => { setMode("chat"); setIssueShot(null); }}
-                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm text-[#0B1F3A]"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => void submitIssue()}
-                  className="flex-1 rounded bg-blue-600 px-3 py-2 text-sm text-white"
+                  className="flex-1 rounded bg-[#0B1F3A] px-3 py-2 text-sm text-white"
                 >
                   Submit
                 </button>
               </div>
             </div>
           ) : mode === "lead" ? (
-            <div className="flex flex-col gap-2 border-t border-white/10 px-3 py-2 md:px-4">
-              <div className="text-xs text-slate-300">A Boreal advisor will text you back. A mobile number is best:</div>
-              <input className="rounded border border-white/20 bg-[#0f1d3a] p-2 text-sm text-white placeholder:text-slate-400" placeholder="Your name" value={leadDraft.name} onChange={(e) => setLeadDraft({ ...leadDraft, name: e.target.value })} />
-              <input className="rounded border border-white/20 bg-[#0f1d3a] p-2 text-sm text-white placeholder:text-slate-400" placeholder="Mobile number" type="tel" value={leadDraft.phone} onChange={(e) => setLeadDraft({ ...leadDraft, phone: e.target.value })} autoFocus />
-              <input className="rounded border border-white/20 bg-[#0f1d3a] p-2 text-sm text-white placeholder:text-slate-400" placeholder="Email (optional if you gave a number)" type="email" value={leadDraft.email} onChange={(e) => setLeadDraft({ ...leadDraft, email: e.target.value })} />
-              {leadError ? <div className="text-xs text-red-400">{leadError}</div> : null}
+            <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2 md:px-4">
+              <div className="text-xs text-slate-600">A Boreal advisor will text you back. A mobile number is best:</div>
+              <input className="rounded border border-slate-300 bg-white p-2 text-sm text-[#0B1F3A] placeholder:text-slate-500" placeholder="Your name" value={leadDraft.name} onChange={(e) => setLeadDraft({ ...leadDraft, name: e.target.value })} />
+              <input className="rounded border border-slate-300 bg-white p-2 text-sm text-[#0B1F3A] placeholder:text-slate-500" placeholder="Mobile number" type="tel" value={leadDraft.phone} onChange={(e) => setLeadDraft({ ...leadDraft, phone: e.target.value })} autoFocus />
+              <input className="rounded border border-slate-300 bg-white p-2 text-sm text-[#0B1F3A] placeholder:text-slate-500" placeholder="Email (optional if you gave a number)" type="email" value={leadDraft.email} onChange={(e) => setLeadDraft({ ...leadDraft, email: e.target.value })} />
+              {leadError ? <div className="text-xs text-red-700">{leadError}</div> : null}
               <div className="flex gap-2">
-                <button type="button" onClick={() => setMode("chat")} className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm">Cancel</button>
-                <button type="button" onClick={() => void submitLead()} className="flex-1 rounded bg-blue-600 px-3 py-2 text-sm text-white">Start chat</button>
+                <button type="button" onClick={() => setMode("chat")} className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm text-[#0B1F3A]">Cancel</button>
+                <button type="button" onClick={() => void submitLead()} className="flex-1 rounded bg-[#0B1F3A] px-3 py-2 text-sm text-white">Start chat</button>
               </div>
             </div>
           ) : (
             <>
-              <div className="flex gap-2 border-t border-white/10 px-3 py-2 md:px-4">
+              <div className="flex gap-2 border-t border-slate-200 px-3 py-2 md:px-4">
                 <button
                   type="button"
                   onClick={() => void requestHumanSupport()}
-                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm text-[#0B1F3A]"
                 >
                   Talk to a Human
                 </button>
                 <button
                   type="button"
                   onClick={() => void openReport()}
-                  className="min-w-0 flex-1 rounded border border-white/20 px-3 py-2 text-sm"
+                  className="min-w-0 flex-1 rounded border border-slate-300 px-3 py-2 text-sm text-[#0B1F3A]"
                 >
                   Report an Issue
                 </button>
               </div>
-              <form onSubmit={handleSend} className="flex gap-2 border-t border-white/10 px-3 py-2 md:px-4">
+              <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-200 px-3 py-2 md:px-4">
                 <input
-                  className="min-w-0 flex-1 rounded border border-white/20 bg-[#0f1d3a] px-3 py-2 text-sm text-white placeholder:text-slate-400"
+                  className="min-w-0 flex-1 rounded border border-slate-300 bg-white px-3 py-2 text-sm text-[#0B1F3A] placeholder:text-slate-500"
                   placeholder="Type a message…"
                   ref={inputRef}
                   value={input}
@@ -558,7 +575,7 @@ export default function MayaWidget() {
                 <button
                   type="submit"
                   disabled={sending || !input.trim()}
-                  className="shrink-0 rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                  className="shrink-0 rounded bg-[#0B1F3A] px-3 py-2 text-sm text-white disabled:opacity-50"
                 >
                   Send
                 </button>
@@ -574,7 +591,7 @@ export default function MayaWidget() {
         aria-label={open ? "Close chat" : "Open chat"}
         data-maya-launcher="true" /* BF_CLIENT_CMP_PHONE_TABS_v732 - hidden on the phone client portal (Chat > Ask Maya opens her) */
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
+        className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-[calc(1rem+env(safe-area-inset-right))] z-[60] flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-full bg-[#0B1F3A] text-white shadow-lg hover:bg-[#13294B]"
       >
         {open ? <CloseIcon /> : <ChatIcon />}
       </button>
