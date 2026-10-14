@@ -40,9 +40,11 @@ describe("who a new chat message goes to", () => {
 });
 
 describe("status card and switcher rows", () => {
-  it("shows the stage, the step and all caught up", () => {
+  it("asks what stage the application is at, shows the stage and the bar, and all caught up", () => {
     render(<CmpStatusCard stageLabel="In Review" step={2} total={6} next="Your advisor is reviewing your file." caughtUp />);
-    expect(screen.getByText("Step 2 of 6")).toBeTruthy();
+    // BF_CLIENT_v807_STATUS - no "Step 2 of 6"; the bar stays.
+    expect(screen.getByText("What stage is your application at?")).toBeTruthy();
+    expect(screen.queryByText("Step 2 of 6")).toBeNull();
     expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("2");
     expect(screen.getByTestId("cmp-home-caught-up")).toBeTruthy();
   });

@@ -22,7 +22,8 @@ import {
   isEnrolled,
   type BiometryStatus,
 } from "@/native/deviceSignIn";
-import { Icon } from "@/components/cmp/icons"; // BF_CLIENT_v805_PHONE_FIXES
+import { Icon } from "@/components/cmp/icons";
+import { Capacitor } from "@capacitor/core"; // BF_CLIENT_v807_ANDROID // BF_CLIENT_v805_PHONE_FIXES
 
 type Phase = "checking" | "ready";
 
@@ -85,17 +86,21 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
 
   // BF_CLIENT_v805_PHONE_FIXES - in Settings and the account sheet: a settings row with an on/off switch.
   if (variant === "row") {
+    // BF_CLIENT_v807_ANDROID - "Face ID" is Apple's name; Android phones use a fingerprint or face unlock.
+    const android = Capacitor.getPlatform() === "android";
+    const title = android ? "Fingerprint or face unlock" : "Face ID sign-in";
+    const how = android ? "your fingerprint or face" : "your face";
     const available = phase === "ready" && Boolean(status?.available);
     const desc = phase === "checking" ? "Checking..."
       : !available ? `Not available - ${status?.reason ?? "this device can't use Face ID"}`
       : busy ? (enrolled ? "Turning off..." : "Turning on...")
-      : enrolled ? "On. Sign in with your face instead of a text code."
-      : hint ? "Skip the text code next time." : "Sign in with your face instead of a text code.";
+      : enrolled ? "On. Sign in with " + how + " instead of a text code."
+      : hint ? "Skip the text code next time." : "Sign in with " + how + " instead of a text code.";
     return (
       <div className="cmpx-row cmpx-row--static" data-testid="face-id-setting">
         <span className="cmpx-row__icon"><Icon name="user" /></span>
         <span className="cmpx-row__text">
-          <span className="cmpx-row__title" id="face-id-title">Face ID sign-in</span>
+          <span className="cmpx-row__title" id="face-id-title">{title}</span>
           <span className="cmpx-row__desc" data-testid={available ? undefined : phase === "ready" ? "face-id-unavailable" : undefined}>{desc}</span>
           {error ? <span className="cmpx-row__desc" role="alert" style={{ color: "#b91c1c" }}>{error}</span> : null}
         </span>

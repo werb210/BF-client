@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
     Keyboard: { resize: 'native', resizeOnFullScreen: true },
     // BF_CLIENT_v802_PHONE_UI - dark status-bar text over the white portal header.
     StatusBar: { style: 'LIGHT', backgroundColor: '#ffffff' },
+    // BF_CLIENT_v807_ANDROID - Android draws the app edge to edge (under the status bar). Capacitor fills
+    // env(safe-area-inset-*) so the fixed header and tab bar pad themselves; 'cover' from the start avoids a jump.
+    SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover' },
   }
 };
 

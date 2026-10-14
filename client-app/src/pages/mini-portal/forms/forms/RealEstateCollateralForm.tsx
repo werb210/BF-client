@@ -6,10 +6,18 @@
 // "+ Add owner" / "+ Add mortgage" until used (the hidden fields still submit
 // as empty strings, exactly as before), money keypads, pinned Submit, and a
 // localStorage draft so nothing typed is lost when the sheet closes.
+// BF_CLIENT_v807_FORMS - the property address is the shared Canada / US
+// address block. Its parts are kept under address_street / address_city /
+// address_region / address_postal / address_country, the one-line form under
+// "address", and the pre-v807 keys "street" and "city_province" ("City,
+// Province") keep being written so the PDF and portal views still read them.
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
-import { MoneyInput, mergeDraft, readDraft, useFormDraft } from "../cmpFormKit";
+import {
+  AddressBlock, MoneyInput, addressEntries, hasAddressParts, mergeDraft, normalizeRegion, countryOfRegion,
+  readAddress, readDraft, useFormDraft, type AddressValue,
+} from "../cmpFormKit";
 
 const FORM_KEY = "real_estate_collateral_disclosure";
 
@@ -18,6 +26,8 @@ type Reveal = { owners: number; mortgages: number };
 
 const newProperty = (): Property => ({
   street: "", city_province: "", legal_address: "",
+  // BF_CLIENT_v807_FORMS
+  address: "", address_street: "", address_city: "", address_region: "", address_postal: "", address_country: "",
   owner1: "", owner1_marital: "", owner2: "", owner2_marital: "", owner3: "", owner3_marital: "",
   matrimonial: "", matrimonial_which: "",
   rented: "", rental_income_monthly: "", renter_names: "",
@@ -27,6 +37,32 @@ const newProperty = (): Property => ({
   m2_lender: "", m2_type: "", m2_balance: "", m2_charge: "", m2_payment: "",
   m3_lender: "", m3_type: "", m3_balance: "", m3_charge: "", m3_payment: "",
   taxes_current: "", other_charges: "", other_charges_details: "", other_disclosures: "",
+});
+
+// BF_CLIENT_v807_FORMS - the address of a property, reading pre-v807 saves
+// (only "street" and "city_province") into the block.
+const ADDRESS_FIELD = "address";
+function propertyAddress(p: Property): AddressValue {
+  if (hasAddressParts(p, ADDRESS_FIELD)) return readAddress(p, ADDRESS_FIELD);
+  const legacy = { ...readAddress({}, ADDRESS_FIELD), street: String(p.street ?? "") };
+  const cp = String(p.city_province ?? "").trim();
+  if (cp) {
+    const at = cp.lastIndexOf(",");
+    const region = at >= 0 ? normalizeRegion(cp.slice(at + 1)) : "";
+    if (region) {
+      legacy.city = cp.slice(0, at).trim();
+      legacy.region = region;
+      legacy.country = countryOfRegion(region);
+    } else {
+      legacy.city = cp;
+    }
+  }
+  return legacy;
+}
+const addressFields = (v: AddressValue): Property => ({
+  ...addressEntries(ADDRESS_FIELD, v),
+  street: v.street,
+  city_province: [v.city.trim(), v.region.trim()].filter(Boolean).join(", "),
 });
 
 const MONEY_KEYS = /(_balance|_charge|_payment|purchase_price|present_value|rental_income_monthly)$/;
@@ -81,6 +117,9 @@ export default function RealEstateCollateralForm({
 
   const setField = (idx: number, key: string, value: string) =>
     setProperties((ps) => ps.map((p, i): Property => (i === idx ? { ...p, [key]: value } : p)));
+
+  const setAddress = (idx: number, v: AddressValue) => // BF_CLIENT_v807_FORMS
+    setProperties((ps) => ps.map((p, i): Property => (i === idx ? { ...p, ...addressFields(v) } : p)));
 
   const addProperty = () => setProperties((ps) => [...ps, newProperty()]);
   const removeProperty = (idx: number) => {
@@ -190,11 +229,16 @@ export default function RealEstateCollateralForm({
               )}
             </div>
 
-            {field(idx, "street", "Number & Street")}
-            <div className="cmp-grid-2">
-              {field(idx, "city_province", "City / Province")}
-              {field(idx, "legal_address", "Legal address (if known)")}
-            </div>
+            {/* BF_CLIENT_v807_FORMS - Canada / US address block */}
+            <AddressBlock
+              idPrefix={`re-${idx}-address`}
+              legend="Property address"
+              testId={`re-${idx}-address`}
+              value={propertyAddress(p)}
+              onChange={(v) => setAddress(idx, v)}
+              onBlur={persist}
+            />
+            {field(idx, "legal_address", "Legal address (if known)")}
 
             <div className="cmpf-section">Owners</div>
             {([1, 2, 3] as const).filter((n) => n <= owners).map((n) => owner(idx, n))}

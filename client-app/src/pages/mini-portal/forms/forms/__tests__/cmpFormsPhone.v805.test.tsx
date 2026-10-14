@@ -1,7 +1,7 @@
 // BF_CLIENT_v805_FORMS - behaviour of the phone-friendly CMP forms: blocks
 // behind "+ Add ..." still submit empty, local drafts restore and clear, the
 // CRA steps/button, and the Equipment Remove control. All render-based.
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
@@ -20,6 +20,8 @@ import { draftKey, mergeDraft } from "../../cmpFormKit";
 
 const RE_KEYS = [
   "street", "city_province", "legal_address",
+  // BF_CLIENT_v807_FORMS - address block parts + one-line address
+  "address", "address_street", "address_city", "address_region", "address_postal", "address_country",
   "owner1", "owner1_marital", "owner2", "owner2_marital", "owner3", "owner3_marital",
   "matrimonial", "matrimonial_which", "rented", "rental_income_monthly", "renter_names",
   "property_type", "purchase_price", "purchase_when", "present_value", "value_method",
@@ -176,7 +178,7 @@ describe("save as you go", () => {
     const view = render(<RealEstateCollateralForm applicationId="app-flush" onComplete={vi.fn()} />);
     await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
     await act(async () => { await Promise.resolve(); });
-    fireEvent.change(screen.getByLabelText("Number & Street"), { target: { value: "1 Main St" } });
+    fireEvent.change(within(screen.getByTestId("re-0-address")).getByLabelText("Street"), { target: { value: "1 Main St" } }); // BF_CLIENT_v807_FORMS
     view.unmount();
     const raw = window.localStorage.getItem(draftKey("real_estate_collateral_disclosure", "app-flush"));
     expect(raw && JSON.parse(raw).properties[0].street).toBe("1 Main St");
@@ -204,7 +206,7 @@ describe("CRA authorization", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Individual / Sole Prop / Partnership" }));
     expect(steps()).toHaveLength(INDIVIDUAL_STEPS.length);
-    expect(screen.getByText(/Accord is not alerted when you finish/)).toBeTruthy();
+    expect(screen.getByText(/Boreal Financial is not alerted when you finish/)).toBeTruthy();
 
     const confirm = screen.getByRole("button", { name: "Confirm Authorization" }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);

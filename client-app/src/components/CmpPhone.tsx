@@ -24,8 +24,32 @@ export function useIsPhoneWidth(): boolean {
   return phone;
 }
 
+// BF_CLIENT_v807_TABLET - one design on every screen. Phones (up to 640px) and tablets held upright (641-1023px)
+// show one section at a time with the bottom tabs; tablets in landscape and computers (1024px and up) show Home
+// and Chat side by side with a rail on the left for Home, More and Settings.
+export type CmpMode = "phone" | "tablet" | "wide";
+export const WIDE_QUERY = "(min-width: 1024px)";
+export function cmpModeNow(): CmpMode {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "phone";
+  if (window.matchMedia(PHONE_QUERY).matches) return "phone";
+  return window.matchMedia(WIDE_QUERY).matches ? "wide" : "tablet";
+}
+export function useCmpMode(): CmpMode {
+  const [mode, setMode] = useState<CmpMode>(cmpModeNow);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
+    const on = () => setMode(cmpModeNow());
+    on();
+    const qs = [window.matchMedia(PHONE_QUERY), window.matchMedia(WIDE_QUERY)];
+    qs.forEach((q) => q.addEventListener?.("change", on));
+    return () => qs.forEach((q) => q.removeEventListener?.("change", on));
+  }, []);
+  return mode;
+}
+
+/** BF_CLIENT_v807_TABLET - the client portal's new design is used at every width now (it was phones only). */
 export function usePhoneLayout(): boolean {
-  const phone = useIsPhoneWidth();
+  const phone = true;
   // Maya's round floating button would sit on the tab bar; on a phone she opens from Chat > Ask Maya.
   // BF_CLIENT_PHONE_TABS_v752 - the tab bar is no longer hidden while the keyboard is up: the app shrinks above the
   // keyboard (Keyboard resize "native" in capacitor.config.ts), so the tabs stay reachable from Chat.
@@ -50,10 +74,12 @@ const TABS: Array<{ id: CmpTab; label: string }> = [
   { id: "settings", label: "Settings" },
 ];
 
-export function CmpTabBar({ tab, onTab, todoCount }: { tab: CmpTab; onTab: (t: CmpTab) => void; todoCount: number }) {
+export function CmpTabBar({ tab, onTab, todoCount, mode = "phone" }: { tab: CmpTab; onTab: (t: CmpTab) => void; todoCount: number; mode?: CmpMode }) {
+  // BF_CLIENT_v807_TABLET - wide screens: a rail on the left, and no Chat tab (Chat is always open on the right).
+  const tabs = mode === "wide" ? TABS.filter((t) => t.id !== "chat") : TABS;
   return (
-    <nav className="cmp-tabbar" aria-label="Client portal" data-testid="cmp-tabbar">
-      {TABS.map((t) => {
+    <nav className={"cmp-tabbar" + (mode === "wide" ? " cmp-tabbar--rail" : "")} aria-label="Client portal" data-testid="cmp-tabbar">
+      {tabs.map((t) => {
         const on = t.id === tab;
         return (
           <button key={t.id} type="button" className={"cmp-tabbar__tab" + (on ? " cmp-tabbar__tab--on" : "")} aria-current={on ? "page" : undefined}

@@ -149,10 +149,8 @@ export function CmpStatusCard({ stageLabel, step, total, next, caughtUp }: { sta
   const pct = Math.max(0, Math.min(100, Math.round((step / total) * 100)));
   return (
     <section className="cmpx-card" data-cmp-tab="home" data-testid="cmp-status" aria-label="Application status">
-      <div className="cmpx-status__row">
-        <span className="cmpx-eyebrow">Status</span>
-        <span className="cmpx-status__step">Step {step} of {total}</span>
-      </div>
+      {/* BF_CLIENT_v807_STATUS - a plain question instead of "Status / Step 4 of 6", which told the client nothing. */}
+      <h2 className="cmpx-status__title">What stage is your application at?</h2>
       <div className="cmpx-status__stage" data-testid="cmp-status-stage">{stageLabel}</div>
       <div className="cmpx-bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={step} aria-label={"Step " + step + " of " + total}>
         <div className="cmpx-bar__fill" style={{ width: pct + "%" }} />
@@ -163,7 +161,7 @@ export function CmpStatusCard({ stageLabel, step, total, next, caughtUp }: { sta
           <span>You're all caught up. We have everything we need from you right now.</span>
         </div>
       ) : null}
-      <div className="cmpx-status__next" data-testid="cmp-status-next"><b>What happens next</b>{next}</div>
+      <div className="cmpx-status__next" data-testid="cmp-status-next">{next}</div>
     </section>
   );
 }
@@ -175,7 +173,7 @@ export function CmpOffersCard({ count, bestAmount, onOpen }: { count: number; be
       <div className="cmpx-eyebrow">{count === 1 ? "Your offer" : "Your offers"}</div>
       {bestAmount ? <div className="cmpx-offers__amount">{count > 1 ? "Up to " : ""}{bestAmount}</div> : null}
       <p className="cmpx-offers__sub">{count === 1 ? "One lender has made you an offer." : count + " lenders have made you offers. Compare them side by side."}</p>
-      <button type="button" className="cmpx-btn cmpx-btn--block" onClick={onOpen}>{count === 1 ? "Review the offer" : "Compare offers"}</button>
+      <button type="button" className="cmpx-btn cmpx-btn--block" onClick={onOpen} data-testid="open-offers-btn">{count === 1 ? "Review the offer" : "Compare offers"}</button>
     </section>
   );
 }

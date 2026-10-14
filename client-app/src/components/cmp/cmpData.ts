@@ -6,7 +6,7 @@ export const STAGE_STEPS = [
   { key: "received", label: "Received", next: "We have your application. Your advisor looks at it next." },
   { key: "in_review", label: "In Review", next: "Your advisor is reviewing your file. If anything is missing, it will appear here." },
   { key: "documents_required", label: "Documents Required", next: "We need a few documents before your file can go to lenders." },
-  { key: "additional_steps_required", label: "Additional Steps", next: "A few short forms are left. Once they're done, your file goes to lenders." },
+  { key: "additional_steps_required", label: "Additional Steps", next: "Lenders need a few more items before your file moves on. They're listed below." },
   { key: "off_to_lender", label: "Off to Lender", next: "Your file is with lenders. We'll tell you the moment an offer comes in." },
   { key: "offer", label: "Offer", next: "You have an offer. Review it, then accept it or ask for changes." },
 ] as const;

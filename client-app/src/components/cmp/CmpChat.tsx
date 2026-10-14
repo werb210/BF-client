@@ -50,6 +50,11 @@ export default function CmpChat(p: Props) {
   const to = p.recipient ?? defaultRecipient(p.messages);
   const aName = advisorName(p.advisor);
   const advisorLabel = p.advisor?.firstName || "My advisor";
+  // BF_CLIENT_v807_CHAT - who you are writing to is always spelled out: two clear choices at the top and a
+  // line above the message box ("You're writing to Maya, our AI assistant").
+  const advisorWho = p.advisor?.firstName ? p.advisor.firstName + ", your advisor" : "your advisor";
+  const writingTo = to === "maya" ? "Maya, our AI assistant" : advisorWho;
+  const writingNote = to === "maya" ? "She answers right away." : "A person on our team replies during business hours.";
 
   const timeline = useMemo(() => {
     const staff = p.messages.map((m) => ({ kind: "staff" as const, at: Date.parse(m.createdAt) || 0, m }));
@@ -134,16 +139,21 @@ export default function CmpChat(p: Props) {
 
   return (
     <section className="cmp-phone-only cmpx-chat" data-cmp-tab="chat" data-testid="cmp-chat" aria-label="Chat">
-      <div className="cmpx-chat__who">
-        {p.advisor?.photoUrl ? <img className="cmpx-avatar" src={p.advisor.photoUrl} alt="" /> : <span className="cmpx-avatar" aria-hidden="true">{aName ? initials(aName) : "B"}</span>}
-        <div>
-          <div className="cmpx-chat__whoname">{aName || "Your Boreal team"}</div>
-          <div className="cmpx-chat__whosub">Maya, our AI assistant, answers first. Your advisor is one tap away.</div>
-        </div>
+      <div className="cmpx-chatto" role="tablist" aria-label="Who are you writing to?" data-testid="cmp-chat-to">
+        <button type="button" role="tab" aria-selected={to === "maya"} className="cmpx-chatto__opt" onClick={() => p.setRecipient("maya")} data-testid="cmp-to-maya">
+          <span className="cmpx-avatar cmpx-avatar--maya" aria-hidden="true"><Icon name="sparkle" size={18} /></span>
+          <span className="cmpx-chatto__text"><span className="cmpx-chatto__name">Maya</span><span className="cmpx-chatto__sub">AI assistant &middot; answers right away</span></span>
+        </button>
+        <button type="button" role="tab" aria-selected={to === "advisor"} className="cmpx-chatto__opt" onClick={() => p.setRecipient("advisor")} data-testid="cmp-to-advisor">
+          {p.advisor?.photoUrl ? <img className="cmpx-avatar" src={p.advisor.photoUrl} alt="" /> : <span className="cmpx-avatar" aria-hidden="true">{aName ? initials(aName) : "B"}</span>}
+          <span className="cmpx-chatto__text"><span className="cmpx-chatto__name">{p.advisor?.firstName || "Your advisor"}</span><span className="cmpx-chatto__sub">A person &middot; replies in business hours</span></span>
+        </button>
       </div>
       <div className="cmpx-chat__body" ref={p.bodyRef}>
         {timeline.length === 0 ? (
-          <div className="cmpx-chat__empty" data-testid="cmp-chat-empty">Ask anything about your application. Maya answers right away, and you can send any question on to your advisor.</div>
+          <div className="cmpx-chat__empty" data-testid="cmp-chat-empty">{to === "maya"
+            ? "Ask Maya anything about your application. She answers right away, and any answer can be sent on to your advisor."
+            : "Write to " + advisorWho + ". They'll reply here, and you'll get a notification."}</div>
         ) : timeline.map((t) => {
           if (t.kind === "maya") {
             const e = t.e;
@@ -170,7 +180,7 @@ export default function CmpChat(p: Props) {
           const mine = m.authorRole === "self";
           return (
             <div key={m.id} className={"cmpx-msg " + (mine ? "cmpx-msg--me" : "cmpx-msg--them")}>
-              {mine ? null : <div className="cmpx-msg__who">{m.authorName || "Boreal"}</div>}
+              <div className="cmpx-msg__who">{mine ? "To " + (p.advisor?.firstName || "your advisor") : (m.authorName || "Boreal")}</div>
               <div className="cmpx-msg__bubble">
                 {m.body ? <div>{m.body}</div> : null}
                 {m.attachments?.map((a, i) => (a.contentType ?? "").startsWith("image/")
@@ -191,11 +201,7 @@ export default function CmpChat(p: Props) {
         </div>
       ) : null}
       <div className="cmpx-composer">
-        <div className="cmpx-composer__to" role="group" aria-label="Send to">
-          <span>To:</span>
-          <button type="button" aria-pressed={to === "maya"} onClick={() => p.setRecipient("maya")} data-testid="cmp-to-maya">Maya (AI)</button>
-          <button type="button" aria-pressed={to === "advisor"} onClick={() => p.setRecipient("advisor")} data-testid="cmp-to-advisor">{advisorLabel}</button>
-        </div>
+        <p className="cmpx-composer__writing" data-testid="cmp-chat-writing">You're writing to <b>{writingTo}</b>. {writingNote}</p>
         {p.attachments.length > 0 ? (
           <div className="cmpx-chips">
             {p.attachments.map((a, i) => (

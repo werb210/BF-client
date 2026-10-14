@@ -39,12 +39,13 @@ import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UP
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
-import { usePhoneLayout, CmpTabBar, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
+import { usePhoneLayout, useCmpMode, CmpTabBar, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732 + BF_CLIENT_v807_TABLET
 // BF_CLIENT_v802_PHONE_UI - the phone client portal: header, Home cards, one chat thread, More, Settings, booking.
 import { CmpHeader, AppSwitcherSheet, CmpHello, CmpStatusCard, CmpOffersCard, CmpReferCard, toSwitcherApp } from "../components/cmp/CmpHome";
 import CmpChat from "../components/cmp/CmpChat";
 import CmpMore, { CallControl, type MoreForm } from "../components/cmp/CmpMore";
-import CmpSettings from "../components/cmp/CmpSettings";
+import CmpSettings, { type EditableDetails } from "../components/cmp/CmpSettings";
+import ReportProblemSheet from "../components/cmp/ReportProblemSheet"; // BF_CLIENT_v807_REPORT
 import BookCallSheet from "../components/cmp/BookCallSheet";
 import { STAGE_STEPS, FUNDED_STEP, isFundedState, loadAdvisor, type Advisor } from "../components/cmp/cmpData";
 import { phoneFromToken } from "@/native/deviceSignIn";
@@ -161,6 +162,7 @@ export default function MiniPortalPage() {
   // BF_CLIENT_CMP_PHONE_TABS_v732 - phone layout: active tab, to-do count for the badge, the next step for Home.
   const isPhone = usePhoneLayout();
   const [phoneTab, setPhoneTab] = useState<CmpTab>("home");
+  const cmpMode = useCmpMode(); // BF_CLIENT_v807_TABLET
   const [todoOpen, setTodoOpen] = useState<{ count: number; first: string | null }>({ count: 0, first: null });
   const [todoLoaded, setTodoLoaded] = useState(false); // BF_CLIENT_PHONE_POLISH_v751
   // BF_CLIENT_v802_PHONE_UI - which requested forms are still open and which are done (More tab status).
@@ -178,6 +180,8 @@ export default function MiniPortalPage() {
     setTodoKinds({ docs: d.outstanding.filter((i) => i.kind === "document").length, other: d.outstanding.filter((i) => i.kind !== "document").length });
   }, []);
   const [todoKinds, setTodoKinds] = useState<{ docs: number; other: number }>({ docs: 0, other: 0 }); // BF_CLIENT_v805_PHONE_FIXES
+  const [profileOverride, setProfileOverride] = useState<EditableDetails | null>(null); // BF_CLIENT_v807_DETAILS
+  const [reportOpen, setReportOpen] = useState(false); // BF_CLIENT_v807_REPORT
   // BF_CLIENT_v802_PHONE_UI
   const [rawStage, setRawStage] = useState("");
   const [advisor, setAdvisor] = useState<Advisor | null>(null);
@@ -203,6 +207,8 @@ export default function MiniPortalPage() {
     const fullName = [a.firstName, a.lastName].filter(Boolean).join(" ").trim();
     const out: Record<string, unknown> = {};
     if (fullName) out.fullName = fullName;
+    if (a.firstName) out.firstName = String(a.firstName); // BF_CLIENT_v807_DETAILS
+    if (a.lastName) out.lastName = String(a.lastName);
     if (a.email) out.email = a.email;
     if (a.phone ?? a.cellPhone) out.cellPhone = a.phone ?? a.cellPhone;
     if (a.homePhone) out.homePhone = a.homePhone;
@@ -838,22 +844,43 @@ export default function MiniPortalPage() {
   const stageStep = funded ? FUNDED_STEP : (STAGE_STEPS[stageIndex] ?? STAGE_STEPS[0]);
   const stepNumber = funded ? STAGE_STEPS.length : Math.min(stageIndex + 1, STAGE_STEPS.length);
   const currentApp = myApps.find((a) => String(a?.id) === String(applicationId));
-  const businessName = String(cmpPrefill.businessName ?? currentApp?.business_name ?? currentApp?.businessName ?? "").trim() || "Your application";
-  const fullName = String(cmpPrefill.fullName ?? "").trim();
+  // BF_CLIENT_v807_DETAILS - what the client saved in Settings wins until the file reloads with it.
+  const businessName = (profileOverride?.business || String(cmpPrefill.businessName ?? currentApp?.business_name ?? currentApp?.businessName ?? "").trim()) || "Your application";
+  const fullName = profileOverride ? (profileOverride.firstName + " " + profileOverride.lastName).trim() : String(cmpPrefill.fullName ?? "").trim();
+  const myEmail = profileOverride?.email ?? String(cmpPrefill.email ?? "");
+  const editableDetails: EditableDetails = profileOverride ?? {
+    firstName: String(cmpPrefill.firstName ?? fullName.split(/\s+/)[0] ?? ""),
+    lastName: String(cmpPrefill.lastName ?? fullName.split(/\s+/).slice(1).join(" ")),
+    email: myEmail,
+    business: businessName === "Your application" ? "" : businessName,
+  };
+  const saveDetails = async (d: EditableDetails) => {
+    await apiCall("/api/client/profile", { method: "POST", body: { applicationId, firstName: d.firstName, lastName: d.lastName, email: d.email, businessName: d.business } });
+    setProfileOverride(d);
+    setMyApps((prev) => prev.map((a) => (String(a?.id) === String(applicationId) ? { ...a, business_name: d.business } : a)));
+  };
   const firstName = fullName.split(/\s+/)[0] ?? "";
   const myPhone = String(cmpPrefill.cellPhone ?? "").trim() || (() => { const t = getToken(); return (t && phoneFromToken(t)) || ""; })();
   const switcherApps = myApps.map(toSwitcherApp);
   const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;
   // BF_CLIENT_v805_PHONE_FIXES - "what happens next" says what is actually left (it said "a few short forms
   // are left" next to "you're all caught up"). Nothing left before lenders: we're reviewing.
+  // BF_CLIENT_v807_STATUS - Documents Required and Additional Steps mean something is needed from the client,
+  // so those stages never show "all caught up"; the description says what is left, or that the advisor is
+  // adding what lenders asked for.
+  const needsItemsStage = stageStep.key === "documents_required" || stageStep.key === "additional_steps_required";
+  const showCaughtUp = caughtUp && !needsItemsStage;
   const statusNext = (() => {
     const docs = todoKinds.docs;
     const other = todoKinds.other + todoExtras.length;
     const left = docs + other;
     if (todoLoaded && left > 0) {
       const parts = [docs ? docs + (docs === 1 ? " document" : " documents") : "", other ? other + (other === 1 ? " form" : " forms") : ""].filter(Boolean).join(" and ");
-      return left + (left === 1 ? " thing" : " things") + " left: " + parts + ". Once they're done, your file moves to the next step.";
+      if (stageStep.key === "additional_steps_required") return "Lenders need a few more items before your file moves on: " + parts + ". They're listed below.";
+      if (stageStep.key === "documents_required") return "We need a few documents before your file can go to lenders: " + parts + ". They're listed below.";
+      return left + (left === 1 ? " thing" : " things") + " left: " + parts + ". They're listed below. Once they're done, your file moves to the next step.";
     }
+    if (todoLoaded && needsItemsStage) return "Everything asked for so far is in. Your advisor is checking it and will add anything else lenders need.";
     if (caughtUp && !funded && stageIndex < STAGE_BY_KEY.off_to_lender) return "We have what we need from you for now. Your advisor is reviewing your file and will let you know what comes next.";
     return stageStep.next;
   })();
@@ -904,7 +931,20 @@ export default function MiniPortalPage() {
     }
     setPhoneTab(t); window.scrollTo?.(0, 0);
   };
-  const openChat = (to: "maya" | "advisor") => { setChatTo(to); onPhoneTab("chat"); };
+  // BF_CLIENT_v807_TABLET - on a wide screen Chat is always open on the right: "Message" just picks who to
+  // write to and puts the cursor in the message box.
+  const openChat = (to: "maya" | "advisor") => {
+    setChatTo(to);
+    if (cmpMode === "wide") { window.setTimeout(() => composerInputRef.current?.focus(), 0); return; }
+    onPhoneTab("chat");
+  };
+  const viewTab: CmpTab = cmpMode === "wide" && phoneTab === "chat" ? "home" : phoneTab;
+  // BF_CLIENT_v807_ANDROID - the Android Back button returns to Home before it leaves the app.
+  useEffect(() => {
+    const onBack = (e: Event) => { if (viewTab !== "home") { e.preventDefault(); setPhoneTab("home"); } };
+    window.addEventListener("boreal:back", onBack);
+    return () => window.removeEventListener("boreal:back", onBack);
+  }, [viewTab]);
 
   // BF_CLIENT_APP_GONE_v736
   if (appGone) {
@@ -933,7 +973,7 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
       {/* BF_CLIENT_PHONE_POLISH_v751 - on a phone the Face ID / Sign out row lives on the More tab only. */}
       {!isPhone ? <AccountBar /> : null} {/* BF_CLIENT_v802_SETTINGS - on a phone Face ID and Sign out are on the Settings tab only */}
-      <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + phoneTab : "")}>
+      <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + viewTab + " cmp-mode-" + cmpMode : "")}>
       {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
       <div data-cmp-tab="home">
       {isPhone ? <CmpHello firstName={firstName} advisor={advisor} onCall={() => void startCall()} onMessage={() => openChat("advisor")} onBook={() => setBookOpen(true)} /> : null}
@@ -1040,7 +1080,7 @@ export default function MiniPortalPage() {
           {uploadNotice.text}
         </div>
       )}
-      {isPhone ? <CmpStatusCard stageLabel={stageStep.label} step={stepNumber} total={STAGE_STEPS.length} next={statusNext} caughtUp={caughtUp} /> : null}
+      {isPhone ? <CmpStatusCard stageLabel={stageStep.label} step={stepNumber} total={STAGE_STEPS.length} next={statusNext} caughtUp={showCaughtUp} /> : null}
       </div>
       {/* BF_CLIENT_v802_PHONE_UI - the to-do list is on Home (To do is no longer a tab). */}
       <div data-cmp-tab="home">
@@ -1185,8 +1225,7 @@ export default function MiniPortalPage() {
         {isPhone ? (
           <CmpMore forms={moreForms} docsStatus={docsChecked ? (hasOutstandingDocs ? "needed" : "done") : null}
             onForm={(id) => onChip(id)} onUpload={() => { setPickerDoc(null); setShowDocPicker(true); }}
-            onNewApplication={() => onChip("new")} onBook={() => setBookOpen(true)} onAskMaya={() => openChat("maya")}
-            call={{ state: callState, error: callError, onStart: () => void startCall(), onEnd: endCall, onReset: () => setCallState("idle") }} />
+            onNewApplication={() => onChip("new")} />
         ) : (
         <aside className="mp-actions" data-cmp-tab="more">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
@@ -1479,11 +1518,9 @@ export default function MiniPortalPage() {
       </div>
       {isPhone ? (
         <CmpSettings
-          details={{ name: fullName, phone: myPhone ? formatPhone(myPhone) : "", email: String(cmpPrefill.email ?? ""), business: businessName }}
+          details={editableDetails} phone={myPhone ? formatPhone(myPhone) : ""} onSaveDetails={saveDetails}
           applicationNumber={shortId} stage={stageStep.label}
-          onDocuments={() => { setPickerDoc(null); setShowDocPicker(true); }}
-          onAskQuestion={() => openChat("maya")}
-          onReportProblem={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "report" } }))}
+          onReportProblem={() => setReportOpen(true)}
           onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} />
       ) : null}
       {/* BF_CLIENT_v802_PHONE_UI - the application switcher and the booking sheet. */}
@@ -1491,7 +1528,8 @@ export default function MiniPortalPage() {
         onContinue={(id) => void continueApplication(id)}
         onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
       {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
-        prefill={{ name: fullName, email: String(cmpPrefill.email ?? ""), phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}
+        prefill={{ name: fullName, email: myEmail, phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}
+      {reportOpen ? <ReportProblemSheet applicationId={String(applicationId ?? "")} contact={{ name: fullName, phone: myPhone, email: myEmail }} onClose={() => setReportOpen(false)} /> : null}
       {/* BF_CLIENT_PHONE_TABS_v752 - outside the tab sections, so it opens from Settings (a dialog inside a hidden tab never shows). */}
       {deleteStep > 0 && (
         <div
@@ -1530,7 +1568,7 @@ export default function MiniPortalPage() {
           </div>
         </div>
       )}
-      {isPhone ? <CmpTabBar tab={phoneTab} onTab={onPhoneTab} todoCount={todoOpen.count + todoExtras.length} /> : null}
+      {isPhone ? <CmpTabBar tab={viewTab} onTab={onPhoneTab} todoCount={todoOpen.count + todoExtras.length} mode={cmpMode} /> : null}
       </div>
     </>
   );

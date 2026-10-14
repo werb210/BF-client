@@ -327,3 +327,58 @@
   .cmpf-row { flex-direction: column; align-items: stretch !important; gap: 4px !important; }
   .cmpf-row > .cmpf-row-field { width: 100% !important; }
 }
+
+/* BF_CLIENT_v807_FORMS - Canada / US address block. One field per row by
+   default (phones); the tablet rules below pair City + Province/State and
+   Postal/ZIP + Country. */
+.cmpf-address {
+  border: 0;
+  margin: 16px 0 0; /* space above "Physical address (if different)" etc.; a legend's own margin is ignored */
+  padding: 0;
+  min-width: 0;
+}
+.cmpf-address-legend {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 14px;
+}
+.cmpf-address-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+/* BF_CLIENT_v807_FORMS - tablet (iPad / Android tablet) and wider: the forms
+   sit in a large centred sheet, so short fields pair up two per row, text is
+   16px, every control is at least 44px tall and fields get more room.
+   Repeating blocks keep their card look. Phones (max-width 640px) are not
+   affected. */
+@media (min-width: 641px) {
+  .cmpf { font-size: 16px; }
+  .cmpf-intro { font-size: 16px; margin-bottom: 18px; }
+  .cmpf-label { font-size: 16px; margin: 14px 0 6px; }
+  .cmpf-section { font-size: 17px; margin-top: 26px; }
+  .cmpf-sub { font-size: 15px; }
+  .cmpf-input,
+  .cmpf-select,
+  .cmpf-textarea { font-size: 16px; min-height: 44px; }
+  .cmpf-add,
+  .cmpf-remove,
+  .cmpf-radio,
+  .cmpf-seg button { min-height: 44px; font-size: 16px; }
+  .cmpf-check { font-size: 16px; }
+  .cmpf-table td { font-size: 16px; }
+
+  .cmpf .cmp-grid-2,
+  .cmpf .cmp-grid-3 { column-gap: 20px; row-gap: 4px; }
+  .cmpf-card { padding: 18px 20px; margin-bottom: 18px; }
+
+  .cmpf-address-legend { font-size: 16px; margin-top: 18px; }
+  .cmpf-address-row { grid-template-columns: 1fr 1fr; column-gap: 20px; }
+}
+
+/* Three across is cramped in a portrait tablet sheet: two per row there. */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .cmpf .cmp-grid-3 { grid-template-columns: 1fr 1fr; }
+}

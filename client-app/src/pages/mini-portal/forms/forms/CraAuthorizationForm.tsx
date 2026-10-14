@@ -119,8 +119,9 @@ export default function CraAuthorizationForm({
     <div className="cmpf">
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>CRA View-Only Authorization</h2>
       <p className="cmpf-intro">
+        {/* BF_CLIENT_v807_FORMS - the firm name and number stay: they are what the CRA shows. */}
         Grant view-only (Level 1) access to {ACCORD_FIRM} (business number {ACCORD_BN}). This is read-only -
-        Accord cannot file or change anything with the CRA.
+        nothing can be filed or changed with the CRA through it.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Confirmed</span>}
       </p>
 
@@ -140,14 +141,14 @@ export default function CraAuthorizationForm({
       </ol>
 
       <p className="cmpf-note">
-        Important: Accord is not alerted when you finish. After submitting, please let your Accord representative know.
+        Important: Boreal Financial is not alerted when you finish. After submitting, please let your Boreal Financial representative know.
       </p>
 
       {error && <p className="cmpf-error">{error}</p>}
 
       <label className="cmpf-check">
         <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-        <span>I have completed the CRA view-only authorization for Accord.</span>
+        <span>I have completed the CRA view-only authorization.</span>
       </label>
 
       <div className="cmpf-actions">
