@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 import FaceIdSignInToggle from "@/components/FaceIdSignInToggle";
 import PasskeySignInToggle from "@/components/PasskeySignInToggle"; // BF_CLIENT_BLOCK_v600
 import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
+import { useIsPhoneWidth } from "@/components/CmpPhone"; // BF_CLIENT_v802_ACCOUNT_BUTTON
+import { Sheet } from "@/components/cmp/CmpHome";
+import { Icon } from "@/components/cmp/icons";
 
 export default function AccountBar() {
   // BF_CLIENT_SIGN_OUT_v345
@@ -31,6 +34,10 @@ export default function AccountBar() {
   // the service worker caches and the push registration (auth/logout.ts).
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
+  // BF_CLIENT_v802_ACCOUNT_BUTTON - on a phone the Face ID / Sign out row no longer sits on top of every
+  // screen: a small account button opens them in a sheet.
+  const isPhone = useIsPhoneWidth();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const signOut = async () => {
     setSigningOut(true);
@@ -42,6 +49,27 @@ export default function AccountBar() {
     }
     navigate("/otp", { replace: true }); // BF_CLIENT_v790 - same destination as before v789
   };
+
+  if (isPhone) {
+    return (
+      <>
+        <button type="button" className="cmpx-acct-btn" aria-label="Account" data-testid="account-button" onClick={() => setSheetOpen(true)}>
+          <Icon name="user" size={20} />
+        </button>
+        {sheetOpen ? (
+          <Sheet title="Account" onClose={() => setSheetOpen(false)} testId="account-sheet">
+            <div className="cmpx-list cmpx-settings__toggles" style={{ marginBottom: 12 }}>
+              <FaceIdSignInToggle />
+              <PasskeySignInToggle />
+            </div>
+            <button type="button" className="cmpx-btn cmpx-btn--ghost cmpx-btn--block" disabled={signingOut} onClick={() => void signOut()}>
+              <Icon name="out" />{signingOut ? "Signing out..." : "Sign out"}
+            </button>
+          </Sheet>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <div

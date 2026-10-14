@@ -12,6 +12,8 @@ const config: CapacitorConfig = {
   plugins: {
     // BF_CLIENT_PHONE_TABS_v752 - resize the app above the keyboard so the tab bar stays visible on Chat.
     Keyboard: { resize: 'native', resizeOnFullScreen: true },
+    // BF_CLIENT_v802_PHONE_UI - dark status-bar text over the white portal header.
+    StatusBar: { style: 'LIGHT', backgroundColor: '#ffffff' },
   }
 };
 

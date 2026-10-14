@@ -30,7 +30,6 @@ import ProductQuestionsForm from "@/pages/mini-portal/forms/forms/ProductQuestio
 import SlimHeader from "@/components/SlimHeader";
 import AccountBar from "@/components/AccountBar"; // BF_CLIENT_CMP_LAYOUT_v631
 import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
-import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 import { ensureMicrophonePermission } from "@/lib/microphone"; // BF_CLIENT_v789_MIC_PERMISSION
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
@@ -40,7 +39,15 @@ import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UP
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
 import ReactivateHeldFiles from "../components/ReactivateHeldFiles"; // BF_CLIENT_BLOCK_v548_REACTIVATE_HELD
-import { usePhoneLayout, CmpTabBar, CmpChatSwitch, CmpNextStep, CmpMoreFooter, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
+import { usePhoneLayout, CmpTabBar, type CmpTab } from "../components/CmpPhone"; // BF_CLIENT_CMP_PHONE_TABS_v732
+// BF_CLIENT_v802_PHONE_UI - the phone client portal: header, Home cards, one chat thread, More, Settings, booking.
+import { CmpHeader, AppSwitcherSheet, CmpHello, CmpStatusCard, CmpOffersCard, CmpReferCard, toSwitcherApp } from "../components/cmp/CmpHome";
+import CmpChat from "../components/cmp/CmpChat";
+import CmpMore, { CallControl, type MoreForm } from "../components/cmp/CmpMore";
+import CmpSettings from "../components/cmp/CmpSettings";
+import BookCallSheet from "../components/cmp/BookCallSheet";
+import { STAGE_STEPS, FUNDED_STEP, isFundedState, loadAdvisor, type Advisor } from "../components/cmp/cmpData";
+import { phoneFromToken } from "@/native/deviceSignIn";
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -155,12 +162,30 @@ export default function MiniPortalPage() {
   const [phoneTab, setPhoneTab] = useState<CmpTab>("home");
   const [todoOpen, setTodoOpen] = useState<{ count: number; first: string | null }>({ count: 0, first: null });
   const [todoLoaded, setTodoLoaded] = useState(false); // BF_CLIENT_PHONE_POLISH_v751
+  // BF_CLIENT_v802_PHONE_UI - which requested forms are still open and which are done (More tab status).
+  const [formsOpen, setFormsOpen] = useState<Set<string>>(new Set());
+  const [formsDone, setFormsDone] = useState<Set<string>>(new Set());
   const onTodoData = useCallback((d: { outstanding: Array<{ key: string; kind: string }>; completed: Array<{ key: string; kind: string }> }) => {
     setTodoOpen({ count: d.outstanding.length, first: String((d.outstanding[0] as { label?: string } | undefined)?.label ?? "") || null });
     setTodoLoaded(true);
-    const keys = [...d.outstanding, ...d.completed].filter((i) => i.kind === "form").map((i) => String(i.key).replace(/^form:/, ""));
+    const formKey = (i: { key: string }) => String(i.key).replace(/^form:/, "");
+    const keys = [...d.outstanding, ...d.completed].filter((i) => i.kind === "form").map(formKey);
     setRequestedForms(new Set(keys));
+    setFormsOpen(new Set(d.outstanding.filter((i) => i.kind === "form").map(formKey)));
+    setFormsDone(new Set(d.completed.filter((i) => i.kind === "form").map(formKey)));
   }, []);
+  // BF_CLIENT_v802_PHONE_UI
+  const [rawStage, setRawStage] = useState("");
+  const [advisor, setAdvisor] = useState<Advisor | null>(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [chatTo, setChatTo] = useState<"maya" | "advisor" | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setAdvisor(null);
+    if (applicationId) void loadAdvisor(applicationId).then((a) => { if (alive) setAdvisor(a); });
+    return () => { alive = false; };
+  }, [applicationId]);
   const [docsChecked, setDocsChecked] = useState(false);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
@@ -211,7 +236,7 @@ export default function MiniPortalPage() {
     // BF_CLIENT_BLOCK_v310_CLIENT_STAGE_v1 — /api/applications/:id is staff-gated (401 for the
     // client mini-portal), so the read above silently fails and the tracker stuck at "Received".
     // Read the live stage from the client-accessible endpoint.
-    try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, stage: String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? ""), business: String(stg?.metadata?.businessName ?? stg?.data?.metadata?.businessName ?? "") })); /* BF_CLIENT_BLOCK_v590_HOME_WIDGET */ const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); /* BF_CLIENT_BLOCK_v311_CLIENT_PREFILL_v1 — staff /:id is gated (401 for the client), so the prefill metadata never loaded and the CMP forms came up blank. Take metadata from the client endpoint. */ const md = stg?.metadata ?? stg?.data?.metadata ?? null; if (md) setAppDetail((prev: any) => ({ data: { application: { metadata: md, pipeline_state: stg?.pipeline_state ?? prev?.data?.application?.pipeline_state ?? null } } })); } catch {}
+    try { const stg = await apiCall<any>(`/api/client/application-stage?applicationId=${encodeURIComponent(applicationId)}`); void import("@/native/clientWidget").then((m) => m.updateClientWidget({ applicationId, stage: String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? ""), business: String(stg?.metadata?.businessName ?? stg?.data?.metadata?.businessName ?? "") })); /* BF_CLIENT_BLOCK_v590_HOME_WIDGET */ const sraw = String(stg?.pipeline_state ?? stg?.data?.pipeline_state ?? "").toLowerCase().replace(/\s+/g, "_"); setRawStage(sraw); /* BF_CLIENT_v802_PHONE_UI */ if (sraw in STAGE_BY_KEY) setStageIndex(STAGE_BY_KEY[sraw as StageKey]); /* BF_CLIENT_BLOCK_v311_CLIENT_PREFILL_v1 — staff /:id is gated (401 for the client), so the prefill metadata never loaded and the CMP forms came up blank. Take metadata from the client endpoint. */ const md = stg?.metadata ?? stg?.data?.metadata ?? null; if (md) setAppDetail((prev: any) => ({ data: { application: { metadata: md, pipeline_state: stg?.pipeline_state ?? prev?.data?.application?.pipeline_state ?? null } } })); } catch {}
     try {
       // BF_CLIENT_BLOCK_v326 — on a failed fetch (incl. 429), throw to the outer
       // catch and PRESERVE the thread. The old .catch(()=>[]) wiped all messages.
@@ -371,6 +396,9 @@ export default function MiniPortalPage() {
       setPickerDoc(null);
       setShowDocPicker(true);
     }
+    // BF_CLIENT_v802_PUSH_SECTIONS - a message push opens the chat; an offer push opens the offers.
+    if (searchParams.get("section") === "messages" && applicationId) { setChatTo("advisor"); setPhoneTab("chat"); }
+    if (searchParams.get("section") === "offers" && applicationId) setOffersOpen(true);
   }, [searchParams, applicationId]);
   const [hasOpenQa, setHasOpenQa] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_PRODUCT_QUESTIONS_v290 - null until checked; hides the prompt once everything is answered.
@@ -670,13 +698,15 @@ export default function MiniPortalPage() {
   }
   async function sendMessage() {
     if ((!text.trim() && attachments.length === 0) || !applicationId) return;
-    const next = text.trim();
-    const attach = attachments;
-    setText("");
-    setAttachments([]);
-    setStagedFiles([]);
-    await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body: next, direction: "inbound", attachments: attach } });
-    setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body: next, createdAt: new Date().toISOString(), attachments: attach.length ? attach : null }]);
+    await postToAdvisor(text.trim(), true);
+  }
+  // BF_CLIENT_v802_ONE_THREAD - the phone chat also forwards a question Maya answered (without attachments).
+  async function postToAdvisor(body: string, withAttachments: boolean) {
+    if (!applicationId || (!body && !(withAttachments && attachments.length))) return;
+    const attach = withAttachments ? attachments : [];
+    if (withAttachments) { setText(""); setAttachments([]); setStagedFiles([]); }
+    await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body, direction: "inbound", attachments: attach } });
+    setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body, createdAt: new Date().toISOString(), attachments: attach.length ? attach : null }]);
   }
 
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — immediate hard delete (staff-side cascade),
@@ -799,6 +829,50 @@ export default function MiniPortalPage() {
       : applicationId.toUpperCase()
     : "";
 
+  // BF_CLIENT_v802_PHONE_UI - what the phone screens show.
+  const funded = isFundedState(rawStage);
+  const stageStep = funded ? FUNDED_STEP : (STAGE_STEPS[stageIndex] ?? STAGE_STEPS[0]);
+  const stepNumber = funded ? STAGE_STEPS.length : Math.min(stageIndex + 1, STAGE_STEPS.length);
+  const currentApp = myApps.find((a) => String(a?.id) === String(applicationId));
+  const businessName = String(cmpPrefill.businessName ?? currentApp?.business_name ?? currentApp?.businessName ?? "").trim() || "Your application";
+  const fullName = String(cmpPrefill.fullName ?? "").trim();
+  const firstName = fullName.split(/\s+/)[0] ?? "";
+  const myPhone = String(cmpPrefill.cellPhone ?? "").trim() || (() => { const t = getToken(); return (t && phoneFromToken(t)) || ""; })();
+  const switcherApps = myApps.map(toSwitcherApp);
+  const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;
+  const liveOffers = offers.filter((o) => !isOfferExpired(o.expiresAt));
+  const bestOfferAmount = (() => {
+    const nums = liveOffers.map((o) => Number(String(o.amount ?? "").replace(/[^0-9.]/g, ""))).filter((n) => Number.isFinite(n) && n > 0);
+    return nums.length ? "$" + Math.max(...nums).toLocaleString("en-CA") : "";
+  })();
+  const moreForms: MoreForm[] = ACTION_CHIPS
+    .filter((c) => c.id !== "upload" && c.id !== "new")
+    .filter((c) => ALWAYS_CHIPS.has(c.id) || requestedForms.has(c.id) || (c.id === "sba_forms" && isSbaApplication))
+    .map((c) => ({
+      id: c.id,
+      label: c.label,
+      status: c.id === "sba_forms"
+        ? ([...formsOpen].some((k) => k.startsWith("sba_form")) ? "needed" : [...formsDone].some((k) => k.startsWith("sba_form")) ? "done" : "optional")
+        : formsDone.has(c.id) ? "done" : formsOpen.has(c.id) ? "needed" : "optional",
+    }));
+  const formatPhone = (p: string) => { const d = p.replace(/\D/g, "").slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; };
+
+  // BF_CLIENT_CHAT_TAB_COMPOSER_v735 - Chat opens on the latest messages with the message box focused, so the
+  // keyboard comes up straight away. The tab is rendered synchronously (flushSync) so the focus happens inside
+  // the tap itself, which iOS requires before it will show the keyboard. Other tabs still start at the top.
+  const onPhoneTab = (t: CmpTab) => {
+    if (t === "chat") {
+      flushSync(() => setPhoneTab(t));
+      const body = threadBodyRef.current;
+      if (body) body.scrollTop = body.scrollHeight;
+      const input = composerInputRef.current;
+      if (input) { input.focus({ preventScroll: true }); input.scrollIntoView?.({ block: "end" }); }
+      return;
+    }
+    setPhoneTab(t); window.scrollTo?.(0, 0);
+  };
+  const openChat = (to: "maya" | "advisor") => { setChatTo(to); onPhoneTab("chat"); };
+
   // BF_CLIENT_APP_GONE_v736
   if (appGone) {
     return (
@@ -819,13 +893,18 @@ export default function MiniPortalPage() {
 
   return (
     <>
-      <SlimHeader />  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
+      {/* BF_CLIENT_v802_PHONE_UI - on a phone a slim white header with the business name and stage (tap to switch). */}
+      {isPhone
+        ? <CmpHeader business={businessName} stage={stageStep.label} canSwitch={switcherApps.length > 1} onSwitch={() => setSwitcherOpen(true)} />
+        : <SlimHeader />}  {/* BF_CLIENT_BLOCK_v75_FORMS_AUTH_AND_SLIM_HEADER_v1 */}
       {/* BF_CLIENT_CMP_LAYOUT_v631 - the Boreal header comes first; the account row sits under it. */}
       {/* BF_CLIENT_PHONE_POLISH_v751 - on a phone the Face ID / Sign out row lives on the More tab only. */}
-      {!isPhone || phoneTab === "settings" ? <AccountBar /> : null} {/* BF_CLIENT_PHONE_TABS_v752 */}
+      {!isPhone ? <AccountBar /> : null} {/* BF_CLIENT_v802_SETTINGS - on a phone Face ID and Sign out are on the Settings tab only */}
       <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + phoneTab : "")}>
       {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
       <div data-cmp-tab="home">
+      {isPhone ? <CmpHello firstName={firstName} advisor={advisor} onCall={() => void startCall()} onMessage={() => openChat("advisor")} onBook={() => setBookOpen(true)} /> : null}
+      {isPhone && callState !== "idle" ? <div style={{ margin: "0 0 12px" }}><CallControl state={callState} error={callError} onStart={() => void startCall()} onEnd={endCall} onReset={() => setCallState("idle")} /></div> : null}
       <InstallAppPrompt />
       {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
       <ReactivateHeldFiles
@@ -860,7 +939,7 @@ export default function MiniPortalPage() {
           </div>
         ))}
       {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
-      {myApps.length > 1 && (
+      {!isPhone && myApps.length > 1 && (
         <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <label htmlFor="mp-app-switch" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>Your applications</label>
           <select
@@ -888,6 +967,8 @@ export default function MiniPortalPage() {
           </ul>
         </div>
       )}
+      {/* BF_CLIENT_v802_PHONE_UI - phones show the status card instead; the application number is in Settings. */}
+      {!isPhone ? (<>
       <header className="mp-app-header">
         <div className="mp-app-header__left">
           <span className="mp-app-header__label">Application</span>
@@ -915,6 +996,7 @@ export default function MiniPortalPage() {
           </div>
         ))}
       </div>
+      </>) : null}
       {/* BF_CLIENT_ACTION_CENTER_v198 - BF_CLIENT_TODO_PANEL_v630: under the header and stage bar,
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
       <AppUpdateBanner />
@@ -925,32 +1007,33 @@ export default function MiniPortalPage() {
           {uploadNotice.text}
         </div>
       )}
+      {isPhone ? <CmpStatusCard stageLabel={stageStep.label} step={stepNumber} total={STAGE_STEPS.length} next={stageStep.next} caughtUp={caughtUp} /> : null}
       </div>
-      <CmpNextStep label={todoOpen.first} remaining={todoOpen.count} onOpen={() => setPhoneTab("todo")} />
-      {/* BF_CLIENT_PHONE_TABS_v752 - Home says so when there is nothing to do. */}
-      {isPhone && todoLoaded && todoOpen.count + todoExtras.length === 0 ? (
-        <div className="cmp-empty" data-cmp-tab="home" data-testid="cmp-home-caught-up">
-          <div className="cmp-empty__title">You're all caught up</div>
-          <div className="cmp-empty__sub">We have everything we need from you right now. We'll let you know if anything else comes up.</div>
-        </div>
-      ) : null}
-      <div data-cmp-tab="todo">
+      {/* BF_CLIENT_v802_PHONE_UI - the to-do list is on Home (To do is no longer a tab). */}
+      <div data-cmp-tab="home">
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
-      {/* BF_CLIENT_PHONE_POLISH_v751 - the To do tab was a blank page when nothing was outstanding. */}
-      {isPhone && todoLoaded && todoOpen.count + todoExtras.length === 0 ? (
-        <div className="cmp-empty" data-testid="cmp-todo-empty">
-          <div className="cmp-empty__title">You're all caught up</div>
-          <div className="cmp-empty__sub">Nothing to do right now. When we need something from you, it will appear here and we'll let you know.</div>
-        </div>
-      ) : null}
       </div>
+      {isPhone ? <CmpOffersCard count={liveOffers.length} bestAmount={bestOfferAmount} onOpen={() => setOffersOpen(true)} /> : null}
+      {isPhone && funded ? <CmpReferCard shareUrl="https://www.boreal.financial/?utm_source=client_app&utm_medium=referral&utm_campaign=refer_a_business" /> : null}
       {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
-      <div data-testid="book-call" data-cmp-tab="home" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      {/* BF_CLIENT_v802_BOOK_IN_APP - opens the booking sheet here instead of the website. Phones book from the advisor card. */}
+      {!isPhone ? <div data-testid="book-call" data-cmp-tab="home" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <span style={{ color: "#0B1F3A", fontSize: 15 }}>Want to talk it through? Book a 30-minute call with an advisor.</span>
-        <a href="https://www.boreal.financial/book" target="_blank" rel="noreferrer" style={{ background: "#0B1F3A", color: "#ffffff", padding: "8px 16px", borderRadius: 8, fontWeight: 600, textDecoration: "none" }}>Book a call</a>
-      </div>
+        <button type="button" onClick={() => setBookOpen(true)} style={{ background: "#0B1F3A", color: "#ffffff", padding: "8px 16px", borderRadius: 8, fontWeight: 600, border: 0, cursor: "pointer", fontSize: 15 }}>Book a call</button>
+      </div> : null}
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
-        <CmpChatSwitch />
+        {/* BF_CLIENT_v802_ONE_THREAD - on a phone: one full-screen thread, Maya first, the advisor a tap away. */}
+        {isPhone ? (
+          <CmpChat applicationId={applicationId} messages={messages.filter((m) => !(
+            (!hasOutstandingDocs && isDocUploadPrompt(m.ctaAction))
+            || (pastAdditionalSteps && typeof m.body === "string" && /few quick steps to finish/i.test(m.body))
+            || (pastAdditionalSteps && isTaskPrompt(m.ctaAction))
+            || (m.ctaAction === "lender_qa" && qaChecked && !hasOpenQa)
+            || (typeof m.ctaAction === "string" && m.ctaAction.startsWith("product_questions") && productQuestionsMissing === 0)))}
+            staffTyping={staffTyping} advisor={advisor} text={text} setText={setText} recipient={chatTo} setRecipient={setChatTo}
+            attachments={attachments} onAttach={(f) => void stageFile(f)} onRemoveAttachment={removeAttachment}
+            sendToAdvisor={postToAdvisor} onCta={(a) => handleMessageCta(a)} inputRef={composerInputRef} bodyRef={threadBodyRef} />
+        ) : (
         <section className="mp-thread-card" data-cmp-tab="chat">
           <header className="mp-thread-card__header">Chat with Boreal Staff</header>
           <div className="mp-thread-card__body" ref={threadBodyRef}>
@@ -1065,6 +1148,13 @@ export default function MiniPortalPage() {
             <button onClick={() => void sendMessage()}>Send</button>
           </div>
         </section>
+        )}
+        {isPhone ? (
+          <CmpMore forms={moreForms} docsStatus={docsChecked ? (hasOutstandingDocs ? "needed" : "done") : null}
+            onForm={(id) => onChip(id)} onUpload={() => { setPickerDoc(null); setShowDocPicker(true); }}
+            onNewApplication={() => onChip("new")} onBook={() => setBookOpen(true)} onAskMaya={() => openChat("maya")}
+            call={{ state: callState, error: callError, onStart: () => void startCall(), onEnd: endCall, onReset: () => setCallState("idle") }} />
+        ) : (
         <aside className="mp-actions" data-cmp-tab="more">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
             <header className="mp-actions__header">What's Next?</header>
@@ -1092,45 +1182,23 @@ export default function MiniPortalPage() {
             {/* Twilio Voice WebRTC, no tel: link */}
             {/* BF_CLIENT_UI_CLUSTER_2 — inset 16px so Call Us lines up with the chips above. */}
             <div style={{ marginTop: 12, padding: "0 16px" }}>
-              {callState === "idle" && (
-                <button type="button" className="mp-callus" onClick={() => void startCall()} style={{ width: "100%" }}>
-                  📞 Call Us!
-                </button>
-              )}
-              {(callState === "connecting" || callState === "ringing") && (
-                <div style={{ width: "100%", padding: 12, background: "#fef3c7", color: "#78350f", borderRadius: 10, textAlign: "center", fontSize: 14 }}>
-                  {callState === "connecting" ? "Connecting…" : "Ringing staff…"}
-                  <button type="button" onClick={endCall} style={{ marginLeft: 12, padding: "4px 10px", border: 0, borderRadius: 6, background: A11Y_COLORS.dangerBg, color: A11Y_COLORS.dangerText, cursor: "pointer" }}>Cancel</button>
-                </div>
-              )}
-              {callState === "connected" && (
-                <button type="button" className="mp-hangup" onClick={endCall} style={{ width: "100%" }}>
-                  📞 Hang up
-                </button>
-              )}
-              {callState === "ended" && (
-                <button type="button" className="mp-callus" onClick={() => setCallState("idle")} style={{ width: "100%" }}>
-                  📞 Call Us!
-                </button>
-              )}
-              {callState === "failed" && (
-                <div style={{ width: "100%", padding: 12, background: "#fee2e2", color: "#7f1d1d", borderRadius: 10, fontSize: 13 }}>
-                  {callError ?? "Call failed."} <button type="button" onClick={() => setCallState("idle")} style={{ marginLeft: 8, color: "#7f1d1d", background: "transparent", border: 0, textDecoration: "underline", cursor: "pointer" }}>Try again</button>
-                </div>
-              )}
+              {/* BF_CLIENT_v802_CALL_BUTTON - navy with a drawn phone icon; no emoji and no green. */}
+              <CallControl state={callState} error={callError} onStart={() => void startCall()} onEnd={endCall} onReset={() => setCallState("idle")} />
             </div>
             {/* BF_CLIENT_ACCOUNT_BAR_v341 - the Face ID row moved to AccountBar,
                 which renders at the top of every signed-in screen. */}
-            {showDocPicker && (
-              <DocPicker
-                applicationId={applicationId}
-                documentType={pickerDoc?.type}
-                documentLabel={pickerDoc?.label}
-                onClose={() => { setShowDocPicker(false); setPickerDoc(null); setTodoRefresh((n) => n + 1); }}
-                onUploaded={() => { void loadAll(); }}
-              />
-            )}
         </aside>
+        )}
+        {/* BF_CLIENT_v802_PHONE_UI - outside the tab sections: inside More it stayed hidden when opened from Home. */}
+        {showDocPicker && (
+          <DocPicker
+            applicationId={applicationId}
+            documentType={pickerDoc?.type}
+            documentLabel={pickerDoc?.label}
+            onClose={() => { setShowDocPicker(false); setPickerDoc(null); setTodoRefresh((n) => n + 1); }}
+            onUploaded={() => { void loadAll(); }}
+          />
+        )}
         {/* BF_CLIENT_OFFERS_MODAL_v1 - offers open in a full-width dialog so amounts are never clipped. */}
         {offersOpen && (
           <div className="mp-offers-overlay" role="dialog" aria-modal="true" aria-label="Offers" onClick={() => setOffersOpen(false)}>
@@ -1139,6 +1207,15 @@ export default function MiniPortalPage() {
                 <strong>Your offers</strong>
                 <button type="button" className="mp-offers-dialog__close" aria-label="Close" onClick={() => setOffersOpen(false)}>&times;</button>
               </header>
+              {/* BF_CLIENT_v802_OFFERS_PHONE - on a phone two or more offers are compared in one table first. */}
+              {isPhone && offers.length > 1 ? (
+                <table className="cmpx-compare" data-testid="offers-compare">
+                  <thead><tr><th scope="col">Lender</th><th scope="col">Amount</th><th scope="col">Rate</th><th scope="col">Term</th></tr></thead>
+                  <tbody>{offers.map((o) => (
+                    <tr key={o.id}><td>{o.lenderName}{o.recommended ? " *" : ""}</td><td>{o.amount ? "$" + o.amount : "\u2014"}</td><td>{o.rateOrFactor ?? "\u2014"}</td><td>{o.term ?? "\u2014"}</td></tr>
+                  ))}</tbody>
+                </table>
+              ) : null}
               {/* BF_CLIENT_OFFERS_IN_THREAD_v3 - side by side from two up. */}
               <div className={offers.length > 1 ? "mp-offers mp-offers--multi" : "mp-offers"}>
                 {offers.map((o) => {
@@ -1153,6 +1230,14 @@ export default function MiniPortalPage() {
                       <header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>
                       <div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "\u2014"}</div>
                       <div className="mp-offer__subtitle">Offer Amount.</div>
+                      {isPhone ? (
+                        <div className="mp-offer__keys">
+                          <div>{o.rateOrFactor?.includes("%") ? "Interest rate" : "Factor rate"}<strong>{o.rateOrFactor ?? "\u2014"}</strong></div>
+                          <div>Term<strong>{o.term ?? "\u2014"}</strong></div>
+                          <div>Payments<strong>{o.paymentFrequency ?? "\u2014"}</strong></div>
+                          <div>Expires<strong>{o.expiresAt ? (isOfferExpired(o.expiresAt) ? "Expired" : `${days}d ${hours}h`) : "\u2014"}</strong></div>
+                        </div>
+                      ) : null}
                       <div className="mp-offer__meta">
                         <div className="mp-offer__meta-row-main">{o.rateOrFactor?.includes("%") ? `${o.rateOrFactor} Interest rate` : `${o.rateOrFactor ?? "\u2014"} factor`}</div>
                         <div className="mp-offer__meta-row">{o.term ?? "\u2014"} years | Term</div>
@@ -1358,11 +1443,19 @@ export default function MiniPortalPage() {
       )}
       </div>
       {isPhone ? (
-        <section className="cmp-settings" data-cmp-tab="settings" data-testid="cmp-settings">
-          <div className="cmp-settings__title">Settings</div>
-          <CmpMoreFooter onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} />
-        </section>
+        <CmpSettings
+          details={{ name: fullName, phone: myPhone ? formatPhone(myPhone) : "", email: String(cmpPrefill.email ?? ""), business: businessName }}
+          applicationNumber={shortId} stage={stageStep.label}
+          onDocuments={() => { setPickerDoc(null); setShowDocPicker(true); }}
+          onAskQuestion={() => openChat("maya")}
+          onReportProblem={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "report" } }))}
+          onDeleteAccount={() => { setDeleteErr(null); setDeleteStep(1); }} />
       ) : null}
+      {/* BF_CLIENT_v802_PHONE_UI - the application switcher and the booking sheet. */}
+      {switcherOpen ? <AppSwitcherSheet apps={switcherApps} currentId={String(applicationId)} onClose={() => setSwitcherOpen(false)}
+        onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
+      {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
+        prefill={{ name: fullName, email: String(cmpPrefill.email ?? ""), phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}
       {/* BF_CLIENT_PHONE_TABS_v752 - outside the tab sections, so it opens from Settings (a dialog inside a hidden tab never shows). */}
       {deleteStep > 0 && (
         <div
@@ -1401,20 +1494,7 @@ export default function MiniPortalPage() {
           </div>
         </div>
       )}
-      {isPhone ? <CmpTabBar tab={phoneTab} onTab={(t) => {
-        // BF_CLIENT_CHAT_TAB_COMPOSER_v735 - Chat opens on the latest messages with the message box focused, so the
-        // keyboard comes up straight away. The tab is rendered synchronously (flushSync) so the focus happens inside
-        // the tap itself, which iOS requires before it will show the keyboard. Other tabs still start at the top.
-        if (t === "chat") {
-          flushSync(() => setPhoneTab(t));
-          const body = threadBodyRef.current;
-          if (body) body.scrollTop = body.scrollHeight;
-          const input = composerInputRef.current;
-          if (input) { input.focus({ preventScroll: true }); input.scrollIntoView?.({ block: "end" }); }
-          return;
-        }
-        setPhoneTab(t); window.scrollTo?.(0, 0);
-      }} todoCount={todoOpen.count + todoExtras.length} /> : null}
+      {isPhone ? <CmpTabBar tab={phoneTab} onTab={onPhoneTab} todoCount={todoOpen.count + todoExtras.length} /> : null}
       </div>
     </>
   );

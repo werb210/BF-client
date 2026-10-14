@@ -51,3 +51,8 @@ select:-webkit-autofill {
   .resp-table td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; color: #51617D; margin-top: 6px; }
   .resp-table td[data-label='']::before { content: none; }
 }
+
+/* BF_CLIENT_v802_WIZARD_PHONE - on a phone the application wizard is full width: no floating card, 16px sides. */
+@media (max-width: 640px) {
+  .wiz-card { padding: 16px !important; gap: 18px !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
+}

@@ -23,9 +23,8 @@ describe("phone polish", () => {
     expect(appBuildLabel("2026-10-10T17:05:00Z", "abc1234")).toMatch(/^build abc1234 · Oct 10, 11:05/);
     expect(appBuildLabel(undefined, undefined)).toBe("");
   });
-  it("the To do tab says when there is nothing to do, and the account row moved to Settings", () => {
+  it("on a phone the account row is only on the Settings tab (v802)", () => {
     const page = readFileSync("src/pages/MiniPortalPage.tsx", "utf8");
-    expect(page).toContain('data-testid="cmp-todo-empty"');
-    expect(page).toContain('{!isPhone || phoneTab === "settings" ? <AccountBar /> : null}');
+    expect(page).toContain("{!isPhone ? <AccountBar /> : null}");
   });
 });

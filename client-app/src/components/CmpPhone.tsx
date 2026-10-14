@@ -1,14 +1,16 @@
 // BF_CLIENT_CMP_PHONE_TABS_v732 - the client portal on a phone: one section at a time behind a bottom tab bar
-// (Home, To do, Chat, More), as approved in the Oct 5 mockup. Computers and iPads keep today's layout. The
+// (Home, Chat, More, Settings since v802), as approved in the Oct 5 mockup. Computers and iPads keep today's layout. The
 // sections themselves are the existing ones; the page only tags them with data-cmp-tab and CSS shows the
 // active tab, so nothing remounts when the client switches tabs (the chat keeps its place).
 import { useEffect, useState } from "react";
 import "./CmpPhone.css";
 
-export type CmpTab = "home" | "todo" | "chat" | "more" | "settings";
+// BF_CLIENT_v802_PHONE_UI - To do is part of Home now (Home carries the to-do badge): Home, Chat, More, Settings.
+export type CmpTab = "home" | "chat" | "more" | "settings";
 export const PHONE_QUERY = "(max-width: 640px)";
 
-export function usePhoneLayout(): boolean {
+/** True on a phone-width screen. No side effects (the wizard uses it too). */
+export function useIsPhoneWidth(): boolean {
   const get = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(PHONE_QUERY).matches;
   const [phone, setPhone] = useState<boolean>(get);
   useEffect(() => {
@@ -19,6 +21,11 @@ export function usePhoneLayout(): boolean {
     mq.addEventListener?.("change", on);
     return () => mq.removeEventListener?.("change", on);
   }, []);
+  return phone;
+}
+
+export function usePhoneLayout(): boolean {
+  const phone = useIsPhoneWidth();
   // Maya's round floating button would sit on the tab bar; on a phone she opens from Chat > Ask Maya.
   // BF_CLIENT_PHONE_TABS_v752 - the tab bar is no longer hidden while the keyboard is up: the app shrinks above the
   // keyboard (Keyboard resize "native" in capacitor.config.ts), so the tabs stay reachable from Chat.
@@ -32,14 +39,12 @@ export function usePhoneLayout(): boolean {
 
 const ICONS: Record<CmpTab, JSX.Element> = {
   home: <path d="M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z" />,
-  todo: <><path d="M9 6h11M9 12h11M9 18h11" /><path d="m3 6 1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17" /></>,
   chat: <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" />,
   more: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>,
 };
 const TABS: Array<{ id: CmpTab; label: string }> = [
   { id: "home", label: "Home" },
-  { id: "todo", label: "To do" },
   { id: "chat", label: "Chat" },
   { id: "more", label: "More" },
   { id: "settings", label: "Settings" },
@@ -55,35 +60,11 @@ export function CmpTabBar({ tab, onTab, todoCount }: { tab: CmpTab; onTab: (t: C
             data-testid={"cmp-tab-" + t.id} onClick={() => onTab(t.id)}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[t.id]}</svg>
             <span>{t.label}</span>
-            {t.id === "todo" && todoCount > 0 ? <span className="cmp-tabbar__badge" aria-label={todoCount + " to do"}>{todoCount}</span> : null}
+            {t.id === "home" && todoCount > 0 ? <span className="cmp-tabbar__badge" aria-label={todoCount + " to do"}>{todoCount}</span> : null}
           </button>
         );
       })}
     </nav>
-  );
-}
-
-/** Chat tab: switch between the Boreal team (this page's chat) and Maya (opens her chat). */
-export function CmpChatSwitch() {
-  return (
-    <div className="cmp-phone-only cmp-chatswitch" role="group" aria-label="Who to talk to" data-cmp-tab="chat">
-      <button type="button" className="cmp-chatswitch__btn cmp-chatswitch__btn--on" aria-pressed="true">Boreal team</button>
-      <button type="button" className="cmp-chatswitch__btn" aria-pressed="false" data-testid="cmp-ask-maya"
-        onClick={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "chat" } }))}>Ask Maya</button>
-    </div>
-  );
-}
-
-/** Home tab: the one thing to do next, with a button to the To do tab. */
-export function CmpNextStep({ label, remaining, onOpen }: { label: string | null; remaining: number; onOpen: () => void }) {
-  if (!label) return null;
-  return (
-    <section className="cmp-phone-only cmp-nextstep" data-cmp-tab="home" aria-label="Your next step" data-testid="cmp-next-step">
-      <div className="cmp-nextstep__eyebrow">YOUR NEXT STEP</div>
-      <div className="cmp-nextstep__title">{label}</div>
-      {remaining > 1 ? <div className="cmp-nextstep__sub">{remaining - 1} more {remaining - 1 === 1 ? "item" : "items"} after this one.</div> : null}
-      <button type="button" className="cmp-nextstep__btn" onClick={onOpen}>Open my to-do list</button>
-    </section>
   );
 }
 
@@ -115,10 +96,11 @@ export function CmpMoreFooter({ onDeleteAccount }: { onDeleteAccount: () => void
   const build = appBuildLabel(import.meta.env.VITE_APP_BUILT_AT as string | undefined, import.meta.env.VITE_APP_BUILD_SHA as string | undefined);
   return (
     <div className="cmp-more-footer" data-testid="cmp-more-footer">
-      <button type="button" className="cmp-more-footer__delete" onClick={onDeleteAccount}>Delete account</button>
       <div className="cmp-more-footer__version" data-testid="cmp-version">
         {native ? `App ${native}` : "Web app"}{build ? ` · ${build}` : ""}
       </div>
+      {/* BF_CLIENT_v802_SETTINGS - Delete account is the last thing on the page, in plain text. */}
+      <button type="button" className="cmp-more-footer__delete" onClick={onDeleteAccount}>Delete account</button>
     </div>
   );
 }

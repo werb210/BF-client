@@ -23,7 +23,11 @@ export function routeForPush(actionId: unknown, data: Record<string, unknown> | 
   if (action === "UPLOAD_NOW") {
     return appId ? `/application/${appId}?section=documents` : "/portal?section=documents";
   }
-  if (action === "OPEN_APPLICATION" || action === "VIEW_OFFER") {
+  // BF_CLIENT_v802_PUSH_SECTIONS - View offer opens the offers, not just the application.
+  if (action === "VIEW_OFFER") {
+    return appId ? `/application/${appId}?section=offers` : "/portal?section=offers";
+  }
+  if (action === "OPEN_APPLICATION") {
     return appId ? `/application/${appId}` : base;
   }
   // Plain tap: keep the section hint but scope it to the right application.

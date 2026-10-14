@@ -3,6 +3,7 @@ import { components, tokens } from "@/styles";
 // BF_CLIENT_QA_FLOW_FIXES_v1
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { isStartupPathKyc } from "@/wizard/wizardSchema";
+import { useIsPhoneWidth } from "@/components/CmpPhone"; // BF_CLIENT_v802_WIZARD_PHONE
 
 // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_DESIGN_v1 — Direction A "Refined Cards":
 // dark header band with a blue progress fill, labeled 6-dot stepper, blue
@@ -24,6 +25,28 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
   const { app } = useApplicationStore();
   const skipped = new Set<number>(isStartupPathKyc(app.kyc as Record<string, unknown>) ? [2, 5] : []);
   const pct = Math.max(0, Math.min(1, (step - 1) / (totalSteps - 1))) * 100;
+  // BF_CLIENT_v802_WIZARD_PHONE - on a phone: a thin progress bar and "Step 1 of 6 - Profile", so the
+  // questions start above the fold. No dark band and no six-dot stepper.
+  const isPhone = useIsPhoneWidth();
+  if (isPhone) {
+    const phonePct = Math.max(0, Math.min(1, step / totalSteps)) * 100;
+    return (
+      <>
+        <FieldTips />
+        <div data-testid="step-header-phone" style={{ paddingRight: 44 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: tokens.colors.textSecondary, letterSpacing: 0.2 }}>
+            Step {step} of {totalSteps} &middot; {STEP_LABELS[step - 1] ?? ""}
+          </div>
+          <div role="progressbar" aria-valuemin={0} aria-valuemax={totalSteps} aria-valuenow={step} aria-label={`Step ${step} of ${totalSteps}`}
+            style={{ height: 4, margin: "8px 0 14px", borderRadius: 999, background: "#E4EAF2", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${phonePct}%`, background: "#BF9B49", transition: "width .3s ease" }} />
+          </div>
+          <h1 style={{ ...components.form.title, fontSize: 22, marginBottom: subtitle ? 4 : 0 }}>{title}</h1>
+          {subtitle && <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 1.45 }}>{subtitle}</p>}
+        </div>
+      </>
+    );
+  }
   return (
     <>
       <FieldTips />

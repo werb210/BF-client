@@ -8,6 +8,7 @@ describe("website links use www", () => {
       const s = readFileSync(p, "utf8");
       expect(s).not.toContain('href="https://boreal.financial/');
     }
-    expect(readFileSync("src/pages/MiniPortalPage.tsx", "utf8")).toContain('href="https://www.boreal.financial/book"');
+    // BF_CLIENT_v802_BOOK_IN_APP - booking happens in the app; the Settings links still use www.
+    expect(readFileSync("src/components/cmp/CmpSettings.tsx", "utf8")).toContain('href="https://www.boreal.financial/privacy"');
   });
 });

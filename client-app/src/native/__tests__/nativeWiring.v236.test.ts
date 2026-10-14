@@ -17,9 +17,9 @@ describe("push routing", () => {
     expect(routeForPush("UPLOAD_NOW", { url: "borealclient://documents", applicationId: APP }))
       .toBe(`/application/${APP}?section=documents`);
   });
-  it("View Offer and Open Application open the application", () => {
+  it("View Offer opens the offers and Open Application opens the application", () => {
     expect(routeForPush("VIEW_OFFER", { url: `borealclient://application/${APP}`, applicationId: APP }))
-      .toBe(`/application/${APP}`);
+      .toBe(`/application/${APP}?section=offers`); // BF_CLIENT_v802_PUSH_SECTIONS
     expect(routeForPush("OPEN_APPLICATION", { applicationId: APP })).toBe(`/application/${APP}`);
   });
   it("a plain tap on a document request is scoped to its application", () => {
