@@ -15,8 +15,11 @@ describe("all three Step 6 consents reach the server", () => {
     expect(step6).toContain("Communication Consent (Email, SMS, Phone, Portal, and Client Messaging)");
   });
 
-  it("clause 3 is express CASL consent to marketing SMS", () => {
-    expect(step6).toContain("expressly authorize");
+  // BF_CLIENT_v808_MARKETING_OPTIN - clause 3 covers texts about the application; consent to marketing texts
+  // is the separate optional "Text me offers" box.
+  it("clause 3 covers application texts; marketing texts need the separate offers box", () => {
+    expect(step6).toContain("I/We authorize Boreal Financial and its staff to communicate");
+    expect(step6).toContain("separate, optional");
     expect(step6).not.toContain("marketing opportunities"); // BF_CLIENT_SMS_DISCLOSURE_v690
     expect(step6).toContain("SMS/Text Messages");
   });

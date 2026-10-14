@@ -68,34 +68,41 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
     title: "Electronic Communications Risk Acknowledgement",
     blocks: [
       { p: "I/We acknowledge and accept the risks associated with electronic communications and electronic transmission of information. I/We understand that communications transmitted by email, SMS/text message, web portals, online applications, electronic document systems, client messaging systems, mobile applications, or other electronic means may be intercepted, delayed, lost, altered, corrupted, misdirected, impersonated, or accessed by unauthorized parties." },
-      { p: "I/We understand that Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and technology providers cannot guarantee the security, confidentiality, delivery, or uninterrupted operation of electronic communications or electronic systems." },
-      { p: "To the fullest extent permitted by law, I/We release and hold harmless Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, and service providers from any loss, damage, claim, cost, liability, or expense arising from the use of electronic communications, electronic signatures, electronic document transmission, electronic storage, online portals, client messaging systems, or related technologies." },
+      { p: "I/We understand that Boreal Financial (2630108 Alberta Ltd.), its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and technology providers cannot guarantee the security, confidentiality, delivery, or uninterrupted operation of electronic communications or electronic systems." },
+      { p: "To the fullest extent permitted by law, I/We release and hold harmless Boreal Financial, its affiliates, related entities, employees, contractors, representatives, lender partners, and service providers from any loss, damage, claim, cost, liability, or expense arising from the use of electronic communications, electronic signatures, electronic document transmission, electronic storage, online portals, client messaging systems, or related technologies." },
     ],
   },
   {
     title: "Consent to Collect, Use, Verify, and Share Information",
     blocks: [
-      { p: "I/We authorize Boreal Financial Corp., its affiliates, subsidiaries, parent companies, related entities, operating divisions, employees, contractors, representatives, lender partners, investors, insurers, credit reporting agencies, financial institutions, service providers, professional advisors, and other parties involved in evaluating, arranging, underwriting, servicing, or administering financing transactions to collect, verify, use, disclose, exchange, transmit, and retain personal information, business information, financial information, banking information, credit information, application information, supporting documents, and any other information provided in connection with this application." },
-      { p: "I/We further authorize Boreal Financial Corp. to share such information with any current or prospective lender, funding source, investor, insurer, service provider, referral partner, credit reporting agency, governmental authority, compliance provider, fraud prevention provider, or any other party reasonably required to facilitate, evaluate, arrange, administer, monitor, service, or complete a financing transaction." },
-      { p: "I/We certify that all information supplied is true, accurate, and complete to the best of my/our knowledge. I/We understand that Boreal Financial Corp. may rely upon this information and may conduct reasonable verification procedures, including identity verification, business verification, credit inquiries, banking verification, fraud prevention reviews, and related due diligence activities." },
-      { p: "I/We acknowledge that Boreal Financial Corp. may receive commissions, fees, referral compensation, lender-paid compensation, or other remuneration in connection with financing transactions and that Boreal Financial Corp. does not guarantee approval, funding, rates, terms, conditions, lender participation, or financing availability." },
+      { p: "I/We authorize Boreal Financial, its affiliates, subsidiaries, parent companies, related entities, operating divisions, employees, contractors, representatives, lender partners, investors, insurers, credit reporting agencies, financial institutions, service providers, professional advisors, and other parties involved in evaluating, arranging, underwriting, servicing, or administering financing transactions to collect, verify, use, disclose, exchange, transmit, and retain personal information, business information, financial information, banking information, credit information, application information, supporting documents, and any other information provided in connection with this application." },
+      { p: "I/We further authorize Boreal Financial to share such information with any current or prospective lender, funding source, investor, insurer, service provider, referral partner, credit reporting agency, governmental authority, compliance provider, fraud prevention provider, or any other party reasonably required to facilitate, evaluate, arrange, administer, monitor, service, or complete a financing transaction." },
+      { p: "I/We certify that all information supplied is true, accurate, and complete to the best of my/our knowledge. I/We understand that Boreal Financial may rely upon this information and may conduct reasonable verification procedures, including identity verification, business verification, credit inquiries, banking verification, fraud prevention reviews, and related due diligence activities." },
+      { p: "I/We acknowledge that Boreal Financial may receive commissions, fees, referral compensation, lender-paid compensation, or other remuneration in connection with financing transactions and that Boreal Financial does not guarantee approval, funding, rates, terms, conditions, lender participation, or financing availability." },
       { p: "I/We represent and warrant that the individual submitting this application is duly authorized to provide these consents and authorizations on behalf of the business and on behalf of all owners, principals, shareholders, directors, officers, and proposed guarantors identified in this application." },
-      { p: "I/We acknowledge that personal information is collected, used, retained, and disclosed in accordance with Boreal Financial Corp.'s Privacy Policy, and that such information will be retained only as long as reasonably necessary for the purposes described or as required by law." },
+      { p: "I/We acknowledge that personal information is collected, used, retained, and disclosed in accordance with Boreal Financial's Privacy Policy, and that such information will be retained only as long as reasonably necessary for the purposes described or as required by law." },
       { p: "This authorization and any resulting financing relationship are governed by the laws of the Province of Alberta and the federal laws of Canada applicable therein, without regard to conflict-of-laws principles." },
     ],
   },
   {
     title: "Communication Consent (Email, SMS, Phone, Portal, and Client Messaging)",
     blocks: [
-      { p: "I/We expressly authorize Boreal Financial Corp., its affiliates, related entities, employees, contractors, representatives, lender partners, service providers, and authorized third parties to communicate with me/us regarding this application, any related financing transaction, account administration, document requests, underwriting matters, servicing matters, and other business-related communications." },
+      // BF_CLIENT_v808_CONSENT_WORDING - texts about the application come only from Boreal; lenders and other
+      // third parties never text through Boreal or receive the mobile number for marketing (Twilio 30468 review).
+      { p: "I/We authorize Boreal Financial and its staff to communicate with me/us regarding this application, any related financing transaction, account administration, document requests, underwriting matters, servicing matters, and other business-related communications." },
       { p: "This authorization includes communication through:" },
       { ul: ["Email", "SMS/Text Messages", "Telephone Calls", "Voicemail Messages", "Automated Calling Systems", "Client Portal Notifications", "In-Application Messaging", "Boreal Financial Client-to-Staff Messaging Systems", "Secure Document Portals", "Electronic Signature Platforms", "Other electronic communication methods provided now or in the future"] },
       { p: "This consent applies to all email addresses, telephone numbers, messaging accounts, portal accounts, and contact information provided now or in the future. I/We understand that message and data rates may apply and that electronic communications may not always be secure." },
       { p: "I/We agree that electronic records, electronic communications, electronic acknowledgements, and electronic signatures shall have the same legal force and effect as original written documents and handwritten signatures." },
-      { p: "I/We may withdraw consent for commercial electronic messages or marketing communications at any time by using the unsubscribe mechanism provided in those messages or by contacting Boreal Financial Corp. directly. Withdrawing marketing consent will not affect communications reasonably necessary to administer or service an active application or financing transaction." },
+      { p: "Text messages about this application come only from Boreal Financial. Boreal Financial does not share my/our mobile number or text-messaging consent with lenders, affiliates or any third party for marketing or promotional purposes. Marketing text messages are sent only if I/we tick the separate, optional \"Text me offers\" box." },
+      { p: "I/We may withdraw consent for commercial electronic messages or marketing communications at any time by using the unsubscribe mechanism provided in those messages or by contacting Boreal Financial directly. Withdrawing marketing consent will not affect communications reasonably necessary to administer or service an active application or financing transaction." },
     ],
   },
 ];
+
+// BF_CLIENT_v808_MARKETING_OPTIN - same words as BF-Server MARKETING_SMS_OPTIN_TEXT (stored with the consent).
+export const MARKETING_SMS_OPTIN_TEXT =
+  "Optional: Text me offers and news about Boreal Financial products. Up to 4 messages per month. Message and data rates may apply. Reply STOP to opt out at any time. Not required to apply.";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();
@@ -1004,8 +1011,31 @@ export function Step6_Review(): JSX.Element {
         >
           <Checkbox checked={Boolean(app.adMeasurementConsent)} onChange={() => update({ adMeasurementConsent: !app.adMeasurementConsent })} />
           <span>
-            Optional: Boreal Financial may share a scrambled (hashed) copy of my email and phone number with advertising platforms to measure its ads and to show me relevant Boreal Financial offers. My details are never sold. I can withdraw this at any time.
+            {/* BF_CLIENT_v808_CONSENT_WORDING - BF-Server v806 sends the hashed email only; never the phone number. */}
+            Optional: Boreal Financial may share a scrambled (hashed) copy of my email address with advertising platforms to measure its ads and to show me relevant Boreal Financial offers. My details are never sold, and my phone number is never shared. I can withdraw this at any time.
           </span>
+        </label>
+
+        {/* BF_CLIENT_v808_MARKETING_OPTIN - a separate, optional, unticked box: the only consent to marketing texts.
+            Not needed to apply. Wording must match BF-Server MARKETING_SMS_OPTIN_TEXT. */}
+        <label
+          data-testid="marketing-sms-consent"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: tokens.spacing.sm,
+            padding: `${tokens.spacing.sm} ${tokens.spacing.md}`,
+            marginBottom: tokens.spacing.xs,
+            borderRadius: tokens.radii.md,
+            border: `1px dashed ${tokens.colors.border}`,
+            background: tokens.colors.surface,
+            cursor: "pointer",
+            fontSize: tokens.typography.label.fontSize,
+            color: tokens.colors.textSecondary,
+          }}
+        >
+          <Checkbox checked={Boolean(app.marketingSmsConsent)} onChange={() => update({ marketingSmsConsent: !app.marketingSmsConsent })} />
+          <span>{MARKETING_SMS_OPTIN_TEXT}</span>
         </label>
 
         {openClause !== null && (

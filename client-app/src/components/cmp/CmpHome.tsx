@@ -113,7 +113,7 @@ export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onClose 
 }
 
 /** Item 4 - greeting, and the advisor with Call, Message and Book. */
-export function CmpHello({ firstName, advisor, onCall, onMessage, onBook }: { firstName: string; advisor: Advisor | null; onCall: () => void; onMessage: () => void; onBook: () => void }) {
+export function CmpHello({ firstName, advisor, onCall, onMessage, onBook }: { firstName: string; advisor: Advisor | null; onCall: () => void; onMessage?: () => void; onBook: () => void }) {
   const name = advisorName(advisor);
   const [photoFailed, setPhotoFailed] = useState(false);
   return (
@@ -134,9 +134,10 @@ export function CmpHello({ firstName, advisor, onCall, onMessage, onBook }: { fi
             <div className="cmpx-advisor__name">{name || "Boreal Financial team"}</div>
           </div>
         </div>
-        <div className="cmpx-advisor__actions">
+        {/* BF_CLIENT_v808_WIDE_HOME - no Message button where Chat is already open beside Home (wide screens). */}
+        <div className={"cmpx-advisor__actions" + (onMessage ? "" : " cmpx-advisor__actions--two")}>
           <button type="button" className="cmpx-btn" onClick={onCall} data-testid="cmp-advisor-call"><Icon name="phone" />Call</button>
-          <button type="button" className="cmpx-btn" onClick={onMessage} data-testid="cmp-advisor-message"><Icon name="chat" />Message</button>
+          {onMessage ? <button type="button" className="cmpx-btn" onClick={onMessage} data-testid="cmp-advisor-message"><Icon name="chat" />Message</button> : null}
           <button type="button" className="cmpx-btn" onClick={onBook} data-testid="cmp-advisor-book"><Icon name="calendar" />Book</button>
         </div>
       </div>

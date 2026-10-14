@@ -21,6 +21,7 @@ export type SubmissionPayload = {
     terms_accepted: ApplicationData["termsAccepted"];
     share_authorization?: ApplicationData["shareAuthorization"];   // BF_CLIENT_CONSENT_TRANSMIT_v1
     communication_consent?: ApplicationData["infoConfirmed"];      // BF_CLIENT_CONSENT_TRANSMIT_v1
+    marketing_sms_consent?: boolean;                               // BF_CLIENT_v808_MARKETING_OPTIN
     typed_signature?: ApplicationData["typedSignature"];
     co_applicant_signature?: ApplicationData["coApplicantSignature"];
     signature_date?: ApplicationData["signatureDate"];
@@ -49,6 +50,7 @@ export type SubmissionPayload = {
   pgi_opt_in?: "yes" | "no";
   ad_measurement_consent?: boolean; // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
   audience_match_consent?: boolean; // BF_CLIENT_SMS_DISCLOSURE_v690 - same optional box
+  marketing_sms_consent?: boolean; // BF_CLIENT_v808_MARKETING_OPTIN
 };
 
 export function getMissingRequiredDocs(app: ApplicationData) {
@@ -105,6 +107,7 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
       terms_accepted: app.termsAccepted,
       share_authorization: app.shareAuthorization,
       communication_consent: app.infoConfirmed,
+      marketing_sms_consent: app.marketingSmsConsent, // BF_CLIENT_v808_MARKETING_OPTIN
       typed_signature: app.typedSignature,
       co_applicant_signature: app.coApplicantSignature,
       signature_date: app.signatureDate,
@@ -134,6 +137,7 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
     pgi_opt_in: app.pgiOptIn,
     ad_measurement_consent: app.adMeasurementConsent === true, // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
     audience_match_consent: app.adMeasurementConsent === true, // BF_CLIENT_SMS_DISCLOSURE_v690
+    marketing_sms_consent: app.marketingSmsConsent === true, // BF_CLIENT_v808_MARKETING_OPTIN
   };
 }
 
