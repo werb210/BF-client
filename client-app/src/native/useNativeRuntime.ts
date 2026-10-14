@@ -55,7 +55,16 @@ export function useNativeRuntime(): void {
         const modal = document.querySelector<HTMLElement>('[role="dialog"], [aria-modal="true"]');
         const close = modal?.querySelector<HTMLElement>('[aria-label*="Close" i], [data-dismiss]');
         if (close) return close.click();
-        if (canGoBack && pathRef.current !== "/portal" && pathRef.current !== "/") navigate(-1);
+        // BF_CLIENT_v807_ANDROID - in the client portal, Back first returns to Home from Chat, More or Settings
+        // (the portal handles "boreal:back"), and on Home it puts the app in the background instead of going back
+        // to the sign-in screen.
+        const portal = pathRef.current === "/portal" || pathRef.current.startsWith("/application/");
+        if (portal) {
+          const handled = !window.dispatchEvent(new CustomEvent("boreal:back", { cancelable: true }));
+          if (!handled) void CapacitorApp.minimizeApp();
+          return;
+        }
+        if (canGoBack && pathRef.current !== "/") navigate(-1);
         else if (pathRef.current === "/") void CapacitorApp.exitApp();
       }));
       handles.push(await CapacitorApp.addListener("appStateChange", ({ isActive }) => {

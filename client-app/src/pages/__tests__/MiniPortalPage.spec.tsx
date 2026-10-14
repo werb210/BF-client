@@ -18,30 +18,36 @@ describe("MiniPortalPage", () => {
     (apiCall as any).mockImplementation(async () => ({ items: [] as any[] }));
   });
 
-  it("renders the 6-stage tracker in locked order", () => {
+  // BF_CLIENT_v807_TABLET - the portal is the new design at every width: a stage card on Home, and the forms
+  // and uploads on the More tab (was the 6-dot tracker and the "What's Next" chips on computers).
+  it("shows the stage card, with no step count", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
-    const labels = Array.from(document.querySelectorAll(".mp-stage__label")).map((n) => n.textContent);
-    expect(labels).toEqual(["Received", "In Review", "Documents Required", "Additional Steps Required", "Off to Lender", "Offer"]);
+    expect(screen.getByText("What stage is your application at?")).toBeTruthy();
+    expect(screen.getByTestId("cmp-status-stage").textContent).toBe("Received");
+    expect(screen.getByTestId("cmp-status").textContent).not.toMatch(/Step \d of \d/);
+    expect(document.querySelector(".mp-stage__label")).toBeNull();
   });
 
-  it("opens the Personal Net Worth Statement modal when chip is clicked", () => {
+  it("opens the Personal Net Worth Statement form from More", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
-    fireEvent.click(screen.getByRole("button", { name: "Personal Net Worth Statement" }));
+    fireEvent.click(screen.getByTestId("cmp-tab-more"));
+    fireEvent.click(screen.getByTestId("cmp-more-form-networth"));
     expect(screen.getByRole("dialog")).toBeTruthy();
     expect(screen.getAllByText("Personal Statement of Affairs").length).toBeGreaterThan(0);
   });
-  it("renders the action chips", () => {
+
+  it("lists the always-on forms, and not CRA or Connect Bank unless staff request them", () => {
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
-    const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
-    // BF_CLIENT_CMP_LAYOUT_v631 - the five always-on chips; CRA / Connect Bank / collateral
-    // only when staff request them (none requested in the default mock).
-    expect(chips).toEqual(expect.arrayContaining(["Upload Documents", "New Application", "Personal Net Worth Statement", "Debt Stack", "Professional Advisors"]));
-    expect(chips).not.toContain("CRA Authorization");
-    expect(chips).not.toContain("Connect Bank (View-Only)");
+    const more = screen.getByTestId("cmp-more");
+    expect(more.textContent).toContain("Personal Net Worth Statement");
+    expect(more.textContent).toContain("Debt Stack");
+    expect(more.textContent).toContain("Professional Advisors");
+    expect(more.textContent).toContain("Start a new application");
+    expect(more.textContent).not.toContain("CRA Authorization");
+    expect(more.textContent).not.toContain("Connect Bank");
   });
 
-  // BF_CLIENT_CMP_LAYOUT_v631 - Upload Documents is one of the always-on What's Next chips.
-  it("shows the Upload Documents chip in What's Next", async () => {
+  it("offers Upload documents on More, marked needed when documents are outstanding", async () => {
     (apiCall as any).mockImplementation(async (url: string) => {
       if (typeof url === "string" && url.includes("/documents-needed/needed")) {
         return { stillNeeded: [{ document_type: "bank_statements", label: "Bank statements" }], rejected: [] as any[] };
@@ -49,10 +55,6 @@ describe("MiniPortalPage", () => {
       return { items: [] as any[] };
     });
     render(<MemoryRouter initialEntries={["/portal/app-1"]}><MiniPortalPage /></MemoryRouter>);
-    await waitFor(() => {
-      const chips = Array.from(document.querySelectorAll(".mp-chip")).map((n) => n.textContent);
-      expect(chips).toContain("New Application");
-      expect(chips).toContain("Upload Documents");
-    });
+    await waitFor(() => expect(screen.getByTestId("cmp-more-upload").textContent).toContain("Needed"));
   });
 });

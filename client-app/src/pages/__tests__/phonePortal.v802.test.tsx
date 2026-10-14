@@ -106,7 +106,7 @@ describe("v802 phone client portal", () => {
   it("Message on the advisor card writes to the advisor, not Maya", async () => {
     await renderPortal();
     fireEvent.click(screen.getByTestId("cmp-advisor-message"));
-    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-selected")).toBe("true");
     fireEvent.change(screen.getByTestId("cmp-chat-input"), { target: { value: "Can we talk tomorrow?" } });
     await act(async () => { fireEvent.click(screen.getByTestId("cmp-chat-send")); });
     await settle();
@@ -117,7 +117,7 @@ describe("v802 phone client portal", () => {
   it("a message notification opens the chat", async () => {
     await renderPortal({ path: "/application/app-1?section=messages" });
     expect(document.querySelector(".cmp-tab-chat")).not.toBeNull();
-    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-selected")).toBe("true");
   });
 
   it("Book opens the booking sheet in the app with the advisor's own times", async () => {
@@ -129,11 +129,30 @@ describe("v802 phone client portal", () => {
     expect(apiCallsTo("/api/booking/slots")[0][0]).toBe("/api/booking/slots?staff=adv-1");
   });
 
-  it("computers keep the desktop layout", async () => {
+  // BF_CLIENT_v807_TABLET - tablets in landscape and computers get the same design: Home and Chat side by side,
+  // and a rail for Home, More and Settings (no Chat tab, Chat is always open). The old desktop layout is gone.
+  it("landscape tablets and computers show Home and Chat together, with a rail", async () => {
+    vi.stubGlobal("matchMedia", (q: string) => ({
+      matches: q.includes("min-width: 1024px"), media: q, onchange: null as null,
+      addEventListener: noop, removeEventListener: noop, addListener: noop, removeListener: noop, dispatchEvent: (): boolean => false,
+    }));
+    await renderPortal();
+    const root = document.querySelector(".mp-root")!;
+    expect(root.className).toContain("cmp-mode-wide");
+    expect(screen.getByTestId("cmp-tabbar").className).toContain("cmp-tabbar--rail");
+    expect(screen.queryByTestId("cmp-tab-chat")).toBeNull();
+    expect(screen.getByTestId("cmp-chat")).toBeTruthy();
+    expect(document.querySelector(".mp-app-header")).toBeNull();
+    expect(screen.queryByTestId("account-bar")).toBeNull();
+    fireEvent.click(screen.getByTestId("cmp-advisor-message"));
+    expect(root.className).toContain("cmp-tab-home");
+    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("upright tablets use the tabs, centred", async () => {
     phoneScreen(false);
     await renderPortal();
-    expect(screen.queryByTestId("cmp-tabbar")).toBeNull();
-    expect(document.querySelector(".mp-app-header")).not.toBeNull();
-    expect(screen.getByTestId("account-bar")).toBeTruthy();
+    expect(document.querySelector(".mp-root")!.className).toContain("cmp-mode-tablet");
+    expect(screen.getByTestId("cmp-tab-chat")).toBeTruthy();
   });
 });

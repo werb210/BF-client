@@ -6,10 +6,18 @@
 // BF_CLIENT_v805_FORMS - phone layout: money keypads with "$", tables reflow
 // to cards, references 2-3 behind "+ Add reference" until used, a large joint
 // checkbox, pinned Submit, and a localStorage draft.
+// BF_CLIENT_v807_FORMS - Canada and US: home, physical and reference addresses
+// use the shared address block (parts under <field>_street/_city/_region/
+// _postal/_country, the one-line string still under <field>), and the labels
+// name both countries (SIN or SSN, RRSP / 401(k), TFSA / IRA, CRA or IRS).
+// Data keys are unchanged.
 import { useEffect, useMemo, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
-import { MoneyInput, mergeDraft, readDraft, useFormDraft } from "../cmpFormKit"; // BF_CLIENT_v805_FORMS
+import {
+  AddressBlock, MoneyInput, addressEntries, addressFromPrefill, hasAddressParts, isBlank,
+  mergeDraft, readAddress, readDraft, useFormDraft, type AddressValue,
+} from "../cmpFormKit"; // BF_CLIENT_v805_FORMS / BF_CLIENT_v807_FORMS
 
 const FORM_KEY = "net_worth_statement";
 
@@ -17,8 +25,8 @@ type Data = Record<string, string>;
 
 const ASSET_ROWS: Array<{ key: string; label: string }> = [
   { key: "asset_cash", label: "Cash" },
-  { key: "asset_rrsp", label: "RRSP" },
-  { key: "asset_tfsa", label: "TFSA" },
+  { key: "asset_rrsp", label: "RRSP / 401(k)" }, // BF_CLIENT_v807_FORMS
+  { key: "asset_tfsa", label: "TFSA / IRA" },
   { key: "asset_stocks", label: "Stocks / Bonds" },
   { key: "asset_ar", label: "Accounts Receivable" },
   { key: "asset_liquid_other", label: "Other (liquid)" },
@@ -37,11 +45,11 @@ const ASSET_ROWS: Array<{ key: string; label: string }> = [
 
 const LIAB_ROWS: Array<{ key: string; label: string }> = [
   { key: "liab_credit_cards", label: "Credit cards (total)" },
-  { key: "liab_rrsp_loans", label: "RRSP loans (total)" },
+  { key: "liab_rrsp_loans", label: "RRSP / 401(k) loans (total)" },
   { key: "liab_other_loans", label: "Other loans (total)" },
   { key: "liab_stock_margin", label: "Stock margin debt" },
   { key: "liab_loc", label: "Line of credit (total)" },
-  { key: "liab_cra_debt", label: "Taxes owing / CRA debt" },
+  { key: "liab_cra_debt", label: "Taxes owing (CRA or IRS)" },
   { key: "liab_vehicle_1", label: "Loan on vehicle 1" },
   { key: "liab_vehicle_2", label: "Loan on vehicle 2" },
   { key: "liab_vehicle_3", label: "Loan on vehicle 3" },
@@ -71,6 +79,9 @@ const DISCLOSURES: string[] = [
   "Any legal actions, pending/looming actions or judgments against you?",
   "Are you a co-signor, guarantor or obligor to any other party's debts?",
 ];
+
+// BF_CLIENT_v807_FORMS - fields shown as the address block.
+const ADDRESS_FIELDS = ["primary_home_address", "primary_physical_address", "ref1_address", "ref2_address", "ref3_address"];
 
 const num = (v: string | undefined) => {
   const n = parseFloat((v ?? "").replace(/[^0-9.\-]/g, ""));
@@ -112,17 +123,25 @@ export default function PersonalNetWorthForm({
           primary_work_phone: p.workPhone,
           primary_sin: p.sin,
           primary_dob: p.dob,
-          primary_home_address: p.street,
-          primary_physical_address: p.street,
         };
         for (const [k, v] of Object.entries(mapped)) if (typeof v === "string" && v) pre[k] = v;
+        // BF_CLIENT_v807_FORMS - home and physical address from the application's parts.
+        const addr = addressFromPrefill(prefill);
+        if (!isBlank(addr)) for (const f of ADDRESS_FIELDS.slice(0, 2)) Object.assign(pre, addressEntries(f, addr));
       }
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing?.data) {
           const d = existing.data as { joint?: boolean; fields?: Data };
           setJoint(!!d.joint || !!draft?.joint);
-          setData(withDraft({ ...pre, ...(d.fields ?? {}) }));
+          // BF_CLIENT_v807_FORMS - a saved one-line address (pre-v807) beats the prefill parts.
+          const saved = d.fields ?? {};
+          for (const f of ADDRESS_FIELDS) {
+            if (String(saved[f] ?? "").trim() && !hasAddressParts(saved, f)) {
+              for (const k of Object.keys(addressEntries(f, readAddress({}, f)))) delete pre[k];
+            }
+          }
+          setData(withDraft({ ...pre, ...saved }));
           setSubmitted(!!existing.submitted_at);
           setHydrated(true);
           return;
@@ -137,6 +156,19 @@ export default function PersonalNetWorthForm({
   }, [applicationId, prefill]);
 
   const set = (k: string, v: string) => setData((d) => ({ ...d, [k]: v }));
+  // BF_CLIENT_v807_FORMS
+  const setAddress = (field: string, v: AddressValue) => setData((d) => ({ ...d, ...addressEntries(field, v) }));
+  const addr = (field: string, legend: string) => (
+    <AddressBlock
+      key={field}
+      idPrefix={`pnw-${field}`}
+      legend={legend}
+      testId={`pnw-${field}`}
+      value={readAddress(data, field)}
+      onChange={(v) => setAddress(field, v)}
+      onBlur={persist}
+    />
+  );
   const persist = () => { void saveFormResponse(applicationId, FORM_KEY, { joint, fields: data }).catch(() => {}); };
 
   const totals = useMemo(() => {
@@ -183,9 +215,12 @@ export default function PersonalNetWorthForm({
 
   const MARITAL_OPTIONS = ["Single", "Married", "Common-law", "Separated", "Divorced", "Widowed"];
 
+  // BF_CLIENT_v807_FORMS - SIN as 123-456-789; a US home address formats an SSN as 123-45-6789.
   const formatSin = (raw: string) => {
     const d = raw.replace(/[^0-9]/g, "").slice(0, 9);
-    return d.replace(/(\d{3})(\d{0,3})(\d{0,3})/, (_m: string, a: string, b: string, c: string) =>
+    const us = readAddress(data, "primary_home_address").country === "US";
+    const re = us ? /(\d{3})(\d{0,2})(\d{0,4})/ : /(\d{3})(\d{0,3})(\d{0,3})/;
+    return d.replace(re, (_m: string, a: string, b: string, c: string) =>
       [a, b, c].filter(Boolean).join("-")
     );
   };
@@ -240,7 +275,9 @@ export default function PersonalNetWorthForm({
   };
 
   // BF_CLIENT_v805_FORMS - references 2 and 3 show once used or asked for.
-  const refHasData = (n: number) => ["name", "rel", "address", "phone"].some((x) => String(data[`ref${n}_${x}`] ?? "").trim() !== "");
+  const refHasData = (n: number) =>
+    ["name", "rel", "address", "phone"].some((x) => String(data[`ref${n}_${x}`] ?? "").trim() !== "") ||
+    hasAddressParts(data, `ref${n}_address`); // BF_CLIENT_v807_FORMS
   const refsShown = Math.max(refsRevealed, refHasData(3) ? 3 : refHasData(2) ? 2 : 1);
 
   const moneyCell = (key: string, label: string) => (
@@ -283,7 +320,7 @@ export default function PersonalNetWorthForm({
       <div className="cmpf-section">Primary Party</div>
       <div className="cmp-grid-2">
         {f("primary_name", "Full legal name")}
-        {f("primary_sin", "SIN")}
+        {f("primary_sin", "SIN (Canada) or SSN (US)")}
         {f("primary_alt_names", "Alternate name(s)")}
         {f("primary_prior_names", "Prior name(s)")}
         {f("primary_dob", "Date of birth")}
@@ -295,16 +332,16 @@ export default function PersonalNetWorthForm({
         {f("primary_email", "Personal email")}
         {f("primary_work_email", "Work email")}
       </div>
-      {f("primary_home_address", "Full home address")}
-      {f("primary_physical_address", "Physical address (if different)")}
+      {addr("primary_home_address", "Full home address")}
+      {addr("primary_physical_address", "Physical address (if different)")}
 
       <div className="cmpf-section">Personal References</div>
       {[1, 2, 3].filter((n) => n <= refsShown).map((n) => (
         <div key={n} className="cmp-grid-2" data-testid={`pnw-ref-${n}`}>
           {f(`ref${n}_name`, `Reference ${n} - name`)}
           {f(`ref${n}_rel`, "Relationship")}
-          {f(`ref${n}_address`, "Address")}
           {f(`ref${n}_phone`, "Cell phone")}
+          <div style={{ gridColumn: "1 / -1" }}>{addr(`ref${n}_address`, "Address")}</div>
         </div>
       ))}
       {refsShown < 3 && (
@@ -315,7 +352,7 @@ export default function PersonalNetWorthForm({
         <>
           <div className="cmpf-section">Spouse / Common-law Partner</div>
           <div className="cmp-grid-2">
-            {f("spouse_sin", "SIN")}
+            {f("spouse_sin", "SIN (Canada) or SSN (US)")}
             {f("spouse_alt_names", "Alternate name(s)")}
             {f("spouse_prior_names", "Prior name(s)")}
             {f("spouse_dob", "Date of birth")}

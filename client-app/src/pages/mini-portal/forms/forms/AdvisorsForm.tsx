@@ -8,6 +8,8 @@
 // "+ Add ..." buttons until used (all four rows still submit, empty as before),
 // tel/email/money keypads, a large authorization checkbox, pinned Submit, and
 // a localStorage draft.
+// BF_CLIENT_v807_FORMS - Canada and US wording, "Boreal Financial" in place of
+// "Accord" in what the applicant reads, and the authorization text below.
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
 import { formatPhoneNumber } from "@/utils/location"; // v_ADVISOR_PHONE_FMT_v1
@@ -153,7 +155,7 @@ export default function AdvisorsForm({
     <div className="cmpf">
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Professional Advisors</h2>
       <p className="cmpf-intro">
-        Optional. If you work with any of the advisors below, add their details so Accord can coordinate with them.
+        Optional. If you work with any of the advisors below, add their details so Boreal Financial can coordinate with them.
         Leave blank any that don't apply.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
@@ -192,7 +194,7 @@ export default function AdvisorsForm({
           {moneyField("mon-balance", "Balance outstanding (existing facility)", monitoring.balanceOutstanding, (v) => setMon("balanceOutstanding", v))}
           {moneyField("mon-limit", "Authorized limit (existing facility)", monitoring.authorizedLimit, (v) => setMon("authorizedLimit", v))}
           <div style={{ gridColumn: "1 / -1" }}>
-            {yesNo("mon-cra", 'Do you have CRA "My Business" set up?', monitoring.craMyBusiness, (v) => setMon("craMyBusiness", v))}
+            {yesNo("mon-cra", "Do you have CRA My Business (Canada) or an IRS online business account (US) set up?", monitoring.craMyBusiness, (v) => setMon("craMyBusiness", v))}
           </div>
         </div>
       </div>
@@ -204,11 +206,8 @@ export default function AdvisorsForm({
         </div>
         <label className="cmpf-check">
           <input type="checkbox" checked={authorized} onChange={(e) => { setAuthorized(e.target.checked); void saveFormResponse(applicationId, FORM_KEY, buildPayload(e.target.checked)).catch(() => {}); }} />
-          <span>
-            I authorize Accord to discuss this proposed credit facility with {FINANCIAL_ADVISOR_FIRM}, including
-            sharing personal and business credit information relating to the shareholders, related entities, and any
-            proposed guarantor(s).
-          </span>
+          {/* BF_CLIENT_v807_FORMS */}
+          <span>I authorize Boreal Financial to discuss this proposed credit facility with any of its lending partners.</span>
         </label>
       </div>
 

@@ -64,9 +64,6 @@ export default function CmpMore(p: {
   onForm: (id: string) => void;
   onUpload: () => void;
   onNewApplication: () => void;
-  onBook: () => void;
-  onAskMaya: () => void;
-  call: { state: CallState; error: string | null; onStart: () => void; onEnd: () => void; onReset: () => void };
 }) {
   return (
     <section className="cmp-phone-only" data-cmp-tab="more" data-testid="cmp-more">
@@ -88,14 +85,7 @@ export default function CmpMore(p: {
           </div>
         </div>
       ) : null}
-      <div className="cmpx-group">
-        <h2 className="cmpx-group__title">Talk to us</h2>
-        <div style={{ marginBottom: 10 }}><CallControl {...p.call} /></div>
-        <div className="cmpx-list">
-          <Row icon="calendar" title="Book a call" desc="Pick a time for a phone or Teams call." onClick={p.onBook} testId="cmp-more-book" />
-          <Row icon="sparkle" title="Ask Maya" desc="Our AI assistant answers right away." onClick={p.onAskMaya} testId="cmp-more-maya" />
-        </div>
-      </div>
+      {/* BF_CLIENT_v807_MORE - Call, Book a call and Ask Maya are on Home (advisor card) and in Chat; not repeated here. */}
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Applications</h2>
         <div className="cmpx-list">

@@ -14,7 +14,7 @@ describe("a client portal pointing at an application that no longer exists", () 
     await renderPortal();
     expect(screen.getByTestId("mp-app-gone").textContent).toContain(GONE);
     expect(screen.getByRole("button", { name: "Start a new application" })).toBeTruthy();
-    expect(screen.queryByText("Chat with Boreal Staff")).toBeNull();
+    expect(screen.queryByTestId("cmp-chat")).toBeNull(); // BF_CLIENT_v807_TABLET - the portal is the new design at every width
   });
 
   it("stops polling once the application is gone", async () => {
@@ -41,7 +41,7 @@ describe("a client portal pointing at an application that no longer exists", () 
     await refocus();
     await refocus();
     expect(screen.queryByTestId("mp-app-gone")).toBeNull();
-    expect(screen.getByText("Chat with Boreal Staff")).toBeTruthy();
+    expect(screen.getByTestId("cmp-chat")).toBeTruthy();
   });
 
   it("resets when the client switches to another application", async () => {
@@ -50,7 +50,7 @@ describe("a client portal pointing at an application that no longer exists", () 
     expect(screen.getByTestId("mp-app-gone")).toBeTruthy();
     await goTo("/application/app-2");
     expect(screen.queryByTestId("mp-app-gone")).toBeNull();
-    expect(screen.getByText("Chat with Boreal Staff")).toBeTruthy();
+    expect(screen.getByTestId("cmp-chat")).toBeTruthy();
     expect(apiCallsTo("/api/client/offers?applicationId=app-2").length).toBeGreaterThan(0);
   });
 });

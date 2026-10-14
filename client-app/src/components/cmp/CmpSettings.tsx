@@ -73,12 +73,81 @@ function Action({ icon, title, desc, onClick, href, testId }: { icon: string; ti
   return <button type="button" className="cmpx-row" onClick={href ? () => void openExternal(href) : onClick} data-testid={testId}>{body}</button>;
 }
 
+// BF_CLIENT_v807_DETAILS - the client edits their own name, email and business name. Saving updates the CRM
+// contact and the application (BF-Server v807 POST /api/client/profile). The mobile number is the sign-in
+// number, so it stays read-only.
+export type EditableDetails = { firstName: string; lastName: string; email: string; business: string };
+const DETAIL_ERRORS: Record<string, string> = {
+  first_name_required: "Add your first name.",
+  last_name_required: "Add your last name.",
+  email_invalid: "Check your email address.",
+  business_name_required: "Add your business name.",
+};
+export function DetailsEditor({ details, phone, onSave }: { details: EditableDetails; phone: string; onSave: (d: EditableDetails) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<EditableDetails>(details);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const name = [details.firstName, details.lastName].filter(Boolean).join(" ");
+  const start = () => { setDraft(details); setErr(null); setSaved(false); setEditing(true); };
+  const save = async () => {
+    const d = { firstName: draft.firstName.trim(), lastName: draft.lastName.trim(), email: draft.email.trim(), business: draft.business.trim() };
+    if (!d.firstName) { setErr(DETAIL_ERRORS.first_name_required); return; }
+    if (!d.lastName) { setErr(DETAIL_ERRORS.last_name_required); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)) { setErr(DETAIL_ERRORS.email_invalid); return; }
+    if (!d.business) { setErr(DETAIL_ERRORS.business_name_required); return; }
+    setBusy(true); setErr(null);
+    try { await onSave(d); setEditing(false); setSaved(true); }
+    catch (e) {
+      const code = e instanceof Error ? e.message : ""; // apiCall puts the server's error code in the message
+      setErr(DETAIL_ERRORS[code] ?? "We couldn't save that. Check your connection and try again.");
+    } finally { setBusy(false); }
+  };
+  if (!editing) {
+    return (
+      <>
+        <div className="cmpx-list" data-testid="cmp-settings-details">
+          <Line icon="user" title="Name" value={name} />
+          <Line icon="phone" title="Mobile" value={phone} />
+          <Line icon="chat" title="Email" value={details.email} />
+          <Line icon="folder" title="Business" value={details.business} />
+        </div>
+        {saved ? <p className="cmpx-muted" role="status" style={{ margin: "8px 4px 0", color: "#065F46", fontWeight: 600 }}>Saved. Your advisor sees the change too.</p> : null}
+        <button type="button" className="cmpx-btn cmpx-btn--ghost cmpx-btn--block" style={{ marginTop: 10 }} onClick={start} data-testid="cmp-details-edit">Edit my details</button>
+        <p className="cmpx-muted" style={{ margin: "8px 4px 0" }}>Your mobile number is how you sign in. To change it, ask your advisor.</p>
+      </>
+    );
+  }
+  const field = (key: keyof EditableDetails, label: string, auto: string, type = "text") => (
+    <label className="cmpx-field">{label}
+      <input type={type} value={draft[key]} autoComplete={auto} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} data-testid={"cmp-details-" + key} />
+    </label>
+  );
+  return (
+    <div className="cmpx-card cmpx-details-form" data-testid="cmp-details-form">
+      <div className="cmpx-details-form__row">
+        {field("firstName", "First name", "given-name")}
+        {field("lastName", "Last name", "family-name")}
+      </div>
+      {field("email", "Email", "email", "email")}
+      {field("business", "Business name", "organization")}
+      <p className="cmpx-muted" style={{ margin: "0 0 10px" }}>Mobile: {phone || "\u2014"} (your sign-in number; ask your advisor to change it)</p>
+      {err ? <p className="cmpx-err" role="alert">{err}</p> : null}
+      <div className="cmpx-details-form__actions">
+        <button type="button" className="cmpx-btn cmpx-btn--ghost" onClick={() => setEditing(false)} disabled={busy}>Cancel</button>
+        <button type="button" className="cmpx-btn" onClick={() => void save()} disabled={busy} data-testid="cmp-details-save">{busy ? "Saving..." : "Save"}</button>
+      </div>
+    </div>
+  );
+}
+
 export default function CmpSettings(p: {
-  details: { name: string; phone: string; email: string; business: string };
+  details: EditableDetails;
+  phone: string;
+  onSaveDetails: (d: EditableDetails) => Promise<void>;
   applicationNumber: string;
   stage: string;
-  onDocuments: () => void;
-  onAskQuestion: () => void;
   onReportProblem: () => void;
   onDeleteAccount: () => void;
 }) {
@@ -121,13 +190,7 @@ export default function CmpSettings(p: {
 
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Your details</h2>
-        <div className="cmpx-list" data-testid="cmp-settings-details">
-          <Line icon="user" title="Name" value={p.details.name} />
-          <Line icon="phone" title="Mobile" value={p.details.phone} />
-          <Line icon="chat" title="Email" value={p.details.email} />
-          <Line icon="folder" title="Business" value={p.details.business} />
-        </div>
-        <p className="cmpx-muted" style={{ margin: "8px 4px 0" }}>To change any of these, message your advisor.</p>
+        <DetailsEditor details={p.details} phone={p.phone} onSave={p.onSaveDetails} />
       </div>
 
       <div className="cmpx-group">
@@ -135,15 +198,14 @@ export default function CmpSettings(p: {
         <div className="cmpx-list" data-testid="cmp-settings-file">
           <Line icon="doc" title="Application number" value={p.applicationNumber} />
           <Line icon="flag" title="Stage" value={p.stage} />
-          <Action icon="upload" title="Documents" desc="Upload or re-upload what we've asked for." onClick={p.onDocuments} testId="cmp-settings-documents" />
         </div>
       </div>
 
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Help</h2>
         <div className="cmpx-list">
-          <Action icon="help" title="Ask a question" desc="Maya answers first; your advisor is one tap away." onClick={p.onAskQuestion} testId="cmp-settings-ask" />
-          <Action icon="flag" title="Report a problem" desc="Tell us what went wrong. A screenshot is attached." onClick={p.onReportProblem} testId="cmp-settings-report" />
+          {/* BF_CLIENT_v807_SETTINGS - "Documents" (on More) and "Ask a question" (on Home and in Chat) are not repeated here. */}
+          <Action icon="flag" title="Report a problem" desc="Tell us what went wrong. A picture of your screen is included." onClick={p.onReportProblem} testId="cmp-settings-report" />
           <Action icon="shield" title="Privacy policy" href="https://www.boreal.financial/privacy" />
           <Action icon="doc" title="Terms of service" href="https://www.boreal.financial/terms" />
         </div>
