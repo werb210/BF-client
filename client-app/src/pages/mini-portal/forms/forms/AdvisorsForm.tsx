@@ -30,6 +30,9 @@ const ADVISOR_ROWS: { key: AdvisorKey; label: string }[] = [
 ];
 
 const EMPTY_ROW: AdvisorRow = { firm: "", contact: "", phone: "", email: "" };
+// BF_CLIENT_v808_ADVISORS_REMINDER - the three advisors every lender asks about.
+const KEY_ADVISORS: AdvisorKey[] = ["cpa", "attorney", "insurance"];
+const ADVISOR_LABEL: Record<AdvisorKey, string> = { cpa: "CPA / Accounting Firm", attorney: "Attorney / Law Firm", insurance: "Insurance Agent", ar_credit_insurance: "A/R Credit Insurance" };
 
 export default function AdvisorsForm({
   applicationId,
@@ -48,7 +51,10 @@ export default function AdvisorsForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // BF_CLIENT_v805_FORMS
-  const [revealedAdvisors, setRevealedAdvisors] = useState<Set<AdvisorKey>>(new Set(["cpa"]));
+  // BF_CLIENT_v808_ADVISORS_REMINDER - CPA, lawyer and insurance agent are shown from the start (lenders ask for
+  // all three); A/R credit insurance stays behind "+ Add".
+  const [revealedAdvisors, setRevealedAdvisors] = useState<Set<AdvisorKey>>(new Set(KEY_ADVISORS));
+  const [missingReminder, setMissingReminder] = useState<AdvisorKey[] | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, { advisors, monitoring, authorized }, hydrated);
 
@@ -105,11 +111,19 @@ export default function AdvisorsForm({
     void saveFormResponse(applicationId, FORM_KEY, buildPayload(authorized)).catch(() => {});
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (skipReminder = false) => {
     if (!authorized) {
       setError("Please authorize Boreal Financial to discuss the application before continuing.");
       return;
     }
+    // BF_CLIENT_v808_ADVISORS_REMINDER - CPA, lawyer or insurance agent left empty: remind before submitting.
+    // The client can go back and fill them in, or submit anyway if they don't have one.
+    const missing = KEY_ADVISORS.filter((k) => !advisors[k].firm.trim() && !advisors[k].contact.trim());
+    if (missing.length > 0 && !skipReminder) {
+      setMissingReminder(missing);
+      return;
+    }
+    setMissingReminder(null);
     setSubmitting(true);
     setError(null);
     try {
@@ -155,8 +169,8 @@ export default function AdvisorsForm({
     <div className="cmpf">
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Professional Advisors</h2>
       <p className="cmpf-intro">
-        Optional. If you work with any of the advisors below, add their details so Boreal Financial can coordinate with them.
-        Leave blank any that don't apply.
+        {/* BF_CLIENT_v808_ADVISORS_REMINDER */}
+        Add your accountant, lawyer and insurance agent so Boreal Financial can coordinate with them. If you don't have one, you can still submit.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
@@ -213,12 +227,37 @@ export default function AdvisorsForm({
 
       {error && <p className="cmpf-error">{error}</p>}
 
+      {missingReminder ? (
+        <div role="alertdialog" aria-labelledby="adv-missing-title" className="cmpf-card" data-testid="advisors-missing-reminder"
+          style={{ background: "#FFFBEB", borderColor: "#F59E0B", marginTop: 16 }}>
+          <div id="adv-missing-title" style={{ fontSize: 16, fontWeight: 700, color: "#0B1F3A" }}>
+            You haven't added your {missingReminder.map((k) => ADVISOR_LABEL[k]).join(", ").replace(/, ([^,]*)$/, " or $1")}
+          </div>
+          <p style={{ margin: "6px 0 12px", fontSize: 15, color: "#0B1F3A" }}>
+            Lenders usually ask for these. Please go back and fill them in. If you don't have one, you can submit now and
+            add it later from More &gt; Forms.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" className="cmpf-primary" data-testid="advisors-go-back" onClick={() => {
+              const first = missingReminder[0];
+              setMissingReminder(null);
+              const el = typeof document !== "undefined" ? document.getElementById(`adv-${first}-firm`) : null;
+              el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+              el?.focus();
+            }}>Go back and fill them in</button>
+            <button type="button" className="cmpf-secondary" data-testid="advisors-submit-anyway" onClick={() => void handleSubmit(true)}>
+              Submit without them
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="cmpf-actions">
         <button
           type="button"
           className="cmpf-primary"
           disabled={submitting || !authorized}
-          onClick={() => void handleSubmit()}
+          onClick={() => void handleSubmit(false)}
         >
           {submitting ? "Submitting..." : "Submit Advisors"}
         </button>

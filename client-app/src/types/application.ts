@@ -199,6 +199,9 @@ export interface ApplicationData {
   // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402 - optional; lets BF-Server send hashed
   // email/phone with Google Ads conversions (enhanced conversions for leads).
   adMeasurementConsent?: boolean;
+  // BF_CLIENT_v808_MARKETING_OPTIN - optional, unticked "Text me offers" box on Step 6. The only consent to
+  // marketing texts; BF-Server records it as express consent (consent_source 'marketing_sms_optin').
+  marketingSmsConsent?: boolean;
 }
 
 export interface ApplicationPayload {

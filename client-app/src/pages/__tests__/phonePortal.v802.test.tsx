@@ -144,9 +144,10 @@ describe("v802 phone client portal", () => {
     expect(screen.getByTestId("cmp-chat")).toBeTruthy();
     expect(document.querySelector(".mp-app-header")).toBeNull();
     expect(screen.queryByTestId("account-bar")).toBeNull();
-    fireEvent.click(screen.getByTestId("cmp-advisor-message"));
+    // BF_CLIENT_v808_WIDE_HOME - Chat is already open beside Home, so the advisor card has Call and Book only.
+    expect(screen.queryByTestId("cmp-advisor-message")).toBeNull();
+    expect(screen.getByTestId("cmp-advisor-book")).toBeTruthy();
     expect(root.className).toContain("cmp-tab-home");
-    expect(screen.getByTestId("cmp-to-advisor").getAttribute("aria-selected")).toBe("true");
   });
 
   it("upright tablets use the tabs, centred", async () => {

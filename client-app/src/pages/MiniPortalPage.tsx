@@ -976,7 +976,7 @@ export default function MiniPortalPage() {
       <div className={"mp-root" + (isPhone ? " cmp-phone cmp-tab-" + viewTab + " cmp-mode-" + cmpMode : "")}>
       {/* BF_CLIENT_CMP_PHONE_TABS_v732 - on a phone everything down to the stage bar is the Home tab. */}
       <div data-cmp-tab="home">
-      {isPhone ? <CmpHello firstName={firstName} advisor={advisor} onCall={() => void startCall()} onMessage={() => openChat("advisor")} onBook={() => setBookOpen(true)} /> : null}
+      {isPhone ? <CmpHello firstName={firstName} advisor={advisor} onCall={() => void startCall()} onMessage={cmpMode === "wide" ? undefined : () => openChat("advisor")} onBook={() => setBookOpen(true)} /> : null}
       {isPhone && callState !== "idle" ? <div style={{ margin: "0 0 12px" }}><CallControl state={callState} error={callError} onStart={() => void startCall()} onEnd={endCall} onReset={() => setCallState("idle")} /></div> : null}
       <InstallAppPrompt />
       {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}

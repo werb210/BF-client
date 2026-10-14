@@ -17,7 +17,7 @@ describe("text-message disclosure and simpler Step 6", () => {
     const step6 = readFileSync("src/wizard/Step6_Review.tsx", "utf8");
     expect(step6).toContain('data-testid="agree-all-terms"');
     expect(step6).toContain("update({ termsAccepted: !allAgreed, shareAuthorization: !allAgreed, infoConfirmed: !allAgreed })");
-    expect(step6.match(/<Checkbox /g)?.length).toBe(2);
+    expect(step6.match(/<Checkbox /g)?.length).toBe(3); // BF_CLIENT_v808_MARKETING_OPTIN - plus the optional "Text me offers" box
     expect(step6).not.toContain("Boreal Insurance");
     expect(step6).not.toContain("such as Google");
     expect(step6).not.toContain("marketing opportunities");

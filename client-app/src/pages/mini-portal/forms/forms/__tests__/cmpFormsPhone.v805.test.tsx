@@ -80,29 +80,57 @@ describe("Real Estate: owners and mortgages behind + Add", () => {
   });
 });
 
-describe("Advisors: CPA first, the rest behind + Add", () => {
-  it("hides the other advisor types but still submits all four rows", async () => {
+// BF_CLIENT_v808_ADVISORS_REMINDER - CPA, lawyer and insurance agent show from the start; A/R credit insurance
+// stays behind + Add. Submitting with any of the three empty reminds the client; they can still submit.
+describe("Advisors: the three key advisors, a reminder for any left empty", () => {
+  it("shows CPA, lawyer and insurance agent; A/R credit insurance behind + Add", async () => {
+    render(<AdvisorsForm applicationId="app-adv" onComplete={vi.fn()} />);
+    await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
+    for (const k of ["cpa", "attorney", "insurance"]) expect(screen.getByTestId("advisor-" + k)).toBeTruthy();
+    expect(screen.queryByTestId("advisor-ar_credit_insurance")).toBeNull();
+    expect(screen.getByLabelText("Attorney / Law Firm phone").getAttribute("type")).toBe("tel");
+    expect(screen.getByRole("button", { name: "+ A/R Credit Insurance" })).toBeTruthy();
+  });
+
+  it("reminds the client about the missing ones, and lets them go back", async () => {
     const onComplete = vi.fn();
     render(<AdvisorsForm applicationId="app-adv" onComplete={onComplete} />);
     await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
-    expect(screen.getByTestId("advisor-cpa")).toBeTruthy();
-    expect(screen.queryByTestId("advisor-attorney")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "+ Attorney / Law Firm" }));
-    expect(screen.getByTestId("advisor-attorney")).toBeTruthy();
-    expect(screen.getByLabelText("Attorney / Law Firm phone").getAttribute("type")).toBe("tel");
-
+    fireEvent.change(screen.getByLabelText("CPA / Accounting Firm firm"), { target: { value: "Smith CPA" } });
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: "Submit Advisors" }));
+    const reminder = await screen.findByTestId("advisors-missing-reminder");
+    expect(reminder.textContent).toContain("You haven't added your Attorney / Law Firm or Insurance Agent");
+    expect(api.submitFormResponse).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("advisors-go-back"));
+    expect(screen.queryByTestId("advisors-missing-reminder")).toBeNull();
+    expect(document.activeElement?.id).toBe("adv-attorney-firm");
+    expect(onComplete).not.toHaveBeenCalled();
+  });
+
+  it("submits without them when the client says so, still sending all four rows", async () => {
+    const onComplete = vi.fn();
+    render(<AdvisorsForm applicationId="app-adv" onComplete={onComplete} />);
+    await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Submit Advisors" }));
+    fireEvent.click(await screen.findByTestId("advisors-submit-anyway"));
     await waitFor(() => expect(onComplete).toHaveBeenCalled());
     const empty = { firm: "", contact: "", phone: "", email: "" };
     expect(submitted().advisors).toEqual({ cpa: empty, attorney: empty, insurance: empty, ar_credit_insurance: empty });
   });
 
-  it("shows an advisor that already has data", async () => {
-    api.getFormResponse.mockResolvedValue({ data: { advisors: { insurance: { firm: "Co-op" } } } });
-    render(<AdvisorsForm applicationId="app-adv" onComplete={vi.fn()} />);
-    await waitFor(() => expect(screen.getByTestId("advisor-insurance")).toBeTruthy());
-    expect(screen.queryByTestId("advisor-attorney")).toBeNull();
+  it("no reminder when all three are filled in", async () => {
+    const onComplete = vi.fn();
+    render(<AdvisorsForm applicationId="app-adv" onComplete={onComplete} />);
+    await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText("CPA / Accounting Firm firm"), { target: { value: "Smith CPA" } });
+    fireEvent.change(screen.getByLabelText("Attorney / Law Firm firm"), { target: { value: "Lee Law" } });
+    fireEvent.change(screen.getByLabelText("Insurance Agent contact"), { target: { value: "Pat Agent" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Submit Advisors" }));
+    await waitFor(() => expect(onComplete).toHaveBeenCalled());
+    expect(screen.queryByTestId("advisors-missing-reminder")).toBeNull();
   });
 });
 
