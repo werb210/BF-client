@@ -6,9 +6,18 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { parseNativeUrl } from "./deepLinks";
 import { collectAndroidShares, isSharedFileUrl, receiveSharedUrl } from "./sharedFiles"; // BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL
 
+// BF_CLIENT_v801_LAUNCH_URL_ONCE - the link that opened the app is followed once per launch. useNavigate()
+// returns a new function on every screen change, so this effect re-ran after every navigation and read the
+// launch link again - iOS keeps the last link the app was opened with - and sent the client straight back
+// to it. Tapping New Application in the portal went to Step 1 and bounced back to the portal Home.
+let launchUrlHandled = false;
+export function __resetLaunchUrlForTests(): void { launchUrlHandled = false; }
+
 /** Owns native listeners in one mount and removes them as a unit on teardown. */
 export function useNativeRuntime(): void {
-  const navigate = useNavigate();
+  const navigateNow = useNavigate();
+  const navigateRef = useRef(navigateNow);
+  navigateRef.current = navigateNow;
   const location = useLocation();
   const pathRef = useRef(location.pathname);
   pathRef.current = location.pathname;
@@ -16,6 +25,8 @@ export function useNativeRuntime(): void {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let disposed = false;
+    const navigate: (to: string | number, opts?: { replace?: boolean }) => void = (to, opts) =>
+      typeof to === "number" ? navigateRef.current(to) : navigateRef.current(to, opts);
     const handles: Array<{ remove: () => Promise<void> }> = [];
     const add = async () => {
       // BF_CLIENT_COLD_LAUNCH_DEEPLINK_v426 - iOS delivers the URL that launched a
@@ -24,6 +35,8 @@ export function useNativeRuntime(): void {
       // destination was lost. Read it BEFORE attaching listeners so a live
       // appUrlOpen during startup wins over the stale launch URL.
       try {
+        if (launchUrlHandled) throw new Error("launch link already followed");
+        launchUrlHandled = true;
         const launch = await CapacitorApp.getLaunchUrl();
         const route = launch?.url ? parseNativeUrl(launch.url) : null;
         // Only redirect when it actually resolves somewhere - parseNativeUrl
@@ -60,5 +73,5 @@ export function useNativeRuntime(): void {
       disposed = true;
       void Promise.all(handles.splice(0).map((handle) => handle.remove()));
     };
-  }, [navigate]);
+  }, []); // BF_CLIENT_v801_LAUNCH_URL_ONCE - once per mount; navigateRef always holds the current navigate
 }
