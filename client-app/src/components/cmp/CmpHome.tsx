@@ -1,15 +1,18 @@
 // BF_CLIENT_v802_PHONE_UI - the phone client portal's header and Home cards.
 import { useEffect, useState } from "react";
 import { Icon, BorealMark } from "./icons";
-import { type Advisor, advisorName, initials } from "./cmpData";
+import { type Advisor, advisorName, initials, shortStageLabel } from "./cmpData";
 import "./cmp.css";
 
-export type SwitcherApp = { id: string; business: string; product: string; amount: string; stage: string; signatureNeeded: boolean };
+export type SwitcherApp = { id: string; business: string; product: string; amount: string; stage: string; signatureNeeded: boolean; notFinished: boolean; lastSaved: string };
 
 const PRODUCT_LABELS: Record<string, string> = {
   EQUIPMENT_FINANCING: "Equipment financing", EQUIPMENT_FINANCE: "Equipment financing", EQUIPMENT: "Equipment financing",
   LINE_OF_CREDIT: "Line of credit", LOC: "Line of credit", TERM_LOAN: "Term loan", WORKING_CAPITAL: "Working capital",
   INVOICE_FACTORING: "Invoice factoring", FACTORING: "Invoice factoring", STARTUP: "Start-up financing", SBA: "SBA loan",
+  // BF_CLIENT_v805_PHONE_FIXES - the switcher showed "Sba government" and "Standard".
+  SBA_GOVERNMENT: "SBA loan", SBA_LOAN: "SBA loan", GOVERNMENT: "Government-backed loan", STANDARD: "Business financing",
+  MEDIA: "Media financing", PURCHASE_ORDER: "Purchase order financing", ABL: "Asset-based lending", ASSET_BASED_LENDING: "Asset-based lending",
 };
 
 export function productLabel(raw: unknown): string {
@@ -22,13 +25,20 @@ export function productLabel(raw: unknown): string {
 export function toSwitcherApp(a: any): SwitcherApp {
   const amt = Number(a?.requested_amount ?? 0);
   const stageRaw = String(a?.pipeline_state ?? "").trim();
+  // BF_CLIENT_v805_PHONE_FIXES - an application never submitted (draft, or no submitted_at) is "Not finished"
+  // and can be continued; its placeholder name ("Draft application") is not shown as a business.
+  const notFinished = /^draft$/i.test(stageRaw) || (a?.submitted_at == null && "submitted_at" in (a ?? {}));
+  const rawName = String(a?.business_name ?? a?.businessName ?? a?.legal_business_name ?? "").trim();
+  const saved = Date.parse(String(a?.updated_at ?? a?.created_at ?? ""));
   return {
     id: String(a?.id ?? ""),
-    business: String(a?.business_name ?? a?.businessName ?? a?.legal_business_name ?? "").trim() || "Your business",
+    business: rawName && !/^draft application$/i.test(rawName) ? rawName : notFinished ? "Unfinished application" : "Your business",
     product: productLabel(a?.product_category),
     amount: Number.isFinite(amt) && amt > 0 ? "$" + amt.toLocaleString("en-CA") : "",
-    stage: /^draft$/i.test(stageRaw) ? "Not submitted" : stageRaw.replace(/_/g, " "),
+    stage: notFinished ? "Not finished" : shortStageLabel(stageRaw),
     signatureNeeded: a?.signature_needed === true,
+    notFinished,
+    lastSaved: Number.isFinite(saved) ? new Date(saved).toLocaleDateString("en-CA", { month: "short", day: "numeric" }) : "",
   };
 }
 
@@ -48,7 +58,7 @@ export function CmpHeader({ business, stage, canSwitch, onSwitch }: { business: 
   );
 }
 
-export function Sheet({ title, onClose, children, testId }: { title: string; onClose: () => void; children: React.ReactNode; testId?: string }) {
+export function Sheet({ title, onClose, children, testId, panelClassName }: { title: string; onClose: () => void; children: React.ReactNode; testId?: string; panelClassName?: string }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -56,7 +66,7 @@ export function Sheet({ title, onClose, children, testId }: { title: string; onC
   }, [onClose]);
   return (
     <div className="cmpx-sheet" role="dialog" aria-modal="true" aria-label={title} data-testid={testId} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="cmpx-sheet__panel">
+      <div className={"cmpx-sheet__panel" + (panelClassName ? " " + panelClassName : "")}>
         <div className="cmpx-sheet__grip" aria-hidden="true" />
         <div className="cmpx-sheet__head">
           <h2 className="cmpx-sheet__title">{title}</h2>
@@ -69,12 +79,23 @@ export function Sheet({ title, onClose, children, testId }: { title: string; onC
 }
 
 /** Item 12 - business name large, product and amount underneath. */
-export function AppSwitcherSheet({ apps, currentId, onPick, onClose }: { apps: SwitcherApp[]; currentId: string; onPick: (id: string) => void; onClose: () => void }) {
+export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onClose }: { apps: SwitcherApp[]; currentId: string; onPick: (id: string) => void; onContinue?: (id: string) => void; onClose: () => void }) {
   return (
     <Sheet title="Your applications" onClose={onClose} testId="cmp-app-switcher">
       <ul className="cmpx-apps">
         {apps.map((a) => (
           <li key={a.id}>
+            {a.notFinished && onContinue ? (
+              // BF_CLIENT_v805_PHONE_FIXES - not submitted yet: say so, and offer to carry on in the application.
+              <div className="cmpx-app" data-testid="cmp-app-unfinished">
+                <span style={{ minWidth: 0 }}>
+                  <span className="cmpx-app__biz" style={{ display: "block" }}>{a.business}</span>
+                  <span className="cmpx-app__sub" style={{ display: "block" }}>{[a.product, a.amount].filter(Boolean).join(" \u00b7 ")}</span>
+                  <span className="cmpx-app__sub" style={{ display: "block" }}>{["Not finished", a.lastSaved ? "last saved " + a.lastSaved : ""].filter(Boolean).join(" \u00b7 ")}</span>
+                </span>
+                <button type="button" className="cmpx-app__go" onClick={() => onContinue(a.id)}>Continue</button>
+              </div>
+            ) : (
             <button type="button" className="cmpx-app" onClick={() => onPick(a.id)} aria-current={a.id === currentId ? "true" : undefined}>
               <span style={{ minWidth: 0 }}>
                 <span className="cmpx-app__biz" style={{ display: "block" }}>{a.business}</span>
@@ -83,6 +104,7 @@ export function AppSwitcherSheet({ apps, currentId, onPick, onClose }: { apps: S
               </span>
               {a.id === currentId ? <span className="cmpx-app__tick" aria-label="Open now"><Icon name="check" /></span> : null}
             </button>
+            )}
           </li>
         ))}
       </ul>
@@ -103,10 +125,13 @@ export function CmpHello({ firstName, advisor, onCall, onMessage, onBook }: { fi
         <div className="cmpx-advisor">
           {advisor?.photoUrl && !photoFailed
             ? <img className="cmpx-avatar" src={advisor.photoUrl} alt="" onError={() => setPhotoFailed(true)} />
-            : <span className="cmpx-avatar" aria-hidden="true">{name ? initials(name) : <Icon name="user" />}</span>}
+            : name
+              ? <span className="cmpx-avatar" aria-hidden="true">{initials(name)}</span>
+              : <span className="cmpx-avatar cmpx-avatar--brand" aria-hidden="true"><BorealMark /></span>}
           <div style={{ minWidth: 0 }}>
-            <div className="cmpx-eyebrow">{name ? "Your advisor" : "Your Boreal team"}</div>
-            <div className="cmpx-advisor__name">{name || "Here to help"}</div>
+            {/* BF_CLIENT_v805_PHONE_FIXES - no advisor assigned yet: the Boreal team, with the Boreal logo. */}
+            <div className="cmpx-eyebrow">{name ? "Your advisor" : "Your team"}</div>
+            <div className="cmpx-advisor__name">{name || "Boreal Financial team"}</div>
           </div>
         </div>
         <div className="cmpx-advisor__actions">

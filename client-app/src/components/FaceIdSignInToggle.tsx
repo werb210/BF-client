@@ -22,10 +22,11 @@ import {
   isEnrolled,
   type BiometryStatus,
 } from "@/native/deviceSignIn";
+import { Icon } from "@/components/cmp/icons"; // BF_CLIENT_v805_PHONE_FIXES
 
 type Phase = "checking" | "ready";
 
-export default function FaceIdSignInToggle() {
+export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}) {
   const [phase, setPhase] = useState<Phase>("checking");
   const [status, setStatus] = useState<BiometryStatus | null>(null);
   const [enrolled, setEnrolled] = useState(false);
@@ -81,6 +82,31 @@ export default function FaceIdSignInToggle() {
 
   // Face ID is a device feature; there is nothing to offer in a browser tab.
   if (phase === "ready" && status && !status.native) return null;
+
+  // BF_CLIENT_v805_PHONE_FIXES - in Settings and the account sheet: a settings row with an on/off switch.
+  if (variant === "row") {
+    const available = phase === "ready" && Boolean(status?.available);
+    const desc = phase === "checking" ? "Checking..."
+      : !available ? `Not available - ${status?.reason ?? "this device can't use Face ID"}`
+      : busy ? (enrolled ? "Turning off..." : "Turning on...")
+      : enrolled ? "On. Sign in with your face instead of a text code."
+      : hint ? "Skip the text code next time." : "Sign in with your face instead of a text code.";
+    return (
+      <div className="cmpx-row cmpx-row--static" data-testid="face-id-setting">
+        <span className="cmpx-row__icon"><Icon name="user" /></span>
+        <span className="cmpx-row__text">
+          <span className="cmpx-row__title" id="face-id-title">Face ID sign-in</span>
+          <span className="cmpx-row__desc" data-testid={available ? undefined : phase === "ready" ? "face-id-unavailable" : undefined}>{desc}</span>
+          {error ? <span className="cmpx-row__desc" role="alert" style={{ color: "#b91c1c" }}>{error}</span> : null}
+        </span>
+        <button type="button" role="switch" className="cmpx-switch" aria-checked={enrolled} aria-labelledby="face-id-title"
+          data-testid="face-id-switch" disabled={!available || busy}
+          onClick={() => void (enrolled ? turnOff() : turnOn())}>
+          <span aria-hidden="true" />
+        </button>
+      </div>
+    );
+  }
 
   const row: React.CSSProperties = {
     marginTop: 12,

@@ -2,7 +2,7 @@
 // A new question goes to Maya first (she answers at once) unless a person on staff wrote in the last
 // 24 hours. Every Maya answer has "Send to my advisor", which posts the question into the advisor chat.
 // Maya's side of the thread is kept on this device per application; the server keeps its own transcript.
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { apiCall } from "@/api/client";
 import { getToken } from "@/auth/token";
 import { formatMessageTime } from "@/utils/safeDate";
@@ -57,11 +57,22 @@ export default function CmpChat(p: Props) {
     return [...staff, ...ai].sort((a, b) => a.at - b.at);
   }, [p.messages, maya]);
 
+  // BF_CLIENT_v805_PHONE_FIXES - keep the newest message in view. It was hidden behind the message box after
+  // sending, because the suggestions and the keyboard changed the layout after the scroll had run. Scroll again
+  // once layout settles, and whenever the screen resizes (keyboard up or down).
+  const scrollToEnd = useCallback(() => {
+    const go = () => { const el = p.bodyRef.current; if (el) el.scrollTop = el.scrollHeight; };
+    requestAnimationFrame(go);
+    window.setTimeout(go, 120);
+    window.setTimeout(go, 350);
+  }, [p.bodyRef]);
+  useEffect(() => { scrollToEnd(); }, [timeline.length, mayaBusy, p.staffTyping, scrollToEnd]);
   useEffect(() => {
-    const el = p.bodyRef.current;
-    if (!el) return;
-    requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-  }, [timeline.length, mayaBusy, p.staffTyping, p.bodyRef]);
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    window.addEventListener("resize", scrollToEnd);
+    vv?.addEventListener("resize", scrollToEnd);
+    return () => { window.removeEventListener("resize", scrollToEnd); vv?.removeEventListener("resize", scrollToEnd); };
+  }, [scrollToEnd]);
 
   async function askMaya(question: string) {
     const q = question.trim();
@@ -198,7 +209,7 @@ export default function CmpChat(p: Props) {
             <Icon name="clip" />
             <input type="file" style={{ display: "none" }} onChange={(e) => { for (const f of Array.from(e.target.files ?? [])) p.onAttach(f); e.target.value = ""; if (to === "maya") p.setRecipient("advisor"); }} />
           </label>
-          <input ref={p.inputRef} className="cmpx-composer__input" data-testid="cmp-chat-input" value={p.text} onChange={(e) => p.setText(e.target.value)}
+          <input ref={p.inputRef} className="cmpx-composer__input" data-testid="cmp-chat-input" value={p.text} onChange={(e) => p.setText(e.target.value)} onFocus={scrollToEnd}
             placeholder={to === "maya" ? "Ask Maya a question" : "Message " + (p.advisor?.firstName || "your advisor")}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void send(); } }} enterKeyHint="send" />
           <button type="button" className="cmpx-send" aria-label="Send" data-testid="cmp-chat-send" disabled={sending || mayaBusy || (!p.text.trim() && p.attachments.length === 0)} onClick={() => void send()}>

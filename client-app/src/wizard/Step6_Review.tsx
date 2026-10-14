@@ -1092,7 +1092,7 @@ export function Step6_Review(): JSX.Element {
           Submitted to our network of {lenderCount ? `${lenderCount}+` : "40+"} lenders
         </div>
 
-        <div style={layout.stickyCta}>
+        <div className="wiz-cta" style={layout.stickyCta}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
             <Button
               variant="secondary"

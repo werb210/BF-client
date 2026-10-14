@@ -1569,7 +1569,7 @@ export function Step1_KYC(): JSX.Element {
           </div>
         )}
 
-        <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+        <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
           <Button
             style={{ width: "100%", maxWidth: "220px" }}
             onClick={() => {

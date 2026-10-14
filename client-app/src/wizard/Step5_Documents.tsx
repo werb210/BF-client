@@ -1103,7 +1103,7 @@ function Step5DocumentsBody() {
         )}
       </Card>
 
-      <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+      <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
           <Button
             variant="secondary"

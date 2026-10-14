@@ -4,6 +4,8 @@ import { components, tokens } from "@/styles";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { isStartupPathKyc } from "@/wizard/wizardSchema";
 import { useIsPhoneWidth } from "@/components/CmpPhone"; // BF_CLIENT_v802_WIZARD_PHONE
+import { Icon } from "@/components/cmp/icons"; // BF_CLIENT_v805_PHONE_FIXES
+import "@/components/cmp/cmp.css";
 
 // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_DESIGN_v1 — Direction A "Refined Cards":
 // dark header band with a blue progress fill, labeled 6-dot stepper, blue
@@ -33,7 +35,12 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
     return (
       <>
         <FieldTips />
-        <div data-testid="step-header-phone" style={{ paddingRight: 44 }}>
+        {/* BF_CLIENT_v805_PHONE_FIXES - Maya sits in the header next to the account button instead of floating over the form. */}
+        <button type="button" className="cmpx-acct-btn cmpx-maya-btn" aria-label="Ask Maya" data-testid="step-header-maya"
+          onClick={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "chat" } }))}>
+          <Icon name="chat" size={20} />
+        </button>
+        <div data-testid="step-header-phone" style={{ paddingRight: 96 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: tokens.colors.textSecondary, letterSpacing: 0.2 }}>
             Step {step} of {totalSteps} &middot; {STEP_LABELS[step - 1] ?? ""}
           </div>

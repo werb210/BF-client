@@ -1,7 +1,12 @@
 // BF_CLIENT_v802_PHONE_UI - the phone client portal, driven the way a client uses it.
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { act, fireEvent, screen, within } from "@testing-library/react";
-import { apiCallsTo, currentLocation, portalMocks, renderPortal, setApi, settle } from "./miniPortalHarness";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { actionCenter, apiCallsTo, currentLocation, portalMocks, renderPortal, setApi, settle } from "./miniPortalHarness";
+
+// BF_CLIENT_v805_PHONE_FIXES - an unfinished application continues in the wizard where it was left.
+const resumeMocks = vi.hoisted(() => ({ status: vi.fn(async (_id: string) => ({ data: { currentStep: 3 } })) }));
+vi.mock("@/api/clientApp", async (orig) => ({ ...(await orig<Record<string, unknown>>()), ClientAppAPI: { status: resumeMocks.status } }));
+vi.mock("@/applications/resume", async (orig) => ({ ...(await orig<Record<string, unknown>>()), extractApplicationFromStatus: () => ({ currentStep: 3 }), getResumeRoute: () => "/apply/step-3" }));
 
 const STAFF_REPLY_OLD = { id: "m1", direction: "outbound", body: "Hi, I'm reviewing your file.", staff_name: "Andrew", created_at: "2026-01-02T10:00:00Z" };
 
@@ -48,9 +53,25 @@ describe("v802 phone client portal", () => {
     fireEvent.click(screen.getByTestId("cmp-header-title"));
     const sheet = screen.getByTestId("cmp-app-switcher");
     expect(sheet.textContent).toContain("Equipment financing \u00b7 $42,000");
-    fireEvent.click(within(sheet).getAllByRole("button").find((b) => b.textContent?.includes("$42,000"))!);
-    await settle();
-    expect(currentLocation()).toBe("/application/app-2");
+    // BF_CLIENT_v805_PHONE_FIXES - the draft says it is not finished and offers Continue, which resumes the wizard.
+    const unfinished = within(sheet).getByTestId("cmp-app-unfinished");
+    expect(unfinished.textContent).toContain("Not finished");
+    fireEvent.click(within(unfinished).getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(currentLocation()).toBe("/apply/step-3"));
+    expect(resumeMocks.status).toHaveBeenCalledWith("app-2");
+  });
+
+  it("what happens next counts what is left, and never says forms are left when you are caught up", async () => {
+    // BF_CLIENT_v805_PHONE_FIXES
+    await renderPortal();
+    const onData = (actionCenter() as unknown as { onData: (d: unknown) => void }).onData;
+    await act(async () => { onData({ outstanding: [{ key: "d1", kind: "document" }, { key: "d2", kind: "document" }, { key: "form:networth", kind: "form" }], completed: [] }); });
+    expect(screen.getByTestId("cmp-status-next").textContent).toContain("3 things left: 2 documents and 1 form.");
+    expect(screen.queryByTestId("cmp-home-caught-up")).toBeNull();
+    await act(async () => { onData({ outstanding: [], completed: [{ key: "d1", kind: "document" }] }); });
+    expect(screen.getByTestId("cmp-home-caught-up")).toBeTruthy();
+    expect(screen.getByTestId("cmp-status-next").textContent).toContain("We have what we need from you for now.");
+    expect(screen.getByTestId("cmp-status-next").textContent).not.toMatch(/forms? (are|is) left/i);
   });
 
   it("Start a new application on More opens Step 1", async () => {

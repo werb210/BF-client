@@ -32,7 +32,36 @@ type Props = {
   extraItems?: ActionItem[];
   /** BF_CLIENT_CMP_LAYOUT_v631 - the page uses this to show only the forms staff requested. */
   onData?: (d: { outstanding: ActionItem[]; completed: ActionItem[] }) => void;
+  /** BF_CLIENT_v805_PHONE_FIXES - phone layout: progress, then Documents and Forms, three of each until "Show all". */
+  grouped?: boolean;
 };
+
+const buttonLabel = (item: ActionItem) => (item.kind === "document" ? "Upload" : item.key === "sign" ? "Sign" : item.kind === "form" ? "Fill in" : "Open");
+
+function GroupedList({ title, items, onAction, testId }: { title: string; items: ActionItem[]; onAction?: (item: ActionItem) => void; testId: string }) {
+  const [all, setAll] = useState(false);
+  if (items.length === 0) return null;
+  const shown = all ? items : items.slice(0, 3);
+  return (
+    <div className="cmpx-todo__group" data-testid={testId}>
+      <h3 className="cmpx-todo__grouptitle">{title} ({items.length})</h3>
+      {shown.map((item) => (
+        <div key={item.key} className="cmpx-todo__item">
+          <span className="cmpx-todo__label">
+            {item.label}
+            {item.urgent && item.kind === "document" ? <span className="cmpx-todo__warn">Needs re-uploading - the last one was not accepted</span> : null}
+          </span>
+          {onAction ? <button type="button" className="cmpx-todo__btn" onClick={() => onAction(item)}>{buttonLabel(item)}</button> : null}
+        </div>
+      ))}
+      {items.length > 3 ? (
+        <button type="button" className="cmpx-todo__more" onClick={() => setAll((v) => !v)} aria-expanded={all}>
+          {all ? "Show fewer" : "Show all " + items.length}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 const wrap: React.CSSProperties = {
   border: "1px solid #e5e7eb",
@@ -42,7 +71,7 @@ const wrap: React.CSSProperties = {
   marginBottom: 20,
 };
 
-export default function ActionCenter({ applicationId, onAction, refreshKey, onData, extraItems }: Props) {
+export default function ActionCenter({ applicationId, onAction, refreshKey, onData, extraItems, grouped }: Props) {
   // BF_CLIENT_TODO_ACTIONS_v637 - the latest extras, for the badge/widget count inside load().
   const extrasRef = useRef<ActionItem[]>(extraItems ?? []);
   extrasRef.current = extraItems ?? [];
@@ -116,6 +145,20 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
   // BF_CLIENT_BLOCK_v562 - nothing to do means nothing to show: no "Completed"
   // list and no "nothing outstanding" banner. The panel exists only for work left.
   if (outstanding.length === 0) return null;
+
+  if (grouped) {
+    const total = outstanding.length + data.completed.length;
+    return (
+      <div style={wrap} data-testid="action-center">
+        <div className="cmpx-todo__progress">
+          <h2 className="cmpx-todo__title">What you need to do</h2>
+          <span className="cmpx-todo__count" data-testid="action-center-progress">{data.completed.length} of {total} done</span>
+        </div>
+        <GroupedList title="Documents" items={outstanding.filter((i) => i.kind === "document")} onAction={onAction} testId="action-center-docs" />
+        <GroupedList title="Forms" items={outstanding.filter((i) => i.kind !== "document")} onAction={onAction} testId="action-center-forms" />
+      </div>
+    );
+  }
 
   return (
     <div style={wrap} data-testid="action-center">

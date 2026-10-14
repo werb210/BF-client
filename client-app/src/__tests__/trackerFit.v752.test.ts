@@ -34,7 +34,7 @@ describe("phone tabs v752", () => {
     expect(cmp).toContain('{ id: "settings", label: "Settings" }');
     expect(page).toContain("{!isPhone ? <AccountBar /> : null}");
     expect(settings).toContain('data-cmp-tab="settings"');
-    expect(settings).toContain("<FaceIdSignInToggle />");
+    expect(settings).toContain("<FaceIdSignInToggle variant=\"row\" />");
     expect(settings).toContain("<CmpMoreFooter onDeleteAccount={p.onDeleteAccount} />");
     expect(ccss).toContain('.cmp-phone.cmp-tab-settings [data-cmp-tab]:not([data-cmp-tab="settings"])');
   });

@@ -920,7 +920,7 @@ export function Step3_Business() {
         </div>
       </Card>
 
-      <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+      <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         {missingStep3.length > 0 && (
           <div style={{ width: "100%", color: tokens.colors.textSecondary, fontSize: 14 }}>
             Please complete: {missingStep3.join(", ")}.

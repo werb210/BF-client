@@ -6,6 +6,8 @@
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { mergeDraft, readDraft, useFormDraft } from "../cmpFormKit"; // BF_CLIENT_v805_FORMS
+import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES
 
 const FORM_KEY = "cra_view_only_authorization";
 const ACCORD_BN = "840554489";
@@ -13,31 +15,36 @@ const ACCORD_FIRM = "ACCORD SMALL BUSINESS FINANCE CORP.";
 
 type EntityType = "corporate" | "individual";
 
-const CORPORATE_STEPS: string[] = [
-  "Log into your CRA My Business Account.",
-  "Click PROFILE (top-right corner).",
-  "Scroll to Authorized representatives, then click Manage authorized representatives.",
-  "Click Authorize a representative.",
-  `In the box labelled “RepID, GroupID, or BN (required)”, enter Accord's business number ${ACCORD_BN} (no spaces), then click Next.`,
-  `Confirm the firm name shows as ${ACCORD_FIRM} If a different name appears, you entered the wrong business number.`,
-  "For Level of authorization, select View Only (level 1).",
-  "Leave the Expiry Date blank.",
-  "Under accounts this representative can access, tick the first option (All accounts), then click Next.",
-  "On the confirmation screen, verify: firm name, All accounts, View only (level 1), All years, and Does not expire.",
-  "Tick the Confirmation box, then click Submit. You'll receive a confirmation page.",
+// BF_CLIENT_v805_FORMS - the steps were long paragraphs that filled a phone
+// screen each. Same facts, one short line per step.
+export const CRA_MY_BUSINESS_URL =
+  "https://www.canada.ca/en/revenue-agency/services/e-services/digital-services-businesses/business-account.html";
+
+export const CORPORATE_STEPS: string[] = [
+  "Sign in to CRA My Business Account.",
+  "Tap PROFILE (top right).",
+  "Under Authorized representatives, tap Manage authorized representatives.",
+  "Tap Authorize a representative.",
+  `In "RepID, GroupID, or BN", enter ${ACCORD_BN} (no spaces), then Next.`,
+  `Check the firm shows as ${ACCORD_FIRM} (if not, re-check the number).`,
+  "Level of authorization: View Only (level 1).",
+  "Expiry Date: leave blank.",
+  "Accounts: tick the first option (All accounts), then Next.",
+  "Check: firm name, All accounts, View only (level 1), All years, Does not expire.",
+  "Tick Confirmation, then Submit. A confirmation page appears.",
 ];
 
-const INDIVIDUAL_STEPS: string[] = [
-  "Log into your CRA My Account.",
-  "Click your name (top-right) and select Profile.",
-  "Scroll to Authorized representative(s) and click the “+ Add” button.",
-  "On “Authorize a Representative”, click Start.",
-  `In the box labelled “RepID, GroupID, or BN”, enter Accord's business number ${ACCORD_BN} (no spaces) and click Search.`,
-  "Accord Small Business Finance and the BN will appear — click Next. If a different name appears, you entered the wrong business number.",
-  "On Authorization Level, select Level 1 (View Only).",
-  "On Online Access, select Yes.",
-  "On Expiry Date, click “does not expire”, then click Next.",
-  "On Confirmation, tick the authorization box and click Submit. You'll receive a confirmation page.",
+export const INDIVIDUAL_STEPS: string[] = [
+  "Sign in to CRA My Account.",
+  "Tap your name (top right), then Profile.",
+  "Under Authorized representative(s), tap + Add.",
+  "On Authorize a Representative, tap Start.",
+  `In "RepID, GroupID, or BN", enter ${ACCORD_BN} (no spaces), then Search.`,
+  "Check Accord Small Business Finance appears (if not, re-check the number), then Next.",
+  "Authorization Level: Level 1 (View Only).",
+  "Online Access: Yes.",
+  "Expiry Date: does not expire, then Next.",
+  "Tick the authorization box, then Submit. A confirmation page appears.",
 ];
 
 export default function CraAuthorizationForm({
@@ -49,20 +56,25 @@ export default function CraAuthorizationForm({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false); // BF_CLIENT_v805_FORMS
+  const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, { entity_type: entityType, confirmed }, hydrated);
 
   useEffect(() => {
     void (async () => {
+      let server: { entity_type?: EntityType; confirmed?: boolean } = {};
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing) {
-          const d = (existing.data || {}) as { entity_type?: EntityType; confirmed?: boolean };
-          if (d.entity_type) setEntityType(d.entity_type);
-          setConfirmed(!!d.confirmed);
+          server = (existing.data || {}) as { entity_type?: EntityType; confirmed?: boolean };
           setSubmitted(!!existing.submitted_at);
         }
       } catch {
         // first open — no saved response
       }
+      const d = mergeDraft(server, readDraft(FORM_KEY, applicationId)); // BF_CLIENT_v805_FORMS
+      if (d.entity_type) setEntityType(d.entity_type);
+      setConfirmed(!!d.confirmed);
+      setHydrated(true);
     })();
   }, [applicationId]);
 
@@ -83,6 +95,7 @@ export default function CraAuthorizationForm({
         confirmed: true,
         confirmed_at: new Date().toISOString(),
       });
+      clearLocalDraft(); // BF_CLIENT_v805_FORMS
       setSubmitted(true);
       onComplete();
     } catch (err) {
@@ -95,63 +108,58 @@ export default function CraAuthorizationForm({
   const steps = entityType === "corporate" ? CORPORATE_STEPS : INDIVIDUAL_STEPS;
 
   const tab = (t: EntityType, label: string) => (
-    <button
-      type="button"
-      onClick={() => onPickEntity(t)}
-      style={{
-        padding: "8px 14px",
-        fontSize: 13,
-        fontWeight: 600,
-        border: "1px solid #d1d5db",
-        background: entityType === t ? "#0b1320" : "#fff",
-        color: entityType === t ? "#fff" : "#0f172a",
-        borderRadius: 6,
-        cursor: "pointer",
-      }}
-    >
+    <button type="button" aria-pressed={entityType === t} onClick={() => onPickEntity(t)}>
       {label}
     </button>
   );
 
+  const openCra = () => { void openExternal(CRA_MY_BUSINESS_URL); }; // BF_CLIENT_v805_PHONE_FIXES - in-app browser
+
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>CRA View-Only Authorization</h2>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
-        Grant view-only (Level 1) access to {ACCORD_FIRM} (business number {ACCORD_BN}). This is read-only —
+    <div className="cmpf">
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>CRA View-Only Authorization</h2>
+      <p className="cmpf-intro">
+        Grant view-only (Level 1) access to {ACCORD_FIRM} (business number {ACCORD_BN}). This is read-only -
         Accord cannot file or change anything with the CRA.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Confirmed</span>}
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="cmpf-seg" role="group" aria-label="Who is authorizing">
         {tab("corporate", "Corporation")}
         {tab("individual", "Individual / Sole Prop / Partnership")}
       </div>
 
-      <ol style={{ fontSize: 14, lineHeight: 1.6, color: "#111827", paddingLeft: 20 }}>
+      <button type="button" className="cmpf-cta" onClick={openCra}>
+        Open CRA My Business
+      </button>
+
+      <ol className="cmpf-steps" data-testid="cra-steps" style={{ marginTop: 12 }}>
         {steps.map((step, i) => (
-          <li key={i} style={{ marginBottom: 8 }}>{step}</li>
+          <li key={i}>{step}</li>
         ))}
       </ol>
 
-      <p style={{ fontSize: 12, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 6, padding: "8px 12px", marginTop: 12 }}>
+      <p className="cmpf-note">
         Important: Accord is not alerted when you finish. After submitting, please let your Accord representative know.
       </p>
 
-      {error && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p className="cmpf-error">{error}</p>}
 
-      <label style={{ display: "block", fontSize: 14, marginTop: 16 }}>
-        <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />{" "}
-        I have completed the CRA view-only authorization for Accord.
+      <label className="cmpf-check">
+        <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+        <span>I have completed the CRA view-only authorization for Accord.</span>
       </label>
 
-      <button
-        type="button"
-        disabled={submitting || !confirmed}
-        onClick={() => void handleSubmit()}
-        style={{ marginTop: 16, padding: "12px 24px", background: confirmed ? "#0b1320" : "#9ca3af", color: "#fff", border: 0, borderRadius: 8, cursor: confirmed ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 600, opacity: submitting ? 0.6 : 1 }}
-      >
-        {submitting ? "Submitting…" : "Confirm Authorization"}
-      </button>
+      <div className="cmpf-actions">
+        <button
+          type="button"
+          className="cmpf-primary"
+          disabled={submitting || !confirmed}
+          onClick={() => void handleSubmit()}
+        >
+          {submitting ? "Submitting..." : "Confirm Authorization"}
+        </button>
+      </div>
     </div>
   );
 }

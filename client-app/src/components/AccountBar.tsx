@@ -59,7 +59,7 @@ export default function AccountBar() {
         {sheetOpen ? (
           <Sheet title="Account" onClose={() => setSheetOpen(false)} testId="account-sheet">
             <div className="cmpx-list cmpx-settings__toggles" style={{ marginBottom: 12 }}>
-              <FaceIdSignInToggle />
+              <FaceIdSignInToggle variant="row" />
               <PasskeySignInToggle />
             </div>
             <button type="button" className="cmpx-btn cmpx-btn--ghost cmpx-btn--block" disabled={signingOut} onClick={() => void signOut()}>

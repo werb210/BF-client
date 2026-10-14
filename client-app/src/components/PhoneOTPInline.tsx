@@ -15,6 +15,7 @@ import QuickSignIn from './QuickSignIn'; // BF_CLIENT_ONE_SIGN_IN_v737
 import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TOKEN_v742 - getToken
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
+import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES - Terms and Privacy open in the in-app browser
 
 const API_BASE =
   ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
@@ -437,8 +438,8 @@ export default function PhoneOTPInline() {
           {/* BF_CLIENT_SMS_DISCLOSURE_v690 - carrier-required text-message disclosure at the point of opt-in. */}
           <p data-testid="sms-disclosure" style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
             By entering your mobile number, you agree to receive text messages from Boreal Financial about your application: sign-in codes, status updates, document requests and signing reminders. Up to 10 messages per month. Message and data rates may apply. Reply STOP to opt out or HELP for help. See our{' '}
-            <a href="https://www.boreal.financial/terms" target="_blank" rel="noreferrer" style={{ color: '#1E3A8A' }}>Terms</a> and{' '}
-            <a href="https://www.boreal.financial/privacy" target="_blank" rel="noreferrer" style={{ color: '#1E3A8A' }}>Privacy Policy</a>.
+            <a href="https://www.boreal.financial/terms" target="_blank" rel="noreferrer" onClick={(e) => { e.preventDefault(); void openExternal(e.currentTarget.href); }} style={{ color: '#1E3A8A' }}>Terms</a> and{' '}
+            <a href="https://www.boreal.financial/privacy" target="_blank" rel="noreferrer" onClick={(e) => { e.preventDefault(); void openExternal(e.currentTarget.href); }} style={{ color: '#1E3A8A' }}>Privacy Policy</a>.
           </p>
         </>
       )}

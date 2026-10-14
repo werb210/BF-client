@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import FaceIdSignInToggle from "@/components/FaceIdSignInToggle";
 import PasskeySignInToggle from "@/components/PasskeySignInToggle";
 import { wipeSession } from "@/auth/logout";
+import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES
 import { CmpMoreFooter } from "@/components/CmpPhone";
 import { Icon } from "./icons";
 import "./cmp.css";
@@ -68,9 +69,8 @@ function Action({ icon, title, desc, onClick, href, testId }: { icon: string; ti
       <span className="cmpx-chev"><Icon name="chevron" size={18} /></span>
     </>
   );
-  return href
-    ? <a className="cmpx-row" href={href} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }} data-testid={testId}>{body}</a>
-    : <button type="button" className="cmpx-row" onClick={onClick} data-testid={testId}>{body}</button>;
+  // BF_CLIENT_v805_PHONE_FIXES - links open in the in-app browser instead of leaving the app.
+  return <button type="button" className="cmpx-row" onClick={href ? () => void openExternal(href) : onClick} data-testid={testId}>{body}</button>;
 }
 
 export default function CmpSettings(p: {
@@ -95,7 +95,7 @@ export default function CmpSettings(p: {
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Sign-in and security</h2>
         <div className="cmpx-list cmpx-settings__toggles" data-testid="cmp-settings-security">
-          <FaceIdSignInToggle />
+          <FaceIdSignInToggle variant="row" />
           <PasskeySignInToggle />
           <div className="cmpx-row cmpx-row--static">
             <span className="cmpx-row__icon"><Icon name="lock" /></span>
