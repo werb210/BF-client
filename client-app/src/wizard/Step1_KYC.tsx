@@ -969,7 +969,7 @@ export function Step1_KYC(): JSX.Element {
       <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
       <div className="wizard-step-shell">
-        <StepHeader step={1} title="Financial Profile" subtitle="Tell us what you need so we can match you to the right lenders." />
+        <StepHeader step={1} title="Financial Profile" subtitle="Tell us what you need so your advisor can find the right financing." /* BF_CLIENT_v806_TFV */ />
         {/* BF_CLIENT_STEP1_TALK_TO_HUMAN_v169 - a human escape hatch at the top of
             Step 1: opens Maya straight to the "an advisor will text you back"
             callback screen so someone unsure of their options reaches a person
