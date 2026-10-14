@@ -25,11 +25,12 @@ export default function LandingPage() {
               Start your application
             </p>
             <h1 className="mt-4 font-display text-4xl font-bold leading-[1.12] md:text-5xl">
-              One application. Every lender that fits.
+              {/* BF_CLIENT_v806_TFV - Boreal acts for the applicant; no lead-matching wording (Twilio 30468). */}
+              Business financing, handled by your Boreal advisor.
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
-              Tell us about your business once and we take your file to the
-              lenders who fund companies like yours. Enter your mobile number to
+              Tell us about your business once. Your advisor prepares your file and
+              arranges financing on your behalf. Enter your mobile number to
               begin or to pick up where you left off.
             </p>
           </div>
