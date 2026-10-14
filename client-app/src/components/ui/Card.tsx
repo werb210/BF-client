@@ -19,7 +19,8 @@ export function Card({
     variant === "muted" ? components.card.muted : components.card.base;
 
   return (
-    <div className={className} style={{ ...baseStyle, ...style }} {...rest}>
+    // BF_CLIENT_v805_PHONE_FIXES - ui-card classes let the phone wizard drop the box inside the page box.
+    <div className={["ui-card", "ui-card--" + variant, className].filter(Boolean).join(" ")} style={{ ...baseStyle, ...style }} {...rest}>
       {children}
     </div>
   );

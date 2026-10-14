@@ -12,7 +12,7 @@ describe("Ask Maya on the client portal", () => {
   });
   it("Maya is mounted on the portal (only the floating bubble is hidden there)", () => {
     expect(widget).not.toMatch(/startsWith\("\/application\/"\)\) return null/);
-    expect(widget).toContain('const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/");');
+    expect(widget).toContain('const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/")');
     expect(widget).toContain("{!hideLauncher && (<>");
   });
 });

@@ -2,13 +2,19 @@
 // Per-property real-estate disclosure for collateral mortgages, modeled on
 // Accord's Collateral Mortgage Form (v07012025). Supports multiple properties.
 // Persists via the generic form-responses endpoint, key "real_estate_collateral_disclosure".
+// BF_CLIENT_v805_FORMS - phone layout: owners 2-3 and mortgages 2-3 stay behind
+// "+ Add owner" / "+ Add mortgage" until used (the hidden fields still submit
+// as empty strings, exactly as before), money keypads, pinned Submit, and a
+// localStorage draft so nothing typed is lost when the sheet closes.
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { MoneyInput, mergeDraft, readDraft, useFormDraft } from "../cmpFormKit";
 
 const FORM_KEY = "real_estate_collateral_disclosure";
 
 type Property = Record<string, string>;
+type Reveal = { owners: number; mortgages: number };
 
 const newProperty = (): Property => ({
   street: "", city_province: "", legal_address: "",
@@ -23,9 +29,13 @@ const newProperty = (): Property => ({
   taxes_current: "", other_charges: "", other_charges_details: "", other_disclosures: "",
 });
 
-const lbl = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", margin: "8px 0 2px" } as const;
-const inp = { width: "100%", padding: "7px 9px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 5, boxSizing: "border-box" as const } as const;
-const sectionH = { fontSize: 13, fontWeight: 700, color: "#0f172a", margin: "16px 0 4px" } as const;
+const MONEY_KEYS = /(_balance|_charge|_payment|purchase_price|present_value|rental_income_monthly)$/;
+const has = (p: Property, keys: string[]) => keys.some((k) => String(p[k] ?? "").trim() !== "");
+const ownersWithData = (p: Property) => (has(p, ["owner3", "owner3_marital"]) ? 3 : has(p, ["owner2", "owner2_marital"]) ? 2 : 1);
+const mortgagesWithData = (p: Property) => {
+  const m = (n: number) => ["lender", "type", "balance", "charge", "payment"].map((f) => `m${n}_${f}`);
+  return has(p, m(3)) ? 3 : has(p, m(2)) ? 2 : 1;
+};
 
 export default function RealEstateCollateralForm({
   applicationId,
@@ -33,11 +43,19 @@ export default function RealEstateCollateralForm({
   onComplete,
 }: { applicationId: string; prefill?: Record<string, unknown>; onComplete: () => void }) {
   const [properties, setProperties] = useState<Property[]>([newProperty()]);
+  const [reveal, setReveal] = useState<Reveal[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, { properties }, hydrated);
 
   useEffect(() => {
+    const draft = readDraft<{ properties?: Property[] }>(FORM_KEY, applicationId);
+    const withDraft = (ps: Property[]): Property[] =>
+      draft && Array.isArray(draft.properties)
+        ? mergeDraft(ps, draft.properties).map((p) => ({ ...newProperty(), ...p }))
+        : ps;
     void (async () => {
       const ownerName = String((prefill?.fullName ?? "") || "");
       try {
@@ -45,15 +63,19 @@ export default function RealEstateCollateralForm({
         if (existing?.data) {
           const d = existing.data as { properties?: Property[] };
           if (Array.isArray(d.properties) && d.properties.length) {
-            setProperties(d.properties.map((p) => ({ ...newProperty(), ...p })));
+            setProperties(withDraft(d.properties.map((p) => ({ ...newProperty(), ...p }))));
+          } else {
+            setProperties((ps) => withDraft(ps));
           }
           setSubmitted(!!existing.submitted_at);
+          setHydrated(true);
           return;
         }
       } catch {
         // first open
       }
-      if (ownerName) setProperties((ps) => ps.map((p, i): Property => (i === 0 ? { ...p, owner1: p.owner1 || ownerName } : p)));
+      setProperties((ps) => withDraft(ownerName ? ps.map((p, i): Property => (i === 0 ? { ...p, owner1: p.owner1 || ownerName } : p)) : ps));
+      setHydrated(true);
     })();
   }, [applicationId, prefill]);
 
@@ -61,8 +83,19 @@ export default function RealEstateCollateralForm({
     setProperties((ps) => ps.map((p, i): Property => (i === idx ? { ...p, [key]: value } : p)));
 
   const addProperty = () => setProperties((ps) => [...ps, newProperty()]);
-  const removeProperty = (idx: number) =>
+  const removeProperty = (idx: number) => {
+    if (properties.length <= 1) return;
     setProperties((ps) => (ps.length > 1 ? ps.filter((_, i) => i !== idx) : ps));
+    setReveal((rs) => rs.filter((_, i) => i !== idx));
+  };
+  const revealOf = (idx: number): Reveal => reveal[idx] ?? { owners: 1, mortgages: 1 };
+  const bump = (idx: number, k: keyof Reveal, current: number) =>
+    setReveal((rs) => {
+      const next = [...rs];
+      for (let i = 0; i <= idx; i++) next[i] = next[i] ?? { owners: 1, mortgages: 1 };
+      next[idx] = { ...next[idx], [k]: Math.min(3, current + 1) };
+      return next;
+    });
 
   const persist = () => { void saveFormResponse(applicationId, FORM_KEY, { properties }).catch(() => {}); };
 
@@ -70,6 +103,7 @@ export default function RealEstateCollateralForm({
     setSubmitting(true);
     try {
       await submitFormResponse(applicationId, FORM_KEY, { properties, submitted_at: new Date().toISOString() });
+      clearLocalDraft();
       setSubmitted(true);
       onComplete();
     } catch (err) {
@@ -79,28 +113,46 @@ export default function RealEstateCollateralForm({
     }
   };
 
-  const field = (idx: number, key: string, label: string, placeholder = "") => (
-    <div>
-      <label style={lbl}>{label}</label>
-      <input style={inp} value={properties[idx][key] ?? ""} placeholder={placeholder}
-        onChange={(e) => setField(idx, key, e.target.value)} onBlur={persist} />
-    </div>
-  );
+  const field = (idx: number, key: string, label: string, placeholder = "") => {
+    const id = `re-${idx}-${key}`;
+    const common = {
+      id,
+      value: properties[idx][key] ?? "",
+      placeholder,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setField(idx, key, e.target.value),
+      onBlur: persist,
+    };
+    return (
+      <div>
+        <label className="cmpf-label" htmlFor={id}>{label}</label>
+        {MONEY_KEYS.test(key) ? (
+          <MoneyInput {...common} />
+        ) : key === "purchase_when" ? (
+          <input className="cmpf-input" inputMode="numeric" {...common} placeholder={placeholder || "e.g. 2019"} />
+        ) : (
+          <input className="cmpf-input" {...common} />
+        )}
+      </div>
+    );
+  };
 
-  const yesNo = (idx: number, key: string, label: string) => (
-    <div>
-      <label style={lbl}>{label}</label>
-      <select style={inp} value={properties[idx][key] ?? ""} onChange={(e) => { setField(idx, key, e.target.value); }} onBlur={persist}>
-        <option value="">—</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
-  );
+  const yesNo = (idx: number, key: string, label: string) => {
+    const id = `re-${idx}-${key}`;
+    return (
+      <div>
+        <label className="cmpf-label" htmlFor={id}>{label}</label>
+        <select id={id} className="cmpf-select" value={properties[idx][key] ?? ""} onChange={(e) => { setField(idx, key, e.target.value); }} onBlur={persist}>
+          <option value="">Select...</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    );
+  };
 
   const mortgage = (idx: number, n: 1 | 2 | 3) => (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>{n === 1 ? "1st" : n === 2 ? "2nd" : "3rd"} Mortgage</div>
+    <div key={n} style={{ marginTop: 8 }} data-testid={`re-${idx}-mortgage-${n}`}>
+      <div className="cmpf-sub">{n === 1 ? "1st" : n === 2 ? "2nd" : "3rd"} Mortgage</div>
       <div className="cmp-grid-3">
         {field(idx, `m${n}_lender`, "Lender")}
         {field(idx, `m${n}_type`, "Type")}
@@ -111,82 +163,89 @@ export default function RealEstateCollateralForm({
     </div>
   );
 
+  const owner = (idx: number, n: 1 | 2 | 3) => (
+    <div key={n} className="cmp-grid-2" data-testid={`re-${idx}-owner-${n}`}>
+      {field(idx, `owner${n}`, `Owner ${n} - full legal name`)}
+      {field(idx, `owner${n}_marital`, `Owner ${n} - marital status`)}
+    </div>
+  );
+
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Real Estate Collateral</h2>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 8 }}>
+    <div className="cmpf">
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Real Estate Collateral</h2>
+      <p className="cmpf-intro">
         Details on real estate offered as additional collateral. Complete one block per property.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
-      {properties.map((_, idx) => (
-        <div key={idx} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 14, marginBottom: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: 14 }}>Property #{idx + 1}</strong>
-            {properties.length > 1 && (
-              <button type="button" onClick={() => removeProperty(idx)} style={{ border: 0, background: "transparent", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button>
+      {properties.map((p, idx) => {
+        const owners = Math.max(revealOf(idx).owners, ownersWithData(p));
+        const mortgages = Math.max(revealOf(idx).mortgages, mortgagesWithData(p));
+        return (
+          <div key={idx} className="cmpf-card">
+            <div className="cmpf-card-head">
+              <span className="cmpf-card-title">Property #{idx + 1}</span>
+              {properties.length > 1 && (
+                <button type="button" className="cmpf-remove" onClick={() => removeProperty(idx)}>Remove</button>
+              )}
+            </div>
+
+            {field(idx, "street", "Number & Street")}
+            <div className="cmp-grid-2">
+              {field(idx, "city_province", "City / Province")}
+              {field(idx, "legal_address", "Legal address (if known)")}
+            </div>
+
+            <div className="cmpf-section">Owners</div>
+            {([1, 2, 3] as const).filter((n) => n <= owners).map((n) => owner(idx, n))}
+            {owners < 3 && (
+              <button type="button" className="cmpf-add" onClick={() => bump(idx, "owners", owners)}>+ Add owner</button>
             )}
-          </div>
+            <div className="cmp-grid-2">
+              {yesNo(idx, "matrimonial", "Family / matrimonial home?")}
+              {field(idx, "matrimonial_which", "If yes, which owner(s)?")}
+            </div>
 
-          {field(idx, "street", "Number & Street")}
-          <div className="cmp-grid-2">
-            {field(idx, "city_province", "City / Province")}
-            {field(idx, "legal_address", "Legal address (if known)")}
-          </div>
+            <div className="cmpf-section">Occupancy &amp; Value</div>
+            <div className="cmp-grid-3">
+              {yesNo(idx, "rented", "Rented?")}
+              {field(idx, "rental_income_monthly", "Rental income (monthly)")}
+              {field(idx, "renter_names", "Renter name(s)")}
+            </div>
+            <div className="cmp-grid-2">
+              {field(idx, "property_type", "Property type")}
+              {field(idx, "purchase_price", "Purchase price")}
+              {field(idx, "purchase_when", "Purchased when")}
+              {field(idx, "present_value", "Present value")}
+              {field(idx, "value_method", "Value method")}
+            </div>
 
-          <div style={sectionH}>Owners</div>
-          <div className="cmp-grid-2">
-            {field(idx, "owner1", "Owner 1 — full legal name")}
-            {field(idx, "owner1_marital", "Owner 1 — marital status")}
-            {field(idx, "owner2", "Owner 2 — full legal name")}
-            {field(idx, "owner2_marital", "Owner 2 — marital status")}
-            {field(idx, "owner3", "Owner 3 — full legal name")}
-            {field(idx, "owner3_marital", "Owner 3 — marital status")}
-          </div>
-          <div className="cmp-grid-2">
-            {yesNo(idx, "matrimonial", "Family / matrimonial home?")}
-            {field(idx, "matrimonial_which", "If yes, which owner(s)?")}
-          </div>
+            <div className="cmpf-section">Mortgages</div>
+            {([1, 2, 3] as const).filter((n) => n <= mortgages).map((n) => mortgage(idx, n))}
+            {mortgages < 3 && (
+              <button type="button" className="cmpf-add" onClick={() => bump(idx, "mortgages", mortgages)}>+ Add mortgage</button>
+            )}
 
-          <div style={sectionH}>Occupancy & Value</div>
-          <div className="cmp-grid-3">
-            {yesNo(idx, "rented", "Rented?")}
-            {field(idx, "rental_income_monthly", "Rental income (monthly)")}
-            {field(idx, "renter_names", "Renter name(s)")}
+            <div className="cmpf-section">Disclosures</div>
+            <div className="cmp-grid-2">
+              {yesNo(idx, "taxes_current", "Property taxes current?")}
+              {yesNo(idx, "other_charges", "Other charges on title?")}
+            </div>
+            {field(idx, "other_charges_details", "If yes, details")}
+            {field(idx, "other_disclosures", "Other disclosure(s)")}
           </div>
-          <div className="cmp-grid-2">
-            {field(idx, "property_type", "Property type")}
-            {field(idx, "purchase_price", "Purchase price")}
-            {field(idx, "purchase_when", "Purchased when")}
-            {field(idx, "present_value", "Present value")}
-            {field(idx, "value_method", "Value method")}
-          </div>
+        );
+      })}
 
-          <div style={sectionH}>Mortgages</div>
-          {mortgage(idx, 1)}
-          {mortgage(idx, 2)}
-          {mortgage(idx, 3)}
-
-          <div style={sectionH}>Disclosures</div>
-          <div className="cmp-grid-2">
-            {yesNo(idx, "taxes_current", "Property taxes current?")}
-            {yesNo(idx, "other_charges", "Other charges on title?")}
-          </div>
-          {field(idx, "other_charges_details", "If yes, details")}
-          {field(idx, "other_disclosures", "Other disclosure(s)")}
-        </div>
-      ))}
-
-      <button type="button" onClick={addProperty} style={{ border: "1px solid #cbd5e1", background: "#fff", padding: "8px 14px", borderRadius: 6, fontSize: 13, cursor: "pointer", color: "#0f172a" }}>
+      <button type="button" className="cmpf-add" onClick={addProperty}>
         + Add another property
       </button>
 
-      {error && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p className="cmpf-error">{error}</p>}
 
-      <div style={{ marginTop: 16 }}>
-        <button type="button" disabled={submitting} onClick={() => void handleSubmit()}
-          style={{ padding: "12px 24px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 600, opacity: submitting ? 0.6 : 1 }}>
-          {submitting ? "Submitting…" : "Submit"}
+      <div className="cmpf-actions">
+        <button type="button" className="cmpf-primary" disabled={submitting} onClick={() => void handleSubmit()}>
+          {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
     </div>

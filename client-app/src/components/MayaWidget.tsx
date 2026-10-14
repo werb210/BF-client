@@ -20,6 +20,7 @@ import { apiRequest } from "@/lib/api";
 import { getToken } from "@/auth/token";
 import { useApplicationStore } from "@/state/useApplicationStore";
 import { useAuth } from "@/auth/useAuth";
+import { useIsPhoneWidth } from "@/components/CmpPhone"; // BF_CLIENT_v805_PHONE_FIXES
 import {
   clearConversation,
   conversationHeaders,
@@ -457,7 +458,9 @@ export default function MayaWidget() {
   // BF_CLIENT_ASK_MAYA_v745 - on the client portal Maya has no floating bubble (it overlapped the portal's own controls),
   // but she is still there: the "Ask Maya" buttons (What's Next on desktop, Chat on phones) open her. She used to be
   // removed from these pages entirely, so both buttons did nothing.
-  const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/");
+  // BF_CLIENT_v805_PHONE_FIXES - in the application on a phone the round button covered the form; Maya opens from the step header there.
+  const isPhone = useIsPhoneWidth();
+  const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/") || (isPhone && location.pathname.startsWith("/apply"));
   const chatUi = (
     <>
       {open ? (
@@ -507,13 +510,12 @@ export default function MayaWidget() {
                 onChange={(e) => setIssue(e.target.value)}
                 placeholder="Describe the issue…"
               />
-              <div className="text-xs text-slate-600">
-                {issueShotBusy
-                  ? "Capturing screenshot…"
-                  : issueShot
-                  ? "Screenshot attached (will be sent)"
-                  : "No screenshot captured — text-only report"}
-              </div>
+              {/* BF_CLIENT_v805_PHONE_FIXES - only say something about a screenshot when there is one (or one is being taken). */}
+              {issueShotBusy || issueShot ? (
+                <div className="text-xs text-slate-600">
+                  {issueShotBusy ? "Capturing screenshot…" : "Screenshot attached (will be sent)"}
+                </div>
+              ) : null}
               {issueShot ? (
                 <img alt="" src={issueShot} style={{ maxHeight: 80, borderRadius: 4, border: "1px solid #E2E8F0" }} />
               ) : null}

@@ -2,9 +2,14 @@
 // First-draft equipment list: each row is a piece of equipment offered as
 // collateral. Business name prefilled from application data.
 // Persists via the generic form-responses endpoint, key "equipment_list".
+// BF_CLIENT_v805_FORMS - phone layout: only the items in use are shown (the
+// second empty starter row stays in the payload but hidden until "+ Add
+// equipment"), a labelled Remove button, money keypads, pinned Submit, and a
+// localStorage draft.
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { MoneyInput, mergeDraft, readDraft, useFormDraft, visibleCount } from "../cmpFormKit"; // BF_CLIENT_v805_FORMS
 
 const FORM_KEY = "equipment_list";
 
@@ -34,10 +39,6 @@ const num = (v: string) => {
 };
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-const lbl = { display: "block", fontSize: 11, fontWeight: 600, color: "#374151", margin: "6px 0 2px" } as const;
-const inp = { width: "100%", padding: "6px 8px", fontSize: 13, border: "1px solid #d1d5db", borderRadius: 5, boxSizing: "border-box" as const } as const;
-const th = { textAlign: "left" as const, padding: "6px 6px", fontSize: 10, fontWeight: 700, color: "#475569", borderBottom: "1px solid #e5e7eb", whiteSpace: "nowrap" as const } as const;
-const td = { padding: "4px 6px", borderBottom: "1px solid #f1f5f9", verticalAlign: "top" as const } as const;
 
 export default function EquipmentCollateralForm({
   applicationId,
@@ -49,19 +50,27 @@ export default function EquipmentCollateralForm({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(1); // BF_CLIENT_v805_FORMS
+  const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, data, loaded);
 
   useEffect(() => {
+    const draft = readDraft<EquipData>(FORM_KEY, applicationId); // BF_CLIENT_v805_FORMS
+    const withDraft = (d: EquipData): EquipData => {
+      if (!draft) return d;
+      const m = mergeDraft(d, draft);
+      return { ...m, rows: (Array.isArray(m.rows) ? m.rows : d.rows).map((r) => ({ ...emptyRow(), ...r })) };
+    };
     void (async () => {
       const preName = String((prefill?.businessName ?? prefill?.fullName ?? "") || "");
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         if (existing?.data) {
           const d = existing.data as Partial<EquipData>;
-          setData({
+          setData(withDraft({
             business_name: d.business_name || preName,
             rows: Array.isArray(d.rows) && d.rows.length ? d.rows.map((r) => ({ ...emptyRow(), ...r })) : emptyData().rows,
             notes: d.notes || "",
-          });
+          }));
           setSubmitted(!!existing.submitted_at);
           setLoaded(true);
           return;
@@ -69,7 +78,7 @@ export default function EquipmentCollateralForm({
       } catch {
         // first open
       }
-      setData((d) => ({ ...d, business_name: preName }));
+      setData((d) => withDraft({ ...d, business_name: preName }));
       setLoaded(true);
     })();
   }, [applicationId, prefill]);
@@ -77,8 +86,18 @@ export default function EquipmentCollateralForm({
   const persist = (next: EquipData) => { void saveFormResponse(applicationId, FORM_KEY, next as unknown as Record<string, unknown>).catch(() => {}); };
   const setRow = (i: number, patch: Partial<EquipRow>) =>
     setData((d) => ({ ...d, rows: d.rows.map((r, idx): EquipRow => (idx === i ? { ...r, ...patch } : r)) }));
-  const addRow = () => setData((d) => ({ ...d, rows: [...d.rows, emptyRow()] }));
-  const removeRow = (i: number) => setData((d) => ({ ...d, rows: d.rows.length > 1 ? d.rows.filter((_, idx) => idx !== i) : d.rows }));
+  // BF_CLIENT_v805_FORMS - "+ Add equipment" first reveals a hidden starter row,
+  // and only appends a new one when every row is already on screen.
+  const shown = visibleCount(data.rows, revealed);
+  const addRow = () => {
+    if (shown < data.rows.length) { setRevealed(shown + 1); return; }
+    setRevealed(shown + 1);
+    setData((d) => ({ ...d, rows: [...d.rows, emptyRow()] }));
+  };
+  const removeRow = (i: number) => {
+    setRevealed(Math.max(1, shown - 1));
+    setData((d) => ({ ...d, rows: d.rows.length > 1 ? d.rows.filter((_, idx) => idx !== i) : d.rows }));
+  };
 
   const totals = {
     value: data.rows.reduce((s, r) => s + num(r.value), 0),
@@ -90,6 +109,7 @@ export default function EquipmentCollateralForm({
     setSubmitting(true);
     try {
       await submitFormResponse(applicationId, FORM_KEY, { ...data, totals, submitted_at: new Date().toISOString() });
+      clearLocalDraft(); // BF_CLIENT_v805_FORMS
       setSubmitted(true);
       onComplete();
     } catch (err) {
@@ -114,60 +134,73 @@ export default function EquipmentCollateralForm({
     { key: "payment", label: "Payment amt." },
   ];
 
+  // BF_CLIENT_v805_FORMS - one card per item (a 10-column table was a sideways
+  // scroll in the modal and a long stack on a phone), Remove at the end of each.
+  const MONEY_COLS = new Set<keyof EquipRow>(["value", "balance", "payment"]);
+  const cell = (i: number, r: EquipRow, c: { key: keyof EquipRow; label: string }) => {
+    const id = `equip-${i}-${c.key}`;
+    const common = {
+      id,
+      value: r[c.key],
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setRow(i, { [c.key]: e.target.value } as Partial<EquipRow>),
+    };
+    return (
+      <div key={c.key}>
+        <label className="cmpf-label" htmlFor={id}>{c.label}</label>
+        {MONEY_COLS.has(c.key) ? <MoneyInput {...common} /> : (
+          <input className="cmpf-input" inputMode={c.key === "year" ? "numeric" : undefined} {...common} />
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div onBlur={() => persist(data)}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Equipment Collateral</h2>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 12 }}>
+    <div className="cmpf" onBlur={() => persist(data)}>
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Equipment Collateral</h2>
+      <p className="cmpf-intro">
         List the equipment offered as collateral. Include any existing lien and balance owing so the net value is clear.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
-      <label style={lbl}>Business name</label>
-      <input style={{ ...inp, maxWidth: 420 }} value={data.business_name}
+      <label className="cmpf-label" htmlFor="equip-business-name">Business name</label>
+      <input id="equip-business-name" className="cmpf-input" style={{ maxWidth: 420 }} value={data.business_name}
         onChange={(e) => setData((d) => ({ ...d, business_name: e.target.value }))} />
 
-      <div style={{ overflowX: "auto", marginTop: 12 }}>
-        <table className="resp-table" style={{ width: "100%", borderCollapse: "collapse", minWidth: 860 }}>
-          <thead>
-            <tr>{cols.map((c) => <th key={c.key} style={th}>{c.label}</th>)}<th style={th}></th></tr>
-          </thead>
-          <tbody>
-            {data.rows.map((r, i) => (
-              <tr key={i}>
-                {cols.map((c) => (
-                  <td key={c.key} data-label={c.label} style={td}>
-                    <input style={inp} value={r[c.key]} onChange={(e) => setRow(i, { [c.key]: e.target.value } as Partial<EquipRow>)} />
-                  </td>
-                ))}
-                <td data-label="" style={td}>
-                  {data.rows.length > 1 && (
-                    <button type="button" onClick={() => removeRow(i)} style={{ border: 0, background: "transparent", color: "#b91c1c", cursor: "pointer", fontSize: 16 }}>×</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ marginTop: 14 }}>
+        {data.rows.slice(0, shown).map((r, i) => (
+          <div key={i} className="cmpf-card" data-testid={`equip-item-${i}`}>
+            <div className="cmpf-card-title">Item {i + 1}</div>
+            <div className="cmp-grid-3">
+              {cols.map((c) => cell(i, r, c))}
+            </div>
+            {shown > 1 && (
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+                <button type="button" className="cmpf-remove" aria-label={`Remove item ${i + 1}`} onClick={() => removeRow(i)}>Remove</button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      <button type="button" onClick={addRow} style={{ marginTop: 8, border: "1px solid #cbd5e1", background: "#fff", padding: "6px 12px", borderRadius: 6, fontSize: 13, cursor: "pointer", color: "#0f172a" }}>+ Add equipment</button>
+      <button type="button" className="cmpf-add" onClick={addRow}>+ Add equipment</button>
 
-      <div style={{ marginTop: 12, padding: 12, background: "#f8fafc", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14 }}>
+      <div className="cmpf-totals">
         <div>Total estimated value: <strong>{money(totals.value)}</strong></div>
         <div>Total balance owing: <strong>{money(totals.balance)}</strong></div>
         <div>Total payments: <strong>{money(totals.payment)}</strong></div>
         <div style={{ marginTop: 4 }}>Net equity: <strong>{money(totals.value - totals.balance)}</strong></div>
       </div>
 
-      <label style={lbl}>Notes</label>
-      <textarea style={{ ...inp, minHeight: 60 }} value={data.notes} onChange={(e) => setData((d) => ({ ...d, notes: e.target.value }))} />
+      <label className="cmpf-label" htmlFor="equip-notes">Notes</label>
+      <textarea id="equip-notes" className="cmpf-textarea" value={data.notes} onChange={(e) => setData((d) => ({ ...d, notes: e.target.value }))} />
 
-      {error && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p className="cmpf-error">{error}</p>}
 
-      <button type="button" disabled={submitting} onClick={() => void handleSubmit()}
-        style={{ marginTop: 16, padding: "12px 24px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 600, opacity: submitting ? 0.6 : 1 }}>
-        {submitting ? "Submitting…" : "Submit"}
-      </button>
+      <div className="cmpf-actions">
+        <button type="button" className="cmpf-primary" disabled={submitting} onClick={() => void handleSubmit()}>
+          {submitting ? "Submitting..." : "Submit"}
+        </button>
+      </div>
     </div>
   );
 }

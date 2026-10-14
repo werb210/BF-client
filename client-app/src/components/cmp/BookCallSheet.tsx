@@ -59,6 +59,12 @@ export default function BookCallSheet({ advisorId, advisorFirstName, prefill, on
   useEffect(() => { if (!day && days.length) setDay(days[0]!.key); }, [days, day]);
   const times = days.find((d) => d.key === day)?.list ?? [];
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, ...opts }).format(new Date(iso));
+  // BF_CLIENT_v805_PHONE_FIXES - times split into Morning and Afternoon so the list is easy to scan.
+  const hourIn = (iso: string) => Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" }).format(new Date(iso)));
+  const timeGroups = [
+    { label: "Morning", list: times.filter((s) => hourIn(s.startsAt) < 12) },
+    { label: "Afternoon", list: times.filter((s) => hourIn(s.startsAt) >= 12) },
+  ].filter((g) => g.list.length > 0);
   const who = forStaff !== "any" && advisorFirstName ? advisorFirstName : "an advisor";
 
   const submit = async () => {
@@ -83,7 +89,7 @@ export default function BookCallSheet({ advisorId, advisorFirstName, prefill, on
   };
 
   return (
-    <Sheet title="Book a call" onClose={onClose} testId="cmp-book-sheet">
+    <Sheet title="Book a call" onClose={onClose} testId="cmp-book-sheet" panelClassName={booked ? undefined : "cmpx-sheet__panel--cta"}>
       {booked ? (
         <div data-testid="cmp-book-done">
           <p style={{ fontSize: 17, fontWeight: 700, color: "#0B1F3A", margin: "4px 0 6px" }}>You're booked.</p>
@@ -113,21 +119,28 @@ export default function BookCallSheet({ advisorId, advisorFirstName, prefill, on
                   </button>
                 ))}
               </div>
-              <div className="cmpx-times" role="group" aria-label="Time">
-                {times.map((s) => (
-                  <button key={s.startsAt} type="button" className="cmpx-time" aria-pressed={s.startsAt === startsAt} onClick={() => setStartsAt(s.startsAt)}>
-                    {fmt(s.startsAt, { hour: "numeric", minute: "2-digit" })}
-                  </button>
-                ))}
-              </div>
+              {timeGroups.map((g) => (
+                <div key={g.label} data-testid={"cmp-book-group-" + g.label.toLowerCase()}>
+                  <p className="cmpx-timegroup">{g.label}</p>
+                  <div className="cmpx-times" role="group" aria-label={g.label + " times"}>
+                    {g.list.map((s) => (
+                      <button key={s.startsAt} type="button" className="cmpx-time" aria-pressed={s.startsAt === startsAt} onClick={() => setStartsAt(s.startsAt)}>
+                        {fmt(s.startsAt, { hour: "numeric", minute: "2-digit" })}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
               <label className="cmpx-field">Your name<input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
               <label className="cmpx-field">Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
               {kind === "phone" ? <label className="cmpx-field">Number to call<input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" /></label> : null}
               <label className="cmpx-field">Anything we should know? (optional)<textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></label>
-              {err ? <p className="cmpx-err" role="alert">{err}</p> : null}
-              <button type="button" className="cmpx-btn cmpx-btn--block" disabled={busy || !startsAt} onClick={() => void submit()} data-testid="cmp-book-confirm">
-                {busy ? "Booking..." : startsAt ? "Book " + fmt(startsAt, { weekday: "short", hour: "numeric", minute: "2-digit" }) : "Pick a time"}
-              </button>
+              <div className="cmpx-book-cta">
+                {err ? <p className="cmpx-err" role="alert">{err}</p> : null}
+                <button type="button" className="cmpx-btn cmpx-btn--block" disabled={busy || !startsAt} onClick={() => void submit()} data-testid="cmp-book-confirm">
+                  {busy ? "Booking..." : startsAt ? "Book " + fmt(startsAt, { weekday: "short", hour: "numeric", minute: "2-digit" }) : "Pick a time"}
+                </button>
+              </div>
             </>
           )}
         </>

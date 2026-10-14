@@ -102,7 +102,8 @@ export default function MiniPortalPage() {
   const { id: routeId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { app, startNewApplication } = useApplicationStore();
+  const store = useApplicationStore();
+  const { app, startNewApplication } = store;
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
   const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null); const [offersOpen, setOffersOpen] = useState(false); // BF_CLIENT_OFFERS_MODAL_v1
 
@@ -173,7 +174,10 @@ export default function MiniPortalPage() {
     setRequestedForms(new Set(keys));
     setFormsOpen(new Set(d.outstanding.filter((i) => i.kind === "form").map(formKey)));
     setFormsDone(new Set(d.completed.filter((i) => i.kind === "form").map(formKey)));
+    // BF_CLIENT_v805_PHONE_FIXES - what is left, by kind, for the status card's "what happens next".
+    setTodoKinds({ docs: d.outstanding.filter((i) => i.kind === "document").length, other: d.outstanding.filter((i) => i.kind !== "document").length });
   }, []);
+  const [todoKinds, setTodoKinds] = useState<{ docs: number; other: number }>({ docs: 0, other: 0 }); // BF_CLIENT_v805_PHONE_FIXES
   // BF_CLIENT_v802_PHONE_UI
   const [rawStage, setRawStage] = useState("");
   const [advisor, setAdvisor] = useState<Advisor | null>(null);
@@ -840,6 +844,35 @@ export default function MiniPortalPage() {
   const myPhone = String(cmpPrefill.cellPhone ?? "").trim() || (() => { const t = getToken(); return (t && phoneFromToken(t)) || ""; })();
   const switcherApps = myApps.map(toSwitcherApp);
   const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;
+  // BF_CLIENT_v805_PHONE_FIXES - "what happens next" says what is actually left (it said "a few short forms
+  // are left" next to "you're all caught up"). Nothing left before lenders: we're reviewing.
+  const statusNext = (() => {
+    const docs = todoKinds.docs;
+    const other = todoKinds.other + todoExtras.length;
+    const left = docs + other;
+    if (todoLoaded && left > 0) {
+      const parts = [docs ? docs + (docs === 1 ? " document" : " documents") : "", other ? other + (other === 1 ? " form" : " forms") : ""].filter(Boolean).join(" and ");
+      return left + (left === 1 ? " thing" : " things") + " left: " + parts + ". Once they're done, your file moves to the next step.";
+    }
+    if (caughtUp && !funded && stageIndex < STAGE_BY_KEY.off_to_lender) return "We have what we need from you for now. Your advisor is reviewing your file and will let you know what comes next.";
+    return stageStep.next;
+  })();
+  // BF_CLIENT_v805_PHONE_FIXES - Continue an application that was never submitted: load it into the wizard
+  // from the server and open the step where it was left.
+  const continueApplication = useCallback(async (id: string) => {
+    setSwitcherOpen(false);
+    try {
+      const { ClientAppAPI } = await import("@/api/clientApp");
+      const { extractApplicationFromStatus, getResumeRoute } = await import("@/applications/resume");
+      const res = await ClientAppAPI.status(id);
+      const partial = extractApplicationFromStatus((res as { data?: Record<string, unknown> }).data ?? {}, id);
+      if (typeof store.loadFromServer === "function") store.loadFromServer({ ...partial, applicationToken: id, applicationId: id });
+      navigate(getResumeRoute(partial));
+    } catch (err) {
+      console.error("[cmp] could not resume the application in the wizard", err);
+      navigate("/application/" + encodeURIComponent(id));
+    }
+  }, [navigate, store]);
   const liveOffers = offers.filter((o) => !isOfferExpired(o.expiresAt));
   const bestOfferAmount = (() => {
     const nums = liveOffers.map((o) => Number(String(o.amount ?? "").replace(/[^0-9.]/g, ""))).filter((n) => Number.isFinite(n) && n > 0);
@@ -1007,11 +1040,11 @@ export default function MiniPortalPage() {
           {uploadNotice.text}
         </div>
       )}
-      {isPhone ? <CmpStatusCard stageLabel={stageStep.label} step={stepNumber} total={STAGE_STEPS.length} next={stageStep.next} caughtUp={caughtUp} /> : null}
+      {isPhone ? <CmpStatusCard stageLabel={stageStep.label} step={stepNumber} total={STAGE_STEPS.length} next={statusNext} caughtUp={caughtUp} /> : null}
       </div>
       {/* BF_CLIENT_v802_PHONE_UI - the to-do list is on Home (To do is no longer a tab). */}
       <div data-cmp-tab="home">
-      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} /> : null}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} grouped={isPhone} /> : null}
       </div>
       {isPhone ? <CmpOffersCard count={liveOffers.length} bestAmount={bestOfferAmount} onOpen={() => setOffersOpen(true)} /> : null}
       {isPhone && funded ? <CmpReferCard shareUrl="https://www.boreal.financial/?utm_source=client_app&utm_medium=referral&utm_campaign=refer_a_business" /> : null}
@@ -1301,6 +1334,7 @@ export default function MiniPortalPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Application form"
+          className="cmp-form-modal" /* BF_CLIENT_v805_PHONE_FIXES - full screen on a phone */
           onClick={(e) => { if (e.target === e.currentTarget) setOpenForm(null); }}
           style={{
             position: "fixed",
@@ -1314,6 +1348,7 @@ export default function MiniPortalPage() {
           }}
         >
           <div
+            className="cmp-form-modal__panel"
             style={{
               background: "#fff",
               color: "#0b1320",
@@ -1326,7 +1361,7 @@ export default function MiniPortalPage() {
               boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
+            <div className="cmp-form-modal__bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               {/* BF_CLIENT_AUDIT_FIX_v1 -- title removed; form renders its own heading */}
               <div aria-hidden="true" />
               <button
@@ -1338,7 +1373,7 @@ export default function MiniPortalPage() {
                 ×
               </button>
             </div>
-            <div style={{ padding: 20 }}>
+            <div className="cmp-form-modal__body" style={{ padding: 20 }}>
               {openForm === "networth" && (
                 <PersonalNetWorthForm
                   applicationId={applicationId}
@@ -1453,6 +1488,7 @@ export default function MiniPortalPage() {
       ) : null}
       {/* BF_CLIENT_v802_PHONE_UI - the application switcher and the booking sheet. */}
       {switcherOpen ? <AppSwitcherSheet apps={switcherApps} currentId={String(applicationId)} onClose={() => setSwitcherOpen(false)}
+        onContinue={(id) => void continueApplication(id)}
         onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
       {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
         prefill={{ name: fullName, email: String(cmpPrefill.email ?? ""), phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}

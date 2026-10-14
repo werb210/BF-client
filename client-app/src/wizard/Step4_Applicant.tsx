@@ -976,7 +976,7 @@ export function Step4_Applicant() {
               </Card>
             )}
 
-            <div style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+            <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
                 <Button variant="secondary" style={{ width: "100%", maxWidth: "160px" }} onClick={() => navigate("/apply/step-3")}>← Back</Button>
                 {/* BF_CLIENT_SBA_WIZARD_FLOW_v210 - SBA skips Step 5 because its

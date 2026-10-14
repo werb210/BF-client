@@ -11,6 +11,16 @@ export const STAGE_STEPS = [
   { key: "offer", label: "Offer", next: "You have an offer. Review it, then accept it or ask for changes." },
 ] as const;
 
+/** BF_CLIENT_v805_PHONE_FIXES - the short stage name the header uses ("Additional Steps Required" -> "Additional Steps"). */
+export function shortStageLabel(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  if (isFundedState(s)) return "Funded";
+  const key = s.toLowerCase().replace(/[\s-]+/g, "_");
+  const hit = STAGE_STEPS.find((st) => st.key === key);
+  return hit ? hit.label : s.replace(/_/g, " ");
+}
+
 export const FUNDED_STEP = { key: "funded", label: "Funded", next: "Your funding is complete. Thank you for choosing Boreal." };
 
 /** "Accepted" and "Funded" are the server's funded states (BF-Server FUNDED_STATES). */

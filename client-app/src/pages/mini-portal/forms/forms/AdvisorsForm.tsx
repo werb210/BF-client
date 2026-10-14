@@ -4,10 +4,15 @@
 // rows. The financial advisor/consultant is always Boreal Financial, so
 // that block is fixed text plus the authorization the applicant grants.
 // Persists via the generic form-responses endpoint, key "professional_advisors".
+// BF_CLIENT_v805_FORMS - CPA shows first; the other advisor types stay behind
+// "+ Add ..." buttons until used (all four rows still submit, empty as before),
+// tel/email/money keypads, a large authorization checkbox, pinned Submit, and
+// a localStorage draft.
 import { useEffect, useState } from "react";
 import { getFormResponse, submitFormResponse, saveFormResponse } from "@/lib/api";
 import { formatPhoneNumber } from "@/utils/location"; // v_ADVISOR_PHONE_FMT_v1
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { MoneyInput, isBlank, mergeDraft, readDraft, useFormDraft } from "../cmpFormKit"; // BF_CLIENT_v805_FORMS
 
 const FORM_KEY = "professional_advisors";
 const FINANCIAL_ADVISOR_FIRM = "Boreal Financial";
@@ -40,6 +45,10 @@ export default function AdvisorsForm({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // BF_CLIENT_v805_FORMS
+  const [revealedAdvisors, setRevealedAdvisors] = useState<Set<AdvisorKey>>(new Set(["cpa"]));
+  const [hydrated, setHydrated] = useState(false);
+  const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, { advisors, monitoring, authorized }, hydrated);
 
   useEffect(() => {
     void (async () => {
@@ -67,6 +76,14 @@ export default function AdvisorsForm({
       } catch {
         // first open — no saved response
       }
+      // BF_CLIENT_v805_FORMS - lay the local draft over what the server returned.
+      const draft = readDraft<{ advisors?: Record<AdvisorKey, AdvisorRow>; monitoring?: typeof monitoring; authorized?: boolean }>(FORM_KEY, applicationId);
+      if (draft) {
+        if (draft.advisors) setAdvisors((prev) => mergeDraft(prev, draft.advisors));
+        if (draft.monitoring) setMonitoring((prev) => mergeDraft(prev, draft.monitoring));
+        if (draft.authorized) setAuthorized(true);
+      }
+      setHydrated(true);
     })();
   }, [applicationId]);
 
@@ -95,6 +112,7 @@ export default function AdvisorsForm({
     setError(null);
     try {
       await submitFormResponse(applicationId, FORM_KEY, buildPayload(true));
+      clearLocalDraft(); // BF_CLIENT_v805_FORMS
       setSubmitted(true);
       onComplete();
     } catch (err) {
@@ -104,87 +122,108 @@ export default function AdvisorsForm({
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "8px 10px",
-    fontSize: 13,
-    border: "1px solid #d1d5db",
-    borderRadius: 6,
-    boxSizing: "border-box",
-  };
-  const cellLabel: React.CSSProperties = { fontSize: 11, color: "#6b7280", marginBottom: 2 };
+  // BF_CLIENT_v805_FORMS - an advisor block shows when it is CPA, holds data,
+  // or the user asked for it.
+  const advisorShown = (key: AdvisorKey) => revealedAdvisors.has(key) || !isBlank(advisors[key]);
+  const hiddenAdvisors = ADVISOR_ROWS.filter(({ key }) => !advisorShown(key));
+  const revealAdvisor = (key: AdvisorKey) => setRevealedAdvisors((prev) => new Set(prev).add(key));
+
+  const text = (id: string, label: string, value: string, onChange: (v: string) => void, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <div>
+      <label className="cmpf-label" htmlFor={id}>{label}</label>
+      <input id={id} className="cmpf-input" value={value} onChange={(e) => onChange(e.target.value)} onBlur={persist} {...extra} />
+    </div>
+  );
+  const yesNo = (id: string, label: string, value: string, onChange: (v: string) => void) => (
+    <div>
+      <label className="cmpf-label" htmlFor={id}>{label}</label>
+      <select id={id} className="cmpf-select" value={value} onChange={(e) => onChange(e.target.value)} onBlur={persist}>
+        <option value="">Select...</option><option value="Yes">Yes</option><option value="No">No</option>
+      </select>
+    </div>
+  );
+  const moneyField = (id: string, label: string, value: string, onChange: (v: string) => void) => (
+    <div>
+      <label className="cmpf-label" htmlFor={id}>{label}</label>
+      <MoneyInput id={id} value={value} onChange={(e) => onChange(e.target.value)} onBlur={persist} />
+    </div>
+  );
 
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Professional Advisors</h2>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+    <div className="cmpf">
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Professional Advisors</h2>
+      <p className="cmpf-intro">
         Optional. If you work with any of the advisors below, add their details so Accord can coordinate with them.
         Leave blank any that don't apply.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Submitted</span>}
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {ADVISOR_ROWS.map(({ key, label }) => (
-          <div key={key} style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#111827", marginBottom: 8 }}>{label}</div>
+      <div>
+        {ADVISOR_ROWS.filter(({ key }) => advisorShown(key)).map(({ key, label }) => (
+          <div key={key} className="cmpf-card" data-testid={`advisor-${key}`}>
+            <div className="cmpf-card-title">{label}</div>
             <div className="cmp-grid-2">
-              <div>
-                <div style={cellLabel}>Firm</div>
-                <input style={inputStyle} value={advisors[key].firm} onChange={(e) => setField(key, "firm", e.target.value)} onBlur={persist} aria-label={`${label} firm`} />
-              </div>
-              <div>
-                <div style={cellLabel}>Contact</div>
-                <input style={inputStyle} value={advisors[key].contact} onChange={(e) => setField(key, "contact", e.target.value)} onBlur={persist} aria-label={`${label} contact`} />
-              </div>
-              <div>
-                <div style={cellLabel}>Phone</div>
-                <input style={inputStyle} value={advisors[key].phone} onChange={(e) => setField(key, "phone", formatPhoneNumber(e.target.value, "CA"))} onBlur={persist} aria-label={`${label} phone`} inputMode="tel" />
-              </div>
-              <div>
-                <div style={cellLabel}>Email</div>
-                <input style={inputStyle} type="email" value={advisors[key].email} onChange={(e) => setField(key, "email", e.target.value)} onBlur={persist} aria-label={`${label} email`} />
-              </div>
+              {text(`adv-${key}-firm`, "Firm", advisors[key].firm, (v) => setField(key, "firm", v), { "aria-label": `${label} firm` })}
+              {text(`adv-${key}-contact`, "Contact", advisors[key].contact, (v) => setField(key, "contact", v), { "aria-label": `${label} contact`, autoComplete: "name" })}
+              {text(`adv-${key}-phone`, "Phone", advisors[key].phone, (v) => setField(key, "phone", formatPhoneNumber(v, "CA")), { "aria-label": `${label} phone`, type: "tel", inputMode: "tel", autoComplete: "tel" })}
+              {text(`adv-${key}-email`, "Email", advisors[key].email, (v) => setField(key, "email", v), { "aria-label": `${label} email`, type: "email", inputMode: "email", autoComplete: "email" })}
             </div>
           </div>
         ))}
       </div>
+      {hiddenAdvisors.length > 0 && (
+        <div data-testid="add-advisor">
+          <div className="cmpf-sub" style={{ marginTop: 0 }}>Add another advisor</div>
+          {hiddenAdvisors.map(({ key, label }) => (
+            <button key={key} type="button" className="cmpf-add" onClick={() => revealAdvisor(key)}>+ {label}</button>
+          ))}
+        </div>
+      )}
 
       {/* BF_CLIENT_BLOCK_v710_ONGOING_MONITORING_v1 */}
-      <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 6 }}>Ongoing Monitoring</h3>
-      <div className="cmp-grid-2" style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12 }}>
-        <div><div style={cellLabel}>Accounting software used</div><input style={inputStyle} value={monitoring.accountingSoftware} onChange={(e) => setMon("accountingSoftware", e.target.value)} onBlur={persist} /></div>
-        <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.accountingRemoteView} onChange={(e) => setMon("accountingRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-        <div><div style={cellLabel}>Primary bank</div><input style={inputStyle} value={monitoring.primaryBank} onChange={(e) => setMon("primaryBank", e.target.value)} onBlur={persist} /></div>
-        <div><div style={cellLabel}>Remote view-only access?</div><select style={inputStyle} value={monitoring.bankRemoteView} onChange={(e) => setMon("bankRemoteView", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-        {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 — existing senior lender/bank (Accord page 1) */}
-        <div><div style={cellLabel}>Balance outstanding (existing facility)</div><input style={inputStyle} value={monitoring.balanceOutstanding} onChange={(e) => setMon("balanceOutstanding", e.target.value)} onBlur={persist} /></div>
-        <div><div style={cellLabel}>Authorized limit (existing facility)</div><input style={inputStyle} value={monitoring.authorizedLimit} onChange={(e) => setMon("authorizedLimit", e.target.value)} onBlur={persist} /></div>
-        <div style={{ gridColumn: "1 / -1" }}><div style={cellLabel}>Do you have CRA "My Business" set up?</div><select style={inputStyle} value={monitoring.craMyBusiness} onChange={(e) => setMon("craMyBusiness", e.target.value)} onBlur={persist}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+      <h3 style={{ fontSize: 17, fontWeight: 700, margin: "24px 0 6px" }}>Ongoing Monitoring</h3>
+      <div className="cmpf-card">
+        <div className="cmp-grid-2">
+          {text("mon-software", "Accounting software used", monitoring.accountingSoftware, (v) => setMon("accountingSoftware", v))}
+          {yesNo("mon-accounting-remote", "Remote view-only access?", monitoring.accountingRemoteView, (v) => setMon("accountingRemoteView", v))}
+          {text("mon-bank", "Primary bank", monitoring.primaryBank, (v) => setMon("primaryBank", v))}
+          {yesNo("mon-bank-remote", "Remote view-only access?", monitoring.bankRemoteView, (v) => setMon("bankRemoteView", v))}
+          {/* BF_CLIENT_BLOCK_v_ACCORD_FIELDS_v1 - existing senior lender/bank (Accord page 1) */}
+          {moneyField("mon-balance", "Balance outstanding (existing facility)", monitoring.balanceOutstanding, (v) => setMon("balanceOutstanding", v))}
+          {moneyField("mon-limit", "Authorized limit (existing facility)", monitoring.authorizedLimit, (v) => setMon("authorizedLimit", v))}
+          <div style={{ gridColumn: "1 / -1" }}>
+            {yesNo("mon-cra", 'Do you have CRA "My Business" set up?', monitoring.craMyBusiness, (v) => setMon("craMyBusiness", v))}
+          </div>
+        </div>
       </div>
 
-      <h3 style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 6 }}>Financial Advisor / Consultant</h3>
-      <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, background: "#f9fafb" }}>
-        <div style={{ fontSize: 14, color: "#111827" }}>
+      <h3 style={{ fontSize: 17, fontWeight: 700, margin: "24px 0 6px" }}>Financial Advisor / Consultant</h3>
+      <div className="cmpf-card" style={{ background: "#F5F8FC" }}>
+        <div style={{ fontSize: 15, color: "#0B1F3A" }}>
           Your financial advisor on this transaction is <strong>{FINANCIAL_ADVISOR_FIRM}</strong>.
         </div>
-        <label style={{ display: "block", fontSize: 13, marginTop: 12, lineHeight: 1.5 }}>
-          <input type="checkbox" checked={authorized} onChange={(e) => { setAuthorized(e.target.checked); void saveFormResponse(applicationId, FORM_KEY, buildPayload(e.target.checked)).catch(() => {}); }} />{" "}
-          I authorize Accord to discuss this proposed credit facility with {FINANCIAL_ADVISOR_FIRM}, including
-          sharing personal and business credit information relating to the shareholders, related entities, and any
-          proposed guarantor(s).
+        <label className="cmpf-check">
+          <input type="checkbox" checked={authorized} onChange={(e) => { setAuthorized(e.target.checked); void saveFormResponse(applicationId, FORM_KEY, buildPayload(e.target.checked)).catch(() => {}); }} />
+          <span>
+            I authorize Accord to discuss this proposed credit facility with {FINANCIAL_ADVISOR_FIRM}, including
+            sharing personal and business credit information relating to the shareholders, related entities, and any
+            proposed guarantor(s).
+          </span>
         </label>
       </div>
 
-      {error && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p className="cmpf-error">{error}</p>}
 
-      <button
-        type="button"
-        disabled={submitting || !authorized}
-        onClick={() => void handleSubmit()}
-        style={{ marginTop: 16, padding: "12px 24px", background: authorized ? "#0b1320" : "#9ca3af", color: "#fff", border: 0, borderRadius: 8, cursor: authorized ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 600, opacity: submitting ? 0.6 : 1 }}
-      >
-        {submitting ? "Submitting…" : "Submit Advisors"}
-      </button>
+      <div className="cmpf-actions">
+        <button
+          type="button"
+          className="cmpf-primary"
+          disabled={submitting || !authorized}
+          onClick={() => void handleSubmit()}
+        >
+          {submitting ? "Submitting..." : "Submit Advisors"}
+        </button>
+      </div>
     </div>
   );
 }

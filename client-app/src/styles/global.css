@@ -56,3 +56,15 @@ select:-webkit-autofill {
 @media (max-width: 640px) {
   .wiz-card { padding: 16px !important; gap: 18px !important; border-radius: 0 !important; border: 0 !important; box-shadow: none !important; }
 }
+
+/* BF_CLIENT_v805_PHONE_FIXES - on a phone: no box inside a box, and Continue is full width and stays at the bottom. */
+@media (max-width: 640px) {
+  .wiz-card { overflow: visible !important; }
+  .wiz-card .ui-card--default:not(.ui-card--default .ui-card--default) { border: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; }
+  .wiz-cta { position: sticky !important; bottom: 0 !important; z-index: 30; border-radius: 0 !important; box-shadow: 0 -1px 0 #E4EAF2 !important; background: #fff !important;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) !important; }
+  .wiz-card .wiz-cta { margin-left: -16px; margin-right: -16px; margin-bottom: -16px; }
+  .wiz-cta > div { flex-wrap: nowrap !important; }
+  .wiz-cta button { width: 100% !important; max-width: none !important; min-height: 50px; flex: 2 1 0; }
+  .wiz-cta button:first-child:not(:last-child) { flex: 1 1 0; }
+}

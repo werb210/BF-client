@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import { readDraft, useFormDraft } from "../cmpFormKit"; // BF_CLIENT_v805_FORMS
 
 // Accord's hosted Flinks Connect instance (from the Accord credit application).
 const FLINKS_URL = "https://accordfinancial.flinksapp.io";
@@ -25,6 +26,9 @@ export default function FlinksConnectForm({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // BF_CLIENT_v805_FORMS - remember the tick if the sheet closes before Confirm.
+  const [hydrated, setHydrated] = useState(false);
+  const clearLocalDraft = useFormDraft("flinks_banking", applicationId, { opened, confirmed }, hydrated);
 
   useEffect(() => {
     void (async () => {
@@ -39,6 +43,10 @@ export default function FlinksConnectForm({
       } catch {
         // first-time open has no saved response — ignore
       }
+      const draft = readDraft<{ opened?: boolean; confirmed?: boolean }>("flinks_banking", applicationId);
+      if (draft?.opened) setOpened(true);
+      if (draft?.confirmed) setConfirmed(true);
+      setHydrated(true);
     })();
   }, [applicationId]);
 
@@ -63,6 +71,7 @@ export default function FlinksConnectForm({
         connected: true,
         confirmed_at: new Date().toISOString(),
       });
+      clearLocalDraft(); // BF_CLIENT_v805_FORMS
       setSubmitted(true);
       onComplete();
     } catch (err) {
@@ -73,52 +82,51 @@ export default function FlinksConnectForm({
   };
 
   return (
-    <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Connect Your Bank (View-Only)</h2>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+    <div className="cmpf">
+      <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 6px" }}>Connect Your Bank (View-Only)</h2>
+      <p className="cmpf-intro">
         Underwriting requires a secure, view-only connection to your business bank account. This is
-        read-only — it cannot move money or make changes. The connection is provided by Flinks.
+        read-only - it cannot move money or make changes. The connection is provided by Flinks.
         {submitted && <span style={{ marginLeft: 12, color: A11Y_COLORS.successText, fontWeight: 600 }}>✓ Confirmed</span>}
       </p>
 
-      <ol style={{ fontSize: 14, lineHeight: 1.6, color: "#111827", paddingLeft: 20 }}>
-        <li style={{ marginBottom: 8 }}>Click <strong>Connect Bank</strong> below. A secure Flinks window opens in a new tab.</li>
-        <li style={{ marginBottom: 8 }}>Choose your bank, sign in, and select the account(s) to share (view-only).</li>
-        <li style={{ marginBottom: 8 }}>When you see the success screen, return to this tab and confirm below.</li>
+      {/* BF_CLIENT_v805_FORMS - no "tab" wording: in the app this is not a tab. */}
+      <ol className="cmpf-steps">
+        <li>Tap <strong>Connect Bank</strong> below. A secure Flinks window opens.</li>
+        <li>Choose your bank, sign in, and select the account(s) to share (view-only).</li>
+        <li>When you see the success screen, come back here and confirm below.</li>
       </ol>
 
       {/* EMBED seam — when Accord whitelists our domain + emits events to our
           origin, replace this button with an <iframe src={FLINKS_URL}/> and a
           window "message" listener that sets confirmed=true on the success
           event, then calls handleSubmit() automatically. */}
-      <button
-        type="button"
-        onClick={openFlinks}
-        style={{ marginTop: 8, padding: "12px 24px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 600 }}
-      >
-        Connect Bank →
+      <button type="button" className="cmpf-cta" onClick={openFlinks}>
+        Connect Bank
       </button>
 
-      {error && <p style={{ color: "#991b1b", fontSize: 13, marginTop: 12 }}>{error}</p>}
+      {error && <p className="cmpf-error">{error}</p>}
 
-      <label style={{ display: "block", fontSize: 14, marginTop: 20, opacity: opened ? 1 : 0.5 }}>
+      <label className={`cmpf-check${opened ? "" : " cmpf-check--disabled"}`}>
         <input
           type="checkbox"
           checked={confirmed}
           disabled={!opened}
           onChange={(e) => setConfirmed(e.target.checked)}
-        />{" "}
-        I have connected my business bank account (view-only) through Flinks.
+        />
+        <span>I have connected my business bank account (view-only) through Flinks.</span>
       </label>
 
-      <button
-        type="button"
-        disabled={submitting || !confirmed}
-        onClick={() => void handleSubmit()}
-        style={{ marginTop: 16, padding: "12px 24px", background: confirmed ? "#0b1320" : "#9ca3af", color: "#fff", border: 0, borderRadius: 8, cursor: confirmed ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 600, opacity: submitting ? 0.6 : 1 }}
-      >
-        {submitting ? "Submitting…" : "Confirm Connection"}
-      </button>
+      <div className="cmpf-actions">
+        <button
+          type="button"
+          className="cmpf-primary"
+          disabled={submitting || !confirmed}
+          onClick={() => void handleSubmit()}
+        >
+          {submitting ? "Submitting..." : "Confirm Connection"}
+        </button>
+      </div>
     </div>
   );
 }

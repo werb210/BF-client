@@ -15,6 +15,9 @@
 // cash surrender value.
 import { useEffect, useMemo, useState } from "react";
 import { getFormResponse, saveFormResponse, submitFormResponse } from "@/lib/api";
+// BF_CLIENT_v805_FORMS - phone layout: money keypads with "$", date pickers for
+// the YYYY-MM-DD schedule dates, 44px controls, pinned Submit, localStorage draft.
+import { MoneyInput, mergeDraft, readDraft, useFormDraft } from "../cmpFormKit";
 
 // BF_CLIENT_SBA_413_PER_OWNER_v200
 // SBA requires one Form 413 per owner of 20% or more, plus each guarantor - it
@@ -102,18 +105,25 @@ export default function Sba413Form({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const clearLocalDraft = useFormDraft(FORM_KEY, applicationId, data, !loading); // BF_CLIENT_v805_FORMS
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      let server: Data = {};
       try {
         const existing = await getFormResponse(applicationId, FORM_KEY);
         const fields = (existing as any)?.data?.fields ?? (existing as any)?.fields;
-        if (!cancelled && fields && typeof fields === "object") setData(fields as Data);
+        if (fields && typeof fields === "object") server = fields as Data;
       } catch {
         // No saved response yet is the normal first-open case, not an error.
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          // BF_CLIENT_v805_FORMS - local draft over the server copy.
+          const draft = readDraft<Data>(FORM_KEY, applicationId);
+          setData(draft ? mergeDraft(server, draft) : server);
+          setLoading(false);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -137,6 +147,7 @@ export default function Sba413Form({
     setError(null);
     try {
       await submitFormResponse(applicationId, FORM_KEY, { fields: data, totals });
+      clearLocalDraft(); // BF_CLIENT_v805_FORMS
       setSubmitted(true);
       onComplete(); // BF_CLIENT_SBA_SUBMIT_CLOSES_v746
     } catch {
@@ -149,22 +160,24 @@ export default function Sba413Form({
   if (loading) return <p style={{ color: "#51617D" }}>Loading&hellip;</p>;
 
   const row = (r: { key: string; label: string }) => (
-    <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 0" }}>
-      <label style={{ flex: 1, fontSize: 14, color: "#51617D" }}>{r.label}</label>
-      <input
-        inputMode="decimal"
-        value={data[r.key] ?? ""}
-        onChange={(e) => set(r.key, e.target.value)}
-        onBlur={persist}
-        placeholder="$0"
-        style={{ width: 140, padding: "6px 8px", border: "1px solid #E4EAF2", borderRadius: 6, textAlign: "right" }}
-      />
+    <div key={r.key} className="cmpf-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 0" }}>
+      <label htmlFor={`sba413-${r.key}`} style={{ flex: 1, fontSize: 14, color: "#0B1F3A" }}>{r.label}</label>
+      <span style={{ width: 170, flex: "none" }} className="cmpf-row-field">
+        <MoneyInput
+          id={`sba413-${r.key}`}
+          value={data[r.key] ?? ""}
+          onChange={(e) => set(r.key, e.target.value)}
+          onBlur={persist}
+          placeholder="0"
+          style={{ textAlign: "right" }}
+        />
+      </span>
     </div>
   );
 
   const section = (title: string, rows: Array<{ key: string; label: string }>) => (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 6 }}>{title}</div>
+      <div className="cmpf-section" style={{ marginTop: 0 }}>{title}</div>
       {rows.map(row)}
     </div>
   );
@@ -188,45 +201,47 @@ export default function Sba413Form({
     list.splice(index, 1);
     set(listKey, list as any);
   };
-  const cell = (listKey: string, index: number, field: string, placeholder: string) => (
-    <input value={String((data[listKey] as any[])?.[index]?.[field] ?? "")}
-      onChange={(e) => setRow(listKey, index, field, e.target.value)} onBlur={persist}
-      placeholder={placeholder} style={{ padding: "6px 8px", border: "1px solid #E4EAF2", borderRadius: 6, width: "100%" }} />
-  );
+  // BF_CLIENT_v805_FORMS - "$0" columns are money, "YYYY-MM-DD" columns are
+  // dates (the native picker stores exactly that format), shares are a count.
+  const cell = (listKey: string, index: number, field: string, placeholder: string) => {
+    const value = String((data[listKey] as any[])?.[index]?.[field] ?? "");
+    const id = `sba413-${listKey}-${index}-${field}`;
+    const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setRow(listKey, index, field, e.target.value);
+    if (placeholder.startsWith("$0")) return <MoneyInput id={id} value={value} onChange={onChange} onBlur={persist} placeholder={placeholder.replace(/^\$/, "")} />;
+    if (placeholder === "YYYY-MM-DD") return <input id={id} className="cmpf-input" type="date" value={value} onChange={onChange} onBlur={persist} />;
+    return <input id={id} className="cmpf-input" inputMode={field === "shares" ? "numeric" : undefined} value={value} onChange={onChange} onBlur={persist} placeholder={placeholder} />;
+  };
   const table = (listKey: string, title: string, hint: string, max: number,
     columns: Array<{ field: string; label: string; placeholder: string }>) => {
     const list = Array.isArray(data[listKey]) ? (data[listKey] as any[]) : [];
     return <div style={{ marginBottom: 20 }}>
-      <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 2 }}>{title}</div>
-      <div style={{ color: "#51617D", fontSize: 13, marginBottom: 8 }}>{hint}</div>
-      {list.map((_, index) => <div key={index} style={{ border: "1px solid #E4EAF2", borderRadius: 8, padding: 12, marginBottom: 8, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+      <div className="cmpf-section" style={{ marginTop: 0 }}>{title}</div>
+      <div style={{ color: "#51617D", fontSize: 14, marginBottom: 8 }}>{hint}</div>
+      {list.map((_, index) => <div key={index} className="cmpf-card cmp-grid-2" style={{ marginBottom: 8 }}>
         {columns.map((c) => <div key={c.field} style={{ gridColumn: c.field === columns[0].field ? "1 / -1" : undefined }}>
-          <label style={{ display: "block", fontSize: 12, color: "#51617D", marginBottom: 4 }}>{c.label}</label>
+          <label className="cmpf-label" htmlFor={`sba413-${listKey}-${index}-${c.field}`} style={{ marginTop: 0 }}>{c.label}</label>
           {cell(listKey, index, c.field, c.placeholder)}
         </div>)}
-        <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => removeRow(listKey, index)}
-          style={{ background: "transparent", border: "1px solid #E4EAF2", borderRadius: 6, padding: "4px 10px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button></div>
+        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}><button type="button" className="cmpf-remove" onClick={() => removeRow(listKey, index)}>Remove</button></div>
       </div>)}
-      {list.length < max ? <button type="button" onClick={() => addRow(listKey, max)}
-        style={{ background: "#0B1F3A", color: "#fff", border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", fontSize: 13 }}>
-        Add {list.length === 0 ? "an entry" : "another"}</button> :
+      {list.length < max ? <button type="button" className="cmpf-add" onClick={() => addRow(listKey, max)}>
+        + Add {list.length === 0 ? "an entry" : "another"}</button> :
         <div style={{ color: "#51617D", fontSize: 13 }}>The form holds {max}. If you have more, tell us in Notes and we will attach a continuation sheet.</div>}
     </div>;
   };
   const textSchedule = (key: string, title: string, hint: string) => <div style={{ marginBottom: 20 }}>
-    <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 2 }}>{title}</div>
-    <div style={{ color: "#51617D", fontSize: 13, marginBottom: 8 }}>{hint}</div>
-    <textarea value={String(data[key] ?? "")} onChange={(e) => set(key, e.target.value)} onBlur={persist} rows={3}
-      style={{ width: "100%", padding: "8px", border: "1px solid #E4EAF2", borderRadius: 6, resize: "vertical", fontFamily: "inherit" }} />
+    <div className="cmpf-section" style={{ marginTop: 0 }}>{title}</div>
+    <div style={{ color: "#51617D", fontSize: 14, marginBottom: 8 }}>{hint}</div>
+    <textarea className="cmpf-textarea" aria-label={title} value={String(data[key] ?? "")} onChange={(e) => set(key, e.target.value)} onBlur={persist} rows={3} />
   </div>;
 
   return (
-    <div style={{ maxWidth: 720 }}>
-      <h3 style={{ marginTop: 0, color: "#0B1F3A" }}>
+    <div className="cmpf" style={{ maxWidth: 720 }}>
+      <h3 style={{ marginTop: 0, fontSize: 20, color: "#0B1F3A" }}>
         Personal Financial Statement (SBA Form 413)
         {ownerName ? <span style={{ fontWeight: 400, color: "#51617D" }}> — {ownerName}</span> : null}
       </h3>
-      <p style={{ color: "#51617D", fontSize: 14 }}>
+      <p className="cmpf-intro">
         SBA requires this from every owner of 20% or more and from anyone guaranteeing
         the loan. Figures should be current within 120 days. Divide jointly owned
         assets and liabilities as appropriate. Your answers save as you go, so you can
@@ -289,27 +304,26 @@ export default function Sba413Form({
       {section("Contingent liabilities", CONTINGENT_ROWS)}
 
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontWeight: 600, color: "#0B1F3A", marginBottom: 6 }}>Notes</div>
+        <label className="cmpf-section" htmlFor="sba413-notes" style={{ display: "block", marginTop: 0 }}>Notes</label>
         <textarea
+          id="sba413-notes"
+          className="cmpf-textarea"
           value={data.notes ?? ""}
           onChange={(e) => set("notes", e.target.value)}
           onBlur={persist}
           rows={4}
           placeholder="Unpaid taxes, other liabilities, life insurance held, or anything a lender should see alongside the numbers above."
-          style={{ width: "100%", padding: 8, border: "1px solid #E4EAF2", borderRadius: 6 }}
         />
       </div>
 
       {error ? <p style={{ color: "#B42318", fontSize: 14 }}>{error}</p> : null}
       {submitted ? <p style={{ color: "#067647", fontSize: 14 }}>Saved. You can reopen this any time to update it.</p> : null}
 
-      <div style={{ display: "flex", gap: 12 }}>
-        <button type="button" onClick={handleSubmit} disabled={saving}
-          style={{ padding: "8px 16px", border: 0, borderRadius: 8, background: "#BF9B49", color: "#0B1F3A", fontWeight: 600, cursor: saving ? "default" : "pointer" }}>
+      <div className="cmpf-actions">
+        <button type="button" className="cmpf-primary" onClick={handleSubmit} disabled={saving}>
           {saving ? "Saving..." : "Submit"}
         </button>
-        <button type="button" onClick={() => onComplete()}
-          style={{ padding: "8px 16px", border: "1px solid #E4EAF2", borderRadius: 8, background: "#fff", color: "#0B1F3A", fontWeight: 600, cursor: "pointer" }}>
+        <button type="button" className="cmpf-secondary" onClick={() => onComplete()}>
           Done
         </button>
       </div>

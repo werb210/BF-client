@@ -6,6 +6,10 @@ import { useEffect, useState } from "react";
 import { apiCall } from "@/api/client";
 import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_QA_UPLOAD_v1
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+// BF_CLIENT_v805_FORMS - shared phone styles (16px answers, pinned Submit). This
+// form already autosaves each answer to the server, so it keeps that and gets
+// no local draft on top.
+import "../cmpForms.css";
 
 type Question = {
   id: string;
@@ -26,16 +30,16 @@ const styles = {
   returned: { fontSize: 13, color: "#b45309", marginBottom: 8 } as const,
   docNote: { fontSize: 12, color: "#6b7280", marginTop: 8 } as const,
   upRow: { display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" as const } as const,
-  upLabel: { fontSize: 13, fontWeight: 600, color: "#374151", padding: "6px 12px", border: "1px solid #d1d5db", borderRadius: 6, background: "#f9fafb", cursor: "pointer" } as const,
+  upLabel: { fontSize: 14, fontWeight: 600, color: "#0B1F3A", padding: "12px 14px", minHeight: 44, boxSizing: "border-box" as const, display: "inline-flex", alignItems: "center", border: "1px solid #d1d5db", borderRadius: 6, background: "#f9fafb", cursor: "pointer" } as const,
   upName: { fontSize: 12, color: "#065f46", wordBreak: "break-all" as const } as const,
   upErr: { fontSize: 12, color: "#b91c1c", marginTop: 6 } as const,
   textarea: {
     width: "100%",
     minHeight: 84,
     padding: "8px 10px",
-    fontSize: 14,
-    border: "1px solid #d1d5db",
-    borderRadius: 6,
+    fontSize: 16,
+    border: "1px solid #CBD5E1",
+    borderRadius: 8,
     boxSizing: "border-box" as const,
   } as const,
   err: { fontSize: 13, color: "#b91c1c", marginBottom: 10 } as const,
@@ -188,7 +192,7 @@ export default function LenderQaForm({
 
   if (loading) {
     return (
-      <div>
+      <div className="cmpf">
         <h2 style={styles.h2}>Lender questions</h2>
         <div style={styles.ok}>Loading...</div>
       </div>
@@ -197,7 +201,7 @@ export default function LenderQaForm({
 
   if (questions.length === 0) {
     return (
-      <div>
+      <div className="cmpf">
         <h2 style={styles.h2}>Lender questions</h2>
         <div style={styles.intro}>There are no questions to answer right now.</div>
       </div>
@@ -205,7 +209,7 @@ export default function LenderQaForm({
   }
 
   return (
-    <div>
+    <div className="cmpf">
       <h2 style={styles.h2}>Lender questions</h2>
       <div style={styles.intro}>
         Please answer the questions below. Your answers are saved as you type; press Submit when you are done.
@@ -222,6 +226,7 @@ export default function LenderQaForm({
             <div style={styles.returned}>Please update this answer: {q.reject_reason}</div>
           ) : null}
           <textarea
+            aria-label={`Answer to question ${i + 1}`}
             style={styles.textarea}
             value={answers[q.id] ?? ""}
             placeholder="Type your answer..."
@@ -254,14 +259,17 @@ export default function LenderQaForm({
         </div>
       ))}
 
-      <button
-        type="button"
-        style={submitting ? styles.btnDisabled : styles.btn}
-        disabled={submitting}
-        onClick={() => void submit()}
-      >
-        {submitting ? "Submitting..." : "Submit answers"}
-      </button>
+      <div className="cmpf-actions">
+        <button
+          type="button"
+          className="cmpf-primary"
+          style={submitting ? { ...styles.btnDisabled, marginTop: 0, minHeight: 48 } : undefined}
+          disabled={submitting}
+          onClick={() => void submit()}
+        >
+          {submitting ? "Submitting..." : "Submit answers"}
+        </button>
+      </div>
     </div>
   );
 }

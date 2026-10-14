@@ -12,6 +12,7 @@ import { queuedMessage, reportUploadFailure } from "@/lib/docUpload"; // BF_CLIE
 import { Capacitor } from "@capacitor/core"; // BF_CLIENT_DOCPICKER_SCAN_v634
 import { scanDocumentAsPdfWithQuality } from "@/native/documentScanner"; // BF_CLIENT_DOCPICKER_SCAN_v634
 import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
+import "@/components/cmp/cmp.css"; // BF_CLIENT_v805_PHONE_FIXES - .dp-row / .dp-actions phone layout
 
 type DocItem = { document_type: string; label: string };
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
@@ -159,8 +160,8 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
 
   // BF_CLIENT_v802_SCAN_FIRST - in the phone and tablet apps "Scan to PDF" (the camera finds the page edges,
   // crops, and joins the pages into one PDF) is the main button; choosing a file is the second.
-  const fileBtnPrimary: React.CSSProperties = { minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: A11Y_COLORS.actionBg, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 };
-  const fileBtnSecondary: React.CSSProperties = { minHeight: 40, padding: "6px 14px", border: `1px solid ${A11Y_COLORS.actionText}`, borderRadius: 8, background: "#fff", color: A11Y_COLORS.actionText, cursor: "pointer", fontSize: 14, fontWeight: 600 };
+  const fileBtnPrimary: React.CSSProperties = { minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: "#0B1F3A", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 };
+  // BF_CLIENT_v805_PHONE_FIXES - Scan to PDF and Choose file are two equal navy buttons under the document name.
   const empty = !loading && !error && data.stillNeeded.length === 0 && data.rejected.length === 0; // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728
 
   return (
@@ -188,15 +189,15 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
           <section style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "#b91c1c", margin: "12px 0 8px" }}>Re-upload rejected</h3>
             {data.rejected.map((d) => (
-              <div key={`r-${d.document_type}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+              <div key={`r-${d.document_type}`} className="dp-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 14 }}>{d.label}</span>
-                <span style={{ display: "flex", gap: 8 }}>
+                <span className="dp-actions" style={{ display: "flex", gap: 8 }}>
                   {Capacitor.isNativePlatform() && (
-                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: A11Y_COLORS.actionBg, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: "#0B1F3A", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
                       Scan to PDF
                     </button>
                   )}
-                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={Capacitor.isNativePlatform() ? fileBtnSecondary : fileBtnPrimary}>
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={fileBtnPrimary}>
                     {uploading === d.document_type ? "Uploading…" : Capacitor.isNativePlatform() ? "Choose file" : "Re-upload"}
                   </button>
                 </span>
@@ -209,15 +210,15 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
           <section>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: "12px 0 8px" }}>Still needed</h3>
             {data.stillNeeded.map((d) => (
-              <div key={`n-${d.document_type}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+              <div key={`n-${d.document_type}`} className="dp-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
                 <span style={{ fontSize: 14 }}>{d.label}</span>
-                <span style={{ display: "flex", gap: 8 }}>
+                <span className="dp-actions" style={{ display: "flex", gap: 8 }}>
                   {Capacitor.isNativePlatform() && (
-                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: A11Y_COLORS.actionBg, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
+                    <button type="button" onClick={() => void scanAndUpload(d.document_type, d.label)} disabled={uploading === d.document_type} data-testid="docpicker-scan" style={{ minHeight: 40, padding: "6px 14px", border: 0, borderRadius: 8, background: "#0B1F3A", color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>
                       Scan to PDF
                     </button>
                   )}
-                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={Capacitor.isNativePlatform() ? fileBtnSecondary : fileBtnPrimary}>
+                  <button type="button" onClick={() => pickAndUpload(d.document_type)} disabled={uploading === d.document_type} style={fileBtnPrimary}>
                     {uploading === d.document_type ? "Uploading…" : Capacitor.isNativePlatform() ? "Choose file" : "Upload"}
                   </button>
                 </span>

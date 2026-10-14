@@ -42,7 +42,7 @@ export const layout = {
   },
   stickyCta: {
     position: "sticky" as const,
-    bottom: "var(--page-padding)",
+    bottom: "var(--page-padding, 0px)", // BF_CLIENT_v805_PHONE_FIXES - --page-padding is never defined, so this was not sticky
     padding: tokens.spacing.sm,
     borderRadius: tokens.radii.lg,
     background: tokens.colors.surface,

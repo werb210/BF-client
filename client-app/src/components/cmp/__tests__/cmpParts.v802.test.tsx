@@ -46,9 +46,10 @@ describe("status card and switcher rows", () => {
     expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("2");
     expect(screen.getByTestId("cmp-home-caught-up")).toBeTruthy();
   });
-  it("names the business, product and amount; a draft reads Not submitted", () => {
+  it("names the business, product and amount; a draft reads Not finished", () => {
+    // BF_CLIENT_v805_PHONE_FIXES - a draft is "Not finished" (with a Continue button in the switcher).
     expect(toSwitcherApp({ id: "a", business_name: "Acme", product_category: "LINE_OF_CREDIT", requested_amount: 75000, pipeline_state: "draft" }))
-      .toMatchObject({ business: "Acme", product: "Line of credit", amount: "$75,000", stage: "Not submitted" });
+      .toMatchObject({ business: "Acme", product: "Line of credit", amount: "$75,000", stage: "Not finished", notFinished: true });
   });
 });
 
@@ -68,14 +69,19 @@ describe("booking in the app", () => {
   it("uses the team's times when the advisor has none, and books with the details given", async () => {
     h.apiCall.mockImplementation(async (url: string, init?: { method?: string; body?: unknown }) => {
       if (url === "/api/booking/slots?staff=adv-1") return { timeZone: "America/Edmonton", slots: [] };
-      if (url === "/api/booking/slots?staff=any") return { timeZone: "America/Edmonton", slots: [{ startsAt: "2099-03-03T16:00:00.000Z", staffIds: ["s2"] }] };
+      if (url === "/api/booking/slots?staff=any") return { timeZone: "America/Edmonton", slots: [{ startsAt: "2099-03-03T16:00:00.000Z", staffIds: ["s2"] }, { startsAt: "2099-03-03T21:30:00.000Z", staffIds: ["s2"] }] };
       if (url === "/api/booking" && init?.method === "POST") return { ok: true, booking: { startsAt: "2099-03-03T16:00:00.000Z", staffFirstName: "Sam", kind: "phone" } };
       return {};
     });
     render(<BookCallSheet advisorId="adv-1" advisorFirstName="Andrew" prefill={{ name: "Todd W", email: "todd@example.com", phone: "5875550123" }} onClose={vi.fn()} />);
     await flush();
     expect(screen.getByText(/A 30-minute call with an advisor/)).toBeTruthy();
-    fireEvent.click(within(screen.getByRole("group", { name: "Time" })).getByRole("button"));
+    // BF_CLIENT_v805_PHONE_FIXES - times are grouped Morning / Afternoon (Alberta time).
+    // Future timezone rules vary with the runtime's tzdata; compare the label in the booking timezone.
+    const afternoonTime = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Edmonton", hour: "numeric", minute: "2-digit" })
+      .format(new Date("2099-03-03T21:30:00.000Z"));
+    expect(within(screen.getByRole("group", { name: "Afternoon times" })).getByRole("button").textContent).toBe(afternoonTime);
+    fireEvent.click(within(screen.getByRole("group", { name: "Morning times" })).getByRole("button"));
     await act(async () => { fireEvent.click(screen.getByTestId("cmp-book-confirm")); });
     await flush();
     const post = h.apiCall.mock.calls.find((c) => c[0] === "/api/booking");
