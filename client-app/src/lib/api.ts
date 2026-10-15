@@ -7,6 +7,7 @@ import { apiCall as clientApiCall } from "@/api/client";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { enqueueFormResponse } from "@/lib/formResponseQueue";
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 type RequestOptions = Omit<RequestInit, "body" | "headers"> & {
   method?: string;
@@ -198,6 +199,7 @@ export async function submitFormResponse(
     body: JSON.stringify(data ? { data } : {}),
   });
   if (!res.ok) throw new Error(`submitFormResponse ${res.status}`);
+  trackUsage("form_submitted", { form: docType.slice(0, 60) }); // BF_CLIENT_v811_APP_USAGE
   const json = await res.json();
   // v_PNW_SIGNING_v1 — the server may return an embedded signing link for forms
   // that are signed individually on submit (Personal Net Worth).

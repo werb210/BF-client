@@ -99,6 +99,7 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
     ],
   },
 ];
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 // BF_CLIENT_v808_MARKETING_OPTIN - same words as BF-Server MARKETING_SMS_OPTIN_TEXT (stored with the consent).
 export const MARKETING_SMS_OPTIN_TEXT =
@@ -550,6 +551,7 @@ export function Step6_Review(): JSX.Element {
       }
       void submissionResponse;
       trackEvent("client_submission_completed");
+      trackUsage("application_submitted"); // BF_CLIENT_v811_APP_USAGE
       update({
         applicationId: hydrated.applicationId || app.applicationId,
         documents: hydrated.documents || app.documents,

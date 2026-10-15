@@ -6,6 +6,7 @@ import { resolveSignedInRoute } from "@/auth/signedInRoute"; // BF_CLIENT_v799_S
 import { ClientProfileStore } from "@/state/clientProfiles";
 import { biometryAvailable, isEnrolled, phoneFromToken, signInWithFaceId } from "@/native/deviceSignIn";
 import { passkeysSupported, signInWithPasskey, PasskeyError } from "@/auth/passkeys";
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 export default function QuickSignIn() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function QuickSignIn() {
     setError(null);
     try {
       const data = kind === "faceid" ? await signInWithFaceId() : await signInWithPasskey();
+      trackUsage("sign_in", { method: kind === "faceid" ? "biometric" : "passkey" }); // BF_CLIENT_v811_APP_USAGE
       await routeAfterSignIn(data.token, data);
     } catch (e: any) {
       if (kind === "faceid") {

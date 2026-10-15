@@ -4,6 +4,7 @@
 import { ClientAppAPI } from "../api/clientApp";
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 // BF_CLIENT_UPLOAD_QUEUE_v278
 // Three gaps closed: (1) the mini-portal "Upload Now" picker never queued, so a
@@ -35,6 +36,7 @@ async function uploadWithSession(item: QueuedUploadDescriptor, file: File): Prom
     body: form,
   });
   if (!res.ok) throw Object.assign(new Error(String(res.status)), { status: res.status });
+  trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
 }
 
 const DB_NAME = "bf-upload-queue";

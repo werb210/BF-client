@@ -49,6 +49,7 @@ import ReportProblemSheet from "../components/cmp/ReportProblemSheet"; // BF_CLI
 import BookCallSheet from "../components/cmp/BookCallSheet";
 import { STAGE_STEPS, FUNDED_STEP, isFundedState, loadAdvisor, type Advisor } from "../components/cmp/cmpData";
 import { phoneFromToken } from "@/native/deviceSignIn";
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 // BF_CLIENT_BLOCK_v317_MINI_PORTAL_STAGES_v1 — order per design mockups
 // (Received → In Review → Documents Required → Additional Steps → Off to
@@ -641,6 +642,7 @@ export default function MiniPortalPage() {
         body: form,
       });
       if (!res.ok) throw new Error(String(res.status));
+      trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
       // Staff still accept it, so say what happens next rather than "done".
       setMessages((cur) => [...cur, {
         id: `signed-${offerId}-${Date.now()}`,

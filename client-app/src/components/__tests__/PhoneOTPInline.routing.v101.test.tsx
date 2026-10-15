@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+// BF_CLIENT_v811_APP_USAGE - usage counts are fire-and-forget and tested on their own (appUsage.v811).
+vi.mock("@/lib/appUsage", () => ({ trackUsage: (): void => undefined, trackOpen: (): boolean => false }));
 import { render, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import PhoneOTPInline from "../PhoneOTPInline";

@@ -6,6 +6,7 @@
 import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQueue";
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 export type UploadOutcome =
   | { status: "ok" }
@@ -90,6 +91,7 @@ export async function uploadDocumentFiles(applicationId: string, documentType: s
       console.error("[upload] failed:", err instanceof Error ? err.message : String(err), status);
       return { status: "failed", message: failureMessage(status) };
     }
+    trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
   }
   return queued > 0 ? { status: "queued", queued, message: queuedMessage(queued) } : { status: "ok" };
 }
