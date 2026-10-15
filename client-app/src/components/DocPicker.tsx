@@ -15,6 +15,7 @@ import { A11Y_COLORS } from "@/styles/a11yColors"; // BF_CLIENT_v789_CONTRAST
 import "@/components/cmp/cmp.css"; // BF_CLIENT_v805_PHONE_FIXES - .dp-row / .dp-actions phone layout
 
 type DocItem = { document_type: string; label: string };
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
 
 interface Props {
@@ -112,6 +113,7 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
             body: form,
           });
           if (!lastResp.ok) throw new Error(String(lastResp.status));
+          trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
         } catch (err) {
           const status = lastResp && !lastResp.ok ? lastResp.status : undefined;
           // BF_CLIENT_DIRECT_UPLOAD_v730 - send the browser's own error to the server log.

@@ -2,6 +2,8 @@
 // multi-file: the input accepts several files and every selected file is
 // uploaded, not just files[0].
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+// BF_CLIENT_v811_APP_USAGE - usage counts are fire-and-forget and tested on their own (appUsage.v811).
+vi.mock("@/lib/appUsage", () => ({ trackUsage: (): void => undefined, trackOpen: (): boolean => false }));
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 
 const apiCall = vi.hoisted(() => vi.fn());

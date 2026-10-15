@@ -13,11 +13,13 @@ import InstallPromptBanner from "@/components/InstallPromptBanner";
 import UpdatePromptBanner from "@/components/UpdatePromptBanner";
 import RetryBanner from "../components/RetryBanner";
 import { NativeRuntime } from "../native/NativeRuntime";
+import AppUsageTracker from "@/components/AppUsageTracker"; // BF_CLIENT_v811_APP_USAGE
 
 export default function App() {
   return (
     <ErrorBoundary fallback={<FatalErrorScreen />}>
       <NativeRuntime />
+      <AppUsageTracker />
       <ShareInbox />{/* BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL */}
       <RetryBanner />
       <UpdatePromptBanner />

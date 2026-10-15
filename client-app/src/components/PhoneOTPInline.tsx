@@ -17,6 +17,7 @@ import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TO
 import { getAttribution } from '@/lib/attribution';
 import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES - Terms and Privacy open in the in-app browser
 import { SMS_UPDATES_CONSENT_TEXT } from "@/lib/smsUpdatesConsent"; // BF_CLIENT_v809_SMS_UPDATES_CONSENT
+import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 
 const API_BASE =
   ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
@@ -206,6 +207,7 @@ export default function PhoneOTPInline() {
       if (jwt) {
         setToken(String(jwt));
       }
+      trackUsage("sign_in", { method: "code" }); // BF_CLIENT_v811_APP_USAGE
       // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - moved here from the old OtpPage (deleted): it was the only place these ran, and
       // it stopped being used when this became the one sign-in screen (v737).
       //  - verified_phone: Step 1 pre-fills from the Capital Readiness check by phone, and drafts are filed under it.
@@ -327,6 +329,7 @@ export default function PhoneOTPInline() {
       if (!appToken) {
         throw new Error('Application start response missing token');
       }
+      trackUsage("application_started"); // BF_CLIENT_v811_APP_USAGE
       try {
         setApplicationToken(String(appToken));
         localStorage.removeItem('bf_application_pending_submit');
