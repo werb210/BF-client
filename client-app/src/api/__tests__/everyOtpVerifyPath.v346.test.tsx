@@ -78,6 +78,7 @@ describe("every OTP verify request names who is signing in", () => {
       phone: "+15875551234",
       code: "123456",
       userType: "client",
+      sms_updates_consent: false, // BF_CLIENT_v809_SMS_UPDATES_CONSENT - the "Text me updates" box, unticked
     });
   });
 
