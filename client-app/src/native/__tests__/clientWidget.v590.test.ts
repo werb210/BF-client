@@ -18,13 +18,13 @@ describe("home-screen widget payload", () => {
   });
   it("has a widget extension target embedded in the app, sharing one app group", () => {
     const pbx = readFileSync("ios/App/App.xcodeproj/project.pbxproj", "utf8");
-    expect(pbx).toContain("com.boreal.client.widget");
+    expect(pbx).toContain("com.borealfinancial.client.widget");
     expect(pbx).toContain("ClientWidget.appex in Embed Foundation Extensions");
     expect(pbx.match(/CODE_SIGN_ENTITLEMENTS = App\/App.entitlements;/g)?.length).toBe(2);
     const swift = readFileSync("ios/App/ClientWidget/ClientWidget.swift", "utf8");
     expect(swift).toContain("containerBackground(borealNavy, for: .widget)"); // BF_CLIENT_WIDGET_BRAND_v631
-    expect(swift).toContain("group.com.boreal.client");
-    expect(readFileSync("ios/App/App/AppDelegate.swift", "utf8")).toContain("group.com.boreal.client");
+    expect(swift).toContain("group.com.borealfinancial.client");
+    expect(readFileSync("ios/App/App/AppDelegate.swift", "utf8")).toContain("group.com.borealfinancial.client");
     expect(readFileSync("ios/App/App/BorealBridgeViewController.swift", "utf8")).toContain("ClientWidgetPlugin()");
   });
 });

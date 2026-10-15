@@ -14,7 +14,7 @@ struct ClientWidgetSnapshot: Codable {
     var action: String?
     var updatedAt: Double?
 
-    static let group = "group.com.boreal.client"
+    static let group = "group.com.borealfinancial.client"
     static let key = "boreal.client.widget"
 
     static func load() -> ClientWidgetSnapshot? {

@@ -48,7 +48,7 @@ for name in ("Debug", "Release"):
         raise SystemExit(f"App target is missing its {name} configuration")
     settings = object_body(config_id, f"App target {name} settings")
     required_settings = {
-        "bundle ID": r"PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.boreal\.client\s*;",
+        "bundle ID": r"PRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.borealfinancial\.client\s*;",
         "iPhone and iPad device family (1,2)": r'TARGETED_DEVICE_FAMILY\s*=\s*"1\s*,\s*2"\s*;',
         "iPhone OS SDK": r"SDKROOT\s*=\s*iphoneos\s*;",
         "Designed for iPhone/iPad on Mac enabled": r"SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD\s*=\s*YES\s*;",
