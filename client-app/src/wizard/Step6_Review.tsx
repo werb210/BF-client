@@ -94,7 +94,7 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
       { ul: ["Email", "SMS/Text Messages", "Telephone Calls", "Voicemail Messages", "Automated Calling Systems", "Client Portal Notifications", "In-Application Messaging", "Boreal Financial Client-to-Staff Messaging Systems", "Secure Document Portals", "Electronic Signature Platforms", "Other electronic communication methods provided now or in the future"] },
       { p: "This consent applies to all email addresses, telephone numbers, messaging accounts, portal accounts, and contact information provided now or in the future. I/We understand that message and data rates may apply and that electronic communications may not always be secure." },
       { p: "I/We agree that electronic records, electronic communications, electronic acknowledgements, and electronic signatures shall have the same legal force and effect as original written documents and handwritten signatures." },
-      { p: "Text messages about this application come only from Boreal Financial. Boreal Financial does not share my/our mobile number or text-messaging consent with lenders, affiliates or any third party for marketing or promotional purposes. Marketing text messages are sent only if I/we tick the separate, optional \"Text me offers\" box." },
+      { p: "Text messages about this application come only from Boreal Financial. Boreal Financial does not share my/our mobile number or text-messaging consent with lenders, affiliates or any third party for marketing or promotional purposes. Marketing text messages are sent only if I/we tick the separate, optional \"Text me news, tips and offers\" box." },
       { p: "I/We may withdraw consent for commercial electronic messages or marketing communications at any time by using the unsubscribe mechanism provided in those messages or by contacting Boreal Financial directly. Withdrawing marketing consent will not affect communications reasonably necessary to administer or service an active application or financing transaction." },
     ],
   },
@@ -102,7 +102,7 @@ const TC_CLAUSES: Array<{ title: string; blocks: Array<{ p?: string; ul?: string
 
 // BF_CLIENT_v808_MARKETING_OPTIN - same words as BF-Server MARKETING_SMS_OPTIN_TEXT (stored with the consent).
 export const MARKETING_SMS_OPTIN_TEXT =
-  "Optional: Text me offers and news about Boreal Financial products. Up to 4 messages per month. Message and data rates may apply. Reply STOP to opt out at any time. Not required to apply.";
+  "Optional: Text me news, tips and offers from Boreal Financial. Up to 4 messages per month. Message and data rates may apply. Reply STOP to opt out at any time. Not required to apply.";
 
 export function Step6_Review(): JSX.Element {
   const { app, update } = useApplicationStore();

@@ -16,6 +16,7 @@ import { getToken, setToken } from '@/auth/token'; // BF_CLIENT_SIGNIN_LOOKUP_TO
 // BF_CLIENT_OTP_ATTRIBUTION_v1
 import { getAttribution } from '@/lib/attribution';
 import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES - Terms and Privacy open in the in-app browser
+import { SMS_UPDATES_CONSENT_TEXT } from "@/lib/smsUpdatesConsent"; // BF_CLIENT_v809_SMS_UPDATES_CONSENT
 
 const API_BASE =
   ((import.meta as any).env?.VITE_API_URL) || 'https://server.boreal.financial';
@@ -80,6 +81,7 @@ export default function PhoneOTPInline() {
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [phoneE164, setPhoneE164] = useState<string>('');
+  const [smsUpdates, setSmsUpdates] = useState<boolean>(false); // BF_CLIENT_v809_SMS_UPDATES_CONSENT - never pre-ticked
 
   // Guard against double-fire when auto-submit and user click race.
   const submittingRef = useRef<boolean>(false);
@@ -182,7 +184,8 @@ export default function PhoneOTPInline() {
           // BF_CLIENT_INLINE_OTP_CLIENT_v346 - the landing page's own sign-in. Without
           // userType the server treats a phone that is also a staff user as staff and
           // mints a staff token, which the client app then can't use for Face ID.
-          body: JSON.stringify({ phone: phoneE164, code, userType: 'client' }),
+          // BF_CLIENT_v809_SMS_UPDATES_CONSENT - the "Text me updates" choice is saved when the code checks out.
+          body: JSON.stringify({ phone: phoneE164, code, userType: 'client', sms_updates_consent: smsUpdates === true }),
         },
         15000,
         'verify',
@@ -390,6 +393,32 @@ export default function PhoneOTPInline() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phoneDisplay, phase]);
 
+  const legalLink = (href: string, label: string) => (
+    <a href={href} target="_blank" rel="noreferrer" onClick={(e) => { e.preventDefault(); void openExternal(e.currentTarget.href); }} style={{ color: '#1E3A8A' }}>{label}</a>
+  );
+  // BF_CLIENT_v809_SMS_UPDATES_CONSENT - the optional, unticked "Text me updates" box, right next to its disclosure.
+  const smsUpdatesBox = (
+    <label data-testid="sms-updates-consent" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14, fontSize: 13, color: '#334155', lineHeight: 1.45, textAlign: 'left', cursor: 'pointer' }}>
+      <input
+        type="checkbox"
+        checked={smsUpdates}
+        onChange={(e) => setSmsUpdates(e.target.checked)}
+        disabled={phase === 'submitting'}
+        data-testid="sms-updates-consent-checkbox"
+        style={{ width: 18, height: 18, marginTop: 1, flex: '0 0 auto' }}
+      />
+      <span>{SMS_UPDATES_CONSENT_TEXT}</span>
+    </label>
+  );
+  // BF_CLIENT_SMS_DISCLOSURE_v690 + v809 - the sign-in code itself; texts about the application need the box above.
+  const signInCodeNote = (
+    <p data-testid="sms-disclosure" style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
+      We&apos;ll text a one-time sign-in code to this number. Message and data rates may apply. See our{' '}
+      {legalLink('https://www.boreal.financial/terms', 'Terms')} and{' '}
+      {legalLink('https://www.boreal.financial/privacy', 'Privacy Policy')}.
+    </p>
+  );
+
   return (
     <div
       style={{
@@ -435,12 +464,8 @@ export default function PhoneOTPInline() {
           >
             {busy ? 'Sending…' : 'Start Your Application →'}
           </button>
-          {/* BF_CLIENT_SMS_DISCLOSURE_v690 - carrier-required text-message disclosure at the point of opt-in. */}
-          <p data-testid="sms-disclosure" style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
-            By entering your mobile number, you agree to receive text messages from Boreal Financial about your application: sign-in codes, status updates, document requests and signing reminders. Up to 10 messages per month. Message and data rates may apply. Reply STOP to opt out or HELP for help. See our{' '}
-            <a href="https://www.boreal.financial/terms" target="_blank" rel="noreferrer" onClick={(e) => { e.preventDefault(); void openExternal(e.currentTarget.href); }} style={{ color: '#1E3A8A' }}>Terms</a> and{' '}
-            <a href="https://www.boreal.financial/privacy" target="_blank" rel="noreferrer" onClick={(e) => { e.preventDefault(); void openExternal(e.currentTarget.href); }} style={{ color: '#1E3A8A' }}>Privacy Policy</a>.
-          </p>
+          {smsUpdatesBox}
+          {signInCodeNote}
         </>
       )}
 
@@ -498,6 +523,8 @@ export default function PhoneOTPInline() {
           <p style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center' }}>
             Code arrives automatically — we&apos;ll continue once you finish typing.
           </p>
+          {/* BF_CLIENT_v809_SMS_UPDATES_CONSENT - still choosable here: the code is sent as soon as 10 digits are typed. */}
+          {smsUpdatesBox}
         </>
       )}
     </div>

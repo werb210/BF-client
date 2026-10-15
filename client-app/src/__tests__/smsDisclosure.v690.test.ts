@@ -2,14 +2,17 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const DISCLOSURE = "By entering your mobile number, you agree to receive text messages from Boreal Financial about your application";
+// BF_CLIENT_v809_SMS_UPDATES_CONSENT - the note now covers only the sign-in code; texts about the application need the
+// separate, unticked "Text me updates" box (behaviour tested in smsUpdatesConsent.v809.test.tsx).
+const DISCLOSURE = "We&apos;ll text a one-time sign-in code to this number.";
 
 describe("text-message disclosure and simpler Step 6", () => {
   it("shows the disclosure where the mobile number is entered, on both sign-in screens", () => {
     for (const f of ["src/components/PhoneOTPInline.tsx"]) { // BF_CLIENT_ONE_SIGNIN_ONLY_v743 - the one sign-in screen
       const src = readFileSync(f, "utf8");
       expect(src).toContain(DISCLOSURE);
-      expect(src).toContain("Reply STOP to opt out or HELP for help.");
+      expect(src).toContain('data-testid="sms-updates-consent-checkbox"');
+      expect(src).not.toContain("By entering your mobile number, you agree");
     }
   });
 

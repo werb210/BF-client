@@ -7,6 +7,8 @@ import PasskeySignInToggle from "@/components/PasskeySignInToggle";
 import { wipeSession } from "@/auth/logout";
 import { openExternal } from "@/native/openExternal"; // BF_CLIENT_v805_PHONE_FIXES
 import { CmpMoreFooter } from "@/components/CmpPhone";
+import { apiCall } from "@/api/client"; // BF_CLIENT_v809_SMS_UPDATES_CONSENT
+import { SMS_UPDATES_CONSENT_TEXT } from "@/lib/smsUpdatesConsent";
 import { Icon } from "./icons";
 import "./cmp.css";
 
@@ -71,6 +73,41 @@ function Action({ icon, title, desc, onClick, href, testId }: { icon: string; ti
   );
   // BF_CLIENT_v805_PHONE_FIXES - links open in the in-app browser instead of leaving the app.
   return <button type="button" className="cmpx-row" onClick={href ? () => void openExternal(href) : onClick} data-testid={testId}>{body}</button>;
+}
+
+// BF_CLIENT_v809_SMS_UPDATES_CONSENT - "Text me updates about my application", the same choice as the unticked box on
+// the sign-in screen. It belongs to the signed-in mobile number (BF-Server GET/POST /api/client/sms-updates).
+export function SmsUpdatesToggle() {
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    apiCall<{ smsUpdates?: boolean }>("/api/client/sms-updates")
+      .then((r) => { if (live) setOn(r?.smsUpdates === true); })
+      .catch(() => { if (live) setOn(false); });
+    return () => { live = false; };
+  }, []);
+  const change = async (next: boolean) => {
+    setBusy(true); setErr(null);
+    try { await apiCall("/api/client/sms-updates", { method: "POST", body: { smsUpdates: next } }); setOn(next); }
+    catch { setErr("We couldn't save that. Check your connection and try again."); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="cmpx-row cmpx-row--static" data-testid="cmp-sms-updates">
+      <span className="cmpx-row__icon"><Icon name="chat" /></span>
+      <label className="cmpx-row__text" style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: busy || on === null ? "default" : "pointer" }}>
+        <input type="checkbox" checked={on === true} disabled={busy || on === null} onChange={(e) => void change(e.target.checked)}
+          data-testid="cmp-sms-updates-checkbox" style={{ width: 20, height: 20, marginTop: 2, flex: "0 0 auto" }} />
+        <span>
+          <span className="cmpx-row__title">Text me updates about my application</span>
+          <span className="cmpx-row__desc">{SMS_UPDATES_CONSENT_TEXT.replace(/^Text me updates about my application: /, "")}</span>
+          {err ? <span className="cmpx-err" role="alert" style={{ display: "block" }}>{err}</span> : null}
+        </span>
+      </label>
+    </div>
+  );
 }
 
 // BF_CLIENT_v807_DETAILS - the client edits their own name, email and business name. Saving updates the CRM
@@ -186,6 +223,7 @@ export default function CmpSettings(p: {
           </div>
         </div>
         {push.note ? <p className="cmpx-muted" role="status" style={{ margin: "8px 4px 0" }}>{push.note}</p> : null}
+        <div className="cmpx-list" style={{ marginTop: 10 }}><SmsUpdatesToggle /></div>
       </div>
 
       <div className="cmpx-group">
