@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const IOS = "ios/App";
-const GROUP = "group.com.boreal.client";
+const GROUP = "group.com.borealfinancial.client";
 const read = (p: string) => readFileSync(IOS + "/" + p, "utf8");
 
 describe("share extension hand-over", () => {

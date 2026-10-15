@@ -313,7 +313,7 @@ public class ClientWidgetPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clear", returnType: CAPPluginReturnPromise)
     ]
-    private let group = "group.com.boreal.client"
+    private let group = "group.com.borealfinancial.client" // BF_CLIENT_v812_COMPANY_BUNDLE_ID - company team 76VAY7UJKJ, app com.borealfinancial.client
     private let key = "boreal.client.widget"
 
     @objc func update(_ call: CAPPluginCall) {
@@ -356,7 +356,7 @@ enum SharedInboxDelivery {
     static var deliveredOnce = false
     static func deliver() {
         let fm = FileManager.default
-        guard let base = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.boreal.client") else { return }
+        guard let base = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.borealfinancial.client") else { return }
         let inbox = base.appendingPathComponent("SharedInbox", isDirectory: true)
         guard let folders = try? fm.contentsOfDirectory(at: inbox, includingPropertiesForKeys: nil), !folders.isEmpty else { return }
         let outDir = fm.temporaryDirectory.appendingPathComponent("Shared", isDirectory: true)

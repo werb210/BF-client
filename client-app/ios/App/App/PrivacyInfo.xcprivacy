@@ -90,7 +90,7 @@
   <key>NSPrivacyAccessedAPITypes</key>
   <array>
     <!-- AppDelegate.swift: UserDefaults.standard (CA92.1) and the shared app group
-         group.com.boreal.client for the home-screen widget (1C8F.1). -->
+         group.com.borealfinancial.client for the home-screen widget (1C8F.1). -->
     <dict>
       <key>NSPrivacyAccessedAPIType</key>
       <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
