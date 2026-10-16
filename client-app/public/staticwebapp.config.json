@@ -12,10 +12,25 @@
       "/*.ico",
       "/manifest.webmanifest",
       "/robots.txt",
-      "/sw.js"
+      "/sw.js",
+      "/.well-known/*"
     ]
   },
   "routes": [
+    {
+      "route": "/.well-known/apple-app-site-association",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600"
+      }
+    },
+    {
+      "route": "/.well-known/assetlinks.json",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600"
+      }
+    },
     {
       "route": "/api/*",
       "rewrite": "https://server.boreal.financial/api/*",
@@ -36,5 +51,8 @@
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "microphone=(self), camera=(self)"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
   }
 }

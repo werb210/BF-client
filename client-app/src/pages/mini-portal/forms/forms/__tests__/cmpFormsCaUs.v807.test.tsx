@@ -40,29 +40,28 @@ const optionValues = (select: HTMLElement) =>
 describe("address block (Real Estate property)", () => {
   const block = () => within(screen.getByTestId("re-0-address"));
 
-  it("lists provinces and states until a country is chosen, then narrows to it", async () => {
+  // BF_CLIENT_v817 - both lists stay offered after a country is chosen (the chosen one first).
+  it("lists provinces and states, the chosen country's list first", async () => {
     render(<RealEstateCollateralForm applicationId="app-re" onComplete={vi.fn()} />);
     await waitFor(() => expect(api.getFormResponse).toHaveBeenCalled());
 
-    const region = block().getByLabelText("Province / State");
-    expect(block().getByLabelText("Postal / ZIP code")).toBeTruthy();
-    const groups = Array.from(region.querySelectorAll("optgroup")).map((g) => g.getAttribute("label"));
-    expect(groups).toEqual(["Canada", "United States"]);
-    expect(optionValues(region)).toHaveLength(13 + 51);
+    const region = () => block().getByLabelText("State / Province");
+    expect(block().getByLabelText("ZIP / Postal code")).toBeTruthy();
+    const groups = () => Array.from(region().querySelectorAll("optgroup")).map((g) => g.getAttribute("label"));
+    expect(groups()).toEqual(["Canada", "United States"]);
+    expect(optionValues(region())).toHaveLength(13 + 51);
 
     fireEvent.change(block().getByLabelText("Country"), { target: { value: "US" } });
-    const state = block().getByLabelText("State");
-    expect(block().getByLabelText("ZIP code")).toBeTruthy();
-    expect(block().queryByLabelText("Province / State")).toBeNull();
-    const states = optionValues(state);
-    expect(states).toHaveLength(51);
+    expect(groups()).toEqual(["United States", "Canada"]);
+    const states = optionValues(region());
+    expect(states).toHaveLength(13 + 51);
     expect(states).toContain("TX");
     expect(states).toContain("DC");
-    expect(states).not.toContain("AB");
+    expect(states).toContain("AB");
 
     fireEvent.change(block().getByLabelText("Country"), { target: { value: "CA" } });
-    expect(optionValues(block().getByLabelText("Province"))).toHaveLength(13);
-    expect(block().getByLabelText("Postal code")).toBeTruthy();
+    expect(groups()).toEqual(["Canada", "United States"]);
+    expect(block().getByLabelText("ZIP / Postal code")).toBeTruthy();
   });
 
   it("picking AB sets the country to Canada, and the one-line address is still submitted", async () => {
@@ -72,10 +71,10 @@ describe("address block (Real Estate property)", () => {
 
     fireEvent.change(block().getByLabelText("Street"), { target: { value: "123 Main St" } });
     fireEvent.change(block().getByLabelText("City"), { target: { value: "Calgary" } });
-    fireEvent.change(block().getByLabelText("Province / State"), { target: { value: "AB" } });
+    fireEvent.change(block().getByLabelText("State / Province"), { target: { value: "AB" } });
     expect((block().getByLabelText("Country") as HTMLSelectElement).value).toBe("CA");
-    fireEvent.change(block().getByLabelText("Postal code"), { target: { value: "t2p1a1" } });
-    expect((block().getByLabelText("Postal code") as HTMLInputElement).value).toBe("T2P 1A1");
+    fireEvent.change(block().getByLabelText("ZIP / Postal code"), { target: { value: "t2p1a1" } });
+    expect((block().getByLabelText("ZIP / Postal code") as HTMLInputElement).value).toBe("T2P 1A1");
 
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
     await waitFor(() => expect(onComplete).toHaveBeenCalled());
@@ -91,7 +90,7 @@ describe("address block (Real Estate property)", () => {
     render(<RealEstateCollateralForm applicationId="app-re" onComplete={vi.fn()} />);
     await waitFor(() => expect((block().getByLabelText("Street") as HTMLInputElement).value).toBe("9 Elm Rd"));
     expect((block().getByLabelText("City") as HTMLInputElement).value).toBe("Regina");
-    expect((block().getByLabelText("Province") as HTMLSelectElement).value).toBe("SK");
+    expect((block().getByLabelText("State / Province") as HTMLSelectElement).value).toBe("SK");
   });
 });
 
@@ -114,9 +113,9 @@ describe("Personal Net Worth", () => {
     const home = within(screen.getByTestId("pnw-primary_home_address"));
     fireEvent.change(home.getByLabelText("Street"), { target: { value: "500 Pine Ave" } });
     fireEvent.change(home.getByLabelText("City"), { target: { value: "Austin" } });
-    fireEvent.change(home.getByLabelText("Province / State"), { target: { value: "TX" } });
+    fireEvent.change(home.getByLabelText("State / Province"), { target: { value: "TX" } });
     expect((home.getByLabelText("Country") as HTMLSelectElement).value).toBe("US");
-    fireEvent.change(home.getByLabelText("ZIP code"), { target: { value: "78701" } });
+    fireEvent.change(home.getByLabelText("ZIP / Postal code"), { target: { value: "78701" } });
     fireEvent.change(screen.getByLabelText("Personal email"), { target: { value: "pat@example.com" } });
 
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));

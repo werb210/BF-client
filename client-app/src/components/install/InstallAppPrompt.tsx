@@ -1,10 +1,11 @@
 // BF_CLIENT_BLOCK_CMP_PWA_INSTALL_v1 — first-view mini-portal prompt to add the
 // portal to the home screen (this is where Boreal communicates with the client),
-// plus "Coming Soon" iOS/Android download placeholders that reveal the add-to-
-// home-screen steps. Dismiss is permanent ("Don't show again").
+// plus iOS/Android app download links (BF_CLIENT_v817 - were "Coming Soon"
+// placeholders). Dismiss is permanent ("Don't show again").
 import { useEffect, useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import { Capacitor } from "@capacitor/core"; // BF_CLIENT_INSTALL_CARD_NATIVE_v338
+import { ANDROID_PLAY_STORE_URL, iosAppStoreUrl } from "@/lib/appStoreLinks"; // BF_CLIENT_v817
 
 type Platform = "ios" | "android" | "desktop" | "unknown";
 
@@ -52,7 +53,7 @@ const styles = {
   primaryBtn: { background: "#fff", color: "#0B1F3A", border: 0, borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" } as CSSProperties,
   secondaryBtn: { background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 500, cursor: "pointer" } as CSSProperties,
   steps: { background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: 14, margin: "12px 0 0", fontSize: 13, lineHeight: 1.6 } as CSSProperties,
-  comingSoon: { background: "rgba(255,255,255,0.16)", borderRadius: 8, padding: 14, margin: "12px 0 0", fontSize: 13, lineHeight: 1.6 } as CSSProperties,
+  linkBtn: { display: "inline-block", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 500, textDecoration: "none" } as CSSProperties,
 };
 
 type StepKey = "ios" | "android" | "desktop";
@@ -79,7 +80,6 @@ export default function InstallAppPrompt() {
   const [platform, setPlatform] = useState<Platform>("unknown");
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [openSteps, setOpenSteps] = useState<StepKey | null>(null);
-  const [comingSoon, setComingSoon] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [installed, setInstalled] = useState(false);
 
@@ -107,12 +107,11 @@ export default function InstallAppPrompt() {
   const stepKey: StepKey = platform === "unknown" ? "desktop" : platform;
 
   const onAddToHome = async () => {
-    setComingSoon(false);
     if (installEvent) {
       try { await installEvent.prompt(); await installEvent.userChoice; } finally { setInstallEvent(null); }
       return;
     }
-    setOpenSteps((p) => (p && !comingSoon ? null : stepKey));
+    setOpenSteps((p) => (p ? null : stepKey));
   };
 
   return (
@@ -128,15 +127,11 @@ export default function InstallAppPrompt() {
       </ul>
       <div style={styles.buttonRow}>
         <button type="button" style={styles.primaryBtn} onClick={onAddToHome}>Add to Home Screen</button>
-        <button type="button" style={styles.secondaryBtn} onClick={() => { setComingSoon(true); setOpenSteps("ios"); }}>Download for iOS</button>
-        <button type="button" style={styles.secondaryBtn} onClick={() => { setComingSoon(true); setOpenSteps("android"); }}>Download for Android</button>
+        {/* BF_CLIENT_v817 - real store links (were "Coming Soon" placeholders). */}
+        <a style={styles.linkBtn} href={iosAppStoreUrl()} target="_blank" rel="noopener noreferrer" data-testid="install-ios-link">Download for iOS</a>
+        <a style={styles.linkBtn} href={ANDROID_PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" data-testid="install-android-link">Download for Android</a>
         <button type="button" style={styles.secondaryBtn} onClick={dismiss}>Don&rsquo;t show again</button>
       </div>
-      {comingSoon && (
-        <div style={styles.comingSoon}>
-          <strong>Coming Soon!</strong> The iOS and Android apps aren&rsquo;t published yet. For now, please add this portal to your home screen using the steps below.
-        </div>
-      )}
       {openSteps && (
         <div style={styles.steps}>
           <strong>{STEPS[openSteps].label}</strong>

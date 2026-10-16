@@ -305,13 +305,16 @@ export type AddressBlockProps = {
 };
 
 /**
- * Street, City, Province/State, Postal/ZIP and Country. The province/state
- * list and the labels follow the chosen country.
+ * Street, City, State/Province, ZIP/Postal code and Country. Both the Canadian
+ * and US lists are always offered; the chosen country's list comes first.
  */
 export function AddressBlock({ idPrefix, legend, value, onChange, onBlur, testId }: AddressBlockProps) {
   const country = value.country === "CA" || value.country === "US" ? value.country : "";
-  const regionLabel = country === "CA" ? "Province" : country === "US" ? "State" : "Province / State";
-  const postalLabel = country === "CA" ? "Postal code" : country === "US" ? "ZIP code" : "Postal / ZIP code";
+  // BF_CLIENT_v817 - a chosen country used to narrow the list: once "United States" was set (by the prefill or
+  // a stray pick) Canadian clients could no longer find their province. Both lists are always offered, the chosen
+  // country first, and picking a province or state still sets the country.
+  const regionLabel = "State / Province";
+  const postalLabel = "ZIP / Postal code";
   const set = (part: AddressPart) => (e: { target: { value: string } }) => onChange(applyAddressChange(value, part, e.target.value));
   const id = (p: string) => `${idPrefix}-${p}`;
   // A saved region that is not in the lists (free text from older data) stays selectable.
@@ -338,8 +341,8 @@ export function AddressBlock({ idPrefix, legend, value, onChange, onBlur, testId
           <select id={id("region")} className="cmpf-select" autoComplete="address-level1" value={value.region} onChange={set("region")} onBlur={onBlur}>
             <option value="">Select...</option>
             {!knownRegion && <option value={value.region}>{value.region}</option>}
-            {country !== "US" && group("Canada", CA_PROVINCES)}
-            {country !== "CA" && group("United States", US_STATES)}
+            {country === "US" ? group("United States", US_STATES) : group("Canada", CA_PROVINCES)}
+            {country === "US" ? group("Canada", CA_PROVINCES) : group("United States", US_STATES)}
           </select>
         </div>
       </div>

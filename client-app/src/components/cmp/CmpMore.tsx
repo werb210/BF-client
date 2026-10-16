@@ -6,7 +6,7 @@ import "./cmp.css";
 export type CallState = "idle" | "connecting" | "ringing" | "connected" | "ended" | "failed";
 
 export const FORM_INFO: Record<string, { icon: string; desc: string }> = {
-  networth: { icon: "scale", desc: "Your personal assets and debts, signed by you." },
+  networth: { icon: "scale", desc: "Your personal assets and debts, completed by you." }, // BF_CLIENT_v817 - the form itself has no signature field
   debt: { icon: "doc", desc: "Loans and leases your business pays today." },
   advisors: { icon: "people", desc: "Your accountant, lawyer and other advisors." },
   cra: { icon: "shield", desc: "Lets lenders confirm your tax filings with the CRA." },

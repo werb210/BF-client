@@ -5,6 +5,7 @@
 // degrades to a no-op rather than breaking app start.
 
 import { Capacitor } from "@capacitor/core";
+import { getToken as getSessionToken } from "@/auth/token";
 
 export type RuntimeStatus = {
   uploadQueue: boolean;
@@ -14,6 +15,10 @@ export type RuntimeStatus = {
 
 let started = false;
 let stopFns: Array<() => void> = [];
+// BF_CLIENT_v817 - the APNs/FCM token from the last "registration" event, kept so it can be sent again
+// once the client signs in (the event fires at app start, usually before there is a session).
+let lastDeviceToken: string | null = null;
+let sessionTokenSource: () => string | null = defaultSessionToken;
 
 /** Candidate storage keys, most specific first. */
 const TOKEN_KEYS = ["bf_jwt_token", "boreal.token", "auth_token", "authToken", "token", "jwt", "access_token"];
@@ -29,6 +34,50 @@ export function readToken(): string | null {
     }
   }
   return null;
+}
+
+// BF_CLIENT_v817 - on iOS/Android the session lives in the Keychain-backed auth/token store, never in
+// localStorage, so readToken() alone was always null in the app: every push-token registration went out
+// without Authorization, BF-Server answered 401, no device was ever on file and notices fell back to SMS.
+export function defaultSessionToken(): string | null {
+  try {
+    const session = getSessionToken();
+    if (session) return session;
+  } catch {
+    // fall through to the legacy keys
+  }
+  return readToken();
+}
+
+/** BF_CLIENT_v817 - sends the device push token to BF-Server. True only when the server stored it. */
+export async function postDeviceToken(deviceToken: string, getToken: () => string | null = sessionTokenSource): Promise<boolean> {
+  lastDeviceToken = deviceToken;
+  const auth = getToken();
+  if (!auth) return false; // not signed in yet; syncPushRegistration() sends it after sign-in
+  try {
+    // BF_CLIENT_PUSH_ACTIONS_v144 — the route is /api/push/register-token (the bare /register path
+    // does not exist and silently 404'd every registration), and the server selects APNs vs FCM off
+    // `platform`, so it has to be the real platform, not "capacitor".
+    const response = await fetch(resolveBaseUrl() + "/api/push/register-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + auth },
+      body: JSON.stringify({ token: deviceToken, platform: devicePlatform() }),
+    });
+    return Boolean(response?.ok);
+  } catch {
+    return false; // retried on the next sign-in or app start
+  }
+}
+
+/** BF_CLIENT_v817 - called after sign-in: registers the device token captured before there was a session. */
+export async function syncPushRegistration(): Promise<boolean> {
+  if (!lastDeviceToken) return false;
+  return postDeviceToken(lastDeviceToken);
+}
+
+/** Test seam. */
+export function __setLastDeviceToken(value: string | null): void {
+  lastDeviceToken = value;
 }
 
 export function resolveBaseUrl(): string {
@@ -84,7 +133,8 @@ export async function startBorealRuntime(options: StartOptions = {}): Promise<Ru
   const status: RuntimeStatus = { uploadQueue: false, push: false, errors: [] };
   if (started) return status;
   started = true;
-  const getToken = options.getToken || readToken;
+  const getToken = options.getToken || defaultSessionToken; // BF_CLIENT_v817 - was readToken (null in the app)
+  sessionTokenSource = getToken;
 
   // v136: the upload queue is owned by BF_UPLOAD_QUEUE_v51
   // (src/lib/uploadQueue + src/state/uploadQueueWatcher), which main.tsx already
@@ -97,24 +147,7 @@ export async function startBorealRuntime(options: StartOptions = {}): Promise<Ru
     const installed = await installPushListeners({
       navigate: options.navigate,
       onRegistrationToken: async (token) => {
-        try {
-          const auth = getToken();
-          // BF_CLIENT_PUSH_ACTIONS_v144 — two corrections to the v131 call:
-          // the route is /api/push/register-token (the bare /register path
-          // does not exist and silently 404'd every registration), and the
-          // server selects APNs vs FCM off `platform`, so it has to be the
-          // real platform, not "capacitor".
-          await fetch(resolveBaseUrl() + "/api/push/register-token", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(auth ? { Authorization: "Bearer " + auth } : {}),
-            },
-            body: JSON.stringify({ token, platform: devicePlatform() }),
-          });
-        } catch {
-          // Registration retries on next app start.
-        }
+        await postDeviceToken(token, getToken);
       },
       onError: (error) => status.errors.push("push: " + String(error)),
     });
@@ -136,4 +169,6 @@ export function stopBorealRuntime(): void {
   });
   stopFns = [];
   started = false;
+  lastDeviceToken = null; // BF_CLIENT_v817 - a signed-out device must not re-register for the next person
+  sessionTokenSource = defaultSessionToken;
 }
