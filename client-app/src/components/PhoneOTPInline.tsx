@@ -401,7 +401,7 @@ export default function PhoneOTPInline() {
   );
   // BF_CLIENT_v809_SMS_UPDATES_CONSENT - the optional, unticked "Text me updates" box, right next to its disclosure.
   const smsUpdatesBox = (
-    <label data-testid="sms-updates-consent" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 14, fontSize: 13, color: '#334155', lineHeight: 1.45, textAlign: 'left', cursor: 'pointer' }}>
+    <label data-testid="sms-updates-consent" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 2, marginBottom: 14, fontSize: 13, color: '#334155', lineHeight: 1.45, textAlign: 'left', cursor: 'pointer' }}>
       <input
         type="checkbox"
         checked={smsUpdates}
@@ -454,6 +454,9 @@ export default function PhoneOTPInline() {
             }}
           />
           {error && <div role="alert" style={{ color: '#b91c1c', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {/* BF_CLIENT_v815_CONSENT_ABOVE_BUTTON - the optional "Text me updates" box sits under the phone number,
+              above "Start Your Application", so it is seen before the button is tapped. */}
+          {smsUpdatesBox}
           <button
             type="button"
             disabled={busy}
@@ -467,7 +470,6 @@ export default function PhoneOTPInline() {
           >
             {busy ? 'Sending…' : 'Start Your Application →'}
           </button>
-          {smsUpdatesBox}
           {signInCodeNote}
         </>
       )}
@@ -527,7 +529,7 @@ export default function PhoneOTPInline() {
             Code arrives automatically — we&apos;ll continue once you finish typing.
           </p>
           {/* BF_CLIENT_v809_SMS_UPDATES_CONSENT - still choosable here: the code is sent as soon as 10 digits are typed. */}
-          {smsUpdatesBox}
+          <div style={{ marginTop: 14 }}>{smsUpdatesBox}</div>
         </>
       )}
     </div>
