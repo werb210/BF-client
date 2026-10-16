@@ -19,8 +19,23 @@ function currentStep(): string {
   return typeof window === "undefined" ? "" : wizardStepFromPath(window.location.pathname);
 }
 
-function fieldName(el: Element): string {
-  return clean(el.getAttribute("name") || el.id || el.getAttribute("aria-label") || el.getAttribute("placeholder") || "field", 60);
+// BF_CLIENT_v814_FIELD_LABELS - name a field by the label the applicant sees ("Annual revenue"), so the staff
+// portal's visitor journey reads "Filled in: Annual revenue". Only the label is read, never what was typed or
+// chosen: controls and options inside a label are left out.
+function labelText(label: Element | null | undefined): string {
+  if (!label) return "";
+  const copy = label.cloneNode(true) as Element;
+  copy.querySelectorAll("input, select, textarea, option, button").forEach((n) => n.remove());
+  return clean(copy.textContent, 60).replace(/\s*[*:]+\s*$/, "");
+}
+const AUTO_ID = /^:?r[0-9a-z]{1,4}:?$/i;
+export function fieldName(el: Element): string {
+  const input = el as HTMLInputElement;
+  const byLabels = input.labels && input.labels.length ? labelText(input.labels[0]) : "";
+  const byLabelledBy = (el.getAttribute("aria-labelledby") || "").split(/\s+/).filter(Boolean)
+    .map((id) => labelText(el.ownerDocument?.getElementById(id))).filter(Boolean).join(" ");
+  const id = el.id && !AUTO_ID.test(el.id) ? el.id : "";
+  return clean(byLabels || el.getAttribute("aria-label") || byLabelledBy || el.getAttribute("placeholder") || el.getAttribute("name") || id || "field", 60);
 }
 
 function send(type: string, step: string, meta: Record<string, unknown>): void {

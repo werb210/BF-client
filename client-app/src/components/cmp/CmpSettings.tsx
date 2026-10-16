@@ -10,6 +10,7 @@ import { CmpMoreFooter } from "@/components/CmpPhone";
 import { apiCall } from "@/api/client"; // BF_CLIENT_v809_SMS_UPDATES_CONSENT
 import { SMS_UPDATES_CONSENT_TEXT } from "@/lib/smsUpdatesConsent";
 import { Icon } from "./icons";
+import { ANDROID_PLAY_STORE_URL, iosAppStoreUrl } from "@/lib/appStoreLinks"; // BF_CLIENT_v817
 import "./cmp.css";
 
 type PushState = "checking" | "on" | "off" | "blocked" | "web";
@@ -51,6 +52,28 @@ export function usePushStatus(): { state: PushState; turnOn: () => Promise<void>
     }
   }, [check]);
   return { state, turnOn, note };
+}
+
+// BF_CLIENT_v817 - "Get the app" in a browser: the iOS and Android store links. Hidden inside the app itself.
+export function GetTheAppGroup() {
+  const [native, setNative] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    import("@capacitor/core")
+      .then(({ Capacitor }) => { if (live) setNative(Capacitor.isNativePlatform()); })
+      .catch(() => { if (live) setNative(false); });
+    return () => { live = false; };
+  }, []);
+  if (native !== false) return null;
+  return (
+    <div className="cmpx-group" data-testid="cmp-settings-get-app">
+      <h2 className="cmpx-group__title">Get the app</h2>
+      <div className="cmpx-list">
+        <Action icon="phone" title="Download for iPhone and iPad" desc="Boreal Financial on the App Store" href={iosAppStoreUrl()} testId="cmp-get-app-ios" />
+        <Action icon="phone" title="Download for Android" desc="Boreal Financial on Google Play" href={ANDROID_PLAY_STORE_URL} testId="cmp-get-app-android" />
+      </div>
+    </div>
+  );
 }
 
 function Line({ icon, title, value }: { icon: string; title: string; value: string }) {
@@ -225,6 +248,8 @@ export default function CmpSettings(p: {
         {push.note ? <p className="cmpx-muted" role="status" style={{ margin: "8px 4px 0" }}>{push.note}</p> : null}
         <div className="cmpx-list" style={{ marginTop: 10 }}><SmsUpdatesToggle /></div>
       </div>
+
+      <GetTheAppGroup />
 
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Your details</h2>

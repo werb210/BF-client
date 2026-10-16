@@ -1,0 +1,42 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "76VAY7UJKJ.com.borealfinancial.client",
+          "547H2X5ZG3.com.boreal.client"
+        ],
+        "components": [
+          {
+            "/": "/api/*",
+            "exclude": true
+          },
+          {
+            "/": "/.well-known/*",
+            "exclude": true
+          },
+          {
+            "/": "/*"
+          }
+        ]
+      },
+      {
+        "appID": "76VAY7UJKJ.com.borealfinancial.client",
+        "paths": [
+          "NOT /api/*",
+          "NOT /.well-known/*",
+          "*"
+        ]
+      },
+      {
+        "appID": "547H2X5ZG3.com.boreal.client",
+        "paths": [
+          "NOT /api/*",
+          "NOT /.well-known/*",
+          "*"
+        ]
+      }
+    ]
+  }
+}

@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   readonly VITE_API_URL?: string;
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_API_VERSION?: string;
+  readonly VITE_IOS_APP_STORE_URL?: string; // BF_CLIENT_v817 - App Store listing (or bare numeric id)
 }
 
 interface ImportMeta {

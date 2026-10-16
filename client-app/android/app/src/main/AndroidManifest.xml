@@ -40,6 +40,15 @@
                 <data android:scheme="borealclient" />
             </intent-filter>
 
+            <!-- BF_CLIENT_v817 - Android App Links: SMS links to client.boreal.financial open the app
+                 (verified by https://client.boreal.financial/.well-known/assetlinks.json). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="client.boreal.financial" />
+            </intent-filter>
+
             <!-- BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
