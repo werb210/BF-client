@@ -11,6 +11,7 @@ import { getOrCreateMayaSessionId } from "@/components/MayaWidget";
 import { phoneFromToken } from "@/native/deviceSignIn";
 import type { ThreadMessage } from "@/components/messaging/MessageThread";
 import { Icon } from "./icons";
+import AuthorizedAttachment from "./AuthorizedAttachment"; // BF_CLIENT_v819_CLIENT_MMS - texted pictures in the chat
 import { type Advisor, type MayaEntry, advisorName, defaultRecipient, initials, loadMayaThread, saveMayaThread, SUGGESTED_QUESTIONS } from "./cmpData";
 import "./cmp.css";
 
@@ -183,9 +184,14 @@ export default function CmpChat(p: Props) {
               <div className="cmpx-msg__who">{mine ? "To " + (p.advisor?.firstName || "your advisor") : (m.authorName || "Boreal")}</div>
               <div className="cmpx-msg__bubble">
                 {m.body ? <div>{m.body}</div> : null}
-                {m.attachments?.map((a, i) => (a.contentType ?? "").startsWith("image/")
-                  ? <a key={i} href={a.dataUrl} target="_blank" rel="noreferrer"><img src={a.dataUrl} alt={a.name} style={{ maxWidth: 200, maxHeight: 200, borderRadius: 10, display: "block", marginTop: 6 }} /></a>
-                  : <a key={i} href={a.dataUrl} download={a.name} style={{ display: "block", marginTop: 6, color: "inherit" }}>{a.name}</a>)}
+                {/* BF_CLIENT_v819_CLIENT_MMS - texted pictures (url) load with the client's token; dataUrl ones as before */}
+                {m.attachments?.map((a, i) => (
+                  <div key={i} style={{ marginTop: 6 }}>
+                    <AuthorizedAttachment attachment={a} filePrefix=""
+                      imageStyle={{ maxWidth: 200, maxHeight: 200, borderRadius: 10, display: "block" }}
+                      linkStyle={{ display: "block", color: "inherit" }} />
+                  </div>
+                ))}
                 {m.ctaLabel && m.ctaAction ? <button type="button" className="cmpx-msg__cta" onClick={() => p.onCta(String(m.ctaAction))}>{m.ctaLabel}</button> : null}
               </div>
               <div className="cmpx-msg__time">{formatMessageTime(m.createdAt)}{mine && m.seen ? " \u00b7 Seen" : ""}</div>
