@@ -27,6 +27,14 @@ import { Capacitor } from "@capacitor/core"; // BF_CLIENT_v807_ANDROID // BF_CLI
 
 type Phase = "checking" | "ready";
 
+// BF_CLIENT_v819_BIOMETRIC_WORDING - the plugin's reason is developer text ("The user does not have any
+// biometrics enrolled"). Clients see one plain sentence telling them what to do instead.
+export function biometricUnavailableText(android: boolean): string {
+  return android
+    ? "Set up a fingerprint or face unlock in your phone's settings to use this."
+    : "Set up Face ID in your iPhone's settings to use this.";
+}
+
 export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}) {
   const [phase, setPhase] = useState<Phase>("checking");
   const [status, setStatus] = useState<BiometryStatus | null>(null);
@@ -92,7 +100,8 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
     const how = android ? "your fingerprint or face" : "your face";
     const available = phase === "ready" && Boolean(status?.available);
     const desc = phase === "checking" ? "Checking..."
-      : !available ? `Not available - ${status?.reason ?? "this device can't use Face ID"}`
+      // BF_CLIENT_v819_BIOMETRIC_WORDING - plain words, never the raw system reason.
+      : !available ? biometricUnavailableText(android)
       : busy ? (enrolled ? "Turning off..." : "Turning on...")
       : enrolled ? "On. Sign in with " + how + " instead of a text code."
       : hint ? "Skip the text code next time." : "Sign in with " + how + " instead of a text code.";
@@ -150,7 +159,7 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
 
       {phase === "ready" && status && !status.available && (
         <span style={{ fontSize: 13, color: "#64748b" }} data-testid="face-id-unavailable">
-          Not available — {status.reason}
+          {biometricUnavailableText(Capacitor.getPlatform() === "android")}
         </span>
       )}
 

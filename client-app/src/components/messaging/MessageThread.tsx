@@ -18,7 +18,8 @@ export type ThreadMessage = {
   createdAt: string;
   ctaLabel?: string | null;
   ctaAction?: string | null;
-  attachments?: Array<{ name: string; contentType?: string | null; dataUrl: string }> | null;
+  // BF_CLIENT_v819_CLIENT_MMS - server-provided attachments (a picture the client texted in) carry url, not dataUrl.
+  attachments?: Array<{ name: string; contentType?: string | null; dataUrl?: string; url?: string }> | null;
   seen?: boolean; // BF_CLIENT_BLOCK_v509 - staff opened this message
 };
 

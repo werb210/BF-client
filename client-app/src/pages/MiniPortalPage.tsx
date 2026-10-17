@@ -43,6 +43,7 @@ import { usePhoneLayout, useCmpMode, CmpTabBar, type CmpTab } from "../component
 // BF_CLIENT_v802_PHONE_UI - the phone client portal: header, Home cards, one chat thread, More, Settings, booking.
 import { CmpHeader, AppSwitcherSheet, CmpHello, CmpStatusCard, CmpOffersCard, CmpReferCard, toSwitcherApp } from "../components/cmp/CmpHome";
 import CmpChat from "../components/cmp/CmpChat";
+import AuthorizedAttachment from "../components/cmp/AuthorizedAttachment"; // BF_CLIENT_v819_CLIENT_MMS - texted pictures in the chat
 import CmpMore, { CallControl, type MoreForm } from "../components/cmp/CmpMore";
 import CmpSettings, { type EditableDetails } from "../components/cmp/CmpSettings";
 import ReportProblemSheet from "../components/cmp/ReportProblemSheet"; // BF_CLIENT_v807_REPORT
@@ -266,7 +267,17 @@ export default function MiniPortalPage() {
           createdAt: String(item.createdAt ?? item.created_at ?? new Date().toISOString()),
           ctaLabel: typeof item.cta_label === "string" ? item.cta_label : (typeof item.ctaLabel === "string" ? item.ctaLabel : null),
           ctaAction: typeof item.cta_action === "string" ? item.cta_action : (typeof item.ctaAction === "string" ? item.ctaAction : null),
-          attachments: Array.isArray(item.attachments) ? item.attachments : null,
+          // BF_CLIENT_v819_CLIENT_MMS - keep dataUrl attachments as they are and carry the server's url field through.
+          attachments: Array.isArray(item.attachments)
+            ? item.attachments
+                .filter((a: any) => a && (typeof a.dataUrl === "string" || typeof a.url === "string"))
+                .map((a: any) => ({
+                  name: String(a.name ?? (typeof a.url === "string" ? "Picture" : "File")),
+                  contentType: typeof a.contentType === "string" ? a.contentType : null,
+                  ...(typeof a.dataUrl === "string" ? { dataUrl: a.dataUrl } : {}),
+                  ...(typeof a.url === "string" ? { url: a.url } : {}),
+                }))
+            : null,
           seen: role === "self" && Boolean(item.read_at ?? item.readAt), // BF_CLIENT_BLOCK_v509_CLIENT_SEEN
         };
       }));
@@ -1143,17 +1154,10 @@ export default function MiniPortalPage() {
                       <div>{m.body}</div>
                       {m.attachments && m.attachments.length > 0 ? (
                         <div style={{ marginTop: m.body ? 6 : 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                          {m.attachments.map((a, i) =>
-                            (a.contentType ?? "").startsWith("image/") ? (
-                              <a key={i} href={a.dataUrl} target="_blank" rel="noreferrer">
-                                <img src={a.dataUrl} alt={a.name} style={{ maxWidth: 200, maxHeight: 200, borderRadius: 8, display: "block" }} />
-                              </a>
-                            ) : (
-                              <a key={i} href={a.dataUrl} download={a.name} style={{ fontSize: 13, color: "inherit", textDecoration: "underline" }}>
-                                📎 {a.name}
-                              </a>
-                            ),
-                          )}
+                          {/* BF_CLIENT_v819_CLIENT_MMS - texted pictures (url) load with the client's token */}
+                          {m.attachments.map((a, i) => (
+                            <AuthorizedAttachment key={i} attachment={a} />
+                          ))}
                         </div>
                       ) : null}
                       {m.ctaLabel && m.ctaAction ? <button className="mp-msg-cta" type="button" onClick={() => handleMessageCta(m.ctaAction)}>{m.ctaLabel}</button> : null}

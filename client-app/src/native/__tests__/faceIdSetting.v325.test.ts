@@ -21,7 +21,8 @@ describe("there is always a visible way to turn Face ID on", () => {
     // v324 rendered only when checkBiometry().isAvailable was true, so a plugin
     // that failed to register produced an empty panel and no explanation.
     expect(toggle).toContain('data-testid="face-id-unavailable"');
-    expect(toggle).toContain("Not available — {status.reason}");
+    // BF_CLIENT_v819_BIOMETRIC_WORDING - the reason is now one plain sentence, not the plugin's text.
+    expect(toggle).toContain("biometricUnavailableText(");
   });
 
   it("hides only in a browser tab, where the device has no Face ID to offer", () => {
