@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiCall } from "@/api/client";
 import { Sheet } from "./CmpHome";
+import { addToCalendar, bookedCallEvent } from "@/native/calendar"; // BF_CLIENT_v823_CALENDAR
 import "./cmp.css";
 
 type Slot = { startsAt: string; staffIds: string[] };
@@ -97,6 +98,13 @@ export default function BookCallSheet({ advisorId, advisorFirstName, prefill, on
             {fmt(booked.startsAt, { weekday: "long", month: "long", day: "numeric" })} at {fmt(booked.startsAt, { hour: "numeric", minute: "2-digit" })}
             {booked.staffFirstName ? " with " + booked.staffFirstName : ""}. {booked.kind === "teams" ? "The Teams link is in the invitation we emailed you." : "We'll call you at the number you gave."}
           </p>
+          {/* BF_CLIENT_v823_CALENDAR */}
+          {bookedCallEvent(booked) ? (
+            <button type="button" className="cmpx-btn cmpx-btn--block" style={{ marginBottom: 10 }} data-testid="cmp-book-calendar"
+              onClick={() => { const event = bookedCallEvent(booked); if (event) void addToCalendar(event); }}>
+              Add to calendar
+            </button>
+          ) : null}
           <button type="button" className="cmpx-btn cmpx-btn--block" onClick={onClose}>Done</button>
         </div>
       ) : (

@@ -26,6 +26,8 @@ export function parseNativeUrl(value: unknown): string {
       case "documents":
       case "offers":
       case "messages": return `/portal?section=${destination}`;
+      // BF_CLIENT_v823_QUICK_ACTIONS - the "Book a call" quick action / Android shortcut.
+      case "book-call": return "/portal?section=book-call";
       default: return FALLBACK_ROUTE;
     }
   } catch {

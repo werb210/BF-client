@@ -19,6 +19,9 @@ let stopFns: Array<() => void> = [];
 // once the client signs in (the event fires at app start, usually before there is a session).
 let lastDeviceToken: string | null = null;
 let sessionTokenSource: () => string | null = defaultSessionToken;
+// BF_CLIENT_v823_NOTIFICATIONS - sign-out stops the runtime (push listeners off, device unregistered). It is started
+// again with the same options at the next sign-in, so push works without restarting the app.
+let lastStartOptions: StartOptions | null = null;
 
 /** Candidate storage keys, most specific first. */
 const TOKEN_KEYS = ["bf_jwt_token", "boreal.token", "auth_token", "authToken", "token", "jwt", "access_token"];
@@ -67,6 +70,15 @@ export async function postDeviceToken(deviceToken: string, getToken: () => strin
   } catch {
     return false; // retried on the next sign-in or app start
   }
+}
+
+/** BF_CLIENT_v823_NOTIFICATIONS - after a sign-in: restart push if sign-out stopped it, then register the token. */
+export async function resumeAfterSignIn(): Promise<boolean> {
+  if (!started && lastStartOptions) {
+    await startBorealRuntime(lastStartOptions); // re-registers; the "registration" event posts the new token
+    return true;
+  }
+  return syncPushRegistration();
 }
 
 /** BF_CLIENT_v817 - called after sign-in: registers the device token captured before there was a session. */
@@ -133,6 +145,7 @@ export async function startBorealRuntime(options: StartOptions = {}): Promise<Ru
   const status: RuntimeStatus = { uploadQueue: false, push: false, errors: [] };
   if (started) return status;
   started = true;
+  lastStartOptions = options; // BF_CLIENT_v823_NOTIFICATIONS
   const getToken = options.getToken || defaultSessionToken; // BF_CLIENT_v817 - was readToken (null in the app)
   sessionTokenSource = getToken;
 

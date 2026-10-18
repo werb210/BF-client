@@ -5,6 +5,7 @@
 // "What you need to do" panel refreshes.
 import SwiftUI
 import WidgetKit
+import ActivityKit // BF_CLIENT_v823_LIVE_ACTIVITY
 
 struct ClientWidgetSnapshot: Codable {
     var applicationId: String?
@@ -145,7 +146,106 @@ struct ClientStageWidget: Widget {
 
 @main
 struct ClientWidgetBundle: WidgetBundle {
-    var body: some Widget { ClientStageWidget() }
+    var body: some Widget {
+        ClientStageWidget()
+        ApplicationStatusLiveActivity() // BF_CLIENT_v823_LIVE_ACTIVITY
+    }
+}
+
+// BF_CLIENT_v823_LIVE_ACTIVITY - the application's stage on the lock screen and in the Dynamic Island. Declared
+// identically in the app (AppDelegate.swift), which starts it; BF-Server updates it by push while the app is closed.
+struct ApplicationStatusAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var stage: String
+        var step: Int
+        var totalSteps: Int
+        var action: String
+    }
+    var applicationId: String
+    var business: String
+}
+
+func applicationURL(_ applicationId: String) -> URL {
+    if let id = applicationId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed), !id.isEmpty,
+       let url = URL(string: "borealclient://application/\(id)") { return url }
+    return URL(string: "borealclient://home")!
+}
+
+struct StatusProgressBar: View {
+    let step: Int
+    let total: Int
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.2))
+                Capsule().fill(borealGold)
+                    .frame(width: geometry.size.width * CGFloat(min(max(step, 1), max(total, 1))) / CGFloat(max(total, 1)))
+            }
+        }
+        .frame(height: 6)
+        .accessibilityLabel("Step \(step) of \(total)")
+    }
+}
+
+struct ApplicationStatusLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: ApplicationStatusAttributes.self) { context in
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    BrandRow()
+                    Spacer()
+                    Text("Step \(context.state.step) of \(context.state.totalSteps)")
+                        .font(.caption)
+                        .foregroundStyle(Color.white.opacity(0.7))
+                }
+                Text(context.state.stage)
+                    .font(.headline)
+                    .foregroundStyle(Color.white)
+                if !context.attributes.business.isEmpty {
+                    Text(context.attributes.business)
+                        .font(.caption)
+                        .foregroundStyle(Color.white.opacity(0.7))
+                        .lineLimit(1)
+                }
+                StatusProgressBar(step: context.state.step, total: context.state.totalSteps)
+                if !context.state.action.isEmpty {
+                    Text(context.state.action)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(borealGold)
+                        .lineLimit(1)
+                }
+            }
+            .padding(16)
+            .activityBackgroundTint(borealNavy)
+            .activitySystemActionForegroundColor(Color.white)
+            .widgetURL(applicationURL(context.attributes.applicationId))
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Image(systemName: "mountain.2.fill").foregroundStyle(borealGold)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text("\(context.state.step)/\(context.state.totalSteps)").font(.caption.bold())
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    Text(context.state.stage).font(.headline).lineLimit(1)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        StatusProgressBar(step: context.state.step, total: context.state.totalSteps)
+                        Text(context.state.action).font(.caption).foregroundStyle(borealGold).lineLimit(1)
+                    }
+                }
+            } compactLeading: {
+                Image(systemName: "mountain.2.fill").foregroundStyle(borealGold)
+            } compactTrailing: {
+                Text("\(context.state.step)/\(context.state.totalSteps)").font(.caption2.bold())
+            } minimal: {
+                Image(systemName: "mountain.2.fill").foregroundStyle(borealGold)
+            }
+            .widgetURL(applicationURL(context.attributes.applicationId))
+        }
+    }
 }
 
 // BF_CLIENT_WIDGET_SELF_REFRESH_v675 - the widget's own server check (action centre + stage).

@@ -10,4 +10,5 @@
     <string name="shortcut_application">My application</string>
     <string name="shortcut_documents">Upload documents</string>
     <string name="shortcut_messages">Messages</string>
+    <string name="shortcut_book_call">Book a call</string>
 </resources>

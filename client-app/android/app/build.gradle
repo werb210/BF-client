@@ -64,6 +64,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging'
     // BF_CLIENT_BACKGROUND_UPLOAD_v307 - uploads that finish after the app is closed.
     implementation 'androidx.work:work-runtime:2.9.1'
+    // BF_CLIENT_v823_SMS_CODE - SMS User Consent API: one tap fills in the sign-in code, no SMS permission.
+    implementation 'com.google.android.gms:play-services-auth-api-phone:18.1.0'
 }
 
 apply from: 'capacitor.build.gradle'

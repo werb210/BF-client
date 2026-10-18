@@ -107,5 +107,41 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- BF_CLIENT_v823_LIVE_ACTIVITY - application stage on the lock screen / Dynamic Island. -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<!-- BF_CLIENT_v823_CALENDAR - "Add to calendar" after booking a call (iOS 16 and older ask for access). -->
+	<key>NSCalendarsUsageDescription</key>
+	<string>Boreal adds the call you booked with your advisor to your calendar.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Boreal adds the call you booked with your advisor to your calendar.</string>
+	<!-- BF_CLIENT_v823_QUICK_ACTIONS - long-press the app icon. -->
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.borealfinancial.client.upload</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Upload a document</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>doc.badge.plus</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.borealfinancial.client.message</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Message my advisor</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>bubble.left.and.bubble.right</string>
+		</dict>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.borealfinancial.client.book</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Book a call</string>
+			<key>UIApplicationShortcutItemIconSymbolName</key>
+			<string>calendar.badge.plus</string>
+		</dict>
+	</array>
 </dict>
 </plist>

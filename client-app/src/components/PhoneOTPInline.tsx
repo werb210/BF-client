@@ -117,6 +117,13 @@ export default function PhoneOTPInline() {
       // safety net so a cold-start never blocks an applicant.
       const OTP_START_TIMEOUT_MS = 60000;
 
+      // BF_CLIENT_v823_SMS_CODE - Android: listen for the code text before it is sent; one tap fills it in (and the
+      // 6-digit auto-submit below signs in).
+      void import('../native/smsCode').then(async (m) => {
+        const smsCode = await m.waitForSmsCode();
+        if (smsCode) setCode(smsCode);
+      }).catch((): void => undefined);
+
       const res = await fetchWithTimeout(
         API_BASE + '/api/auth/otp/start',
         {
@@ -360,6 +367,9 @@ export default function PhoneOTPInline() {
       submittingRef.current = false;
     }
   }
+
+  // BF_CLIENT_v823_SMS_CODE - stop listening for the code text when this screen goes away.
+  useEffect(() => () => { void import('../native/smsCode').then((m) => m.cancelSmsCode()).catch((): void => undefined); }, []);
 
   // BF_OTP_AUTOSUBMIT_v31 + BF_OTP_AUTOSUBMIT_ONCE_v32 — auto-fire
   // verifyAndStart when the user finishes typing the 6-digit OTP, but only

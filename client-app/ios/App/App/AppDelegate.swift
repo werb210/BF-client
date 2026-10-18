@@ -2,6 +2,9 @@ import UIKit
 import Capacitor
 import UserNotifications
 import WidgetKit // BF_CLIENT_BLOCK_v590_HOME_WIDGET
+import ActivityKit // BF_CLIENT_v823_LIVE_ACTIVITY
+import EventKit // BF_CLIENT_v823_CALENDAR
+import EventKitUI
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -12,6 +15,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // BF_CLIENT_PUSH_ACTIONS_v144
         BorealPushCategories.register()
+        // BF_CLIENT_v823_LIVE_ACTIVITY - report Live Activity tokens, including ones iOS starts from a push.
+        if #available(iOS 16.2, *) { ApplicationStatusLive.shared.startObserving() }
         // Override point for customization after application launch.
         return true
     }
@@ -105,6 +110,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         if let activity = connectionOptions.userActivities.first {
             _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: activity, restorationHandler: { _ in })
         }
+        // BF_CLIENT_v823_QUICK_ACTIONS - launched from a Home Screen quick action.
+        if let item = connectionOptions.shortcutItem, let url = ClientQuickActions.url(for: item.type) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])
+            }
+        }
+    }
+    // BF_CLIENT_v823_QUICK_ACTIONS - long-press the app icon: Upload a document / Message my advisor / Book a call.
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        guard let url = ClientQuickActions.url(for: shortcutItem.type) else { completionHandler(false); return }
+        completionHandler(ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:]))
     }
     func sceneDidBecomeActive(_ scene: UIScene) {
         PrivacyCover.hide(on: window) // BF_CLIENT_SCENE_PRIVACY_v675
@@ -119,6 +136,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
         _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
+    }
+}
+
+// BF_CLIENT_v823_QUICK_ACTIONS - Info.plist UIApplicationShortcutItems types -> the app's borealclient:// links.
+enum ClientQuickActions {
+    static func url(for type: String) -> URL? {
+        switch type {
+        case "com.borealfinancial.client.upload": return URL(string: "borealclient://documents")
+        case "com.borealfinancial.client.message": return URL(string: "borealclient://messages")
+        case "com.borealfinancial.client.book": return URL(string: "borealclient://book-call")
+        default: return nil
+        }
     }
 }
 
@@ -379,5 +408,238 @@ enum SharedInboxDelivery {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             for url in moved { _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:]) }
         }
+    }
+}
+
+// BF_CLIENT_v823_LIVE_ACTIVITY
+// The application's stage on the lock screen and in the Dynamic Island ("Offer · step 6 of 7 · Review your offer").
+// The app starts or refreshes it whenever it reads the stage; BF-Server pushes changes while the app is closed
+// (APNs liveactivity pushes, BF-Server v823). iOS ends an activity after 8 hours, so the phone also hands the server
+// a push-to-start token (iOS 17.2+) and the next stage change starts a new one. Tokens go to
+// POST /api/client/application-status/watch using the sign-in the home-screen widget already keeps in the App Group,
+// so they are sent even when iOS starts the activity with the app in the background.
+// ApplicationStatusAttributes is declared identically in ClientWidget.swift (the widget draws it).
+
+@available(iOS 16.1, *)
+struct ApplicationStatusAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var stage: String
+        var step: Int
+        var totalSteps: Int
+        var action: String
+    }
+    var applicationId: String
+    var business: String
+}
+
+@available(iOS 16.2, *)
+@MainActor
+final class ApplicationStatusLive {
+    static let shared = ApplicationStatusLive()
+    private var observing = false
+    private var watchedActivities = Set<String>()
+
+    /// Called at launch: report push tokens of activities iOS starts or rotates, and the push-to-start token.
+    func startObserving() {
+        guard !observing else { return }
+        observing = true
+        for activity in Activity<ApplicationStatusAttributes>.activities { watch(activity) }
+        Task {
+            for await activity in Activity<ApplicationStatusAttributes>.activityUpdates { self.watch(activity) }
+        }
+        if #available(iOS 17.2, *) {
+            Task {
+                for await data in Activity<ApplicationStatusAttributes>.pushToStartTokenUpdates {
+                    let token = data.map { String(format: "%02x", $0) }.joined()
+                    UserDefaults(suiteName: ClientAppGroup.id)?.set(token, forKey: "boreal.client.liveActivity.startToken")
+                    if let applicationId = self.knownApplicationId() {
+                        await self.register(applicationId: applicationId, activityToken: nil, startToken: token)
+                    }
+                }
+            }
+        }
+    }
+
+    private func watch(_ activity: Activity<ApplicationStatusAttributes>) {
+        guard !watchedActivities.contains(activity.id) else { return }
+        watchedActivities.insert(activity.id)
+        let applicationId = activity.attributes.applicationId
+        Task {
+            for await data in activity.pushTokenUpdates {
+                let token = data.map { String(format: "%02x", $0) }.joined()
+                await self.register(applicationId: applicationId, activityToken: token, startToken: self.storedStartToken())
+            }
+        }
+    }
+
+    func sync(applicationId: String, business: String, state: ApplicationStatusAttributes.ContentState, final: Bool) async -> Bool {
+        let existing = Activity<ApplicationStatusAttributes>.activities.first { $0.attributes.applicationId == applicationId }
+        let content = ActivityContent(state: state, staleDate: nil)
+        if final {
+            await existing?.end(content, dismissalPolicy: .default)
+            return false
+        }
+        if let existing {
+            await existing.update(content)
+            return true
+        }
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+            // Live Activities are off for Boreal: still give the server the start token for later.
+            if let start = storedStartToken() { await register(applicationId: applicationId, activityToken: nil, startToken: start) }
+            return false
+        }
+        // Only one Boreal application on the lock screen at a time.
+        for other in Activity<ApplicationStatusAttributes>.activities { await other.end(nil, dismissalPolicy: .immediate) }
+        do {
+            let activity = try Activity.request(attributes: ApplicationStatusAttributes(applicationId: applicationId, business: business),
+                                                content: content, pushType: .token)
+            watch(activity)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func end(applicationId: String?) async {
+        for activity in Activity<ApplicationStatusAttributes>.activities where applicationId == nil || activity.attributes.applicationId == applicationId {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+
+    private func storedStartToken() -> String? {
+        UserDefaults(suiteName: ClientAppGroup.id)?.string(forKey: "boreal.client.liveActivity.startToken")
+    }
+
+    /// The application the home-screen widget shows (the app writes it on every refresh).
+    private func knownApplicationId() -> String? {
+        guard let data = UserDefaults(suiteName: ClientAppGroup.id)?.data(forKey: "boreal.client.widget"),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let id = object["applicationId"] as? String, !id.isEmpty else { return nil }
+        return id
+    }
+
+    func register(applicationId: String, activityToken: String?, startToken: String?) async {
+        guard activityToken != nil || startToken != nil,
+              let data = UserDefaults(suiteName: ClientAppGroup.id)?.data(forKey: "boreal.client.widget.auth"),
+              let auth = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let token = auth["token"] as? String, !token.isEmpty else { return }
+        var base = (auth["apiBase"] as? String) ?? "https://server.boreal.financial"
+        while base.hasSuffix("/") { base.removeLast() }
+        guard let url = URL(string: base + "/api/client/application-status/watch") else { return }
+        var body: [String: Any] = ["applicationId": applicationId, "platform": "ios", "environment": ClientAppGroup.apnsEnvironment]
+        if let activityToken { body["activityToken"] = activityToken }
+        if let startToken { body["startToken"] = startToken }
+        var request = URLRequest(url: url, timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        _ = try? await URLSession.shared.data(for: request)
+    }
+}
+
+enum ClientAppGroup {
+    static let id = "group.com.borealfinancial.client"
+    /// Xcode debug builds get sandbox push tokens; TestFlight / App Store builds production ones.
+    static var apnsEnvironment: String {
+#if DEBUG
+        return "sandbox"
+#else
+        return "production"
+#endif
+    }
+}
+
+@objc(ApplicationStatusPlugin)
+public class ApplicationStatusPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "ApplicationStatusPlugin"
+    public let jsName = "ApplicationStatus"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "sync", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "end", returnType: CAPPluginReturnPromise)
+    ]
+
+    @objc func sync(_ call: CAPPluginCall) {
+        guard #available(iOS 16.2, *) else { call.resolve(["shown": false]); return }
+        guard let applicationId = call.getString("applicationId"), !applicationId.isEmpty else {
+            call.reject("applicationId is required")
+            return
+        }
+        let state = ApplicationStatusAttributes.ContentState(
+            stage: call.getString("stage") ?? "Received",
+            step: max(1, call.getInt("step") ?? 1),
+            totalSteps: max(1, call.getInt("totalSteps") ?? 7),
+            action: call.getString("action") ?? ""
+        )
+        let business = call.getString("business") ?? ""
+        let final = call.getBool("final") ?? false
+        Task {
+            let shown = await ApplicationStatusLive.shared.sync(applicationId: applicationId, business: business, state: state, final: final)
+            call.resolve(["shown": shown])
+        }
+    }
+
+    @objc func end(_ call: CAPPluginCall) {
+        guard #available(iOS 16.2, *) else { call.resolve(); return }
+        let applicationId = call.getString("applicationId")
+        Task {
+            await ApplicationStatusLive.shared.end(applicationId: applicationId)
+            call.resolve()
+        }
+    }
+}
+
+// BF_CLIENT_v823_CALENDAR - "Add to calendar" after booking a call. The system's own event editor, already filled
+// in; on iOS 17+ it needs no calendar permission because the person saves the event themselves.
+
+@objc(CalendarEventPlugin)
+public class CalendarEventPlugin: CAPPlugin, CAPBridgedPlugin, EKEventEditViewDelegate {
+    public let identifier = "CalendarEventPlugin"
+    public let jsName = "CalendarEvent"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "add", returnType: CAPPluginReturnPromise)
+    ]
+    private let store = EKEventStore()
+    private var pending: CAPPluginCall?
+
+    @objc func add(_ call: CAPPluginCall) {
+        guard let title = call.getString("title"), let startMs = call.getDouble("startMs"), let endMs = call.getDouble("endMs"),
+              endMs > startMs else {
+            call.reject("title, startMs and endMs are required")
+            return
+        }
+        // iOS 17+ saves from the editor without calendar access; older versions need it first.
+        if #available(iOS 17.0, *) {
+            present(call: call, title: title, startMs: startMs, endMs: endMs)
+        } else {
+            store.requestAccess(to: .event) { _, _ in
+                self.present(call: call, title: title, startMs: startMs, endMs: endMs)
+            }
+        }
+    }
+
+    private func present(call: CAPPluginCall, title: String, startMs: Double, endMs: Double) {
+        DispatchQueue.main.async {
+            let event = EKEvent(eventStore: self.store)
+            event.title = title
+            event.startDate = Date(timeIntervalSince1970: startMs / 1000)
+            event.endDate = Date(timeIntervalSince1970: endMs / 1000)
+            event.location = call.getString("location")
+            event.notes = call.getString("notes")
+            if let link = call.getString("url"), let url = URL(string: link) { event.url = url }
+            event.addAlarm(EKAlarm(relativeOffset: -15 * 60))
+            let editor = EKEventEditViewController()
+            editor.eventStore = self.store
+            editor.event = event
+            editor.editViewDelegate = self
+            self.pending = call
+            self.bridge?.viewController?.present(editor, animated: true)
+        }
+    }
+
+    public func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+        controller.dismiss(animated: true)
+        pending?.resolve(["saved": action == .saved])
+        pending = nil
     }
 }
