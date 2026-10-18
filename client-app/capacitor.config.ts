@@ -17,6 +17,9 @@ const config: CapacitorConfig = {
     // BF_CLIENT_v807_ANDROID - Android draws the app edge to edge (under the status bar). Capacitor fills
     // env(safe-area-inset-*) so the fixed header and tab bar pad themselves; 'cover' from the start avoids a jump.
     SystemBars: { insetsHandling: 'css', initialViewportFitValueHint: 'cover' },
+    // BF_CLIENT_v823_NOTIFICATIONS - a push that arrives while the app is open shows as a banner too (the plugin's
+    // default was the badge only, so an advisor's message went unseen until the app was closed).
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
   }
 };
 

@@ -37,9 +37,36 @@ export function routeForPush(actionId: unknown, data: Record<string, unknown> | 
   return base;
 }
 
+// BF_CLIENT_v823_NOTIFICATIONS - Android notifications are drawn by BorealMessagingService, so Capacitor's
+// "action performed" event never fires for them; NotificationTapPlugin hands over the tapped link instead.
+type AndroidTap = { url?: string; actionId?: string; applicationId?: string };
+interface NotificationTapPlugin {
+  takePending(): Promise<{ tap?: AndroidTap }>;
+  addListener(event: "tap", listener: (tap: AndroidTap) => void): Promise<{ remove: () => Promise<void> }>;
+}
+
+export function routeForAndroidTap(tap: AndroidTap | undefined): string | null {
+  if (!tap || typeof tap.url !== "string") return null;
+  return routeForPush(tap.actionId, { url: tap.url, applicationId: tap.applicationId });
+}
+
+async function installAndroidTapRouting(navigate?: (route: string) => void): Promise<void> {
+  if (Capacitor.getPlatform() !== "android" || !navigate || !Capacitor.isPluginAvailable("NotificationTap")) return;
+  const { registerPlugin } = await import("@capacitor/core");
+  const plugin = registerPlugin<NotificationTapPlugin>("NotificationTap");
+  await plugin.addListener("tap", (tap) => {
+    const route = routeForAndroidTap(tap);
+    if (route) navigate(route);
+  });
+  const { tap } = await plugin.takePending();
+  const route = routeForAndroidTap(tap);
+  if (route) navigate(route);
+}
+
 /** Installs the native push listeners; web starts remain a deliberate no-op. */
 export async function installPushListeners(options: PushListenerOptions): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) return false;
+  await installAndroidTapRouting(options.navigate).catch((): void => undefined); // BF_CLIENT_v823_NOTIFICATIONS
 
   await PushNotifications.addListener("pushNotificationActionPerformed", ({ actionId, notification }) => {
     options.navigate?.(routeForPush(actionId, notification.data as Record<string, unknown> | undefined));

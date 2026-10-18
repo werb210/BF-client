@@ -71,7 +71,8 @@ export function setToken(t: string): void {
   queueCredentialWrite(() => credentialStore.set(t), "Secure credential persistence failed");
   // BF_CLIENT_v817 - the device's push token arrived at app start, before this sign-in; register it now.
   if (Capacitor.isNativePlatform()) {
-    void import("@/native/borealRuntime").then((m) => m.syncPushRegistration()).catch((): void => undefined);
+    // BF_CLIENT_v823_NOTIFICATIONS - also restarts push after a sign-out in the same session.
+    void import("@/native/borealRuntime").then((m) => m.resumeAfterSignIn()).catch((): void => undefined);
     return;
   }
   if (typeof window !== "undefined") {

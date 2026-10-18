@@ -16,4 +16,10 @@
         <intent android:action="android.intent.action.VIEW" android:data="borealclient://messages"
             android:targetPackage="com.boreal.client" android:targetClass="com.boreal.client.MainActivity" />
     </shortcut>
+    <!-- BF_CLIENT_v823_QUICK_ACTIONS -->
+    <shortcut android:shortcutId="book_call" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_book_call" android:shortcutLongLabel="@string/shortcut_book_call">
+        <intent android:action="android.intent.action.VIEW" android:data="borealclient://book-call"
+            android:targetPackage="com.boreal.client" android:targetClass="com.boreal.client.MainActivity" />
+    </shortcut>
 </shortcuts>

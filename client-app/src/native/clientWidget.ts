@@ -57,9 +57,12 @@ export async function updateClientWidget(u: ClientWidgetUpdate): Promise<void> {
     if (base) payload.apiBase = base;
   } catch { /* the widget still shows the app's last snapshot */ }
   await ClientWidget.update(payload).catch((): void => undefined);
+  // BF_CLIENT_v823_LIVE_ACTIVITY - the same stage read drives the lock-screen status.
+  if (u.stage) void import("./applicationStatus").then((m) => m.syncApplicationStatus(u)).catch((): void => undefined);
 }
 
 export async function clearClientWidget(): Promise<void> {
+  void import("./applicationStatus").then((m) => m.endApplicationStatus()).catch((): void => undefined); // BF_CLIENT_v823_LIVE_ACTIVITY
   if (!available()) return;
   await ClientWidget.clear().catch((): void => undefined);
 }

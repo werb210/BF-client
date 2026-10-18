@@ -421,6 +421,8 @@ export default function MiniPortalPage() {
     // BF_CLIENT_v802_PUSH_SECTIONS - a message push opens the chat; an offer push opens the offers.
     if (searchParams.get("section") === "messages" && applicationId) { setChatTo("advisor"); setPhoneTab("chat"); }
     if (searchParams.get("section") === "offers" && applicationId) setOffersOpen(true);
+    // BF_CLIENT_v823_QUICK_ACTIONS - long-press the app icon > Book a call.
+    if (searchParams.get("section") === "book-call" && applicationId) setBookOpen(true);
   }, [searchParams, applicationId]);
   const [hasOpenQa, setHasOpenQa] = useState(false); // BF_CLIENT_QA_CHIP_GATE_v1
   // BF_CLIENT_PRODUCT_QUESTIONS_v290 - null until checked; hides the prompt once everything is answered.

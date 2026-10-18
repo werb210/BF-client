@@ -34,6 +34,9 @@ public class BorealMessagingService extends FirebaseMessagingService {
     private static final String CHANNEL_CALLS = "calls";
     public static final String EXTRA_ACTION = "boreal_action";
     public static final String EXTRA_DEEP_LINK = "boreal_deep_link";
+    // BF_CLIENT_v823_NOTIFICATIONS - lets a tapped "Upload Now" / "View Offer" open the right application.
+    public static final String EXTRA_APPLICATION_ID = "boreal_application_id";
+    private String currentApplicationId = "";
 
     @Override
     public void onMessageReceived(RemoteMessage message) {
@@ -44,10 +47,20 @@ public class BorealMessagingService extends FirebaseMessagingService {
             return;
         }
 
+        // BF_CLIENT_v823_LIVE_ACTIVITY - stage changes update the quiet status notification instead of a new alert.
+        if ("application_status".equals(data.get("type"))) {
+            ApplicationStatusNotifier.show(this, value(data, "applicationId", ""), value(data, "stage", "Received"),
+                    intValue(data, "step", 1), intValue(data, "totalSteps", 7), value(data, "action", ""),
+                    "1".equals(data.get("final")));
+            return;
+        }
+
+        currentApplicationId = value(data, "applicationId", "");
         String title = value(data, "title", "Boreal Financial");
         String body = value(data, "body", "");
         String category = value(data, "categoryId", "GENERIC");
-        String deepLink = value(data, "deepLink", "/");
+        // BF_CLIENT_v823_NOTIFICATIONS - BF-Server sends the link as "url" (deepLink kept for older messages).
+        String deepLink = value(data, "url", value(data, "deepLink", "/"));
         String channelId = "MISSED_CALL".equals(category) ? CHANNEL_CALLS : CHANNEL_DEFAULT;
 
         ensureChannel(channelId);
@@ -90,6 +103,9 @@ public class BorealMessagingService extends FirebaseMessagingService {
             intent.putExtra(EXTRA_ACTION, actionId);
         }
         intent.putExtra(EXTRA_DEEP_LINK, deepLink);
+        if (!currentApplicationId.isEmpty()) {
+            intent.putExtra(EXTRA_APPLICATION_ID, currentApplicationId);
+        }
 
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -97,7 +113,7 @@ public class BorealMessagingService extends FirebaseMessagingService {
         }
         // A distinct request code per action, or Android reuses the first intent
         // for every button and every tap does the same thing.
-        int requestCode = (actionId == null ? "TAP" : actionId).hashCode();
+        int requestCode = ((actionId == null ? "TAP" : actionId) + ":" + currentApplicationId + ":" + deepLink).hashCode();
         return PendingIntent.getActivity(this, requestCode, intent, flags);
     }
 
@@ -121,9 +137,27 @@ public class BorealMessagingService extends FirebaseMessagingService {
      * stacking up.
      */
     private int notificationId(Map<String, String> data) {
-        String entity = value(data, "entityId", "");
+        // BF_CLIENT_v823_NOTIFICATIONS - the server sends applicationId, not entityId; without it every update in a
+        // category replaced the last one, even for different applications.
+        String entity = value(data, "entityId", value(data, "applicationId", ""));
         String category = value(data, "categoryId", "GENERIC");
         return (category + ":" + entity).hashCode();
+    }
+
+    private static int intValue(Map<String, String> data, String key, int fallback) {
+        try {
+            return Integer.parseInt(value(data, key, String.valueOf(fallback)));
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    // BF_CLIENT_v823_NOTIFICATIONS - this service receives Firebase messages instead of Capacitor's, so a rotated
+    // token must be passed on or it only reaches the server at the next cold start.
+    @Override
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+        com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin.onNewToken(token);
     }
 
     private static String value(Map<String, String> data, String key, String fallback) {
