@@ -4,7 +4,9 @@ import { Icon, BorealMark } from "./icons";
 import { type Advisor, advisorName, initials, shortStageLabel } from "./cmpData";
 import "./cmp.css";
 
-export type SwitcherApp = { id: string; business: string; product: string; amount: string; stage: string; signatureNeeded: boolean; notFinished: boolean; lastSaved: string };
+// BF_CLIENT_v828_FINISH_IMPORTED_FILE - readyToFinish: a file Boreal prepared for the client from documents they
+// gave a broker or lender. The client finishes it here; Continue opens the wizard pre-filled.
+export type SwitcherApp = { id: string; business: string; product: string; amount: string; stage: string; signatureNeeded: boolean; notFinished: boolean; lastSaved: string; readyToFinish?: boolean };
 
 const PRODUCT_LABELS: Record<string, string> = {
   EQUIPMENT_FINANCING: "Equipment financing", EQUIPMENT_FINANCE: "Equipment financing", EQUIPMENT: "Equipment financing",
@@ -39,6 +41,7 @@ export function toSwitcherApp(a: any): SwitcherApp {
     signatureNeeded: a?.signature_needed === true,
     notFinished,
     lastSaved: Number.isFinite(saved) ? new Date(saved).toLocaleDateString("en-CA", { month: "short", day: "numeric" }) : "",
+    readyToFinish: a?.ready_to_finish === true,
   };
 }
 
@@ -91,7 +94,7 @@ export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onClose 
                 <span style={{ minWidth: 0 }}>
                   <span className="cmpx-app__biz" style={{ display: "block" }}>{a.business}</span>
                   <span className="cmpx-app__sub" style={{ display: "block" }}>{[a.product, a.amount].filter(Boolean).join(" \u00b7 ")}</span>
-                  <span className="cmpx-app__sub" style={{ display: "block" }}>{["Not finished", a.lastSaved ? "last saved " + a.lastSaved : ""].filter(Boolean).join(" \u00b7 ")}</span>
+                  <span className="cmpx-app__sub" style={{ display: "block" }}>{a.readyToFinish ? "Ready for you to check and finish" : ["Not finished", a.lastSaved ? "last saved " + a.lastSaved : ""].filter(Boolean).join(" \u00b7 ")}</span>
                 </span>
                 <button type="button" className="cmpx-app__go" onClick={() => onContinue(a.id)}>Continue</button>
               </div>

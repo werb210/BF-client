@@ -903,6 +903,17 @@ export default function MiniPortalPage() {
   // from the server and open the step where it was left.
   const continueApplication = useCallback(async (id: string) => {
     setSwitcherOpen(false);
+    // BF_CLIENT_v828_FINISH_IMPORTED_FILE - a file Boreal prepared from documents the client gave a broker or lender:
+    // take it over (it has no saved wizard progress yet) and open the wizard pre-filled, as signing in does.
+    if (myApps.some((a: any) => String(a?.id) === id && a?.ready_to_finish === true)) {
+      try {
+        const { openPreparedApplication } = await import("@/components/cmp/openPrepared");
+        await openPreparedApplication(id, navigate);
+        return;
+      } catch (err) {
+        console.error("[cmp] could not open the prepared application", err);
+      }
+    }
     try {
       const { ClientAppAPI } = await import("@/api/clientApp");
       const { extractApplicationFromStatus, getResumeRoute } = await import("@/applications/resume");
@@ -914,7 +925,7 @@ export default function MiniPortalPage() {
       console.error("[cmp] could not resume the application in the wizard", err);
       navigate("/application/" + encodeURIComponent(id));
     }
-  }, [navigate, store]);
+  }, [navigate, store, myApps]);
   const liveOffers = offers.filter((o) => !isOfferExpired(o.expiresAt));
   const bestOfferAmount = (() => {
     const nums = liveOffers.map((o) => Number(String(o.amount ?? "").replace(/[^0-9.]/g, ""))).filter((n) => Number.isFinite(n) && n > 0);
