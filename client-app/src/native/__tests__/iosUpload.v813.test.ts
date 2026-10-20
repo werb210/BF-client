@@ -26,6 +26,13 @@ describe("Upload iOS build workflow", () => {
     expect(wf).toContain('echo "BUILD_NUMBER=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"');
     expect(wf).toContain('CURRENT_PROJECT_VERSION="$BUILD_NUMBER"');
   });
+  // BF_CLIENT_v833_CERT_CLEANUP - leftover cloud development certificates are deleted before each archive (certCleanup.v833 tests which).
+  it("deletes leftover cloud development certificates before the archive, never failing the run", () => {
+    const step = wf.indexOf("asc-cleanup-dev-certs");
+    expect(step).toBeGreaterThan(-1);
+    expect(step).toBeLessThan(wf.indexOf("xcodebuild archive"));
+    expect(wf.slice(wf.lastIndexOf("- name:", step), step)).toContain("continue-on-error: true");
+  });
   it("export settings upload to App Store Connect for the company team", () => {
     expect(plist).toMatch(/<key>method<\/key>\s*<string>app-store-connect<\/string>/);
     expect(plist).toMatch(/<key>destination<\/key>\s*<string>upload<\/string>/);
