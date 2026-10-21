@@ -212,6 +212,9 @@
 .cmpx-avatar--brand { background: #0B1F3A; }
 .cmpx-avatar--brand svg { width: 30px; height: 22px; }
 .cmpx-avatar--brand path { fill: #fff; }
+/* BF_CLIENT_v839_REMOVE_UNFINISHED */
+.cmpx-app__actions { margin-left: auto; flex: none; display: flex; gap: 8px; align-items: center; }
+.cmpx-app__remove { min-height: 40px; padding: 0 12px; border: 1px solid #C9D2DE; border-radius: 10px; background: #fff; color: #1B2A3D; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .cmpx-app__go { margin-left: auto; flex: none; min-height: 40px; padding: 0 14px; border: 0; border-radius: 10px; background: #0B1F3A; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 
 /* To-do on a phone: progress, then Documents and Forms, three of each until "Show all". */
