@@ -371,8 +371,14 @@ export function Step1_KYC(): JSX.Element {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
 
+  // BF_CLIENT_v840_STEP1_NO_LOOP - copy the readiness details in ONCE per readiness record. This ran on every app.kyc
+  // change, and its own update() made a new app.kyc, so once a returning client's prefill set readiness the page
+  // redrew forever: dropdowns would not open and the amount could not be typed (Mac Safari and Chrome, Oct 21).
+  const readinessAppliedRef = useRef<unknown>(null);
   useEffect(() => {
     if (!readiness) return;
+    if (readinessAppliedRef.current === readiness) return;
+    readinessAppliedRef.current = readiness;
     const data = readiness as Record<string, unknown>;
 
     // BF_CLIENT_BLOCK_v323_TEST2_FIX_PACK_v1 — token-based prefill now
@@ -431,12 +437,8 @@ export function Step1_KYC(): JSX.Element {
         phone: (data.phone as string) ?? app.applicant?.phone ?? "",
       },
     });
-  }, [
-    app.kyc,
-    app.readinessLeadId,
-    readiness,
-    update,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- BF_CLIENT_v840_STEP1_NO_LOOP: keyed on readiness only
+  }, [readiness, update]);
 
   useEffect(() => {
     trackEvent("application_started", { step: 1 });
