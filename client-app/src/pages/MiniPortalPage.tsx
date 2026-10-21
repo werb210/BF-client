@@ -139,6 +139,17 @@ export default function MiniPortalPage() {
     })();
     return () => { cancelled = true; };
   }, [applicationId]);
+  // BF_CLIENT_v839_REMOVE_UNFINISHED - Remove in the switcher: BF-Server marks the unfinished application (and the
+  // client's older unfinished ones) as removed from their list; nothing is deleted.
+  const removeUnfinished = useCallback(async (id: string) => {
+    if (typeof window !== "undefined" && !window.confirm("Remove this unfinished application from your list?")) return;
+    try {
+      await apiCall<any>(`/api/client/applications/${encodeURIComponent(id)}/remove-unfinished`, { method: "POST", body: {} });
+      setMyApps((list) => list.filter((a) => String(a?.id) !== id && !(a?.submitted_at == null && /^(client_direct|readiness_continuation)$/i.test(String(a?.source ?? "")))));
+    } catch {
+      if (typeof window !== "undefined") window.alert("That application could not be removed. Please try again.");
+    }
+  }, []);
   // BF_CLIENT_PHONE_TABS_v752 - the phone app opens /portal with no application chosen, so Home showed "Application -",
   // the stage read Received and To do was blank. Open the application that needs a signature, else the newest
   // submitted one, else the newest draft.
@@ -1545,6 +1556,7 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_v802_PHONE_UI - the application switcher and the booking sheet. */}
       {switcherOpen ? <AppSwitcherSheet apps={switcherApps} currentId={String(applicationId)} onClose={() => setSwitcherOpen(false)}
         onContinue={(id) => void continueApplication(id)}
+        onRemove={(id) => void removeUnfinished(id)}
         onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
       {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
         prefill={{ name: fullName, email: myEmail, phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}

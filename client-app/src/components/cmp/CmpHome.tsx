@@ -82,7 +82,8 @@ export function Sheet({ title, onClose, children, testId, panelClassName }: { ti
 }
 
 /** Item 12 - business name large, product and amount underneath. */
-export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onClose }: { apps: SwitcherApp[]; currentId: string; onPick: (id: string) => void; onContinue?: (id: string) => void; onClose: () => void }) {
+// BF_CLIENT_v839_REMOVE_UNFINISHED - onRemove: takes an unfinished application the client started off their list.
+export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onRemove, onClose }: { apps: SwitcherApp[]; currentId: string; onPick: (id: string) => void; onContinue?: (id: string) => void; onRemove?: (id: string) => void; onClose: () => void }) {
   return (
     <Sheet title="Your applications" onClose={onClose} testId="cmp-app-switcher">
       <ul className="cmpx-apps">
@@ -96,7 +97,12 @@ export function AppSwitcherSheet({ apps, currentId, onPick, onContinue, onClose 
                   <span className="cmpx-app__sub" style={{ display: "block" }}>{[a.product, a.amount].filter(Boolean).join(" \u00b7 ")}</span>
                   <span className="cmpx-app__sub" style={{ display: "block" }}>{a.readyToFinish ? "Ready for you to check and finish" : ["Not finished", a.lastSaved ? "last saved " + a.lastSaved : ""].filter(Boolean).join(" \u00b7 ")}</span>
                 </span>
-                <button type="button" className="cmpx-app__go" onClick={() => onContinue(a.id)}>Continue</button>
+                <span className="cmpx-app__actions">
+                  {onRemove && !a.readyToFinish ? (
+                    <button type="button" className="cmpx-app__remove" onClick={() => onRemove(a.id)} aria-label={"Remove " + a.business} data-testid="cmp-app-remove">Remove</button>
+                  ) : null}
+                  <button type="button" className="cmpx-app__go" onClick={() => onContinue(a.id)}>Continue</button>
+                </span>
               </div>
             ) : (
             <button type="button" className="cmpx-app" onClick={() => onPick(a.id)} aria-current={a.id === currentId ? "true" : undefined}>
