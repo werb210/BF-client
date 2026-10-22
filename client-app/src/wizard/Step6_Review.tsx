@@ -60,6 +60,7 @@ import { buildSubmitBody } from "@/lib/payload/buildSubmitBody";
 import { normalizeForSubmit } from "./submitNormalize";
 import { savePendingSubmit, clearPendingSubmit, subscribeRetry } from "../state/pendingSubmit";
 import { sendSubmitAttempt } from "../utils/submitAttempt"; // BF_CLIENT_BLOCK_v872
+import { sendFraudSignals } from "@/fraud/signals"; // BF_CLIENT_v846_FRAUD
 
 // BF_CLIENT_BLOCK_v721_TC_CLAUSES_v1 - full Terms & Conditions text shown in popups.
 // (Legal text supplied by Boreal; review with counsel. Province = Alberta placeholder.)
@@ -478,6 +479,7 @@ export function Step6_Review(): JSX.Element {
       });
       submitBody.normalized = { ...submitBody.normalized, ...normalizedPayload };
       let submissionResponse: any;
+      let fraudToken = app.applicationToken; // BF_CLIENT_v846_FRAUD - the token the submit really used
       try {
         submissionResponse = await ClientAppAPI.submit(app.applicationToken!, submitBody);
       } catch (submitErr: any) {
@@ -507,11 +509,13 @@ export function Step6_Review(): JSX.Element {
           /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */
         }
         update({ applicationToken: fresh, applicationId: fresh });
+        fraudToken = fresh; // BF_CLIENT_v846_FRAUD
         submissionResponse = await ClientAppAPI.submit(fresh, submitBody);
       }
       try { localStorage.removeItem("creditSessionToken"); } catch { /* BF_CLIENT_BLOCK_v865_STORAGE_SAFE */ }
       clearPendingSubmit(); // BF_LOCAL_FIRST_v35
       sendSubmitAttempt(app, "completed"); // BF_CLIENT_BLOCK_v872
+      sendFraudSignals({ ...app, applicationToken: fraudToken }); // BF_CLIENT_v846_FRAUD - aggregate signals only, never blocks
       // BF_CLIENT_GA4_GENERATE_LEAD_v1 - fire the real lead on true submit success
       // (the old ConfirmationPage conversion was dead code - never routed).
       try {
