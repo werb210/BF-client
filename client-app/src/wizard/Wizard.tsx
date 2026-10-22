@@ -15,6 +15,7 @@ import Step6 from "@/wizard/Step6_Review";
 import { firstIncompleteStepBefore } from "@/wizard/stepValidation";
 import { ClientAppAPI } from "@/api/clientApp"; // BF_CLIENT_STEP_PERSIST_v183
 import { trackEvent } from "@/utils/analytics";
+import { noteStep, startFraudSignals } from "@/fraud/signals"; // BF_CLIENT_v846_FRAUD
 
 const STEP_COMPONENTS = [Step1, Step2, Step3, Step4, Step5, Step6];
 const STEP_PATTERN = /\/apply\/step-(\d+)\b/i;
@@ -93,6 +94,11 @@ export default function Wizard() {
     const names = ["Financial Profile", "Product Category", "Business Details", "Applicant Information", "Documents", "Terms & Signature"];
     trackEvent("wizard_step", { step_number: safeStep, step_name: names[safeStep - 1] ?? `Step ${safeStep}` });
   }, [safeStep]);
+
+  // BF_CLIENT_v846_FRAUD - counts for Boreal's fraud checks (time taken, fields filled, NAMES of sensitive fields
+  // pasted into). No keystrokes or values; sent once after submit. See src/fraud/signals.ts.
+  useEffect(() => startFraudSignals(), []);
+  useEffect(() => { noteStep(safeStep); }, [safeStep]);
 
   const StepComponent = STEP_COMPONENTS[safeStep - 1] ?? Step1;
 
