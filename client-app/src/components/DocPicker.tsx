@@ -17,6 +17,9 @@ import "@/components/cmp/cmp.css"; // BF_CLIENT_v805_PHONE_FIXES - .dp-row / .dp
 type DocItem = { document_type: string; label: string };
 import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
 type NeededResponse = { stillNeeded: DocItem[]; rejected: DocItem[] };
+// BF_CLIENT_v841_OTHER_DOC - a row for documents we did not ask for but the client thinks help.
+// "other" is already an allowed client upload type on the server (no OCR), the same one Step 5 uses.
+export const OTHER_DOC_TYPE = "other";
 
 interface Props {
   applicationId: string;
@@ -148,6 +151,12 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
         return;
       }
       onUploaded?.();
+      // BF_CLIENT_v841_OTHER_DOC - an extra document never clears a list; say it arrived and stay open.
+      if (documentType === OTHER_DOC_TYPE && !aimedAt) {
+        setNotice(files.length === 1 ? "Thanks — your document was added. Your advisor will see it." : `Thanks — ${files.length} documents were added. Your advisor will see them.`);
+        setUploading(null);
+        return;
+      }
       // BF_CLIENT_DIRECT_UPLOAD_v730 - opened for one item, the list held only that item, so emptying it
       // showed "You're all caught up" while other items were still outstanding. Close instead.
       if (aimedAt) { setUploading(null); onClose(); return; }
@@ -226,6 +235,29 @@ export default function DocPicker({ applicationId, onClose, onUploaded, document
                 </span>
               </div>
             ))}
+          </section>
+        )}
+
+        {/* BF_CLIENT_v841_OTHER_DOC - always offered (not when opened for one specific item). */}
+        {!aimedAt && !loading && (
+          <section data-testid="docpicker-other" style={{ marginTop: 20 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: "12px 0 4px" }}>Anything else?</h3>
+            <div className="dp-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f1f5f9" }}>
+              <span style={{ fontSize: 14 }}>
+                Other document (optional)
+                <span style={{ display: "block", fontSize: 13, color: "#475569" }}>Anything you think will help, even if we didn't ask for it.</span>
+              </span>
+              <span className="dp-actions" style={{ display: "flex", gap: 8 }}>
+                {Capacitor.isNativePlatform() && (
+                  <button type="button" onClick={() => void scanAndUpload(OTHER_DOC_TYPE, "Other document")} disabled={uploading === OTHER_DOC_TYPE} data-testid="docpicker-other-scan" style={fileBtnPrimary}>
+                    Scan to PDF
+                  </button>
+                )}
+                <button type="button" onClick={() => pickAndUpload(OTHER_DOC_TYPE)} disabled={uploading === OTHER_DOC_TYPE} data-testid="docpicker-other-upload" style={fileBtnPrimary}>
+                  {uploading === OTHER_DOC_TYPE ? "Uploading…" : Capacitor.isNativePlatform() ? "Choose file" : "Add file"}
+                </button>
+              </span>
+            </div>
           </section>
         )}
       </div>
