@@ -44,6 +44,7 @@ import { fetchCreditPrefill } from "../services/creditPrefill";
 import { getAttribution } from "../lib/attribution";
 import { getClarityPlaybackUrl } from "../lib/clarityPlayback"; // BF_CLIENT_CLARITY_PLAYBACK_v170
 import { fetchReadinessPrefill } from "@/api/readiness";
+import { isPlaceholderName, prefillName } from "./applicantName"; // BF_CLIENT_v851_APPLICANT_NAME
 import { ENV } from "@/env"; // BF_CLIENT_REPORT_BLOCK_v154
 
 const MatchCategories = [
@@ -224,6 +225,7 @@ export function fillEmpty(current: Record<string, unknown> | undefined, prior: u
   for (const [k, v] of Object.entries(prior as Record<string, unknown>)) {
     const cur = out[k];
     const empty = cur === undefined || cur === null || (typeof cur === "string" && cur.trim() === "");
+    if (/name$/i.test(k) && isPlaceholderName(v)) continue; // BF_CLIENT_v851_APPLICANT_NAME - never the OTP placeholder
     if (empty && v !== null && v !== undefined && v !== "") out[k] = v;
   }
   return out;
@@ -432,7 +434,7 @@ export function Step1_KYC(): JSX.Element {
       },
       applicant: {
         ...app.applicant,
-        fullName: (data.fullName as string) ?? app.applicant?.fullName ?? "",
+        fullName: (data.fullName == null ? undefined : prefillName(data.fullName)) ?? app.applicant?.fullName ?? "", // BF_CLIENT_v851_APPLICANT_NAME
         email: (data.email as string) ?? app.applicant?.email ?? "",
         phone: (data.phone as string) ?? app.applicant?.phone ?? "",
       },
@@ -501,7 +503,8 @@ export function Step1_KYC(): JSX.Element {
         setReadiness(p as any);
 
         // Hydrate the wizard's KYC slice with the V1 14-field response.
-        const fullName = String(p.fullName ?? "").trim();
+        // BF_CLIENT_v851_APPLICANT_NAME - never the "Unknown (application started)" placeholder.
+        const fullName = prefillName(p.fullName) ?? "";
         const [firstName = "", ...lastParts] = fullName.split(/\s+/);
         const lastName = lastParts.join(" ");
 
@@ -648,12 +651,12 @@ export function Step1_KYC(): JSX.Element {
           fixedAssets:
             prefillData.availableCollateral ?? app.kyc.fixedAssets ?? "",
           companyName: prefillData.companyName ?? app.kyc.companyName ?? "",
-          fullName: prefillData.fullName ?? app.kyc.fullName ?? "",
+          fullName: prefillName(prefillData.fullName) ?? app.kyc.fullName ?? "", // BF_CLIENT_v851_APPLICANT_NAME
           email: prefillData.email ?? app.kyc.email ?? "",
           phone: prefillData.phone ?? app.kyc.phone ?? "",
         };
 
-        const fullName = (prefillData.fullName || "").trim();
+        const fullName = prefillName(prefillData.fullName) ?? ""; // BF_CLIENT_v851_APPLICANT_NAME
         const [firstName = "", ...lastNameParts] = fullName.split(/\s+/);
         const lastName = lastNameParts.join(" ");
 
@@ -667,7 +670,7 @@ export function Step1_KYC(): JSX.Element {
           },
           applicant: {
             ...app.applicant,
-            fullName: prefillData.fullName ?? app.applicant.fullName ?? "",
+            fullName: prefillName(prefillData.fullName) ?? app.applicant.fullName ?? "", // BF_CLIENT_v851_APPLICANT_NAME
             firstName: firstName || app.applicant.firstName || "",
             lastName: lastName || app.applicant.lastName || "",
             email: prefillData.email ?? app.applicant.email ?? "",

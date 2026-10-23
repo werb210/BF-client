@@ -41,6 +41,7 @@ import { enforceV1StepSchema } from "../schemas/v1WizardSchema";
 import { shouldAutoAdvance } from "../utils/autoadvance";
 import { persistApplicationStep } from "./saveStepProgress";
 import { useReadiness } from "../state/readinessStore";
+import { fillEmptyText, fillName, prefillName, splitName } from "./applicantName"; // BF_CLIENT_v851_APPLICANT_NAME
 import { useAuth } from "@/auth/useAuth";
 import { CREDIT_SCORE_BANDS } from "./creditScoreBands";
 import { isAccordLOCApp } from "./accordRisk";
@@ -525,18 +526,25 @@ export function Step4_Applicant() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // BF_CLIENT_v851_APPLICANT_NAME - the readiness prefill used to OVERWRITE what the applicant typed, on every change, with
+  // the CRM contact's name - "Unknown (application started)" for a new applicant. It now fills only EMPTY
+  // fields, once per prefill, and never uses the placeholder. A typed first or last name keeps all name fields.
+  const readinessFilledRef = useRef<unknown>(null);
   useEffect(() => {
     if (!readiness) return;
+    if (readinessFilledRef.current === readiness) return;
+    readinessFilledRef.current = readiness;
 
-    const [firstName = "", ...rest] = (readiness.fullName || "").trim().split(" ");
-    const lastName = rest.join(" ");
+    const readyName = prefillName(readiness.fullName);
+    const typedName = Boolean(prefillName(values.firstName) || prefillName(values.lastName));
+    const { first: firstName, last: lastName } = splitName(typedName ? undefined : readyName);
     const nextApplicant = {
       ...values,
-      fullName: readiness.fullName || values.fullName,
-      firstName: firstName || values.firstName,
-      lastName: lastName || values.lastName,
-      email: readiness.email || values.email,
-      phone: readiness.phone || values.phone,
+      fullName: fillName(values.fullName, typedName ? undefined : readyName),
+      firstName: fillName(values.firstName, firstName),
+      lastName: fillName(values.lastName, lastName),
+      email: fillEmptyText(values.email, readiness.email),
+      phone: fillEmptyText(values.phone, readiness.phone),
     };
 
     const unchanged =
@@ -552,22 +560,26 @@ export function Step4_Applicant() {
   }, [readiness, update, values]);
 
 
+  // BF_CLIENT_v851_APPLICANT_NAME - same rule for the website's credit prefill: empty fields only, once, never the placeholder.
+  const creditPrefillFilledRef = useRef(false);
   useEffect(() => {
+    if (creditPrefillFilledRef.current) return;
     const stored = localStorage.getItem("creditPrefill");
     if (!stored) return;
+    creditPrefillFilledRef.current = true;
 
     try {
       const data = JSON.parse(stored) as Record<string, string>;
-      const contactName = (data.fullName || data.contactName || "").trim();
-      const [prefillFirstName = "", ...prefillRest] = contactName.split(/\s+/);
-      const prefillLastName = prefillRest.join(" ");
+      const contactName = prefillName(data.fullName) ?? prefillName(data.contactName);
+      const typedName = Boolean(prefillName(values.firstName) || prefillName(values.lastName));
+      const { first: prefillFirstName, last: prefillLastName } = splitName(typedName ? undefined : contactName);
       const nextApplicant = {
         ...values,
-        fullName: values.fullName || contactName,
-        firstName: values.firstName || prefillFirstName,
-        lastName: values.lastName || prefillLastName,
-        email: values.email || data.email || "",
-        phone: values.phone || data.phone || "",
+        fullName: fillName(values.fullName, typedName ? undefined : contactName),
+        firstName: fillName(values.firstName, prefillFirstName),
+        lastName: fillName(values.lastName, prefillLastName),
+        email: fillEmptyText(values.email, data.email),
+        phone: fillEmptyText(values.phone, data.phone),
       };
 
       const changed =
