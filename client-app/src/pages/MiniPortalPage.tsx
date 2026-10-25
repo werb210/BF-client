@@ -48,6 +48,7 @@ import CmpMore, { CallControl, type MoreForm } from "../components/cmp/CmpMore";
 import CmpSettings, { type EditableDetails } from "../components/cmp/CmpSettings";
 import ReportProblemSheet from "../components/cmp/ReportProblemSheet"; // BF_CLIENT_v807_REPORT
 import BookCallSheet from "../components/cmp/BookCallSheet";
+import LoanCalculatorSheet from "../components/cmp/loanCalculator/LoanCalculatorSheet"; // BF_CLIENT_v852_CALC_QBO
 import { STAGE_STEPS, FUNDED_STEP, isFundedState, loadAdvisor, type Advisor } from "../components/cmp/cmpData";
 import { phoneFromToken } from "@/native/deviceSignIn";
 import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
@@ -200,6 +201,7 @@ export default function MiniPortalPage() {
   const [advisor, setAdvisor] = useState<Advisor | null>(null);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false); // BF_CLIENT_v852_CALC_QBO
   const [chatTo, setChatTo] = useState<"maya" | "advisor" | null>(null);
   useEffect(() => {
     let alive = true;
@@ -1255,7 +1257,7 @@ export default function MiniPortalPage() {
         {isPhone ? (
           <CmpMore forms={moreForms} docsStatus={docsChecked ? (hasOutstandingDocs ? "needed" : "done") : null}
             onForm={(id) => onChip(id)} onUpload={() => { setPickerDoc(null); setShowDocPicker(true); }}
-            onNewApplication={() => onChip("new")} />
+            onNewApplication={() => onChip("new")} onCalculator={() => setCalcOpen(true)} />
         ) : (
         <aside className="mp-actions" data-cmp-tab="more">
             {/* BF_CLIENT_BLOCK_53_v1 -- 7-pill 2-col grid; no per-doc cards. */}
@@ -1274,6 +1276,10 @@ export default function MiniPortalPage() {
               {/* BF_CLIENT_ASK_MAYA_v745 - Maya knows this client's applications, documents and details. */}
               <button type="button" className="mp-chip mp-chip--action" data-testid="ask-maya" onClick={() => window.dispatchEvent(new CustomEvent("maya:open", { detail: { mode: "chat" } }))}>
                 Ask Maya
+              </button>
+              {/* BF_CLIENT_v852_CALC_QBO */}
+              <button type="button" className="mp-chip mp-chip--action" data-testid="open-loan-calculator" onClick={() => setCalcOpen(true)}>
+                Loan calculator
               </button>
               {/* BF_CLIENT_BLOCK_v_HIDE_SIGNING_REASON_v1 — never surface the raw
                   signing-readiness status/reason (e.g. "lender_not_finalized") to the
@@ -1560,6 +1566,9 @@ export default function MiniPortalPage() {
         onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
       {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
         prefill={{ name: fullName, email: myEmail, phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}
+      {/* BF_CLIENT_v852_CALC_QBO - the loan calculator, from More (phone) or the actions panel */}
+      {calcOpen ? <LoanCalculatorSheet requestedAmount={Number(currentApp?.requested_amount ?? 0) > 0 ? Number(currentApp?.requested_amount) : null}
+        title={businessName} onClose={() => setCalcOpen(false)} /> : null}
       {reportOpen ? <ReportProblemSheet applicationId={String(applicationId ?? "")} contact={{ name: fullName, phone: myPhone, email: myEmail }} onClose={() => setReportOpen(false)} /> : null}
       {/* BF_CLIENT_PHONE_TABS_v752 - outside the tab sections, so it opens from Settings (a dialog inside a hidden tab never shows). */}
       {deleteStep > 0 && (

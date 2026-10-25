@@ -64,6 +64,7 @@ export default function CmpMore(p: {
   onForm: (id: string) => void;
   onUpload: () => void;
   onNewApplication: () => void;
+  onCalculator?: () => void; // BF_CLIENT_v852_CALC_QBO
 }) {
   return (
     <section className="cmp-phone-only" data-cmp-tab="more" data-testid="cmp-more">
@@ -86,6 +87,15 @@ export default function CmpMore(p: {
         </div>
       ) : null}
       {/* BF_CLIENT_v807_MORE - Call, Book a call and Ask Maya are on Home (advisor card) and in Chat; not repeated here. */}
+      {/* BF_CLIENT_v852_CALC_QBO - estimate payments and download the schedule */}
+      {p.onCalculator ? (
+        <div className="cmpx-group">
+          <h2 className="cmpx-group__title">Tools</h2>
+          <div className="cmpx-list">
+            <Row icon="calc" title="Loan calculator" desc="Estimate payments and download the schedule." onClick={p.onCalculator} testId="cmp-more-calculator" />
+          </div>
+        </div>
+      ) : null}
       <div className="cmpx-group">
         <h2 className="cmpx-group__title">Applications</h2>
         <div className="cmpx-list">
