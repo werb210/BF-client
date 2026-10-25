@@ -21,6 +21,8 @@ const P: Record<string, JSX.Element> = {
   sparkle: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />,
   send: <><path d="M5 12h13" /><path d="m12 5 7 7-7 7" /></>,
   clip: <path d="m21 11.5-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />,
+  // BF_CLIENT_v852_CALC_QBO
+  calc: <><rect x="5" y="2.5" width="14" height="19" rx="2.5" /><path d="M8 7h8M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15h.01M8.5 18.5h.01M12 18.5h.01M15.5 18.5h.01" /></>,
   chevron: <path d="m9 6 6 6-6 6" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
   check: <path d="M4 12.5 9.5 18 20 6.5" />,
