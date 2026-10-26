@@ -52,7 +52,7 @@ async function render(app: ApplicationData): Promise<void> {
 }
 
 function hooksErrors(): unknown[] {
-  return consoleError.mock.calls.filter((args) => /hooks/i.test(args.map(String).join(" ")));
+  return consoleError.mock.calls.filter((args: unknown[]) => /hooks/i.test(args.map(String).join(" ")));
 }
 
 beforeEach(() => {
