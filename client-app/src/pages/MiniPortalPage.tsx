@@ -33,6 +33,7 @@ import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
 import { ensureMicrophonePermission } from "@/lib/microphone"; // BF_CLIENT_v789_MIC_PERMISSION
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
+import { toSignSession, signingTodo, signingNotice, signingModalText, type SignSession } from "@/lib/signingText"; // BF_CLIENT_v858_PARTNER_SIGNING
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
 import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UPDATE_v723
@@ -455,11 +456,11 @@ export default function MiniPortalPage() {
   // BF_CLIENT_BLOCK_v_ACCOUNT_DELETE_v1 — 0=closed, 1=first warning, 2=second warning, 3=deleting
   const [deleteStep, setDeleteStep] = useState(0);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
-  const [signSession, setSignSession] = useState<{ status: string; url?: string; reason?: string } | null>(null);
+  const [signSession, setSignSession] = useState<SignSession | null>(null); // BF_CLIENT_v858_PARTNER_SIGNING - carries who is signing
   // BF_CLIENT_TODO_ACTIONS_v637 - signing is a to-do while the signing session is ready.
   const todoExtras = useMemo(
-    () => (signSession?.status === "ready" ? [{ key: "sign", kind: "action" as const, label: "Sign your application documents", urgent: false, action: "sign" }] : []),
-    [signSession?.status],
+    () => signingTodo(signSession), // BF_CLIENT_v858_PARTNER_SIGNING
+    [signSession],
   );
   const [signLoading, setSignLoading] = useState(false);
   const fetchSigningSession = useCallback(async () => {
@@ -467,8 +468,10 @@ export default function MiniPortalPage() {
     setSignLoading(true);
     try {
       const r = await apiCall<any>(`/api/client/signing-session?applicationId=${encodeURIComponent(applicationId)}`);
-      setSignSession({ status: String(r?.status ?? "error"), url: typeof r?.url === "string" ? r.url : undefined, reason: typeof r?.reason === "string" ? r.reason : undefined });
-    } catch {
+      setSignSession(toSignSession(r)); // BF_CLIENT_v858_PARTNER_SIGNING
+    } catch (e) {
+      // BF_CLIENT_v858_PARTNER_SIGNING - 403: the signed-in person is on the file but is not one of its signers.
+      if (e instanceof Error && ((e as Error & { status?: number }).status === 403 || /\b403\b/.test(e.message))) { setSignSession({ status: "refused" }); return; }
       // BF_CLIENT_BLOCK_v_CMP_POLL_CALM_v1 — a transient /signing-session failure
       // (e.g. a rate-limit blip) must NOT hide the Sign button. Keep the last
       // known state if we already had one; only show error if we never loaded.
@@ -1039,7 +1042,9 @@ export default function MiniPortalPage() {
             style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#fef9c3", border: "1px solid #facc15", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#713f12" }}
           >
             <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 600 }}>
-              Your application {fmtApp(a)} is ready for your signature.
+              {a?.viewer_role === "partner" /* BF_CLIENT_v858_PARTNER_SIGNING */
+                ? <>The application {fmtApp(a)} needs your signature as an owner.</>
+                : <>Your application {fmtApp(a)} is ready for your signature.</>}
             </div>
             <button
               type="button"
@@ -1050,6 +1055,12 @@ export default function MiniPortalPage() {
             </button>
           </div>
         ))}
+      {/* BF_CLIENT_v858_PARTNER_SIGNING - who this person is waiting for, or that they have signed */}
+      {signingNotice(signSession) ? (
+        <div data-testid="cmp-sign-notice" style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#0f172a", fontSize: 14, fontWeight: 600 }}>
+          {signingNotice(signSession)}
+        </div>
+      ) : null}
       {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
       {!isPhone && myApps.length > 1 && (
         <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -1534,6 +1545,9 @@ export default function MiniPortalPage() {
           <div style={{ background: "#fff", color: "#0b1320", borderRadius: 12, maxWidth: 900, width: "100%", height: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 10px 40px rgba(0,0,0,0.4)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 18, fontWeight: 600 }}>Sign Your Documents</div>
+              {signSession?.status === "ready" && signSession.ownerLink ? ( /* BF_CLIENT_v858_PARTNER_SIGNING */
+                <a href={signSession.ownerLink} target="_blank" rel="noopener noreferrer" data-testid="cmp-sign-own-link" style={{ fontSize: 14, fontWeight: 600, color: "#1e3a8a", marginLeft: "auto", marginRight: 16 }}>Open in a new tab</a>
+              ) : null}
               <button type="button" onClick={() => { setShowSign(false); void markSigningComplete(); }} aria-label="Close" style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}>×</button>
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
@@ -1541,10 +1555,9 @@ export default function MiniPortalPage() {
               {signSession?.status === "ready" && signSession.url && (
                 <iframe title="Sign documents" src={signSession.url} style={{ border: 0, width: "100%", height: "100%" }} />
               )}
-              {signSession?.status === "signed" && <div style={{ padding: 24 }}>✓ Your documents are signed. Thank you!</div>}
-              {/* BF_CLIENT_BLOCK_PNW_ORDER_GATE_v1 - PNW must be signed before app signing */}
-              {signSession?.status === "not_ready" && signSession?.reason === "pnw_not_signed" && <div style={{ padding: 24 }}>Please sign your Personal Net worth Statement</div>}
-              {signSession?.status === "not_ready" && signSession?.reason !== "pnw_not_signed" && <div style={{ padding: 24 }}>Your documents aren’t ready to sign yet — we’ll text you the moment they are.</div>}
+              {/* BF_CLIENT_v858_PARTNER_SIGNING - signed / waiting for an earlier owner / not ready / not a signer, for whoever is signed in
+                  (BF_CLIENT_BLOCK_PNW_ORDER_GATE_v1: the PNW statement is still signed first) */}
+              {signingModalText(signSession) && signSession?.status !== "stub" && signSession?.status !== "error" ? <div style={{ padding: 24 }} data-testid="cmp-sign-text">{signingModalText(signSession)}</div> : null}
               {signSession?.status === "stub" && <div style={{ padding: 24 }}>Signing isn’t enabled in this environment yet.</div>}
               {signSession?.status === "error" && <div style={{ padding: 24 }}>We couldn’t load your signing session. Please try again shortly.</div>}
             </div>
