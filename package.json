@@ -6,8 +6,10 @@
     "shared-contract"
   ],
   "overrides": {
-    "esbuild": "0.18.20",
-    "serialize-javascript": "6.0.1"
+    "serialize-javascript": "^7.1.3",
+    "xcode": {
+      "uuid": "^11.1.1"
+    }
   },
   "packageManager": "npm@10",
   "engines": {
@@ -33,9 +35,10 @@
   },
   "type": "module",
   "devDependencies": {
-    "@testing-library/react": "^14.3.1",
     "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.5.2",
     "jsdom": "^24.0.0"
-  }
+  },
+  "x-v859": "BF_CLIENT_v859_DEP_SECURITY"
 }

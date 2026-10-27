@@ -7,7 +7,7 @@ const modulePath = "../../../../scripts/asc-cleanup-dev-certs.mjs";
 
 describe("cloud certificate cleanup", () => {
   it("deletes only leftover API development certificates", async () => {
-    const { isLeftoverApiDevCert }: any = await import(/* @vite-ignore */ modulePath);
+    const { isLeftoverApiDevCert }: any = await import(/* @vite-ignore */ new URL(modulePath, import.meta.url).href);
     const now = Date.parse("2026-10-20T18:00:00Z");
     const cert = (certificateType: string, displayName: string, expirationDate = "2027-06-01T00:00:00Z") =>
       ({ attributes: { certificateType, name: displayName, displayName, expirationDate } });
