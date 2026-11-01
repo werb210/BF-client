@@ -1,3 +1,4 @@
+import { STEP5_STACK_CSS } from "./step5Stack"; // BF_CLIENT_v863_STEP5_STACK
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 // BF_CLIENT_BLOCK_v106_DOC_REQUIREMENTS_UNION_v1
 import { fetchRequiredDocsUnion } from "../api/lenderProducts";
@@ -201,6 +202,7 @@ const RequirementRow = memo(function RequirementRow({
 function OptionSeparator() {
   return (
     <div
+      className="step5-or"
       aria-hidden
       style={{
         display: "flex",
@@ -965,37 +967,41 @@ function Step5DocumentsBody() {
             {/* BF_CLIENT_BLOCK_v470_STEP5_SIDE_BY_SIDE - three options in one row. Supply
                 later goes straight to Step 6; the accountant option opens its form
                 and, once sent, also goes straight to Step 6. */}
-            <div data-testid="step5-options-row" style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", justifyContent: "center", gap: 12, margin: `${tokens.spacing.md} 0` }}>
-              <Button
-                variant="secondary"
-                data-testid="step5-choose-now"
-                onClick={() => setDocChoice("now")}
-                disabled={isLoading}
-                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
-              >
-                Upload my documents now
-              </Button>
-              <OptionSeparator />
-              <Button
-                variant="secondary"
-                data-testid="step5-choose-later"
-                onClick={() => { void uploadLater(); }}
-                disabled={isLoading || hasUploadsInFlight}
-                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
-              >
-                I will supply all required documents at a later time
-              </Button>
-              <OptionSeparator />
-              {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
-              <Button
-                variant="secondary"
-                data-testid="step5-accountant-btn"
-                onClick={() => setAccountantOpen(true)}
-                disabled={isLoading}
-                style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
-              >
-                Have my accountant upload the documents
-              </Button>
+            {/* BF_CLIENT_v863_STEP5_STACK - phones and the demo phone frame: one column, full-width buttons, OR centred between. */}
+            <style>{STEP5_STACK_CSS}</style>
+            <div className="step5-options-wrap">
+              <div className="step5-options-row" data-testid="step5-options-row" style={{ display: "flex", flexWrap: "wrap", alignItems: "stretch", justifyContent: "center", gap: 12, margin: `${tokens.spacing.md} 0` }}>
+                <Button
+                  variant="secondary"
+                  data-testid="step5-choose-now"
+                  onClick={() => setDocChoice("now")}
+                  disabled={isLoading}
+                  style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                >
+                  Upload my documents now
+                </Button>
+                <OptionSeparator />
+                <Button
+                  variant="secondary"
+                  data-testid="step5-choose-later"
+                  onClick={() => { void uploadLater(); }}
+                  disabled={isLoading || hasUploadsInFlight}
+                  style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                >
+                  I will supply all required documents at a later time
+                </Button>
+                <OptionSeparator />
+                {/* BF_CLIENT_STEP5_ACCOUNTANT_v1 */}
+                <Button
+                  variant="secondary"
+                  data-testid="step5-accountant-btn"
+                  onClick={() => setAccountantOpen(true)}
+                  disabled={isLoading}
+                  style={{ flex: "1 1 220px", maxWidth: "320px", minHeight: "64px", fontWeight: 600, border: `2px solid ${tokens.colors.primary}` }}
+                >
+                  Have my accountant upload the documents
+                </Button>
+              </div>
             </div>
           </>
         )}
