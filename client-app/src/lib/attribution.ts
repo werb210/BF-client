@@ -16,6 +16,7 @@ export type Attribution = {
   li_fat_id?: string; // BF_CLIENT_LI_FAT_ID_v1
   sessionId?: string; // BF_CLIENT_VISITOR_JOURNEY_v1 - stitches the website journey to this application
   ref?: string; // BF_CLIENT_REFERRAL_REF_v1 - referral code from a referrer landing page (?ref=)
+  vq?: string; // BF_CLIENT_v867_BROKER_TOOLS_VENDORS - the vendor's quote this customer came from (?vq=, with ?ref=<vendor code>)
 };
 
 export function captureAttribution(): void {
@@ -55,6 +56,9 @@ export function captureAttribution(): void {
     // metadata.attribution.ref and credits the referrer at application-accepted.
     const ref = (p.get("ref") || "").trim();
     if (ref) a.ref = ref;
+    // BF_CLIENT_v867_BROKER_TOOLS_VENDORS - a vendor's apply link also names the quote the customer was given.
+    const vq = (p.get("vq") || "").trim();
+    if (/^[0-9a-f-]{36}$/i.test(vq)) a.vq = vq;
     try { if (document.referrer) a.referrer = document.referrer; } catch { /* ignore */ }
     a.landing_page = window.location.pathname + window.location.search;
     // BF_CLIENT_ATTRIBUTION_MERGE_v1 - keep first-touch marketing source, but always fill in a
