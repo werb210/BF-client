@@ -36,6 +36,7 @@ import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 import { toSignSession, signingTodo, signingNotice, signingModalText, type SignSession } from "@/lib/signingText"; // BF_CLIENT_v858_PARTNER_SIGNING
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
+import FundingConditionsCard from "../components/cmp/FundingConditionsCard"; // BF_CLIENT_v865_BROKER_TOOLS
 import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UPDATE_v723
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
 import FeatureTour from "../components/onboarding/FeatureTour"; // BF_CLIENT_FEATURE_TOUR_v720
@@ -1135,6 +1136,7 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_v802_PHONE_UI - the to-do list is on Home (To do is no longer a tab). */}
       <div data-cmp-tab="home">
       {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} grouped={isPhone} /> : null}
+      {applicationId ? <FundingConditionsCard applicationId={applicationId} /> : null}{/* BF_CLIENT_v865_BROKER_TOOLS */}
       </div>
       {isPhone ? <CmpOffersCard count={liveOffers.length} bestAmount={bestOfferAmount} onOpen={() => setOffersOpen(true)} /> : null}
       {isPhone && funded ? <CmpReferCard shareUrl="https://www.boreal.financial/?utm_source=client_app&utm_medium=referral&utm_campaign=refer_a_business" /> : null}
