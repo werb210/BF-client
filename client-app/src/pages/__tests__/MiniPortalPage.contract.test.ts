@@ -42,12 +42,30 @@ describe("BF_MINI_PORTAL_FIX_v48 MiniPortalPage offers", () => {
   it("shows the snake_case fields normalised on the offer card", async () => {
     setApi({ "/api/client/offers": { items: [SERVER_OFFER] } });
     const dialog = await openOffers();
-    expect(within(dialog).getByText("$75000")).toBeTruthy();
+    expect(within(dialog).getByText("$75,000")).toBeTruthy(); // BF_CLIENT_v881_OFFER_DISPLAY
     expect(within(dialog).getByText("1.32 factor")).toBeTruthy();
     expect(within(dialog).getByText("3 years | Term")).toBeTruthy();
     expect(within(dialog).getByText("Bi-weekly payment")).toBeTruthy();
     expect(within(dialog).getByText("Recommended")).toBeTruthy();
     expect(within(dialog).getByText(/^Expires in \d+ days, \d+ hours$/)).toBeTruthy();
+  });
+
+  // BF_CLIENT_v881_OFFER_DISPLAY
+  it("a term with its unit reads as written, and the amount gets separators", async () => {
+    setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, term: "60 months", amount: "85000.00" }] } });
+    const dialog = await openOffers();
+    expect(within(dialog).getByText("$85,000")).toBeTruthy();
+    expect(within(dialog).getByText("60 months | Term")).toBeTruthy();
+    expect(within(dialog).queryByText(/months years/)).toBeNull();
+  });
+
+  it("an offer without a term sheet hides the term-sheet buttons and says what happens next", async () => {
+    setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, document_url: null }] } });
+    const dialog = await openOffers();
+    expect(within(dialog).queryByTestId("view-pdf-link")).toBeNull();
+    expect(within(dialog).queryByText("Download term sheet")).toBeNull();
+    expect(within(dialog).getByText("Your advisor will send the term sheet to sign once you accept.")).toBeTruthy();
+    expect(within(dialog).getByTestId("accept-offer-btn")).toBeTruthy();
   });
 
   it("falls back to placeholders when a row has no lender name or amount", async () => {
