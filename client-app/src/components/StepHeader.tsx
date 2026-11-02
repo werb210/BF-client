@@ -41,7 +41,7 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
           <Icon name="chat" size={20} />
         </button>
         <div data-testid="step-header-phone" style={{ paddingRight: 96 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: tokens.colors.textSecondary, letterSpacing: 0.2 }}>
+          <div style={{ fontSize: "var(--bf-text-label)", fontWeight: 700, color: tokens.colors.textSecondary, letterSpacing: 0.2 }}>
             Step {step} of {totalSteps} &middot; {STEP_LABELS[step - 1] ?? ""}
           </div>
           <div role="progressbar" aria-valuemin={0} aria-valuemax={totalSteps} aria-valuenow={step} aria-label={`Step ${step} of ${totalSteps}`}
@@ -49,7 +49,7 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
             <div style={{ height: "100%", width: `${phonePct}%`, background: "#BF9B49", transition: "width .3s ease" }} />
           </div>
           <h1 style={{ ...components.form.title, fontSize: 22, marginBottom: subtitle ? 4 : 0 }}>{title}</h1>
-          {subtitle && <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 1.45 }}>{subtitle}</p>}
+          {subtitle && <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: "var(--bf-text-body-sm)", lineHeight: 1.45 }}>{subtitle}</p>}
         </div>
       </>
     );
@@ -69,7 +69,7 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <span aria-hidden style={{ color: "#fff", fontSize: 16, lineHeight: 1 }}>&#9650;</span>
-            <span style={{ color: "#fff", fontSize: 14, fontWeight: 700, letterSpacing: 0.2 }}>Boreal</span>
+            <span style={{ color: "#fff", fontSize: "var(--bf-text-body-sm)", fontWeight: 700, letterSpacing: 0.2 }}>Boreal</span>
           </div>
           <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${pct}%`, background: tokens.colors.primary, transition: "width .3s ease" }} />
@@ -90,13 +90,13 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
                 )}
                 <div style={{
                   width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 700, zIndex: 2, boxSizing: "border-box",
+                  fontSize: "var(--bf-text-caption)", fontWeight: 700, zIndex: 2, boxSizing: "border-box",
                   background: on ? tokens.colors.primary : tokens.colors.surface,
                   color: on ? tokens.colors.surface : tokens.colors.textSecondary,
                   border: `2px solid ${on ? tokens.colors.primary : tokens.colors.border}`,
                   boxShadow: cur ? tokens.shadows.focus : "none",
                 }}>{isSkipped ? "\u2013" : done ? "\u2713" : n}</div>
-                <div style={{ fontSize: 10, fontWeight: 600, textAlign: "center", color: on ? tokens.colors.textPrimary : tokens.colors.textSecondary }}>{label}</div>
+                <div style={{ fontSize: "var(--bf-text-tiny)", fontWeight: 600, textAlign: "center", color: on ? tokens.colors.textPrimary : tokens.colors.textSecondary }}>{label}</div>
               </div>
             );
           })}
@@ -105,7 +105,7 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
         <div style={{ ...components.form.eyebrow, marginBottom: tokens.spacing.xs }}>Step {step} of {totalSteps}</div>
         <h1 style={{ ...components.form.title, marginBottom: subtitle ? 6 : 0 }}>{title}</h1>
         {subtitle && (
-          <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: 14, lineHeight: 1.5 }}>{subtitle}</p>
+          <p style={{ margin: 0, marginBottom: tokens.spacing.md, color: tokens.colors.textSecondary, fontSize: "var(--bf-text-body-sm)", lineHeight: 1.5 }}>{subtitle}</p>
         )}
       </div>
     </>

@@ -161,7 +161,7 @@ export default function Sba413Form({
 
   const row = (r: { key: string; label: string }) => (
     <div key={r.key} className="cmpf-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 0" }}>
-      <label htmlFor={`sba413-${r.key}`} style={{ flex: 1, fontSize: 14, color: "#0B1F3A" }}>{r.label}</label>
+      <label htmlFor={`sba413-${r.key}`} style={{ flex: 1, fontSize: "var(--bf-text-body-sm)", color: "#0B1F3A" }}>{r.label}</label>
       <span style={{ width: 170, flex: "none" }} className="cmpf-row-field">
         <MoneyInput
           id={`sba413-${r.key}`}
@@ -216,7 +216,7 @@ export default function Sba413Form({
     const list = Array.isArray(data[listKey]) ? (data[listKey] as any[]) : [];
     return <div style={{ marginBottom: 20 }}>
       <div className="cmpf-section" style={{ marginTop: 0 }}>{title}</div>
-      <div style={{ color: "#51617D", fontSize: 14, marginBottom: 8 }}>{hint}</div>
+      <div style={{ color: "#51617D", fontSize: "var(--bf-text-body-sm)", marginBottom: 8 }}>{hint}</div>
       {list.map((_, index) => <div key={index} className="cmpf-card cmp-grid-2" style={{ marginBottom: 8 }}>
         {columns.map((c) => <div key={c.field} style={{ gridColumn: c.field === columns[0].field ? "1 / -1" : undefined }}>
           <label className="cmpf-label" htmlFor={`sba413-${listKey}-${index}-${c.field}`} style={{ marginTop: 0 }}>{c.label}</label>
@@ -226,12 +226,12 @@ export default function Sba413Form({
       </div>)}
       {list.length < max ? <button type="button" className="cmpf-add" onClick={() => addRow(listKey, max)}>
         + Add {list.length === 0 ? "an entry" : "another"}</button> :
-        <div style={{ color: "#51617D", fontSize: 13 }}>The form holds {max}. If you have more, tell us in Notes and we will attach a continuation sheet.</div>}
+        <div style={{ color: "#51617D", fontSize: "var(--bf-text-label)" }}>The form holds {max}. If you have more, tell us in Notes and we will attach a continuation sheet.</div>}
     </div>;
   };
   const textSchedule = (key: string, title: string, hint: string) => <div style={{ marginBottom: 20 }}>
     <div className="cmpf-section" style={{ marginTop: 0 }}>{title}</div>
-    <div style={{ color: "#51617D", fontSize: 14, marginBottom: 8 }}>{hint}</div>
+    <div style={{ color: "#51617D", fontSize: "var(--bf-text-body-sm)", marginBottom: 8 }}>{hint}</div>
     <textarea className="cmpf-textarea" aria-label={title} value={String(data[key] ?? "")} onChange={(e) => set(key, e.target.value)} onBlur={persist} rows={3} />
   </div>;
 
@@ -316,8 +316,8 @@ export default function Sba413Form({
         />
       </div>
 
-      {error ? <p style={{ color: "#B42318", fontSize: 14 }}>{error}</p> : null}
-      {submitted ? <p style={{ color: "#067647", fontSize: 14 }}>Saved. You can reopen this any time to update it.</p> : null}
+      {error ? <p style={{ color: "#B42318", fontSize: "var(--bf-text-body-sm)" }}>{error}</p> : null}
+      {submitted ? <p style={{ color: "#067647", fontSize: "var(--bf-text-body-sm)" }}>Saved. You can reopen this any time to update it.</p> : null}
 
       <div className="cmpf-actions">
         <button type="button" className="cmpf-primary" onClick={handleSubmit} disabled={saving}>

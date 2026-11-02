@@ -3,8 +3,10 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import { hasTrackingConsent, CONSENT_KEY } from "../analytics";
 import ConsentBanner from "../../components/ConsentBanner";
+import { primeConsentRegion } from "@/lib/thirdPartyTags";
 
 beforeEach(() => {
+  primeConsentRegion("other"); // BF_CLIENT_v868_QUEBEC_CONSENT - a visitor outside Quebec; no region lookup
   localStorage.clear();
   window.history.replaceState({}, "", "/");
 });

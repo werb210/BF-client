@@ -328,7 +328,7 @@ export function Step3_Business() {
   // wizard-step-shell <style> is preserved.
   return (
     <>
-      <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+      <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
       <div className="wizard-step-shell">
       <StepHeader step={3} title="Business Details" subtitle="Legal information about your company." />
@@ -922,7 +922,7 @@ export function Step3_Business() {
 
       <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         {missingStep3.length > 0 && (
-          <div style={{ width: "100%", color: tokens.colors.textSecondary, fontSize: 14 }}>
+          <div style={{ width: "100%", color: tokens.colors.textSecondary, fontSize: "var(--bf-text-body-sm)" }}>
             Please complete: {missingStep3.join(", ")}.
           </div>
         )}

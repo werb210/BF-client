@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { idVerificationNext } from "@/wizard/idVerificationStep"; // BF_CLIENT_v872_KYC
 import { setApplicationToken } from "@/auth/applicationToken";
 import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_STEP6_BACK_v151
 import { useNavigate } from "react-router-dom";
@@ -588,7 +589,10 @@ export function Step6_Review(): JSX.Element {
       clearStoredApplication();
       setTimeout(() => {
         if (nextApplicationId) {
-          navigate(`/application/${nextApplicationId}`, { replace: true, state: { submitted: true } });
+          // BF_CLIENT_v872_KYC - when Boreal asks for ID right after submitting, go to "Verify your identity".
+          void idVerificationNext(nextApplicationId).then((verify) => {
+            navigate(verify ? `/verify/${encodeURIComponent(nextApplicationId)}?wizard=1` : `/application/${nextApplicationId}`, { replace: true, state: { submitted: true } });
+          });
           return;
         }
         navigate("/portal", { replace: true });
@@ -799,7 +803,7 @@ export function Step6_Review(): JSX.Element {
   // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 - removed duplicate shell/heading.
   return (
     <>
-        <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+        <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
       <div className="wizard-step-shell">
       <StepHeader step={6} title="Terms & Conditions + Typed Signature" subtitle="Check everything is right. You can edit any section before submitting." />
@@ -833,7 +837,7 @@ export function Step6_Review(): JSX.Element {
                   padding: "10px 0",
                   borderTop: i >= 2 ? `1px solid ${tokens.colors.border}` : "none",
                 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: tokens.colors.textSecondary }}>{label}</div>
+                  <div style={{ fontSize: "var(--bf-text-help)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: tokens.colors.textSecondary }}>{label}</div>
                   <div style={{ fontSize: 15, fontWeight: 600, color: tokens.colors.textPrimary, marginTop: 2 }}>{value}</div>
                 </div>
               ))}
@@ -1056,17 +1060,17 @@ export function Step6_Review(): JSX.Element {
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 0, marginBottom: 12 }}>{TC_CLAUSES[openClause].title}</h3>
               {TC_CLAUSES[openClause].blocks.map((b, j) =>
                 b.ul ? (
-                  <ul key={j} style={{ color: "#111827", fontSize: 14, lineHeight: 1.6, paddingLeft: 20, margin: "0 0 12px" }}>
+                  <ul key={j} style={{ color: "#111827", fontSize: "var(--bf-text-body-sm)", lineHeight: 1.6, paddingLeft: 20, margin: "0 0 12px" }}>
                     {b.ul.map((it) => (<li key={it}>{it}</li>))}
                   </ul>
                 ) : (
-                  <p key={j} style={{ color: "#111827", fontSize: 14, lineHeight: 1.6, margin: "0 0 12px" }}>{b.p}</p>
+                  <p key={j} style={{ color: "#111827", fontSize: "var(--bf-text-body-sm)", lineHeight: 1.6, margin: "0 0 12px" }}>{b.p}</p>
                 )
               )}
               <button
                 type="button"
                 onClick={() => setOpenClause(null)}
-                style={{ marginTop: 8, padding: "10px 20px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 600 }}
+                style={{ marginTop: 8, padding: "10px 20px", background: "#0b1320", color: "#fff", border: 0, borderRadius: 8, cursor: "pointer", fontSize: "var(--bf-text-body-sm)", fontWeight: 600 }}
               >
                 Close
               </button>

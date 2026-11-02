@@ -162,7 +162,7 @@ export default function MessageThread({ messages, onHashtagClick, onCtaClick, em
                     display: "block",
                     marginTop: 8,
                     padding: "8px 14px",
-                    fontSize: 13,
+                    fontSize: "var(--bf-text-label)",
                     fontWeight: 600,
                     background: "#1E3A8A",
                     color: "#fff",

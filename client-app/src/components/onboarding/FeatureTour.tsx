@@ -73,10 +73,10 @@ export default function FeatureTour({ forceOpen = false }: { forceOpen?: boolean
     <div role="dialog" aria-modal="true" aria-label="App tour" data-testid="feature-tour"
       style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(11,31,58,0.72)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "16px 16px calc(16px + env(safe-area-inset-bottom, 0px))" }}>
       <div style={{ width: "100%", maxWidth: 440, background: "#fff", color: "#0f172a", borderRadius: 16, padding: 20, boxShadow: "0 10px 30px rgba(0,0,0,.25)" }}>
-        <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>{i + 1} of {steps.length}</div>
+        <div style={{ fontSize: "var(--bf-text-caption)", color: "#475569", marginBottom: 6 }}>{i + 1} of {steps.length}</div>
         <h2 style={{ fontSize: 20, margin: "0 0 8px", fontWeight: 700 }}>{step.title}</h2>
         <p style={{ fontSize: 15, lineHeight: 1.45, margin: "0 0 14px", color: "#334155" }}>{step.body}</p>
-        {note && <p role="status" style={{ fontSize: 14, margin: "0 0 12px", color: "#065f46" }}>{note}</p>}
+        {note && <p role="status" style={{ fontSize: "var(--bf-text-body-sm)", margin: "0 0 12px", color: "#065f46" }}>{note}</p>}
         <div style={{ display: "flex", gap: 8, justifyContent: "space-between", alignItems: "center" }}>
           <button type="button" onClick={() => finish("skipped")} style={{ background: "none", border: "none", color: "#475569", fontSize: 15, padding: "10px 4px" }}>Skip tour</button>
           <div style={{ display: "flex", gap: 8 }}>

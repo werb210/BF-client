@@ -13,7 +13,7 @@
    to shrink its tracks, and the page needs a hard ceiling at the viewport. */
 .mp-root { max-width: 1100px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
 .mp-root > * { min-width: 0; }
-.mp-app-header { display:flex; justify-content:space-between; font-size:12px; color:#51617D; }
+.mp-app-header { display:flex; justify-content:space-between; font-size:var(--bf-text-help); color:#51617D; }
 .mp-app-header__left,.mp-app-header__right{display:flex;gap:8px;align-items:center}
 .mp-app-header__id,.mp-app-header__stage-value{font-weight:600;color:#0B1F3A}
 
@@ -25,23 +25,23 @@
    fails contrast, the same reason the primary button is navy-on-gold. */
 .mp-stage__bullet { width:32px; height:32px; border-radius:999px; background:#F5F8FC; border:1px solid #E4EAF2; color:#0B1F3A; display:flex; align-items:center; justify-content:center; font-weight:700; position:relative; z-index:1; transition:background-color .6s ease, border-color .6s ease; }
 .mp-stage--done .mp-stage__bullet, .mp-stage--current .mp-stage__bullet { background:#BF9B49; border-color:#BF9B49; }
-.mp-stage__label{margin-top:8px;text-align:center;font-size:12px;color:#0B1F3A;line-height:1.2;display:flex;flex-direction:column}
+.mp-stage__label{margin-top:8px;text-align:center;font-size:var(--bf-text-caption);color:#0B1F3A;line-height:1.2;display:flex;flex-direction:column}
 
 .mp-grid { display:grid; grid-template-columns: 65% 35%; gap:16px; }
 .mp-thread-card,.mp-actions,.mp-offer { border:1px solid #E4EAF2; border-radius:16px; background:#fff; }
 .mp-thread-card{display:flex;flex-direction:column;overflow:hidden}
-.mp-thread-card__header,.mp-actions__header{padding:16px;font-size:14px;font-weight:600;border-bottom:1px solid #E4EAF2}
+.mp-thread-card__header,.mp-actions__header{padding:16px;font-size:var(--bf-text-body-sm);font-weight:600;border-bottom:1px solid #E4EAF2}
 .mp-thread-card__body{max-height:480px;overflow-y:auto;padding:16px 20px}
-.mp-thread-card__empty{font-size:14px;color:#51617D}
+.mp-thread-card__empty{font-size:var(--bf-text-body-sm);color:#51617D}
 .mp-msg-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:10px}
 .mp-msg-row--out{justify-content:flex-end}
-.mp-msg-avatar{width:32px;height:32px;border-radius:999px;background:#0B1F3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.mp-msg-avatar{width:32px;height:32px;border-radius:999px;background:#0B1F3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:var(--bf-text-label);font-weight:600}
 .mp-msg-stack{max-width:70%}
-.mp-msg-bubble{padding:10px 12px;border-radius:14px;font-size:14px;line-height:1.35}
+.mp-msg-bubble{padding:10px 12px;border-radius:14px;font-size:var(--bf-text-body-sm);line-height:1.35}
 .mp-msg-bubble--in{background:#F5F8FC;color:#0B1F3A}
 .mp-msg-bubble--out{background:#fff;border:1px solid #E4EAF2;color:#0B1F3A}
-.mp-msg-time{font-size:11px;color:#51617D;white-space:nowrap}
-.mp-msg-cta{margin-top:8px;background:#BF9B49;color:#0B1F3A;border:0;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+.mp-msg-time{font-size:var(--bf-text-micro);color:#51617D;white-space:nowrap}
+.mp-msg-cta{margin-top:8px;background:#BF9B49;color:#0B1F3A;border:0;border-radius:10px;padding:8px 12px;font-size:var(--bf-text-label);font-weight:600;cursor:pointer}
 .mp-thread-card__composer{padding:12px;border-top:1px solid #E4EAF2}
 .mp-thread-card__composer input{border:1px solid #E4EAF2;border-radius:10px;padding:10px 12px;min-height:44px}
 .mp-thread-card__composer button,.mp-btn--primary,.mp-chip{cursor:pointer}
@@ -49,10 +49,10 @@
 .mp-actions{padding-bottom:16px}
 .mp-actions__chips{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
 /* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — cleaner bordered chips (mockup look). */
-.mp-chip--action{min-height:46px;border:1px solid #E4EAF2;background:#fff;color:#0B1F3A;border-radius:10px;font-size:14px;font-weight:600;padding:8px 12px;text-align:center;transition:border-color .15s,background .15s}
+.mp-chip--action{min-height:46px;border:1px solid #E4EAF2;background:#fff;color:#0B1F3A;border-radius:10px;font-size:var(--bf-text-body-sm);font-weight:600;padding:8px 12px;text-align:center;transition:border-color .15s,background .15s}
 .mp-chip--action:hover{border-color:#0B1F3A;background:#F5F8FC}
 /* BF_CLIENT_BLOCK_v_CMP_CALLUS_DEEMPHASIZE_v1 — was a 56px solid-green slab that dominated the panel; mockup de-emphasizes it to a small outline button. */
-.mp-callus{display:flex;align-items:center;justify-content:center;margin:0;min-height:42px;border:1px solid #047857;border-radius:10px;background:#fff;color:#047857;font-size:14px;font-weight:600;cursor:pointer}/* BF_CLIENT_UI_CLUSTER_2 */
+.mp-callus{display:flex;align-items:center;justify-content:center;margin:0;min-height:42px;border:1px solid #047857;border-radius:10px;background:#fff;color:#047857;font-size:var(--bf-text-body-sm);font-weight:600;cursor:pointer}/* BF_CLIENT_UI_CLUSTER_2 */
 .mp-callus:hover{background:#f0fdf4}
 .mp-hangup{display:flex;align-items:center;justify-content:center;margin:0 16px;min-height:56px;border:none;border-radius:28px;background:#b91c1c;color:#fff;font-size:16px;font-weight:600;cursor:pointer}
 
@@ -73,7 +73,7 @@
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid #E4EAF2;
-  font-size: 13px;
+  font-size: var(--bf-text-label);
   color: #51617D;
   line-height: 1.45;
 }
@@ -89,31 +89,31 @@
 .mp-offers-dialog{background:#fff;border-radius:16px;width:min(1040px,100%);max-height:88vh;overflow:auto;padding:20px}
 .mp-offers-dialog__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:18px}
 .mp-offers-dialog__close{border:none;background:transparent;font-size:28px;line-height:1;cursor:pointer;color:#51617D;padding:0 4px}
-.mp-offer__head{background:#BF9B49;color:#1f2937;padding:10px 12px;border-radius:16px 16px 0 0;font-size:14px;font-weight:600;position:relative}
-.mp-offer__badge{position:absolute;right:10px;top:8px;background:#f59e0b;color:#1f2937;border-radius:999px;padding:2px 8px;font-size:11px}
+.mp-offer__head{background:#BF9B49;color:#1f2937;padding:10px 12px;border-radius:16px 16px 0 0;font-size:var(--bf-text-body-sm);font-weight:600;position:relative}
+.mp-offer__badge{position:absolute;right:10px;top:8px;background:#f59e0b;color:#1f2937;border-radius:999px;padding:2px 8px;font-size:var(--bf-text-micro)}
 .mp-offer__amount{font-size:clamp(22px,2.4vw,32px);font-weight:700;color:#0B1F3A;padding:12px 12px 2px;overflow-wrap:anywhere;line-height:1.15}
-.mp-offer__subtitle{padding:0 12px 10px;font-size:11px;color:#51617D}
+.mp-offer__subtitle{padding:0 12px 10px;font-size:var(--bf-text-help);color:#51617D}
 .mp-offer__meta{padding:10px 12px;border-top:1px solid #E4EAF2;border-bottom:1px solid #E4EAF2}
 .mp-offer__meta-row-main{font-size:18px;color:#0B1F3A;margin-bottom:4px}
-.mp-offer__meta-row{font-size:14px;color:#51617D;margin-bottom:4px}
-.mp-offer__expires{padding:10px 12px;font-size:14px;font-weight:600;color:#b45309}
+.mp-offer__meta-row{font-size:var(--bf-text-body-sm);color:#51617D;margin-bottom:4px}
+.mp-offer__expires{padding:10px 12px;font-size:var(--bf-text-body-sm);font-weight:600;color:#b45309}
 .mp-offer--danger .mp-offer__expires{color:#b91c1c}
 /* BF_CLIENT_v789_CONTRAST - a11yColors.ts: successText (Call Us), dangerBg (hang up),
    offerHeadText/offerBadgeText (dark on gold/amber), warningText (expiry). */
 /* BF_CLIENT_v789_OFFER_ACTIONS - result of Accept / Request Changes, and the busy state. */
-.mp-offer__notice{margin:0 12px 10px;padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.4}
+.mp-offer__notice{margin:0 12px 10px;padding:8px 10px;border-radius:8px;font-size:var(--bf-text-label);line-height:1.4}
 .mp-offer__notice--success{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
 .mp-offer__notice--error{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
 .mp-offer__actions .mp-btn:disabled{background:#E4EAF2;color:#374151;border-color:#E4EAF2;cursor:not-allowed}
 .mp-offer__actions{display:grid;gap:8px;padding:0 12px 12px}
-.mp-btn{min-height:42px;border-radius:10px;font-weight:600;font-size:14px;text-align:center;padding:10px 12px;text-decoration:none}
+.mp-btn{min-height:42px;border-radius:10px;font-weight:600;font-size:var(--bf-text-body-sm);text-align:center;padding:10px 12px;text-decoration:none}
 .mp-btn--ghost{background:#E4EAF2;color:#0B1F3A;border:none}
 .mp-btn--secondary{background:#fff;color:#0B1F3A;border:1px solid #0B1F3A}
 
 @media (max-width: 767px){
   .mp-tracker{padding:12px}
   .mp-stage{min-width:96px}
-  .mp-stage__bullet{width:24px;height:24px;font-size:12px}
+  .mp-stage__bullet{width:24px;height:24px;font-size:var(--bf-text-caption)}
   .mp-stage:not(:last-child)::after{top:11px;left:calc(50% + 12px);width:calc(100% - 24px)}
   .mp-grid{grid-template-columns:1fr}
   .mp-offers{grid-template-columns:1fr}
@@ -157,9 +157,9 @@
   background: #F5F8FC;
   cursor: pointer;
 }
-.mp-offer-bubble__lender { font-weight: 600; font-size: 14px; }
-.mp-offer-bubble__amount { font-size: 14px; color: #0B1F3A; }
-.mp-offer-bubble__cta { margin-left: auto; font-size: 13px; font-weight: 600; color: #0B1F3A; }
+.mp-offer-bubble__lender { font-weight: 600; font-size: var(--bf-text-body-sm); }
+.mp-offer-bubble__amount { font-size: var(--bf-text-body-sm); color: #0B1F3A; }
+.mp-offer-bubble__cta { margin-left: auto; font-size: var(--bf-text-label); font-weight: 600; color: #0B1F3A; }
 .mp-offer-bubble--expired {
   border-color: #E4EAF2;
   background: #F5F8FC;
@@ -181,7 +181,7 @@
 @media (max-width: 640px) {
   .mp-tracker { overflow-x: visible; padding: 12px 6px; }
   .mp-stage { min-width: 0; flex: 1 1 0; }
-  .mp-stage__bullet { width: 22px; height: 22px; font-size: 11px; }
+  .mp-stage__bullet { width: 22px; height: 22px; font-size: var(--bf-text-micro); }
   .mp-stage:not(:last-child)::after { top: 10px; left: calc(50% + 11px); width: calc(100% - 22px); }
-  .mp-stage__label { font-size: 10.5px; line-height: 1.15; padding: 0 1px; overflow-wrap: anywhere; color: #0B1F3A; }
+  .mp-stage__label { font-size: var(--bf-text-micro); line-height: 1.15; padding: 0 1px; overflow-wrap: anywhere; color: #0B1F3A; }
 }

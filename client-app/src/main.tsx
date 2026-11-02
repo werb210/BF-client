@@ -14,7 +14,7 @@ import "./styles/global.css";
 import App from "./App";
 import { captureAttribution } from "./lib/attribution";
 import { initClarity } from "./lib/clarity"; // BF_CLIENT_CLARITY_LOADER_v163
-import { loadGoogleTags } from "./lib/thirdPartyTags"; // BF_CLIENT_v789_ANALYTICS_GATES
+import { startGoogleTags } from "./lib/thirdPartyTags"; // BF_CLIENT_v789_ANALYTICS_GATES
 import { startJourney } from "./lib/journey"; // BF_CLIENT_JOURNEY_BOOT_v185
 import { initClientBehaviour } from "./lib/clientBehaviour"; // BF_CLIENT_BEHAVIOUR_v707
 import { validateEnv } from "./env";
@@ -35,8 +35,9 @@ try {
 }
 
 // BF_CLIENT_v789_ANALYTICS_GATES - Consent Mode defaults, GTM and the Google Ads
-// tag, web only. Runs before anything can push to dataLayer.
-loadGoogleTags();
+// tag, web only. BF_CLIENT_v868_QUEBEC_CONSENT - first asks whether the visitor is in
+// Quebec (1.5 s at most); the defaults are placed ahead of anything already pushed.
+void startGoogleTags();
 
 // BF_CLIENT_JOURNEY_BOOT_v185 - ORDER MATTERS. startJourney mints and persists the
 // journey session id and creates the server-side visitor_sessions row. It must run

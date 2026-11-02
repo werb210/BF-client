@@ -666,10 +666,10 @@ export function Step2_Product() {
         {/* BF_CLIENT_BLOCK_v470_CATEGORY_INFO - Compare button above the list, right side. */}
         {!isLoading && !loadError && sbaAutoRef.current === "idle" && visibleCategoryBuckets.length > 1 && (
           <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: "#6b7280" }}>
+            <span style={{ fontSize: "var(--bf-text-label)", color: "#6b7280" }}>
               {compareIds.length ? `${compareIds.length} of ${MAX_COMPARE} selected to compare` : `Tick up to ${MAX_COMPARE} to compare`}
             </span>
-            <button type="button" data-testid="step2-compare-btn" disabled={compareIds.length < 2} onClick={() => setShowCompare(true)} style={{ padding: "6px 16px", borderRadius: 6, border: `1px solid ${tokens.colors.primary}`, background: compareIds.length < 2 ? "#f3f4f6" : tokens.colors.primary, color: compareIds.length < 2 ? "#9ca3af" : "#fff", fontWeight: 600, fontSize: 14, cursor: compareIds.length < 2 ? "not-allowed" : "pointer" }}>
+            <button type="button" data-testid="step2-compare-btn" disabled={compareIds.length < 2} onClick={() => setShowCompare(true)} style={{ padding: "6px 16px", borderRadius: 6, border: `1px solid ${tokens.colors.primary}`, background: compareIds.length < 2 ? "#f3f4f6" : tokens.colors.primary, color: compareIds.length < 2 ? "#9ca3af" : "#fff", fontWeight: 600, fontSize: "var(--bf-text-body-sm)", cursor: compareIds.length < 2 ? "not-allowed" : "pointer" }}>
               Compare{compareIds.length ? ` (${compareIds.length})` : ""}
             </button>
           </div>
@@ -706,25 +706,25 @@ export function Step2_Product() {
                     minWidth: 22, height: 22, padding: "0 7px", borderRadius: 999,
                     background: isSelected ? tokens.colors.primary : tokens.colors.primaryLight,
                     color: isSelected ? "#fff" : tokens.colors.primary,
-                    fontSize: 12, fontWeight: 700, lineHeight: 1,
+                    fontSize: "var(--bf-text-caption)", fontWeight: 700, lineHeight: 1,
                   }}>
                     {bucket.products.length}
                   </span>
                 </div>
-                <div style={{ color: "#6b7280", fontSize: 14, marginTop: 4 }}>
+                <div style={{ color: "#6b7280", fontSize: "var(--bf-text-body-sm)", marginTop: 4 }}>
                   {bucket.products.length} product{bucket.products.length !== 1 ? "s" : ""} available
                   {matchPct !== null ? ` (Match score ${matchPct}%)` : ""}
                 </div>
                 {matchPct !== null && (
-                  <div style={{ fontSize: 13, color: "#374151", marginTop: 2 }}>
+                  <div style={{ fontSize: "var(--bf-text-label)", color: "#374151", marginTop: 2 }}>
                     {matchPct}% Match
                   </div>
                 )}
               </div>
               {/* BF_CLIENT_BLOCK_v470_CATEGORY_INFO - informational actions do not select the category. */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginLeft: "auto", marginRight: 12 }}>
-                {CATEGORY_INFO[category as BucketId] && <button type="button" data-testid={`step2-info-${category}`} onClick={(e) => { e.stopPropagation(); setInfoFor(category as BucketId); }} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${tokens.colors.border}`, background: "#fff", color: tokens.colors.primary, fontWeight: 600, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>What is this?</button>}
-                {CATEGORY_INFO[category as BucketId] && <label onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#374151", cursor: "pointer", whiteSpace: "nowrap" }}>
+                {CATEGORY_INFO[category as BucketId] && <button type="button" data-testid={`step2-info-${category}`} onClick={(e) => { e.stopPropagation(); setInfoFor(category as BucketId); }} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${tokens.colors.border}`, background: "#fff", color: tokens.colors.primary, fontWeight: 600, fontSize: "var(--bf-text-label)", cursor: "pointer", whiteSpace: "nowrap" }}>What is this?</button>}
+                {CATEGORY_INFO[category as BucketId] && <label onClick={(e) => e.stopPropagation()} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--bf-text-label)", color: "#374151", cursor: "pointer", whiteSpace: "nowrap" }}>
                   <input type="checkbox" data-testid={`step2-compare-${category}`} checked={compareIds.includes(category as BucketId)} disabled={!compareIds.includes(category as BucketId) && compareIds.length >= MAX_COMPARE} onChange={() => toggleCompare(category as BucketId)} /> Compare
                 </label>}
               </div>
@@ -741,7 +741,7 @@ export function Step2_Product() {
                   background: isSelected ? tokens.colors.primary : tokens.colors.surface,
                   color: isSelected ? "#fff" : "#374151",
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: "var(--bf-text-body-sm)",
                   cursor: "pointer",
                   whiteSpace: "nowrap",
                 }}
@@ -757,8 +757,8 @@ export function Step2_Product() {
         <div role="dialog" aria-modal="true" aria-label={`About ${categoryLabel(infoFor)}`} data-testid="step2-info-dialog" onClick={() => setInfoFor(null)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 1000 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, maxWidth: 560, width: "100%", maxHeight: "85vh", overflowY: "auto", padding: 24 }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 20, color: "#0f172a" }}>{categoryLabel(infoFor)}</h3>
-            {CATEGORY_INFO_FIELDS.map((f) => <div key={f.key} style={{ marginBottom: 12 }}><div style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>{f.label}</div><div style={{ fontSize: 14, lineHeight: 1.55, color: "#374151", marginTop: 2 }}>{CATEGORY_INFO[infoFor][f.key]}</div></div>)}
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>Typical ranges only. Your actual terms depend on the lender and your business.</div>
+            {CATEGORY_INFO_FIELDS.map((f) => <div key={f.key} style={{ marginBottom: 12 }}><div style={{ fontWeight: 700, fontSize: "var(--bf-text-body-sm)", color: "#0f172a" }}>{f.label}</div><div style={{ fontSize: "var(--bf-text-body-sm)", lineHeight: 1.55, color: "#374151", marginTop: 2 }}>{CATEGORY_INFO[infoFor][f.key]}</div></div>)}
+            <div style={{ fontSize: "var(--bf-text-help)", color: "#6b7280", marginTop: 8 }}>Typical ranges only. Your actual terms depend on the lender and your business.</div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}><button type="button" onClick={() => setInfoFor(null)} style={{ padding: "8px 18px", borderRadius: 6, border: `1px solid ${tokens.colors.border}`, background: "#fff", fontWeight: 600, cursor: "pointer" }}>Close</button></div>
           </div>
         </div>
@@ -767,8 +767,8 @@ export function Step2_Product() {
         <div role="dialog" aria-modal="true" aria-label="Compare product categories" data-testid="step2-compare-dialog" onClick={() => setShowCompare(false)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 1000 }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, maxWidth: 1100, width: "100%", maxHeight: "88vh", overflow: "auto", padding: 24 }}>
             <h3 style={{ margin: "0 0 12px", fontSize: 20, color: "#0f172a" }}>Compare product categories</h3>
-            <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", minWidth: 180 + compareIds.length * 200, fontSize: 13 }}><thead><tr><th style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #e5e7eb", width: 160 }} />{compareIds.map((id) => <th key={id} style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #e5e7eb", fontSize: 15, color: "#0f172a" }}>{categoryLabel(id)}</th>)}</tr></thead><tbody>{CATEGORY_INFO_FIELDS.map((f) => <tr key={f.key}><th scope="row" style={{ textAlign: "left", verticalAlign: "top", padding: 8, borderBottom: "1px solid #e5e7eb", color: "#0f172a" }}>{f.label}</th>{compareIds.map((id) => <td key={id} style={{ verticalAlign: "top", padding: 8, borderBottom: "1px solid #e5e7eb", color: "#374151", lineHeight: 1.5 }}>{CATEGORY_INFO[id]?.[f.key] ?? ""}</td>)}</tr>)}</tbody></table></div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 8 }}>Typical ranges only. Your actual terms depend on the lender and your business.</div>
+            <div style={{ overflowX: "auto" }}><table style={{ borderCollapse: "collapse", width: "100%", minWidth: 180 + compareIds.length * 200, fontSize: "var(--bf-text-label)" }}><thead><tr><th style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #e5e7eb", width: 160 }} />{compareIds.map((id) => <th key={id} style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #e5e7eb", fontSize: 15, color: "#0f172a" }}>{categoryLabel(id)}</th>)}</tr></thead><tbody>{CATEGORY_INFO_FIELDS.map((f) => <tr key={f.key}><th scope="row" style={{ textAlign: "left", verticalAlign: "top", padding: 8, borderBottom: "1px solid #e5e7eb", color: "#0f172a" }}>{f.label}</th>{compareIds.map((id) => <td key={id} style={{ verticalAlign: "top", padding: 8, borderBottom: "1px solid #e5e7eb", color: "#374151", lineHeight: 1.5 }}>{CATEGORY_INFO[id]?.[f.key] ?? ""}</td>)}</tr>)}</tbody></table></div>
+            <div style={{ fontSize: "var(--bf-text-help)", color: "#6b7280", marginTop: 8 }}>Typical ranges only. Your actual terms depend on the lender and your business.</div>
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}><button type="button" onClick={() => setShowCompare(false)} style={{ padding: "8px 18px", borderRadius: 6, border: `1px solid ${tokens.colors.border}`, background: "#fff", fontWeight: 600, cursor: "pointer" }}>Close</button></div>
           </div>
         </div>
@@ -791,7 +791,7 @@ export function Step2_Product() {
               checked={Boolean(app.requires_closing_cost_funding)}
               onChange={(e) => update({ requires_closing_cost_funding: e.target.checked })}
             />
-            <span style={{ fontSize: 13, color: tokens.colors.textSecondary }}>
+            <span style={{ fontSize: "var(--bf-text-label)", color: tokens.colors.textSecondary }}>
               Also include funding for closing costs (we'll add a small Term/LOC
               sub-application at 20% of the equipment ask — handled behind the scenes).
             </span>

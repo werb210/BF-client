@@ -411,7 +411,7 @@ export default function PhoneOTPInline() {
   );
   // BF_CLIENT_v809_SMS_UPDATES_CONSENT - the optional, unticked "Text me updates" box, right next to its disclosure.
   const smsUpdatesBox = (
-    <label data-testid="sms-updates-consent" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 2, marginBottom: 14, fontSize: 13, color: '#334155', lineHeight: 1.45, textAlign: 'left', cursor: 'pointer' }}>
+    <label data-testid="sms-updates-consent" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 2, marginBottom: 14, fontSize: "var(--bf-text-label)", color: '#334155', lineHeight: 1.45, textAlign: 'left', cursor: 'pointer' }}>
       <input
         type="checkbox"
         checked={smsUpdates}
@@ -425,7 +425,7 @@ export default function PhoneOTPInline() {
   );
   // BF_CLIENT_SMS_DISCLOSURE_v690 + v809 - the sign-in code itself; texts about the application need the box above.
   const signInCodeNote = (
-    <p data-testid="sms-disclosure" style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
+    <p data-testid="sms-disclosure" style={{ fontSize: "var(--bf-text-caption)", color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center', lineHeight: 1.5 }}>
       We&apos;ll text a one-time sign-in code to this number. Message and data rates may apply. See our{' '}
       {legalLink('https://www.boreal.financial/terms', 'Terms')} and{' '}
       {legalLink('https://www.boreal.financial/privacy', 'Privacy Policy')}.
@@ -445,7 +445,7 @@ export default function PhoneOTPInline() {
       {phase === 'phone' && (
         <>
           <QuickSignIn />
-          <label style={{ display: 'block', fontSize: 14, color: '#334155', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: "var(--bf-text-body-sm)", color: '#334155', marginBottom: 6 }}>
             Mobile phone number
           </label>
           <input
@@ -463,7 +463,7 @@ export default function PhoneOTPInline() {
               boxSizing: 'border-box',
             }}
           />
-          {error && <div role="alert" style={{ color: '#b91c1c', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {error && <div role="alert" style={{ color: '#b91c1c', fontSize: "var(--bf-text-label)", marginBottom: 8 }}>{error}</div>}
           {/* BF_CLIENT_v815_CONSENT_ABOVE_BUTTON - the optional "Text me updates" box sits under the phone number,
               above "Start Your Application", so it is seen before the button is tapped. */}
           {smsUpdatesBox}
@@ -486,7 +486,7 @@ export default function PhoneOTPInline() {
 
       {(phase === 'code' || phase === 'submitting') && (
         <>
-          <label style={{ display: 'block', fontSize: 14, color: '#334155', marginBottom: 6 }}>
+          <label style={{ display: 'block', fontSize: "var(--bf-text-body-sm)", color: '#334155', marginBottom: 6 }}>
             Enter the code we sent to {phoneDisplay}
           </label>
           {/* BF_OTP_AUTOFILL_v341 — autoComplete="one-time-code" + inputMode="numeric"
@@ -509,7 +509,7 @@ export default function PhoneOTPInline() {
               textAlign: 'center', boxSizing: 'border-box',
             }}
           />
-          {error && <div role="alert" style={{ color: '#b91c1c', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+          {error && <div role="alert" style={{ color: '#b91c1c', fontSize: "var(--bf-text-label)", marginBottom: 8 }}>{error}</div>}
           <button
             type="button"
             disabled={busy}
@@ -529,13 +529,13 @@ export default function PhoneOTPInline() {
             onClick={() => { setPhase('phone'); setCode(''); setError(null); submittingRef.current = false; autoSubmittedCodeRef.current = null; /* BF_OTP_AUTOSUBMIT_ONCE_v32 */ }}
             style={{
               marginTop: 10, background: 'transparent', border: 0,
-              color: '#1e3a8a', fontSize: 13, cursor: 'pointer', padding: 0,
+              color: '#1e3a8a', fontSize: "var(--bf-text-label)", cursor: 'pointer', padding: 0,
               display: 'block', marginLeft: 'auto', marginRight: 'auto',
             }}
           >
             ← Use a different number
           </button>
-          <p style={{ fontSize: 12, color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center' }}>
+          <p style={{ fontSize: "var(--bf-text-help)", color: '#64748b', marginTop: 10, marginBottom: 0, textAlign: 'center' }}>
             Code arrives automatically — we&apos;ll continue once you finish typing.
           </p>
           {/* BF_CLIENT_v809_SMS_UPDATES_CONSENT - still choosable here: the code is sent as soon as 10 digits are typed. */}

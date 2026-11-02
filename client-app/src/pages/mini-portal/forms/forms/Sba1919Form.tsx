@@ -93,7 +93,7 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
       <div style={{ fontWeight: 600, color: "#0B1F3A", margin: "16px 0 8px" }}>Jobs</div>
       {[{ key: "fte_retained", label: "FTE jobs saved or retained because of this loan (including owners)" }, { key: "fte_created", label: "New FTE jobs created because of this loan (including owners)" }].map((f) => (
         <div key={f.key} className="cmpf-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 0" }}>
-          <label htmlFor={`sba1919-${f.key}`} style={{ flex: 1, fontSize: 14, color: "#0B1F3A" }}>{f.label}</label>
+          <label htmlFor={`sba1919-${f.key}`} style={{ flex: 1, fontSize: "var(--bf-text-body-sm)", color: "#0B1F3A" }}>{f.label}</label>
           <span className="cmpf-row-field" style={{ width: 120, flex: "none" }}>
             <input id={`sba1919-${f.key}`} className="cmpf-input" type="number" inputMode="numeric" min="0" value={data[f.key] ?? ""} onChange={(e) => set(f.key, e.target.value)} onBlur={persist} style={{ textAlign: "right" }} />
           </span>
@@ -102,17 +102,17 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
       <div style={{ fontWeight: 600, color: "#0B1F3A", margin: "20px 0 8px" }}>What the loan is for</div>
       {PURPOSES.map((p) => (
         <div key={p.key} className="cmpf-row" style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 0" }}>
-          <label htmlFor={`sba1919-${p.key}`} style={{ flex: 1, fontSize: 14, color: "#0B1F3A" }}>{p.label}</label>
+          <label htmlFor={`sba1919-${p.key}`} style={{ flex: 1, fontSize: "var(--bf-text-body-sm)", color: "#0B1F3A" }}>{p.label}</label>
           <span className="cmpf-row-field" style={{ width: 170, flex: "none" }}>
             <MoneyInput id={`sba1919-${p.key}`} placeholder="0" value={data[p.key] ?? ""} onChange={(e) => set(p.key, e.target.value)} onBlur={persist} style={{ textAlign: "right" }} />
           </span>
         </div>
       ))}
-      <div style={{ display: "flex", justifyContent: "space-between", background: "#F5F8FC", borderRadius: 8, padding: 10, marginTop: 8 }}><span style={{ fontSize: 14 }}>Total</span><strong>{purposeTotal.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}</strong></div>
+      <div style={{ display: "flex", justifyContent: "space-between", background: "#F5F8FC", borderRadius: 8, padding: 10, marginTop: 8 }}><span style={{ fontSize: "var(--bf-text-body-sm)" }}>Total</span><strong>{purposeTotal.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}</strong></div>
       <div style={{ fontWeight: 600, color: "#0B1F3A", margin: "20px 0 8px" }}>Eligibility questions</div>
       {QUESTIONS.map((q) => (
         <div key={q.key} style={{ padding: "10px 0", borderBottom: "1px solid #E4EAF2" }}>
-          <div style={{ fontSize: 14, color: "#0B1F3A", marginBottom: 6 }}>{q.text}</div>
+          <div style={{ fontSize: "var(--bf-text-body-sm)", color: "#0B1F3A", marginBottom: 6 }}>{q.text}</div>
           <div style={{ display: "flex", gap: 16 }}>{["No", "Yes"].map((opt) => (
             <label key={opt} className="cmpf-radio"><input type="radio" name={q.key} value={opt.toLowerCase()} checked={data[q.key] === opt.toLowerCase()} onChange={(e) => { set(q.key, e.target.value); persist(); }} />{opt}</label>
           ))}</div>
@@ -121,19 +121,19 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
               generic detail box could only carry one of them. */}
           {data[q.key] === "yes" && q.key === "q5_exports" && (
             <div style={{ marginTop: 8 }}>
-              <label style={{ display: "block", fontSize: 13, color: "#51617D", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: "var(--bf-text-label)", color: "#51617D", marginBottom: 4 }}>
                 5.a Estimated total export sales this loan will support
               </label>
               <MoneyInput placeholder="0" aria-label="5.a Estimated total export sales"
                 value={data.q5_export_sales ?? ""}
                 onChange={(e) => set("q5_export_sales", e.target.value)} onBlur={persist} />
-              <label style={{ display: "block", fontSize: 13, color: "#51617D", margin: "10px 0 4px" }}>
+              <label style={{ display: "block", fontSize: "var(--bf-text-label)", color: "#51617D", margin: "10px 0 4px" }}>
                 5.b Principal countries of export - list at least one
               </label>
               <input className="cmpf-input" placeholder="United States, Mexico" aria-label="5.b Principal countries of export"
                 value={data.q5_exports_detail ?? ""}
                 onChange={(e) => set("q5_exports_detail", e.target.value)} onBlur={persist} />
-              <div style={{ fontSize: 12, color: "#51617D", marginTop: 4 }}>
+              <div style={{ fontSize: "var(--bf-text-help)", color: "#51617D", marginTop: 4 }}>
                 Separate countries with commas. The form has room for three.
               </div>
             </div>
@@ -141,8 +141,8 @@ export default function Sba1919Form({ applicationId, onComplete }: { application
           {data[q.key] === "yes" && q.key !== "q5_exports" && <textarea className="cmpf-textarea" rows={2} placeholder="Please give us the detail - SBA needs it as an attachment." value={data[`${q.key}_detail`] ?? ""} onChange={(e) => set(`${q.key}_detail`, e.target.value)} onBlur={persist} style={{ marginTop: 6 }} />}
         </div>
       ))}
-      {error ? <p style={{ color: "#B42318", fontSize: 14 }}>{error}</p> : null}
-      {done ? <p style={{ color: "#067647", fontSize: 14 }}>Saved. Reopen any time to change an answer.</p> : null}
+      {error ? <p style={{ color: "#B42318", fontSize: "var(--bf-text-body-sm)" }}>{error}</p> : null}
+      {done ? <p style={{ color: "#067647", fontSize: "var(--bf-text-body-sm)" }}>Saved. Reopen any time to change an answer.</p> : null}
       <div className="cmpf-actions">
         <button type="button" className="cmpf-primary" onClick={handleSubmit} disabled={saving}>{saving ? "Saving..." : "Submit"}</button>
         <button type="button" className="cmpf-secondary" onClick={() => onComplete()}>Done</button>

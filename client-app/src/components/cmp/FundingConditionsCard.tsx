@@ -55,8 +55,8 @@ export default function FundingConditionsCard({ applicationId }: { applicationId
         {list.map((c) => (
           <li key={c.id} style={{ borderTop: "1px solid rgba(127,127,127,0.25)", paddingTop: 10 }}>
             <div style={{ fontWeight: 700 }}>{c.title}</div>
-            {c.description ? <div style={{ fontSize: 14, marginTop: 2 }}>{c.description}</div> : null}
-            {c.due_date ? <div style={{ fontSize: 13, marginTop: 2 }}>Needed by {c.due_date}</div> : null}
+            {c.description ? <div style={{ fontSize: "var(--bf-text-body-sm)", marginTop: 2 }}>{c.description}</div> : null}
+            {c.due_date ? <div style={{ fontSize: "var(--bf-text-label)", marginTop: 2 }}>Needed by {c.due_date}</div> : null}
             {c.submitted ? <div className="cmpx-note" role="status">Sent - your advisor is reviewing it.</div> : c.requires_document ? (
               <label className="cmpx-btn cmpx-btn--block" style={{ marginTop: 8, cursor: busy ? "default" : "pointer" }}>
                 {busy === c.id ? "Sending..." : "Upload the document"}

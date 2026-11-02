@@ -21,7 +21,7 @@ export default function Under10kWaitlist({ initial }: { initial?: { name?: strin
       <input aria-label="Full name" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
       <input aria-label="Email" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <input aria-label="Mobile phone" type="tel" placeholder="Mobile phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-      <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 13 }}>
+      <label style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: "var(--bf-text-label)" }}>
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
         <span>Yes, Boreal Financial may contact me by email, text or phone about financing for my business. I can opt out at any time.</span>
       </label>
@@ -32,7 +32,7 @@ export default function Under10kWaitlist({ initial }: { initial?: { name?: strin
           setState(r && r.ok === false ? "error" : "done");
         } catch { setState("error"); }
       }}>{state === "saving" ? "Saving..." : "Add me to the list"}</button>
-      {state === "error" && <p role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>That did not save. Please try again, or call us.</p>}
+      {state === "error" && <p role="alert" style={{ color: "#b91c1c", fontSize: "var(--bf-text-label)" }}>That did not save. Please try again, or call us.</p>}
     </div>
   );
 }

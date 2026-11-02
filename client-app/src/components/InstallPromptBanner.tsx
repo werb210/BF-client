@@ -35,7 +35,7 @@ export default function InstallPromptBanner() {
     >
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 600 }}>Install Boreal</div>
-        <div style={{ fontSize: 13, opacity: 0.85 }}>Faster access and offline support</div>
+        <div style={{ fontSize: "var(--bf-text-label)", opacity: 0.85 }}>Faster access and offline support</div>
       </div>
       <button
         onClick={() => setDismissed(true)}

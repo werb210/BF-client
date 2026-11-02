@@ -58,7 +58,7 @@ export function FileUploadCard({
         {pill ? (
           <span
             style={{
-              fontSize: 12,
+              fontSize: "var(--bf-text-help)",
               fontWeight: 600,
               padding: "3px 10px",
               borderRadius: tokens.radii.pill,

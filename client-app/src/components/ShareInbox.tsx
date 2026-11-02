@@ -73,10 +73,10 @@ export default function ShareInbox({ deps = defaultDeps }: { deps?: ShareDeps })
     <div style={box} role="dialog" aria-modal="true" data-testid="share-inbox">
       <div style={card}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Add to your application</div>
-        <div style={{ fontSize: 13, color: "#475569", marginBottom: 14 }}>{names}</div>
+        <div style={{ fontSize: "var(--bf-text-label)", color: "#475569", marginBottom: 14 }}>{names}</div>
         {!signedIn ? (
           <>
-            <p style={{ fontSize: 14 }}>Sign in first, then tap Continue.</p>
+            <p style={{ fontSize: "var(--bf-text-body-sm)" }}>Sign in first, then tap Continue.</p>
             <button type="button" onClick={() => setSignedIn(deps.signedIn())}>Continue</button>
           </>
         ) : state === "sent" ? (
@@ -84,19 +84,19 @@ export default function ShareInbox({ deps = defaultDeps }: { deps?: ShareDeps })
         ) : (
           <>
             {apps.length > 1 ? (
-              <label style={{ display: "block", fontSize: 13, marginBottom: 10 }}>Application
+              <label style={{ display: "block", fontSize: "var(--bf-text-label)", marginBottom: 10 }}>Application
                 <select value={appId} onChange={(e) => setAppId(e.target.value)} style={sel}>
                   {apps.map((a) => <option key={a.id} value={a.id}>{[a.business_name, a.product_category].filter(Boolean).join(" \u00b7 ") || a.id.slice(-8)}</option>)}
                 </select>
               </label>
             ) : null}
-            <label style={{ display: "block", fontSize: 13, marginBottom: 14 }}>What is this?
+            <label style={{ display: "block", fontSize: "var(--bf-text-label)", marginBottom: 14 }}>What is this?
               <select aria-label="What is this?" value={docType} onChange={(e) => setDocType(e.target.value)} style={sel}>
                 {items.map((i) => <option key={i.key} value={i.key.replace(/^upload:/, "")}>{i.label}</option>)}
                 <option value={OTHER}>Something else</option>
               </select>
             </label>
-            {state === "error" ? <p role="alert" style={{ color: "#b91c1c", fontSize: 13 }}>That didn't send. Please try again.</p> : null}
+            {state === "error" ? <p role="alert" style={{ color: "#b91c1c", fontSize: "var(--bf-text-label)" }}>That didn't send. Please try again.</p> : null}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button type="button" onClick={close}>Cancel</button>
               <button type="button" disabled={state === "sending" || !appId} onClick={() => void send()} style={{ fontWeight: 700 }}>

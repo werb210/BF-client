@@ -81,7 +81,7 @@ export default function FeeAgreementSignModal({ applicationId, open, onClose, on
           {session?.status === "none" && <div style={{ padding: 24 }}>There is no fee agreement to sign on this application.</div>}
           {session?.status === "stub" && <div style={{ padding: 24 }}>Signing isn't enabled in this environment yet.</div>}
           {/* BF_CLIENT_FEE_REASON_v724 - say why, so the client (and staff on the phone) know what to fix. */}
-          {session?.status === "error" && <div style={{ padding: 24 }}>We couldn't load your agreement. Please try again shortly, or call us at (866) 631-8939.{session.reason ? <div style={{ marginTop: 10, fontSize: 13, color: "#51617D" }}>Reason: {feeReasonText(session.reason)}</div> : null}</div>}
+          {session?.status === "error" && <div style={{ padding: 24 }}>We couldn't load your agreement. Please try again shortly, or call us at (866) 631-8939.{session.reason ? <div style={{ marginTop: 10, fontSize: "var(--bf-text-label)", color: "#51617D" }}>Reason: {feeReasonText(session.reason)}</div> : null}</div>}
         </div>
       </div>
     </div>

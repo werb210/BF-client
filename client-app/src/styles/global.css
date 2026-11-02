@@ -48,7 +48,7 @@ select:-webkit-autofill {
   .resp-table tr { display: block; border: 1px solid #E4EAF2; border-radius: 8px; padding: 6px 10px; margin-bottom: 12px; }
   .resp-table td { display: block; border-bottom: 0 !important; }
   .resp-table td:empty { display: none; }
-  .resp-table td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 600; color: #51617D; margin-top: 6px; }
+  .resp-table td::before { content: attr(data-label); display: block; font-size: var(--bf-text-help); font-weight: 600; color: #51617D; margin-top: 6px; }
   .resp-table td[data-label='']::before { content: none; }
 }
 

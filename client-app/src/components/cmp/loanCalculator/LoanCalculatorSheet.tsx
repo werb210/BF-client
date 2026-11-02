@@ -8,7 +8,7 @@ import "../cmp.css";
 export default function LoanCalculatorSheet({ requestedAmount, title, onClose }: { requestedAmount?: number | null; title?: string; onClose: () => void }) {
   return (
     <Sheet title="Loan calculator" onClose={onClose} testId="cmp-loan-calculator">
-      <p style={{ margin: "0 0 12px", fontSize: 14, color: "#51617D" }}>Estimate your payments. Your lender's offer sets the actual terms.</p>
+      <p style={{ margin: "0 0 12px", fontSize: "var(--bf-text-body-sm)", color: "#51617D" }}>Estimate your payments. Your lender's offer sets the actual terms.</p>
       <LoanCalculator initialAmount={requestedAmount ?? null} title={title} layout="phone" />
     </Sheet>
   );

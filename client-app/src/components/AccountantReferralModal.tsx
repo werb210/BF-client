@@ -135,25 +135,25 @@ export function AccountantReferralModal({
         <div id="accountant-referral-title" style={{ fontWeight: 700, fontSize: 18, marginBottom: tokens.spacing.sm }}>
           Who is your accountant?
         </div>
-        <div style={{ fontSize: 13, color: tokens.colors.textSecondary, marginBottom: tokens.spacing.md }}>
+        <div style={{ fontSize: "var(--bf-text-label)", color: tokens.colors.textSecondary, marginBottom: tokens.spacing.md }}>
           We will email them a request to upload your financial documents. You can
           carry on and finish your application now.
         </div>
 
         <label style={{ display: "block", marginBottom: tokens.spacing.sm }}>
-          <div style={{ fontSize: 13, marginBottom: 4 }}>Accounting firm</div>
+          <div style={{ fontSize: "var(--bf-text-label)", marginBottom: 4 }}>Accounting firm</div>
           <Input autoComplete="organization" value={details.firm} onChange={set("firm")} disabled={busy} />
         </label>
         <label style={{ display: "block", marginBottom: tokens.spacing.sm }}>
-          <div style={{ fontSize: 13, marginBottom: 4 }}>Accountant name</div>
+          <div style={{ fontSize: "var(--bf-text-label)", marginBottom: 4 }}>Accountant name</div>
           <Input autoComplete="name" value={details.contact} onChange={set("contact")} disabled={busy} />
         </label>
         <label style={{ display: "block", marginBottom: tokens.spacing.sm }}>
-          <div style={{ fontSize: 13, marginBottom: 4 }}>Email</div>
+          <div style={{ fontSize: "var(--bf-text-label)", marginBottom: 4 }}>Email</div>
           <Input type="email" autoComplete="email" value={details.email} onChange={set("email")} disabled={busy} />
         </label>
         <label style={{ display: "block", marginBottom: tokens.spacing.md }}>
-          <div style={{ fontSize: 13, marginBottom: 4 }}>Phone</div>
+          <div style={{ fontSize: "var(--bf-text-label)", marginBottom: 4 }}>Phone</div>
           <Input
             type="tel"
             inputMode="tel"
@@ -167,7 +167,7 @@ export function AccountantReferralModal({
         </label>
 
         {(submitError ?? error) && (
-          <div role="alert" style={{ color: tokens.colors.error, fontSize: 13, marginBottom: tokens.spacing.sm }}>
+          <div role="alert" style={{ color: tokens.colors.error, fontSize: "var(--bf-text-label)", marginBottom: tokens.spacing.sm }}>
             {submitError ?? error}
           </div>
         )}

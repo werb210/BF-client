@@ -62,7 +62,7 @@ const wrap: CSSProperties = { maxWidth: 560, margin: "0 auto", padding: 20 };
 const card: CSSProperties = { border: "1px solid #cbd5e1", borderRadius: 12, padding: 16, marginBottom: 12, background: "#fff" };
 const input: CSSProperties = { width: "100%", padding: "10px 12px", fontSize: 16, borderRadius: 8, border: "1px solid #cbd5e1", boxSizing: "border-box" };
 const button: CSSProperties = { padding: "10px 16px", fontSize: 15, fontWeight: 600, borderRadius: 8, border: "none", background: "#1d4ed8", color: "#fff", cursor: "pointer" };
-const link: CSSProperties = { background: "none", border: "none", color: "#1d4ed8", cursor: "pointer", padding: 0, fontSize: 14 };
+const link: CSSProperties = { background: "none", border: "none", color: "#1d4ed8", cursor: "pointer", padding: 0, fontSize: "var(--bf-text-body-sm)" };
 
 export default function AccountantPage() {
   const [signedIn, setSignedIn] = useState(Boolean(getAccountantToken()));
@@ -150,19 +150,19 @@ export default function AccountantPage() {
   if (!signedIn) return shell(
     <div style={wrap}>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Accountant sign-in</h1>
-      <p style={{ color: "#475569", fontSize: 14, marginTop: 0 }}>Use the mobile number your client gave us. We'll text you a code.</p>
+      <p style={{ color: "#475569", fontSize: "var(--bf-text-body-sm)", marginTop: 0 }}>Use the mobile number your client gave us. We'll text you a code.</p>
       <div style={card}>
         {phase === "phone" ? <>
-          <label htmlFor="accountant-phone" style={{ fontSize: 13 }}>Mobile number</label>
+          <label htmlFor="accountant-phone" style={{ fontSize: "var(--bf-text-label)" }}>Mobile number</label>
           <input id="accountant-phone" type="tel" name="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void sendCode(); } }} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
           <button type="button" style={button} disabled={busy || !phone.trim()} onClick={() => void sendCode()}>{busy ? "Sending…" : "Send code"}</button>
         </> : <>
-          <label htmlFor="accountant-code" style={{ fontSize: 13 }}>6-digit code</label>
+          <label htmlFor="accountant-code" style={{ fontSize: "var(--bf-text-label)" }}>6-digit code</label>
           <input id="accountant-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void verifyCode(); } }} style={{ ...input, marginTop: 4, marginBottom: 12 }} />
           <button type="button" style={button} disabled={busy || code.trim().length < 6} onClick={() => void verifyCode()}>{busy ? "Checking…" : "Sign in"}</button>
           <div style={{ marginTop: 10 }}><button type="button" style={link} onClick={() => { setPhase("phone"); setCode(""); setError(null); }}>Use a different number</button></div>
         </>}
-        {error && <div role="alert" style={{ color: "#b91c1c", fontSize: 13, marginTop: 10 }}>{error}</div>}
+        {error && <div role="alert" style={{ color: "#b91c1c", fontSize: "var(--bf-text-label)", marginTop: 10 }}>{error}</div>}
       </div>
     </div>
   );
@@ -172,10 +172,10 @@ export default function AccountantPage() {
       <h1 style={{ fontSize: 22 }}>{name ? `Hello, ${name}` : "Documents"}</h1>
       <button type="button" style={link} onClick={() => { clearAccountantToken(); setSignedIn(false); setPhase("phone"); setCode(""); setOpenId(null); }}>Sign out</button>
     </div>
-    {error && <div role="alert" style={{ color: "#b91c1c", fontSize: 13, marginBottom: 10 }}>{error}</div>}
-    {notice && <div role="status" style={{ color: "#15803d", fontSize: 13, marginBottom: 10 }}>{notice}</div>}
+    {error && <div role="alert" style={{ color: "#b91c1c", fontSize: "var(--bf-text-label)", marginBottom: 10 }}>{error}</div>}
+    {notice && <div role="status" style={{ color: "#15803d", fontSize: "var(--bf-text-label)", marginBottom: 10 }}>{notice}</div>}
     {/* BF_CLIENT_ACCOUNTANT_UX_v2 */}
-    <div style={{ ...card, background: "#f8fafc", fontSize: 14, lineHeight: 1.5, marginBottom: 12 }}>
+    <div style={{ ...card, background: "#f8fafc", fontSize: "var(--bf-text-body-sm)", lineHeight: 1.5, marginBottom: 12 }}>
       <div style={{ fontWeight: 600, marginBottom: 6 }}>What we need from you</div>
       <div style={{ color: "#475569" }}>
         Your client has asked us to collect their financial documents from you directly.
@@ -191,12 +191,12 @@ export default function AccountantPage() {
         <button type="button" style={link} aria-expanded={openId === app.id} onClick={() => void openApplication(app.id)}>{openId === app.id ? "Hide" : "Open"}</button>
       </div>
       {openId === app.id && <div style={{ marginTop: 12 }}>
-        {uploads.length === 0 ? <div style={{ fontSize: 13, color: "#475569" }}>No documents are outstanding.</div> : uploads.map((slot) => <div key={slot.category} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderTop: "1px solid #e2e8f0" }}>
-          <span style={{ fontSize: 14, fontWeight: 500 }}>
+        {uploads.length === 0 ? <div style={{ fontSize: "var(--bf-text-label)", color: "#475569" }}>No documents are outstanding.</div> : uploads.map((slot) => <div key={slot.category} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "8px 0", borderTop: "1px solid #e2e8f0" }}>
+          <span style={{ fontSize: "var(--bf-text-body-sm)", fontWeight: 500 }}>
             {slot.category}
             {!slot.outstanding
-              ? <span style={{ color: "#15803d", marginLeft: 8, fontSize: 12, fontWeight: 400 }}>received</span>
-              : <span style={{ color: "#b45309", marginLeft: 8, fontSize: 12, fontWeight: 400 }}>needed</span>}
+              ? <span style={{ color: "#15803d", marginLeft: 8, fontSize: "var(--bf-text-help)", fontWeight: 400 }}>received</span>
+              : <span style={{ color: "#b45309", marginLeft: 8, fontSize: "var(--bf-text-help)", fontWeight: 400 }}>needed</span>}
           </span>
           {/* BF_CLIENT_ACCOUNTANT_UX_v2 - select or drop multiple documents. */}
           <label
@@ -218,12 +218,12 @@ export default function AccountantPage() {
         </div>)}
 
         {forms.length > 0 && <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Forms</div>
+          <div style={{ fontSize: "var(--bf-text-label)", fontWeight: 600, color: "#334155", marginBottom: 6 }}>Forms</div>
           {forms.map((docType) => {
             const Form = FORM_RENDERERS[docType];
             return <div key={docType} style={{ borderTop: "1px solid #e2e8f0", padding: "8px 0" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: 14 }}>{FORM_LABELS[docType] ?? docType}</span>
+                <span style={{ fontSize: "var(--bf-text-body-sm)" }}>{FORM_LABELS[docType] ?? docType}</span>
                 <button type="button" style={link} data-testid={`accountant-form-${docType}`} aria-expanded={openForm === docType} onClick={() => setOpenForm(openForm === docType ? null : docType)}>{openForm === docType ? "Close" : "Open"}</button>
               </div>
               {openForm === docType && <div style={{ marginTop: 10 }}>
