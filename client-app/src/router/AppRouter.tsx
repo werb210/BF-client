@@ -16,6 +16,12 @@ import Wizard from "@/wizard/Wizard";
 const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
 // BF_CLIENT_ACCOUNTANT_PORTAL_v1 - outside RequireOTP because that guard expects a client token.
 const AccountantPage     = lazy(() => import("@/pages/AccountantPage"));
+// BF_CLIENT_v869_SETTINGS_PACK - public booking pages, the post-funding survey and the privacy request page (no
+// sign-in), ported from KS-Client #25.
+const BookPage           = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.BookPage })));
+const ManageBookingPage  = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.ManageBookingPage })));
+const SurveyPage         = lazy(() => import("@/pages/publicPages/SurveyPage"));
+const PrivacyRequestPage = lazy(() => import("@/pages/publicPages/PrivacyRequestPage"));
 // BF_CLIENT_FLINKS_EMBED_DEMO_v1 - lender-facing sales asset. Public and
 // noindex, outside RequireOTP, no API calls. Nothing links to it.
 const FlinksDemoPage      = lazy(() => import("@/pages/FlinksDemoPage"));
@@ -32,6 +38,10 @@ export default function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/otp" element={<OtpToLanding />} /> {/* BF_CLIENT_ONE_SIGN_IN_v737 - one sign-in screen: the landing page */}
         <Route path="/accountant" element={<AccountantPage />} />
+        <Route path="/book/manage/:token" element={<ManageBookingPage />} />
+        <Route path="/book/:slug" element={<BookPage />} />
+        <Route path="/survey/:token" element={<SurveyPage />} />
+        <Route path="/privacy-request" element={<PrivacyRequestPage />} />
         {/* BF_CLIENT_FLINKS_EMBED_DEMO_v1 */}
         <Route path="/flinks-demo" element={<FlinksDemoPage />} />
         <Route path="/expired" element={<SessionExpiredPage />} />

@@ -1,3 +1,20 @@
+import { CONSENT_KEY } from "@/utils/analytics";
+import { isNativeBuild, peekConsentRegion } from "./thirdPartyTags";
+
+// BF_CLIENT_v869_SETTINGS_PACK_CONSENT - visitor tracking follows the cookie choice (ported from KS-Client #25, kept to
+// Boreal's v868 rule): a visitor who declined is never tracked; in Quebec (Law 25) tracking waits for Accept;
+// elsewhere it runs on notice, as before. The native apps show no banner and keep their in-app journey.
+export function trackingAllowed(): boolean {
+  try {
+    if (isNativeBuild()) return true;
+    const stored = localStorage.getItem(CONSENT_KEY);
+    if (stored === "denied") return false;
+    if (stored === "granted") return true;
+    return peekConsentRegion() !== "QC";
+  } catch {
+    return false;
+  }
+}
 // BF_CLIENT_VISITOR_JOURNEY_v1 - continues the visitor journey inside the wizard.
 // Reuses the journey session id handed over from the website (?journeySession=...),
 // or mints one, so the CRM can show the full path: which ad -> pages -> wizard steps.
@@ -28,6 +45,7 @@ type JourneyEvent = { type: string; path?: string; title?: string; step?: string
 
 export function trackJourney(event: JourneyEvent): void {
   try {
+    if (!trackingAllowed()) return;
     const sessionId = getJourneySessionId();
     if (!sessionId) return;
     // BF_CLIENT_JOURNEY_BOOT_v185 - the collector accepts an attribution object and uses
@@ -70,6 +88,7 @@ export function trackApplicationSubmitted(): void {
 // localStorage when attribution is captured, and it fires the beacon that creates the row.
 export function startJourney(): void {
   try {
+    if (!trackingAllowed()) return;
     getJourneySessionId();
     trackJourney({
       type: "session_start",
