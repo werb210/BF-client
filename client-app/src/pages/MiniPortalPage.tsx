@@ -804,6 +804,8 @@ export default function MiniPortalPage() {
     if (ctaAction === "sign" || ctaAction === "sign_application") { onChip("sign"); return; }
     if (ctaAction === "sign_fee_agreement") { setShowFeeSign(true); return; } // BF_CLIENT_FEE_AGREEMENT_v709
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
+    if (ctaAction === "id_verify") { navigate(`/verify/${encodeURIComponent(applicationId ?? "")}`); return; } // BF_CLIENT_v872_KYC
+    if (ctaAction.startsWith("quote:")) { navigate(`/quote/${encodeURIComponent(ctaAction.slice(6))}`); return; } // BF_CLIENT_v872_QUOTES
     if (ctaAction === "product_questions" || ctaAction.startsWith("product_questions:")) { setOpenForm("product_questions"); return; } // v290
     // BF_CLIENT_SBA_FORMS_ENTRY_v142 - accepts the canonical cta and the raw
     // doc types, so prompts already sitting in a thread start working too.

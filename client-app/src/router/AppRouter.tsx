@@ -22,6 +22,8 @@ const BookPage           = lazy(() => import("@/pages/publicPages/BookingPage").
 const ManageBookingPage  = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.ManageBookingPage })));
 const SurveyPage         = lazy(() => import("@/pages/publicPages/SurveyPage"));
 const PrivacyRequestPage = lazy(() => import("@/pages/publicPages/PrivacyRequestPage"));
+const VerifyIdentityPage = lazy(() => import("@/pages/verify/VerifyIdentityPage")); // BF_CLIENT_v872_KYC
+const QuotePage          = lazy(() => import("@/pages/quote/QuotePage")); // BF_CLIENT_v872_QUOTES
 // BF_CLIENT_FLINKS_EMBED_DEMO_v1 - lender-facing sales asset. Public and
 // noindex, outside RequireOTP, no API calls. Nothing links to it.
 const FlinksDemoPage      = lazy(() => import("@/pages/FlinksDemoPage"));
@@ -66,6 +68,8 @@ export default function AppRouter() {
         <Route path="/application/:id" element={<RequireOTP accountBarInPage><MiniPortalPage /></RequireOTP>} />
         {/* BF_CLIENT_BLOCK_TWO_STAGE_v1 */}
         <Route path="/mini-portal/forms/:applicationId" element={<RequireOTP><Stage2Page /></RequireOTP>} />
+        <Route path="/verify/:applicationId" element={<RequireOTP><VerifyIdentityPage /></RequireOTP>} /> {/* BF_CLIENT_v872_KYC */}
+        <Route path="/quote/:quoteId" element={<RequireOTP><QuotePage /></RequireOTP>} /> {/* BF_CLIENT_v872_QUOTES */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
