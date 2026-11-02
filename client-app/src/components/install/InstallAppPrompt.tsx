@@ -47,13 +47,13 @@ function isStandalone(): boolean {
 const styles = {
   card: { background: "linear-gradient(135deg, #0B1F3A 0%, #1A3A5C 100%)", color: "#fff", borderRadius: 12, padding: 20, margin: "0 0 20px", boxShadow: "0 4px 12px rgba(11, 31, 58, 0.15)" } as CSSProperties,
   title: { fontSize: 18, fontWeight: 700, margin: "0 0 6px" } as CSSProperties,
-  subtitle: { fontSize: 14, opacity: 0.9, margin: "0 0 14px", lineHeight: 1.5 } as CSSProperties,
-  benefits: { fontSize: 13.5, opacity: 0.92, margin: "0 0 16px", lineHeight: 1.7, paddingLeft: 18 } as CSSProperties,
+  subtitle: { fontSize: "var(--bf-text-body-sm)", opacity: 0.9, margin: "0 0 14px", lineHeight: 1.5 } as CSSProperties,
+  benefits: { fontSize: "var(--bf-text-label)", opacity: 0.92, margin: "0 0 16px", lineHeight: 1.7, paddingLeft: 18 } as CSSProperties,
   buttonRow: { display: "flex", gap: 10, flexWrap: "wrap" as const } as CSSProperties,
-  primaryBtn: { background: "#fff", color: "#0B1F3A", border: 0, borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" } as CSSProperties,
-  secondaryBtn: { background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 500, cursor: "pointer" } as CSSProperties,
-  steps: { background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: 14, margin: "12px 0 0", fontSize: 13, lineHeight: 1.6 } as CSSProperties,
-  linkBtn: { display: "inline-block", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 500, textDecoration: "none" } as CSSProperties,
+  primaryBtn: { background: "#fff", color: "#0B1F3A", border: 0, borderRadius: 8, padding: "10px 18px", fontSize: "var(--bf-text-body-sm)", fontWeight: 600, cursor: "pointer" } as CSSProperties,
+  secondaryBtn: { background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: "var(--bf-text-body-sm)", fontWeight: 500, cursor: "pointer" } as CSSProperties,
+  steps: { background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: 14, margin: "12px 0 0", fontSize: "var(--bf-text-label)", lineHeight: 1.6 } as CSSProperties,
+  linkBtn: { display: "inline-block", background: "transparent", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 8, padding: "10px 18px", fontSize: "var(--bf-text-body-sm)", fontWeight: 500, textDecoration: "none" } as CSSProperties,
 };
 
 type StepKey = "ios" | "android" | "desktop";

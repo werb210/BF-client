@@ -403,6 +403,7 @@ export default function MiniPortalPage() {
     const r = await uploadDocumentFiles(String(applicationId), type, files);
     if (r.status === "ok") setUploadNotice({ tone: "ok", text: label + " uploaded. Thank you." });
     else if (r.status === "queued") setUploadNotice({ tone: "info", text: r.message });
+    else if (r.status === "duplicate") setUploadNotice({ tone: r.satisfied ? "ok" : "info", text: r.message }); // BF_CLIENT_v868_DUPLICATE_UX
     else setUploadNotice({ tone: "error", text: r.message });
     void loadAll();
     setTodoRefresh((n) => n + 1);
@@ -1042,7 +1043,7 @@ export default function MiniPortalPage() {
             data-testid="cmp-sign-other-app"
             style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#fef9c3", border: "1px solid #facc15", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#713f12" }}
           >
-            <div style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 600 }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize: "var(--bf-text-body-sm)", fontWeight: 600 }}>
               {a?.viewer_role === "partner" /* BF_CLIENT_v858_PARTNER_SIGNING */
                 ? <>The application {fmtApp(a)} needs your signature as an owner.</>
                 : <>Your application {fmtApp(a)} is ready for your signature.</>}
@@ -1050,7 +1051,7 @@ export default function MiniPortalPage() {
             <button
               type="button"
               onClick={() => navigate(`/application/${encodeURIComponent(String(a.id))}?sign=1`)}
-              style={{ padding: "8px 16px", fontSize: 14, fontWeight: 700, color: "#0f172a", background: "#facc15", border: "none", borderRadius: 6, cursor: "pointer" }}
+              style={{ padding: "8px 16px", fontSize: "var(--bf-text-body-sm)", fontWeight: 700, color: "#0f172a", background: "#facc15", border: "none", borderRadius: 6, cursor: "pointer" }}
             >
               Sign now
             </button>
@@ -1058,19 +1059,19 @@ export default function MiniPortalPage() {
         ))}
       {/* BF_CLIENT_v858_PARTNER_SIGNING - who this person is waiting for, or that they have signed */}
       {signingNotice(signSession) ? (
-        <div data-testid="cmp-sign-notice" style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#0f172a", fontSize: 14, fontWeight: 600 }}>
+        <div data-testid="cmp-sign-notice" style={{ background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#0f172a", fontSize: "var(--bf-text-body-sm)", fontWeight: 600 }}>
           {signingNotice(signSession)}
         </div>
       ) : null}
       {/* BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — multiple application switcher */}
       {!isPhone && myApps.length > 1 && (
         <div style={{ margin: "0 0 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <label htmlFor="mp-app-switch" style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>Your applications</label>
+          <label htmlFor="mp-app-switch" style={{ fontSize: "var(--bf-text-label)", fontWeight: 600, color: "#475569" }}>Your applications</label>
           <select
             id="mp-app-switch"
             value={applicationId}
             onChange={(e) => { const id = e.target.value; if (id && id !== applicationId) navigate(`/application/${encodeURIComponent(id)}`); }}
-            style={{ flex: 1, minWidth: 0, maxWidth: 520, padding: "8px 10px", fontSize: 13, color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
+            style={{ flex: 1, minWidth: 0, maxWidth: 520, padding: "8px 10px", fontSize: "var(--bf-text-label)", color: "#0f172a", background: "#fff", border: "1px solid #cbd5e1", borderRadius: 6 }}
           >
             {myApps.map((a) => (
               <option key={String(a.id)} value={String(a.id)}>{fmtApp(a)}{a?.signature_needed === true ? " - signature needed" : ""}</option>
@@ -1081,8 +1082,8 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_BLOCK_v162_MINI_PORTAL_REJECTED_DOCS_BANNER_v1 */}
       {rejectedDocs.length > 0 && (
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#7f1d1d" }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>⚠ {rejectedDocs.length} document{rejectedDocs.length === 1 ? " was" : "s were"} rejected — please re-upload</div>
-          <ul style={{ margin: "6px 0 10px", paddingLeft: 20, fontSize: 13, lineHeight: 1.5 }}>
+          <div style={{ fontWeight: 700, fontSize: "var(--bf-text-body-sm)", marginBottom: 6 }}>⚠ {rejectedDocs.length} document{rejectedDocs.length === 1 ? " was" : "s were"} rejected — please re-upload</div>
+          <ul style={{ margin: "6px 0 10px", paddingLeft: 20, fontSize: "var(--bf-text-label)", lineHeight: 1.5 }}>
             {rejectedDocs.map((doc) => (
               <li key={doc.id}>
                 {doc.category || "Document"}{doc.filename ? ` (${doc.filename})` : ""}{doc.rejection_reason ? `: ${doc.rejection_reason}` : ""}
@@ -1106,7 +1107,7 @@ export default function MiniPortalPage() {
             type="button"
             className="mp-account-delete-link"
             onClick={() => { setDeleteErr(null); setDeleteStep(1); }}
-            style={{ marginLeft: 16, background: "transparent", border: "none", color: "#6b7280", fontSize: 12, textDecoration: "underline", cursor: "pointer", padding: 0 }}
+            style={{ marginLeft: 16, background: "transparent", border: "none", color: "#6b7280", fontSize: "var(--bf-text-help)", textDecoration: "underline", cursor: "pointer", padding: 0 }}
           >
             Delete account
           </button>
@@ -1125,7 +1126,7 @@ export default function MiniPortalPage() {
           above the chat. Every to-do lives here; the chat is conversation only (BF-Server v629). */}
       <AppUpdateBanner />
       {uploadNotice && (
-        <div role="status" data-testid="upload-notice" style={{ margin: "0 0 12px", padding: "10px 14px", borderRadius: 8, fontWeight: 600, fontSize: 14,
+        <div role="status" data-testid="upload-notice" style={{ margin: "0 0 12px", padding: "10px 14px", borderRadius: 8, fontWeight: 600, fontSize: "var(--bf-text-body-sm)",
           background: uploadNotice.tone === "error" ? "#fef2f2" : uploadNotice.tone === "ok" ? "#ecfdf5" : "#eff6ff",
           color: uploadNotice.tone === "error" ? "#991b1b" : uploadNotice.tone === "ok" ? "#065f46" : "#1e3a8a" }}>
           {uploadNotice.text}
@@ -1172,7 +1173,7 @@ export default function MiniPortalPage() {
               // Only show it once staff have advanced the app past those stages.
               && stageIndex !== STAGE_BY_KEY.documents_required
               && stageIndex !== STAGE_BY_KEY.additional_steps_required ? (
-              <div data-testid="all-received-note" style={{ margin: "0 0 10px", padding: "10px 12px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: 13, fontWeight: 600 }}>
+              <div data-testid="all-received-note" style={{ margin: "0 0 10px", padding: "10px 12px", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: "var(--bf-text-label)", fontWeight: 600 }}>
                 ✓ All required tasks and documents received — nothing outstanding right now.
               </div>
             ) : null}
@@ -1208,7 +1209,7 @@ export default function MiniPortalPage() {
             })}
             {/* BF_CLIENT_BLOCK_v322_MINI_PORTAL_REALTIME_v1 — staff typing */}
             {staffTyping && (
-              <div style={{ fontSize: 12, color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
+              <div style={{ fontSize: "var(--bf-text-help)", color: "#64748b", padding: "4px 0", fontStyle: "italic" }}>
                 Staff is typing…
               </div>
             )}
@@ -1216,7 +1217,7 @@ export default function MiniPortalPage() {
           {attachments.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "4px 8px" }}>
               {attachments.map((a, idx) => (
-                <span key={idx} style={{ fontSize: 12, padding: "2px 8px", border: "1px solid #cbd6e2", borderRadius: 12, background: "#f9fafb", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span key={idx} style={{ fontSize: "var(--bf-text-help)", padding: "2px 8px", border: "1px solid #cbd6e2", borderRadius: 12, background: "#f9fafb", display: "inline-flex", alignItems: "center", gap: 6 }}>
                   📎 {a.name}
                   <button onClick={() => removeAttachment(idx)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "#64748b" }} aria-label={`Remove ${a.name}`}>✕</button>
                 </span>
@@ -1250,7 +1251,7 @@ export default function MiniPortalPage() {
           )}
 
           <div className="mp-thread-card__composer" style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <label style={{ cursor: "pointer", padding: "6px 8px", border: "1px solid #cbd6e2", borderRadius: 6, fontSize: 13, background: "#fff" }} title="Attach a file (≤3MB)">
+            <label style={{ cursor: "pointer", padding: "6px 8px", border: "1px solid #cbd6e2", borderRadius: 6, fontSize: "var(--bf-text-label)", background: "#fff" }} title="Attach a file (≤3MB)">
               📎
               <input
                 type="file"
@@ -1548,7 +1549,7 @@ export default function MiniPortalPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
               <div style={{ fontSize: 18, fontWeight: 600 }}>Sign Your Documents</div>
               {signSession?.status === "ready" && signSession.ownerLink ? ( /* BF_CLIENT_v858_PARTNER_SIGNING */
-                <a href={signSession.ownerLink} target="_blank" rel="noopener noreferrer" data-testid="cmp-sign-own-link" style={{ fontSize: 14, fontWeight: 600, color: "#1e3a8a", marginLeft: "auto", marginRight: 16 }}>Open in a new tab</a>
+                <a href={signSession.ownerLink} target="_blank" rel="noopener noreferrer" data-testid="cmp-sign-own-link" style={{ fontSize: "var(--bf-text-body-sm)", fontWeight: 600, color: "#1e3a8a", marginLeft: "auto", marginRight: 16 }}>Open in a new tab</a>
               ) : null}
               <button type="button" onClick={() => { setShowSign(false); void markSigningComplete(); }} aria-label="Close" style={{ background: "transparent", border: 0, fontSize: 24, cursor: "pointer", color: "#64748b", lineHeight: 1 }}>×</button>
             </div>
@@ -1596,7 +1597,7 @@ export default function MiniPortalPage() {
             <h2 style={{ margin: "0 0 12px", fontSize: 19, color: "#0f172a" }}>Delete your account?</h2>
             {deleteStep === 1 && (
               <>
-                <p style={{ margin: "0 0 20px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                <p style={{ margin: "0 0 20px", fontSize: "var(--bf-text-body-sm)", lineHeight: 1.5, color: "#374151" }}>
                   If you delete your account, any active applications will also be deleted. This cannot be undone.
                 </p>
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
@@ -1607,10 +1608,10 @@ export default function MiniPortalPage() {
             )}
             {deleteStep === 2 && (
               <>
-                <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.5, color: "#374151" }}>
+                <p style={{ margin: "0 0 16px", fontSize: "var(--bf-text-body-sm)", lineHeight: 1.5, color: "#374151" }}>
                   Once deleted, Boreal Financial will not be allowed to communicate with you regarding lender communications, offers to finance, or to assist you with completing your funding.
                 </p>
-                {deleteErr && <p style={{ margin: "0 0 12px", fontSize: 13, color: "#dc2626" }}>{deleteErr}</p>}
+                {deleteErr && <p style={{ margin: "0 0 12px", fontSize: "var(--bf-text-label)", color: "#dc2626" }}>{deleteErr}</p>}
                 <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
                   <button type="button" onClick={() => setDeleteStep(0)} style={{ padding: "10px 16px", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                   <button type="button" onClick={() => void confirmDeleteAccount()} style={{ padding: "10px 16px", borderRadius: 10, border: "none", background: "#dc2626", color: "#fff", fontWeight: 600, cursor: "pointer" }}>Delete my account</button>
@@ -1618,7 +1619,7 @@ export default function MiniPortalPage() {
               </>
             )}
             {deleteStep === 3 && (
-              <p style={{ margin: 0, fontSize: 14, color: "#374151" }}>Deleting your account…</p>
+              <p style={{ margin: 0, fontSize: "var(--bf-text-body-sm)", color: "#374151" }}>Deleting your account…</p>
             )}
           </div>
         </div>

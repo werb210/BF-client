@@ -97,7 +97,7 @@ export default function AccountBar() {
           background: "none",
           border: 0,
           color: "#1e3a5f",
-          fontSize: 14,
+          fontSize: "var(--bf-text-body-sm)",
           textDecoration: "underline",
           cursor: signingOut ? "default" : "pointer",
           padding: 0,

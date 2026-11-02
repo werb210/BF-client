@@ -62,7 +62,7 @@ describe("Clarity loads only after analytics are accepted", () => {
 
 describe("Google Tag Manager and Google Ads", () => {
   it("load on the web", () => {
-    loadGoogleTags();
+    loadGoogleTags("other");
     const srcs = scriptSrcs();
     expect(srcs.some((s) => s.includes("googletagmanager.com/gtm.js?id=GTM-"))).toBe(true);
     expect(srcs.some((s) => s.includes("googletagmanager.com/gtag/js?id=AW-"))).toBe(true);
@@ -71,7 +71,7 @@ describe("Google Tag Manager and Google Ads", () => {
 
   it("never load in the native apps", () => {
     native.value = true;
-    loadGoogleTags();
+    loadGoogleTags("other");
     expect(scriptSrcs().some((s) => s.includes("googletagmanager.com"))).toBe(false);
     expect((window as TagWindow).gtag).toBeUndefined();
   });

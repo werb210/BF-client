@@ -1,6 +1,8 @@
 // BF_CLIENT_ADS_CONSENT_v1
 // Consent Mode defaults now come from lib/thirdPartyTags.ts loadGoogleTags()
 // (web only) instead of an inline block in index.html.
+// BF_CLIENT_v868_QUEBEC_CONSENT - these are the visitors outside Quebec ("other"): Google stays granted by
+// default with Decline as the opt-out. Quebec visitors are covered in quebecConsent.test.tsx.
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -39,7 +41,7 @@ describe("consent defaults", () => {
     // The conversion fires on wizard submit, before most applicants ever touch
     // the banner. With ad_storage denied it was recorded as modelled, not
     // attributed: 52 applications produced 2 recorded conversions.
-    loadGoogleTags();
+    loadGoogleTags("other");
     const [defaults] = consentCalls("default");
     expect(defaults.ad_storage).toBe("granted");
     expect(defaults.ad_user_data).toBe("granted");
@@ -48,17 +50,17 @@ describe("consent defaults", () => {
   it("keeps ads consent consistent with analytics consent", () => {
     // Both rest on the same implied-consent basis; defaulting one granted and
     // the other denied was an inconsistency, not a decision.
-    loadGoogleTags();
+    loadGoogleTags("other");
     expect(consentCalls("default")[0].analytics_storage).toBe("granted");
   });
 
   it("leaves personalised remarketing off", () => {
-    loadGoogleTags();
+    loadGoogleTags("other");
     expect(consentCalls("default")[0].ad_personalization).toBe("denied");
   });
 
   it("still lets the banner revoke every consent key", async () => {
-    loadGoogleTags();
+    loadGoogleTags("other");
     const host = document.createElement("div");
     document.body.appendChild(host);
     const root: Root = createRoot(host);
@@ -80,7 +82,7 @@ describe("consent defaults", () => {
   });
 
   it("keeps the Google Ads base tag loaded", () => {
-    loadGoogleTags();
+    loadGoogleTags("other");
     expect(GOOGLE_ADS_ID).toBe("AW-18248196538");
     const srcs = Array.from(document.querySelectorAll("script")).map((s) => s.getAttribute("src") || "");
     expect(srcs).toContain("https://www.googletagmanager.com/gtag/js?id=AW-18248196538");

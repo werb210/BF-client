@@ -54,8 +54,8 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
   const result = useMemo(() => (ready && errors.length === 0 ? calculateLoan(input) : null), [input, ready, errors]);
 
   const field: CSSProperties = { width: "100%", boxSizing: "border-box", padding: "8px 10px", border: "1px solid " + BORDER, borderRadius: 6, fontSize: phone ? 16 : 14, color: NAVY, background: "#ffffff" };
-  const labelStyle: CSSProperties = { display: "grid", gap: 4, fontSize: 13, fontWeight: 600, color: NAVY };
-  const btn: CSSProperties = { background: NAVY, color: "#ffffff", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
+  const labelStyle: CSSProperties = { display: "grid", gap: 4, fontSize: "var(--bf-text-label)", fontWeight: 600, color: NAVY };
+  const btn: CSSProperties = { background: NAVY, color: "#ffffff", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: "var(--bf-text-body-sm)", fontWeight: 600, cursor: "pointer" };
   const btn2: CSSProperties = { ...btn, background: "#ffffff", color: NAVY, border: "1px solid " + NAVY };
 
   const download = async (kind: "pdf" | "csv") => {
@@ -90,7 +90,7 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
   const td: CSSProperties = { textAlign: "right", padding: phone ? "4px 6px" : "5px 8px", borderBottom: "1px solid #e2e8f0", color: NAVY, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" };
 
   return (
-    <div data-testid="loan-calculator" style={{ color: NAVY, background: "#ffffff", display: "grid", gap: 16, fontSize: 14 }}>
+    <div data-testid="loan-calculator" style={{ color: NAVY, background: "#ffffff", display: "grid", gap: 16, fontSize: "var(--bf-text-body-sm)" }}>
       <div style={grid}>
         <label style={labelStyle}>Amount ($)
           <input data-testid="calc-amount" type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 250000" style={field} />
@@ -117,9 +117,9 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
         </label>
       </div>
 
-      {!ready && <p style={{ margin: 0, color: MUTED, fontSize: 13 }}>Enter the amount, rate and term to see the payments. Daily payments are business days (Monday to Friday, 260 a year).</p>}
+      {!ready && <p style={{ margin: 0, color: MUTED, fontSize: "var(--bf-text-label)" }}>Enter the amount, rate and term to see the payments. Daily payments are business days (Monday to Friday, 260 a year).</p>}
       {errors.length > 0 && (
-        <div role="alert" data-testid="calc-errors" style={{ background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: 6, padding: "8px 10px", fontSize: 13, fontWeight: 600 }}>
+        <div role="alert" data-testid="calc-errors" style={{ background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: 6, padding: "8px 10px", fontSize: "var(--bf-text-label)", fontWeight: 600 }}>
           {errors.map((e) => <div key={e}>{e}</div>)}
         </div>
       )}
@@ -134,12 +134,12 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
               ["Total cost", money(result.totalCost)],
             ].map(([k, v]) => (
               <div key={k} style={{ border: "1px solid " + BORDER, borderRadius: 8, padding: "8px 10px", background: "#f8fafc" }}>
-                <div style={{ fontSize: 12, color: MUTED, fontWeight: 600 }}>{k}</div>
+                <div style={{ fontSize: "var(--bf-text-help)", color: MUTED, fontWeight: 600 }}>{k}</div>
                 <div data-testid={"calc-out-" + String(k).toLowerCase().replace(/[^a-z]+/g, "-")} style={{ fontSize: phone ? 17 : 19, fontWeight: 700, color: NAVY }}>{v}</div>
               </div>
             ))}
           </div>
-          <details style={{ fontSize: 13, color: NAVY }}>
+          <details style={{ fontSize: "var(--bf-text-label)", color: NAVY }}>
             <summary style={{ cursor: "pointer", fontWeight: 600 }}>All figures</summary>
             <dl style={{ display: "grid", gridTemplateColumns: "auto auto", gap: "4px 16px", margin: "8px 0 0" }}>
               {summaryLines(input, result).map(([k, v]) => (
@@ -153,7 +153,7 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
             <button type="button" data-testid="calc-csv" onClick={() => void download("csv")} style={btn2}>Download spreadsheet</button>
             {onSaveNote && <button type="button" data-testid="calc-save" disabled={busy} onClick={() => void save()} style={btn2}>{busy ? "Saving..." : "Save to file"}</button>}
           </div>
-          {note && <div role="status" data-testid="calc-note" style={{ fontSize: 13, fontWeight: 600, color: note.ok ? "#065f46" : "#991b1b" }}>{note.text}</div>}
+          {note && <div role="status" data-testid="calc-note" style={{ fontSize: "var(--bf-text-label)", fontWeight: 600, color: note.ok ? "#065f46" : "#991b1b" }}>{note.text}</div>}
 
           <div style={{ maxHeight: phone ? "45vh" : 360, overflow: "auto", border: "1px solid " + BORDER, borderRadius: 8, WebkitOverflowScrolling: "touch" }}>
             <table data-testid="calc-schedule" style={{ borderCollapse: "collapse", width: "100%", fontSize: phone ? 12 : 13 }}>
@@ -181,7 +181,7 @@ export default function LoanCalculator({ initialAmount, title, onSaveNote, layou
               </tbody>
             </table>
           </div>
-          <p style={{ margin: 0, color: MUTED, fontSize: 12 }}>An estimate only: the lender's documents set the actual payments.{result.balloon > 0 ? " The balloon is paid with the last payment." : ""}</p>
+          <p style={{ margin: 0, color: MUTED, fontSize: "var(--bf-text-help)" }}>An estimate only: the lender's documents set the actual payments.{result.balloon > 0 ? " The balloon is paid with the last payment." : ""}</p>
         </>
       )}
     </div>

@@ -164,7 +164,7 @@ export const components = {
       // BF_CLIENT_DESIGN_v172 - the site's eyebrow is gold at .14em, not grey
       // at .2em. This is the "STEP 3 OF 6" line above each step title.
       letterSpacing: "0.14em",
-      fontSize: "13px",
+      fontSize: "var(--bf-text-label)",
       fontWeight: 600,
       color: tokens.colors.accentInk, // BF_CLIENT_READABILITY_v707
     },
@@ -211,7 +211,7 @@ export const components = {
     pill: {
       borderRadius: tokens.radii.pill,
       padding: "6px 14px",
-      fontSize: "12px",
+      fontSize: "var(--bf-text-help)",
       fontWeight: 600,
       textAlign: "center" as const,
     },
@@ -284,11 +284,11 @@ export const components = {
       padding: tokens.spacing.sm,
       borderRadius: tokens.radii.md,
       background: tokens.colors.background,
-      fontSize: "14px",
+      fontSize: "var(--bf-text-body-sm)",
       color: tokens.colors.textPrimary,
     },
     bubbleMeta: {
-      fontSize: "12px",
+      fontSize: "var(--bf-text-caption)",
       color: tokens.colors.textSecondary,
       marginBottom: tokens.spacing.xs,
     },

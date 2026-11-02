@@ -54,6 +54,7 @@ import AccountantReferralModal, {
 import { Capacitor } from "@capacitor/core";
 import { scanDocumentAsPdfWithQuality } from "../native/documentScanner";
 import { duplicateMessage, findUploadedDuplicate, fingerprintFile, isServerDuplicate, SERVER_DUPLICATE_MESSAGE } from "../lib/documentFingerprint"; // BF_CLIENT_DOCUMENT_DUPLICATE_CHECK_v258
+import { duplicateFromBody } from "../lib/duplicateUpload"; // BF_CLIENT_v868_DUPLICATE_UX
 
 // BF_CLIENT_BLOCK_v96_LIVE_TEST_FIXES_v1
 // The hardcoded "every applicant must upload contracts/invoices/tax_returns"
@@ -145,7 +146,7 @@ const RequirementRow = memo(function RequirementRow({
         <label style={{ display: "flex", alignItems: "center", gap: tokens.spacing.xs }} aria-label={formatDocumentLabel(docType)}>
           <Checkbox checked={docStatus !== "missing"} readOnly />
         </label>
-        <div style={{ ...components.form.helperText, fontSize: 12 }}>
+        <div style={{ ...components.form.helperText, fontSize: "var(--bf-text-help)" }}>
           {entry.required ? "Required" : "Optional"} · {docStatus === "missing" ? "Missing" : "Uploaded"}
         </div>
         <Button
@@ -214,7 +215,7 @@ function OptionSeparator() {
     >
       <span
         style={{
-          fontSize: 13,
+          fontSize: "var(--bf-text-label)",
           fontWeight: 600,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
@@ -678,7 +679,8 @@ function Step5DocumentsBody() {
     const fileHash = await fingerprintFile(file);
     const alreadyUploaded = findUploadedDuplicate(app.documents as any, fileHash);
     if (alreadyUploaded) {
-      setDocErrors((prev) => ({ ...prev, [docType]: duplicateMessage(docType, alreadyUploaded, formatDocumentLabel) }));
+      // BF_CLIENT_v868_DUPLICATE_UX - a note, not a red error that blocks Continue: the file is already uploaded.
+      setDocNotices((prev) => ({ ...prev, [docType]: duplicateMessage(docType, alreadyUploaded, formatDocumentLabel) }));
       return;
     }
 
@@ -760,7 +762,25 @@ function Step5DocumentsBody() {
         const st = (err as { status?: number })?.status;
         // BF_CLIENT_DOCUMENT_DUPLICATE_CHECK_v258 - the server found this file already on the application.
         if (isServerDuplicate(err)) {
-          setDocErrors((prev) => ({ ...prev, [docType]: SERVER_DUPLICATE_MESSAGE }));
+          // BF_CLIENT_v868_DUPLICATE_UX - not an error. When the file already sits under this item, the item is done.
+          const dup = duplicateFromBody((err as { body?: unknown } | null)?.body, docType);
+          const existingId = dup?.existing.id ? String(dup.existing.id) : null;
+          const prevFiles = ((((app.documents[docType] as any)?.files) ?? []) as Array<{ id?: string | null }>);
+          if (dup?.sameItem && existingId && !prevFiles.some((f) => f?.id === existingId)) {
+            const name = dup.existing.filename || file.name;
+            const at = new Date().toISOString();
+            update({
+              documents: {
+                ...app.documents,
+                [docType]: {
+                  ...((app.documents[docType] as any) ?? {}),
+                  id: existingId, name, status: dup.existing.status || "uploaded", uploadedAt: at,
+                  files: [...prevFiles, { id: existingId, name, uploadedAt: at, hash: fileHash }],
+                } as any,
+              },
+            });
+          }
+          setDocNotices((prev) => ({ ...prev, [docType]: dup?.message ?? SERVER_DUPLICATE_MESSAGE }));
           break;
         }
         if (typeof st === "number" && st >= 400 && st < 500 && st !== 408 && st !== 429) {
@@ -1029,7 +1049,7 @@ function Step5DocumentsBody() {
             type="button"
             data-testid="step5-change-option"
             onClick={() => setDocChoice(null)}
-            style={{ alignSelf: "center", background: "none", border: "none", padding: 0, cursor: "pointer", color: tokens.colors.primary, textDecoration: "underline", fontSize: 14 }}
+            style={{ alignSelf: "center", background: "none", border: "none", padding: 0, cursor: "pointer", color: tokens.colors.primary, textDecoration: "underline", fontSize: "var(--bf-text-body-sm)" }}
           >
             Choose a different option
           </button>

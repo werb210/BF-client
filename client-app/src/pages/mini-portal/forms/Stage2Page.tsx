@@ -195,7 +195,7 @@ export default function Stage2Page() {
             setActiveForm(null);
             void load();
           }}
-          style={{ marginBottom: 16, padding: "6px 12px", fontSize: 13, cursor: "pointer", background: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: 4 }}
+          style={{ marginBottom: 16, padding: "6px 12px", fontSize: "var(--bf-text-label)", cursor: "pointer", background: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: 4 }}
         >
           ← Back to forms
         </button>
@@ -218,7 +218,7 @@ export default function Stage2Page() {
         &larr; Back to my application
       </button>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Continue your application</h1>
-      <p style={{ fontSize: 14, color: "#6b7280", marginBottom: 20 }}>
+      <p style={{ fontSize: "var(--bf-text-body-sm)", color: "#6b7280", marginBottom: 20 }}>
         We've received your initial documents. The items below are needed
         so lenders can complete their review. Your progress saves
         automatically -- come back any time.
@@ -228,7 +228,7 @@ export default function Stage2Page() {
         <div style={{
           padding: 12, marginBottom: 20, borderRadius: 8,
           background: progress.done === progress.total ? "#d1fae5" : "#fef3c7",
-          fontSize: 13, fontWeight: 600,
+          fontSize: "var(--bf-text-label)", fontWeight: 600,
           color: progress.done === progress.total ? "#065f46" : "#92400e",
         }}>
           {progress.done} of {progress.total} forms completed
@@ -267,17 +267,17 @@ export default function Stage2Page() {
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>
+                <div style={{ fontWeight: 600, fontSize: "var(--bf-text-body-sm)", color: "#111827" }}>
                   {humanLabel(doc.document_type)}
                   {isForm && (
                     <span style={{
-                      marginLeft: 8, padding: "2px 6px", fontSize: 10,
+                      marginLeft: 8, padding: "2px 6px", fontSize: "var(--bf-text-tiny)",
                       background: "#dbeafe", color: "#1e40af", borderRadius: 3,
                       fontWeight: 600,
                     }}>📝 form</span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+                <div style={{ fontSize: "var(--bf-text-help)", color: "#6b7280", marginTop: 2 }}>
                   {isComplete ? "✓ Completed" : isDraft ? "Draft saved" : "Not started"}
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default function Stage2Page() {
                 <button
                   onClick={() => setActiveForm(doc.document_type)}
                   style={{
-                    padding: "8px 14px", fontSize: 13, fontWeight: 600,
+                    padding: "8px 14px", fontSize: "var(--bf-text-label)", fontWeight: 600,
                     background: isComplete ? "#fff" : "#1E3A8A",
                     color: isComplete ? "#1E3A8A" : "#fff",
                     border: "1px solid #1E3A8A",
@@ -304,7 +304,7 @@ export default function Stage2Page() {
                     setShowUpload(true);
                   }}
                   style={{
-                    padding: "8px 14px", fontSize: 13, fontWeight: 600,
+                    padding: "8px 14px", fontSize: "var(--bf-text-label)", fontWeight: 600,
                     background: isComplete ? "#fff" : "#1E3A8A",
                     color: isComplete ? "#1E3A8A" : "#fff",
                     border: "1px solid #1E3A8A",

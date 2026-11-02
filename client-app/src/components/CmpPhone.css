@@ -13,19 +13,19 @@
 .cmp-tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: #fff; border-top: 1px solid #e3e6eb;
   padding: 4px 8px calc(8px + env(safe-area-inset-bottom)); }
 .cmp-tabbar__tab { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  min-height: 56px; background: none; border: 0; color: #4b5563; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
+  min-height: 56px; background: none; border: 0; color: #4b5563; font: inherit; font-size: var(--bf-text-caption); font-weight: 500; cursor: pointer; }
 .cmp-tabbar__tab--on { color: #0b1f3a; font-weight: 700; }
 .cmp-tabbar__badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
-  border-radius: 9px; background: #b42318; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  border-radius: 9px; background: #b42318; color: #fff; font-size: var(--bf-text-micro); font-weight: 700; display: flex; align-items: center; justify-content: center; }
 
 .cmp-chatswitch { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; margin: 0 0 12px; background: #e9ecf1; border-radius: 12px; }
 .cmp-chatswitch__btn { min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: #4b5563; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .cmp-chatswitch__btn--on { background: #fff; color: #0b1f3a; font-weight: 700; }
 
 .cmp-nextstep { margin: 0 0 14px; padding: 16px; border: 1px solid #d9c08a; border-radius: 14px; background: #fffcf5; }
-.cmp-nextstep__eyebrow { font-size: 13px; font-weight: 700; color: #7a5c17; letter-spacing: 0.02em; }
+.cmp-nextstep__eyebrow { font-size: var(--bf-text-label); font-weight: 700; color: #7a5c17; letter-spacing: 0.02em; }
 .cmp-nextstep__title { margin-top: 6px; font-size: 18px; font-weight: 700; color: #0b1f3a; }
-.cmp-nextstep__sub { margin-top: 4px; font-size: 14px; color: #4b5563; }
+.cmp-nextstep__sub { margin-top: 4px; font-size: var(--bf-text-body-sm); color: #4b5563; }
 .cmp-nextstep__btn { margin-top: 12px; width: 100%; min-height: 48px; border: 0; border-radius: 10px; background: #0b1f3a; color: #fff; font: inherit; font-size: 16px; font-weight: 600; cursor: pointer; }
 
 /* BF_CLIENT_CHAT_TAB_COMPOSER_v735 - on the phone Chat tab the message box stays on screen above the tab bar. */
@@ -39,8 +39,8 @@
 .cmp-empty__title { font-size: 18px; font-weight: 700; color: #0b1f3a; }
 .cmp-empty__sub { margin-top: 6px; font-size: 15px; color: #4b5563; }
 .cmp-more-footer { order: 99; margin: 20px 0 8px; padding-top: 16px; border-top: 1px solid #e3e6eb; text-align: center; }
-.cmp-more-footer__delete { background: none; border: 0; color: #6b7280; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
-.cmp-more-footer__version { margin-top: 10px; font-size: 13px; color: #6b7280; }
+.cmp-more-footer__delete { background: none; border: 0; color: #6b7280; font: inherit; font-size: var(--bf-text-body-sm); text-decoration: underline; cursor: pointer; }
+.cmp-more-footer__version { margin-top: 10px; font-size: var(--bf-text-label); color: #6b7280; }
 
 /* BF_CLIENT_PHONE_TABS_v752 - Settings tab; Ask Maya lives in Chat, so it is not repeated on More. */
 .cmp-phone .mp-actions [data-testid="ask-maya"] { display: none; }
@@ -49,4 +49,4 @@
 .cmp-settings .cmp-more-footer { margin-top: 12px; }
 .cmp-settings .cmp-more-footer__delete { color: #b42318; font-weight: 600; }
 .cmp-settings .cmp-more-footer__version { color: #374151; }
-.cmp-tabbar__tab { font-size: 11px; }
+.cmp-tabbar__tab { font-size: var(--bf-text-micro); }

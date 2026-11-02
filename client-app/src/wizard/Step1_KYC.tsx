@@ -971,7 +971,7 @@ export function Step1_KYC(): JSX.Element {
   // BF_CLIENT_BLOCK_v_WIZARD_STEP1_DIRECTION_A_v1 — removed duplicate shell/heading.
   return (
     <>
-      <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+      <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
       <WizardLayout>
       <div className="wizard-step-shell">
         <StepHeader step={1} title="Financial Profile" subtitle="Tell us what you need so your advisor can find the right financing." /* BF_CLIENT_v806_TFV */ />
@@ -1099,7 +1099,7 @@ export function Step1_KYC(): JSX.Element {
               if (intent === "BOTH") {
                 return (<>
                   {/* BF_CLIENT_UX2_DUAL_AMOUNT_HELP_v1 */}
-                  <div style={{ fontSize: 13, color: "#64748b", marginBottom: 8 }}>Enter the two amounts separately &mdash; the working-capital portion and the equipment cost. They don&rsquo;t need to add up to a single total.</div>
+                  <div style={{ fontSize: "var(--bf-text-label)", color: "#64748b", marginBottom: 8 }}>Enter the two amounts separately &mdash; the working-capital portion and the equipment cost. They don&rsquo;t need to add up to a single total.</div>
                               <div data-error={showErrors && fieldErrors.fundingAmount}>
               {/* BF_CLIENT_BOTH_INTENT_LABELS_v1 - combined intent must split
                   the two amounts unambiguously: capital here, equipment below. */}
@@ -1263,7 +1263,7 @@ export function Step1_KYC(): JSX.Element {
               data-error={showErrors && fieldErrors.industry}
               style={{ display: onSbaStartupPath ? "none" : undefined }}
             >
-              <label style={{ display: "block", fontSize: 13, fontWeight: 500, color: "#374151", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: "var(--bf-text-label)", fontWeight: 500, color: "#374151", marginBottom: 6 }}>
                 Industry *
               </label>
               <select
@@ -1282,7 +1282,7 @@ export function Step1_KYC(): JSX.Element {
                   padding: "10px 12px",
                   border: "1px solid #d1d5db",
                   borderRadius: 8,
-                  fontSize: 14,
+                  fontSize: "var(--bf-text-body-sm)",
                   color: "#111827",
                   background: "#fff",
                   boxSizing: "border-box",
@@ -1552,7 +1552,7 @@ export function Step1_KYC(): JSX.Element {
             style={{
               marginTop: tokens.spacing.lg, padding: "14px 16px", borderRadius: 8,
               background: "#b45c090f", border: "1px solid #b45c0933", color: "#7c3d06",
-              fontSize: 14, lineHeight: 1.55,
+              fontSize: "var(--bf-text-body-sm)", lineHeight: 1.55,
             }}
           >
             {blockedByRevenueFloor ? (

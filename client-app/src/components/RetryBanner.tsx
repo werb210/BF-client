@@ -51,7 +51,7 @@ export default function RetryBanner() {
         justifyContent: "space-between",
         gap: 12,
         flexWrap: "wrap",
-        fontSize: 14,
+        fontSize: "var(--bf-text-body-sm)",
         boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
       }}
     >
@@ -84,7 +84,7 @@ export default function RetryBanner() {
           borderRadius: 6,
           cursor: (busy || state.inFlight) ? "default" : "pointer",
           opacity: (busy || state.inFlight) ? 0.6 : 1,
-          fontSize: 13,
+          fontSize: "var(--bf-text-label)",
           fontWeight: 600,
         }}
       >

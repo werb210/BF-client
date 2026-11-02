@@ -192,3 +192,43 @@ select option:checked {
   .wizard-modal { padding: 22px 18px; }
   .wizard-modal h3 { font-size: 18px; }
 }
+
+/* BF_CLIENT_v868_READABLE_TYPE - one type scale for the small sizes. A computer or tablet keeps the sizes it had; a phone
+   (narrower than 768px, or a touch screen held sideways) gets text it can read: everything a client reads is 15px or
+   more, captions that are truly secondary (a timestamp, a file size) are 13px, and the tab bar labels 12px.
+     --bf-text-body-sm  small body text, list rows          14px -> 15px
+     --bf-text-label    field labels, chips, buttons        13px -> 15px
+     --bf-text-help     helper and error text, notes        12px -> 15px
+     --bf-text-caption  secondary captions only             12px -> 13px
+     --bf-text-micro    tab bar labels, tiny badges         11px -> 12px
+     --bf-text-tiny     counters in a dot                   10px -> 12px
+   Inline styles, the CSS files and tokens.ts use these names; Tailwind's text-xs / text-sm follow the same steps. */
+:root {
+  --bf-text-body-sm: 14px;
+  --bf-text-label: 13px;
+  --bf-text-help: 12px;
+  --bf-text-caption: 12px;
+  --bf-text-micro: 11px;
+  --bf-text-tiny: 10px;
+}
+@media (max-width: 767px), (pointer: coarse) and (max-height: 500px) {
+  :root {
+    --bf-text-body-sm: 15px;
+    --bf-text-label: 15px;
+    --bf-text-help: 15px;
+    --bf-text-caption: 13px;
+    --bf-text-micro: 12px;
+    --bf-text-tiny: 12px;
+  }
+  :root .text-sm { font-size: var(--bf-text-body-sm); line-height: 1.4; }
+  :root .text-xs { font-size: var(--bf-text-help); line-height: 1.4; }
+  :root .text-\[13px\] { font-size: var(--bf-text-label); }
+
+  /* BF_CLIENT_v868_INPUT_16PX - iOS Safari zooms the page in when a field under 16px is tapped. On a phone every text
+     field, select and textarea is 16px (it wins over the inline sizes; the one-time-code box is already larger). */
+  :root input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="color"]):not([type="image"]):not([autocomplete="one-time-code"]),
+  :root select,
+  :root textarea {
+    font-size: 16px !important;
+  }
+}

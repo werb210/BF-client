@@ -137,7 +137,7 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
     border: `1px solid ${busy ? A11Y_COLORS.faceIdBusyBg : "#1e3a5f"}`,
     background: busy ? A11Y_COLORS.faceIdBusyBg : "#1e3a5f",
     color: busy ? A11Y_COLORS.faceIdBusyText : "#fff",
-    fontSize: 14,
+    fontSize: "var(--bf-text-body-sm)",
     fontWeight: 600,
     cursor: busy ? "default" : "pointer",
   };
@@ -146,19 +146,19 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
     border: 0,
     background: "transparent",
     color: "#1e3a5f",
-    fontSize: 14,
+    fontSize: "var(--bf-text-body-sm)",
     textDecoration: "underline",
     cursor: busy ? "default" : "pointer",
   };
 
   return (
     <div style={row} data-testid="face-id-setting">
-      <span style={{ fontSize: 14, color: "#0f172a", fontWeight: 600 }}>Face ID sign-in</span>
+      <span style={{ fontSize: "var(--bf-text-body-sm)", color: "#0f172a", fontWeight: 600 }}>Face ID sign-in</span>
 
-      {phase === "checking" && <span style={{ fontSize: 13, color: "#64748b" }}>Checking…</span>}
+      {phase === "checking" && <span style={{ fontSize: "var(--bf-text-label)", color: "#64748b" }}>Checking…</span>}
 
       {phase === "ready" && status && !status.available && (
-        <span style={{ fontSize: 13, color: "#64748b" }} data-testid="face-id-unavailable">
+        <span style={{ fontSize: "var(--bf-text-label)", color: "#64748b" }} data-testid="face-id-unavailable">
           {biometricUnavailableText(Capacitor.getPlatform() === "android")}
         </span>
       )}
@@ -169,7 +169,7 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
             {busy ? "Turning on…" : "Turn on Face ID sign-in"}
           </button>
           {hint && (
-            <span style={{ fontSize: 13, color: "#64748b" }}>
+            <span style={{ fontSize: "var(--bf-text-label)", color: "#64748b" }}>
               Skip the text code next time.
             </span>
           )}
@@ -178,14 +178,14 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
 
       {phase === "ready" && status?.available && enrolled && (
         <>
-          <span style={{ fontSize: 14, color: "#15803d", fontWeight: 600 }}>On</span>
+          <span style={{ fontSize: "var(--bf-text-body-sm)", color: "#15803d", fontWeight: 600 }}>On</span>
           <button type="button" style={link} disabled={busy} onClick={() => void turnOff()}>
             {busy ? "Turning off…" : "Turn off"}
           </button>
         </>
       )}
 
-      {error && <span style={{ fontSize: 13, color: "#b91c1c", width: "100%" }}>{error}</span>}
+      {error && <span style={{ fontSize: "var(--bf-text-label)", color: "#b91c1c", width: "100%" }}>{error}</span>}
     </div>
   );
 }

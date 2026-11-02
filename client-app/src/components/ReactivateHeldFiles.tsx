@@ -50,7 +50,7 @@ export default function ReactivateHeldFiles({ apps, onReactivated, reactivate = 
           data-testid="cmp-reactivate-held"
           style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", background: "#eff6ff", border: "1px solid #93c5fd", borderRadius: 8, padding: "12px 16px", margin: "0 0 12px", color: "#1e3a8a" }}
         >
-          <div style={{ flex: 1, minWidth: 200, fontSize: 14 }}>
+          <div style={{ flex: 1, minWidth: 200, fontSize: "var(--bf-text-body-sm)" }}>
             <div style={{ fontWeight: 700 }}>{describe(a)} is on hold.</div>
             <div>Ready to go again? Reactivate it and our team will review it.</div>
           </div>
@@ -58,13 +58,13 @@ export default function ReactivateHeldFiles({ apps, onReactivated, reactivate = 
             type="button"
             disabled={busy !== null}
             onClick={() => void go(String(a.id))}
-            style={{ padding: "8px 16px", fontSize: 14, fontWeight: 700, color: "#fff", background: "#1d4ed8", border: "none", borderRadius: 6, cursor: busy ? "default" : "pointer", opacity: busy && busy !== a.id ? 0.6 : 1 }}
+            style={{ padding: "8px 16px", fontSize: "var(--bf-text-body-sm)", fontWeight: 700, color: "#fff", background: "#1d4ed8", border: "none", borderRadius: 6, cursor: busy ? "default" : "pointer", opacity: busy && busy !== a.id ? 0.6 : 1 }}
           >
             {busy === a.id ? "Reactivating\u2026" : "Reactivate this file"}
           </button>
         </div>
       ))}
-      {error ? <div role="alert" style={{ color: "#b91c1c", fontSize: 13, margin: "0 0 12px" }}>{error}</div> : null}
+      {error ? <div role="alert" style={{ color: "#b91c1c", fontSize: "var(--bf-text-label)", margin: "0 0 12px" }}>{error}</div> : null}
     </>
   );
 }

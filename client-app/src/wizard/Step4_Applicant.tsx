@@ -110,7 +110,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName = false, isAccord
   // BF_CLIENT_STEP4_VALIDATION_v171 - an error shows only once the user has
   // left the field, so nothing turns red while they are still typing into it.
   const showErr = (key: string) => (touched[key] && errors[key]) || "";
-  const errStyle = { color: "#b3261e", fontSize: 13, marginTop: 4, lineHeight: 1.4 };
+  const errStyle = { color: "#b3261e", fontSize: "var(--bf-text-label)", marginTop: 4, lineHeight: 1.4 };
   // Field wrapper: labels the input for the scroll-to-first-error pass and
   // renders the message directly beneath it.
   const F = (key: string, label: string, control: ReactNode) => (
@@ -399,10 +399,10 @@ function AccordAdditionalShareholders({ list, onChange }: { list: ShareholderRow
           <div><label style={L}>Ownership %</label><Input type="number" min="0" max="100" value={r.ownership || ""} onChange={(e) => setRow(i, "ownership", e.target.value)} /></div>
           <div><label style={L}>Director?</label><select value={r.director || ""} onChange={(e) => setRow(i, "director", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
           <div><label style={L}>Officer?</label><select value={r.officer || ""} onChange={(e) => setRow(i, "officer", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-          <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: 13 }}>Remove</button></div>
+          <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: "var(--bf-text-label)" }}>Remove</button></div>
         </div>
       ))}
-      <button type="button" onClick={add} style={{ background: "transparent", border: `1px dashed ${tokens.colors.border}`, borderRadius: 8, padding: "10px", color: tokens.colors.textPrimary, cursor: "pointer", fontSize: 14 }}>+ Add shareholder</button>
+      <button type="button" onClick={add} style={{ background: "transparent", border: `1px dashed ${tokens.colors.border}`, borderRadius: 8, padding: "10px", color: tokens.colors.textPrimary, cursor: "pointer", fontSize: "var(--bf-text-body-sm)" }}>+ Add shareholder</button>
     </div>
   );
 }
@@ -921,7 +921,7 @@ export function Step4_Applicant() {
   // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 — removed duplicate shell/heading.
   return (
     <>
-      <style>{`.wizard-step-shell label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
+      <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
         <WizardLayout>
           <div className="wizard-step-shell">
             <StepHeader step={4} title="Applicant Information" subtitle="List everyone with 20%+ ownership - that is the SBA threshold. Each of them signs their own copy." /* BF_CLIENT_OWNERSHIP_20_v145 */ />
@@ -1012,7 +1012,7 @@ export function Step4_Applicant() {
                 >{onSba ? "Continue to Review →" : "Continue to Documents →"}</Button>
                   {/* BF_CLIENT_UX6_SBA_DOCS_NOTE_v1 */}
                   {onSba && (
-                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 8, textAlign: "center" }}>On the SBA path, documents are collected after you submit &mdash; you&rsquo;ll see the checklist on your portal.</div>
+                    <div style={{ fontSize: "var(--bf-text-help)", color: "#64748b", marginTop: 8, textAlign: "center" }}>On the SBA path, documents are collected after you submit &mdash; you&rsquo;ll see the checklist on your portal.</div>
                   )}
               </div>
             </div>

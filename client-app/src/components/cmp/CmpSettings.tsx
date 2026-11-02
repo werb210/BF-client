@@ -242,7 +242,7 @@ export default function CmpSettings(p: {
               <span className="cmpx-row__title">{push.state === "on" ? "Notifications are on" : push.state === "web" ? "Notifications" : push.state === "checking" ? "Checking..." : "Notifications are off"}</span>
               <span className="cmpx-row__desc">{push.state === "web" ? "Get the Boreal app to be told about offers, document requests and messages." : "Offers, document requests and messages from your advisor."}</span>
             </span>
-            {push.state === "off" || push.state === "blocked" ? <button type="button" className="cmpx-btn" style={{ minHeight: 40, fontSize: 14 }} onClick={() => void push.turnOn()}>Turn on</button> : null}
+            {push.state === "off" || push.state === "blocked" ? <button type="button" className="cmpx-btn" style={{ minHeight: 40, fontSize: "var(--bf-text-body-sm)" }} onClick={() => void push.turnOn()}>Turn on</button> : null}
           </div>
         </div>
         {push.note ? <p className="cmpx-muted" role="status" style={{ margin: "8px 4px 0" }}>{push.note}</p> : null}

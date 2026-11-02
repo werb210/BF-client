@@ -164,7 +164,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
     <div style={wrap} data-testid="action-center">
       <>
           <div style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}>What you need to do</div>
-          <div style={{ fontSize: 14, color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
+          <div style={{ fontSize: "var(--bf-text-body-sm)", color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
             {outstanding.length} item{outstanding.length === 1 ? "" : "s"} remaining
           </div>
           {outstanding.map((item, i) => (
@@ -183,7 +183,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
                   width: 24, height: 24, flexShrink: 0, borderRadius: "50%",
                   background: item.urgent ? "#fee2e2" : "#f3f4f6",
                   color: item.urgent ? "#b91c1c" : "#6b7280",
-                  fontSize: 12, fontWeight: 600,
+                  fontSize: "var(--bf-text-caption)", fontWeight: 600,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -192,7 +192,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, color: "#111827" }}>{item.label}</div>
                 {item.urgent && item.kind === "document" && (
-                  <div style={{ fontSize: 13, color: "#b91c1c", marginTop: 2 }}>
+                  <div style={{ fontSize: "var(--bf-text-label)", color: "#b91c1c", marginTop: 2 }}>
                     Needs re-uploading — the last one was not accepted
                   </div>
                 )}
@@ -203,7 +203,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
                   onClick={() => onAction(item)}
                   style={{
                     border: "1px solid #0B1F35", background: "#0B1F35", color: "#fff",
-                    borderRadius: 8, padding: "8px 16px", fontSize: 14, cursor: "pointer",
+                    borderRadius: 8, padding: "8px 16px", fontSize: "var(--bf-text-body-sm)", cursor: "pointer",
                     flexShrink: 0,
                   }}
                 >

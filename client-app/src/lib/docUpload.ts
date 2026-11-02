@@ -7,11 +7,14 @@ import { ENV } from "@/env";
 import { getToken } from "@/auth/token";
 import { enqueueUploadFromFile, isRetryableUploadFailure } from "@/lib/uploadQueue";
 import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
+import { duplicateSummary, readDuplicate, type DuplicateUpload } from "@/lib/duplicateUpload"; // BF_CLIENT_v868_DUPLICATE_UX
 
 export type UploadOutcome =
   | { status: "ok" }
   | { status: "queued"; queued: number; message: string }
-  | { status: "failed"; message: string };
+  | { status: "failed"; message: string }
+  // BF_CLIENT_v868_DUPLICATE_UX - the file is already on the application; satisfied = the item needs nothing more.
+  | { status: "duplicate"; satisfied: boolean; message: string };
 
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine !== false;
 
@@ -58,6 +61,8 @@ export function pickFiles(onPicked: (files: File[]) => void): void {
 /** Uploads each file against one requirement, in order. Retryable failures are saved on the device. */
 export async function uploadDocumentFiles(applicationId: string, documentType: string, files: File[], attempt = "direct"): Promise<UploadOutcome> {
   let queued = 0;
+  let uploaded = 0; // BF_CLIENT_v868_DUPLICATE_UX
+  const duplicates: DuplicateUpload[] = [];
   for (const file of files) {
     if (queued > 0) {
       try { await enqueueUploadFromFile({ applicationToken: "", applicationId, documentType, file, mode: "session" }); queued += 1; continue; }
@@ -76,7 +81,12 @@ export async function uploadDocumentFiles(applicationId: string, documentType: s
         headers: { Authorization: "Bearer " + (getToken() ?? "") },
         body: form,
       });
-      if (!resp.ok) throw new Error(String(resp.status));
+      if (!resp.ok) {
+        // BF_CLIENT_v868_DUPLICATE_UX - "already uploaded" is not a failure: no failure report, no red message.
+        const duplicate = await readDuplicate(resp, documentType);
+        if (duplicate) { duplicates.push(duplicate); continue; }
+        throw new Error(String(resp.status));
+      }
     } catch (err) {
       const status = resp && !resp.ok ? resp.status : undefined;
       reportUploadFailure({
@@ -92,6 +102,11 @@ export async function uploadDocumentFiles(applicationId: string, documentType: s
       return { status: "failed", message: failureMessage(status) };
     }
     trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
+    uploaded += 1;
   }
-  return queued > 0 ? { status: "queued", queued, message: queuedMessage(queued) } : { status: "ok" };
+  if (queued > 0) return { status: "queued", queued, message: queuedMessage(queued) };
+  if (duplicates.length > 0) {
+    return { status: "duplicate", satisfied: uploaded > 0 || duplicates.every((d) => d.sameItem), message: duplicateSummary(duplicates, uploaded) };
+  }
+  return { status: "ok" };
 }

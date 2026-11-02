@@ -68,8 +68,8 @@ export default function QuickSignIn() {
         <button type="button" data-testid="passkey-sign-in" disabled={busy} onClick={() => void run("passkey")}
           style={{ ...btn, border: "1px solid #CBD5E1", background: "#fff", color: "#0B1F3A" }}>{busy ? "Signing in..." : "Sign in with a passkey"}</button>
       )}
-      {error ? <p role="alert" style={{ margin: "0 0 8px", color: "#b42318", fontSize: 14 }}>{error}</p> : null}
-      <p style={{ margin: 0, textAlign: "center", color: "#64748b", fontSize: 14 }}>or get a text code</p>
+      {error ? <p role="alert" style={{ margin: "0 0 8px", color: "#b42318", fontSize: "var(--bf-text-body-sm)" }}>{error}</p> : null}
+      <p style={{ margin: 0, textAlign: "center", color: "#64748b", fontSize: "var(--bf-text-body-sm)" }}>or get a text code</p>
     </div>
   );
 }

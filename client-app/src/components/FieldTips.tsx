@@ -25,7 +25,7 @@ function decorate(root: ParentNode) {
     btn.setAttribute("aria-label", `Help: ${text}`);
     btn.style.cssText =
       "margin-left:6px;width:16px;height:16px;border-radius:50%;border:1px solid #93c5fd;" +
-      "background:#eff6ff;color:#2563eb;font-size:11px;font-weight:700;line-height:1;" +
+      "background:#eff6ff;color:#2563eb;font-size:var(--bf-text-caption);font-weight:700;line-height:1;" +
       "cursor:pointer;vertical-align:middle;padding:0;display:inline-flex;align-items:center;justify-content:center;";
 
     const tip = document.createElement("span");
@@ -33,7 +33,7 @@ function decorate(root: ParentNode) {
     tip.setAttribute("role", "tooltip");
     tip.style.cssText =
       "display:none;position:absolute;z-index:60;max-width:280px;background:#111827;color:#fff;" +
-      "font-size:12px;font-weight:400;line-height:1.5;border-radius:8px;padding:8px 10px;" +
+      "font-size:var(--bf-text-help);font-weight:400;line-height:1.5;border-radius:8px;padding:8px 10px;" +
       "margin-top:6px;box-shadow:0 8px 24px rgba(0,0,0,0.25);";
 
     const wrap = document.createElement("span");

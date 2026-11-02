@@ -20,9 +20,9 @@ type Props = {
 };
 
 const DEFAULT_IMAGE: CSSProperties = { maxWidth: 200, maxHeight: 200, borderRadius: 8, display: "block" };
-const DEFAULT_LINK: CSSProperties = { fontSize: 13, color: "inherit", textDecoration: "underline" };
+const DEFAULT_LINK: CSSProperties = { fontSize: "var(--bf-text-label)", color: "inherit", textDecoration: "underline" };
 // BF_CLIENT_v819_CLIENT_MMS - status text takes the bubble's own text colour, so it reads on both bubble colours.
-const STATUS: CSSProperties = { fontSize: 13, color: "inherit", fontStyle: "italic", display: "block" };
+const STATUS: CSSProperties = { fontSize: "var(--bf-text-label)", color: "inherit", fontStyle: "italic", display: "block" };
 const AUDIO: CSSProperties = { display: "block", width: 240, maxWidth: "100%" };
 
 type Kind = "image" | "audio" | "file";

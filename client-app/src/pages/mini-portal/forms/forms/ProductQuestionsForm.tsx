@@ -50,15 +50,15 @@ export function groupQuestions(questions: ProductQuestion[]): Array<{ title: str
 
 const s = {
   h2: { fontSize: 22, fontWeight: 700, marginBottom: 6 } as const,
-  intro: { fontSize: 14, color: "#4b5563", marginBottom: 16 } as const,
+  intro: { fontSize: "var(--bf-text-body-sm)", color: "#4b5563", marginBottom: 16 } as const,
   group: { border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, marginBottom: 14 } as const,
   groupTitle: { fontSize: 16, fontWeight: 700, marginBottom: 10 } as const,
   row: { marginBottom: 12 } as const,
-  label: { display: "block", fontSize: 14, fontWeight: 600, color: "#0B1F3A", marginBottom: 6 } as const,
+  label: { display: "block", fontSize: "var(--bf-text-body-sm)", fontWeight: 600, color: "#0B1F3A", marginBottom: 6 } as const,
   input: { width: "100%", fontSize: 16, padding: "10px 12px", borderRadius: 8, border: "1px solid #d1d5db", boxSizing: "border-box" as const },
   missing: { border: "1px solid #dc2626" } as const,
   yn: (on: boolean) => ({ minHeight: 44, minWidth: 80, borderRadius: 8, border: `1px solid ${on ? "#2563eb" : "#d1d5db"}`, background: on ? "#dbeafe" : "#fff", fontWeight: 600, fontSize: 15, cursor: "pointer" }),
-  error: { color: "#b91c1c", fontSize: 14, marginTop: 8 } as const,
+  error: { color: "#b91c1c", fontSize: "var(--bf-text-body-sm)", marginTop: 8 } as const,
   done: { color: "#065f46", fontSize: 15, padding: 16, background: "#ecfdf5", borderRadius: 8 } as const,
 };
 
