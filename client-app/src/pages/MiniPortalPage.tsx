@@ -72,6 +72,20 @@ const STAGE_BY_KEY: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...
 
 type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean };
 type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean };
+// BF_CLIENT_v881_OFFER_DISPLAY - "$85000.00" became "$85,000", "60 months years" became "60 months" (a bare number still reads as years), and the term-sheet
+// buttons only show when the offer has a term sheet (they used to do nothing when it had none).
+export function offerAmountText(amount: string | undefined): string {
+  if (amount == null || String(amount).trim() === "") return "\u2014";
+  const n = Number(String(amount).replace(/[$,\s]/g, ""));
+  if (!Number.isFinite(n)) return String(amount);
+  return "$" + n.toLocaleString("en-CA", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+}
+export function offerTermText(term: string | undefined): string {
+  const t = String(term ?? "").trim();
+  if (!t) return "\u2014";
+  return /^[0-9]+(\.[0-9]+)?$/.test(t) ? `${t} years` : t; // a bare number has always meant years here
+}
+
 function normalizeOffer(s: ServerOffer): Offer { return { id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) }; }
 // BF_CLIENT_OFFERS_IN_THREAD_v3 - an offer past its expiry is greyed, not
 // removed: a client who missed it should still see that it existed.
@@ -1336,7 +1350,7 @@ export default function MiniPortalPage() {
                 <table className="cmpx-compare" data-testid="offers-compare">
                   <thead><tr><th scope="col">Lender</th><th scope="col">Amount</th><th scope="col">Rate</th><th scope="col">Term</th></tr></thead>
                   <tbody>{offers.map((o) => (
-                    <tr key={o.id}><td>{o.lenderName}{o.recommended ? " *" : ""}</td><td>{o.amount ? "$" + o.amount : "\u2014"}</td><td>{o.rateOrFactor ?? "\u2014"}</td><td>{o.term ?? "\u2014"}</td></tr>
+                    <tr key={o.id}><td>{o.lenderName}{o.recommended ? " *" : ""}</td><td>{offerAmountText(o.amount)}</td><td>{o.rateOrFactor ?? "\u2014"}</td><td>{offerTermText(o.term)}</td></tr>
                   ))}</tbody>
                 </table>
               ) : null}
@@ -1352,19 +1366,19 @@ export default function MiniPortalPage() {
                   return (
                     <article key={o.id} className={`mp-offer mp-offer--${exp}${expired ? " mp-offer--expired" : ""}`}>
                       <header className="mp-offer__head"><strong>{o.lenderName}</strong>{o.recommended ? <span className="mp-offer__badge">Recommended</span> : null}</header>
-                      <div className="mp-offer__amount">{o.amount ? `$${o.amount}` : "\u2014"}</div>
+                      <div className="mp-offer__amount">{offerAmountText(o.amount)}</div>
                       <div className="mp-offer__subtitle">Offer Amount.</div>
                       {isPhone ? (
                         <div className="mp-offer__keys">
                           <div>{o.rateOrFactor?.includes("%") ? "Interest rate" : "Factor rate"}<strong>{o.rateOrFactor ?? "\u2014"}</strong></div>
-                          <div>Term<strong>{o.term ?? "\u2014"}</strong></div>
+                          <div>Term<strong>{offerTermText(o.term)}</strong></div>
                           <div>Payments<strong>{o.paymentFrequency ?? "\u2014"}</strong></div>
                           <div>Expires<strong>{o.expiresAt ? (isOfferExpired(o.expiresAt) ? "Expired" : `${days}d ${hours}h`) : "\u2014"}</strong></div>
                         </div>
                       ) : null}
                       <div className="mp-offer__meta">
                         <div className="mp-offer__meta-row-main">{o.rateOrFactor?.includes("%") ? `${o.rateOrFactor} Interest rate` : `${o.rateOrFactor ?? "\u2014"} factor`}</div>
-                        <div className="mp-offer__meta-row">{o.term ?? "\u2014"} years | Term</div>
+                        <div className="mp-offer__meta-row">{offerTermText(o.term)} | Term</div>
                         <div className="mp-offer__meta-row">{o.paymentFrequency ?? "\u2014"} payment</div>
                       </div>
                       <div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>
@@ -1372,6 +1386,7 @@ export default function MiniPortalPage() {
                       {/* BF_CLIENT_SIGNED_UPLOAD_PENDING_v5 - outside the
                           accept/pending branch, because signing and returning
                           happens AFTER acceptance, not instead of it. */}
+                      {o.pdfUrl ? (
                       <div className="mp-signed-return">
                         Download the term sheet, sign it, and send the signed copy back to us.
                         <div className="mp-signed-return__actions">
@@ -1394,6 +1409,9 @@ export default function MiniPortalPage() {
                           </label>
                         </div>
                       </div>
+                      ) : (
+                        <div className="mp-signed-return">Your advisor will send the term sheet to sign once you accept.</div>
+                      )}
                       {offerNotice[o.id] ? (
                         <div
                           data-testid="offer-notice"
@@ -1407,7 +1425,7 @@ export default function MiniPortalPage() {
                         <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
                       ) : (
                         <div className="mp-offer__actions">
-                          <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button>
+                          {o.pdfUrl ? <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button> : null}
                           <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "changes"} onClick={() => void requestChanges(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "changes" ? "Sending..." : "Request Changes"}</button>
                           <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "accept"} onClick={() => void acceptOffer(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "accept" ? "Accepting..." : "Accept"}</button>
                         </div>
