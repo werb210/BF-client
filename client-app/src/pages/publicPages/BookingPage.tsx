@@ -70,97 +70,13 @@ function SlotPicker({ slots, tz, value, onChange }: { slots: Slot[]; tz: string;
   );
 }
 
-export function BookPage() {
+// BF_CLIENT_v885_BOOKING_ORIGINAL - the client-app booking page duplicated the website's (www.boreal.financial/book-todd).
+// Old links forward there; only the client's own cancel / reschedule page stays here.
+export function WebsiteBookingRedirect() {
   const { slug = "" } = useParams();
-  const btn = useButton();
-  const [pg, setPg] = useState<Page | null>(null);
-  const [typeId, setTypeId] = useState<string>("");
-  const [slots, setSlots] = useState<Slot[] | null>(null);
-  const [startsAt, setStartsAt] = useState("");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", notes: "" });
-  const [sms, setSms] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<Booked | null>(null);
-
-  useEffect(() => {
-    void publicApi<Page>(`/api/booking/page/${encodeURIComponent(slug)}`).then((p) => { setPg(p); setTypeId(p.meetingTypes[0]?.id ?? ""); })
-      .catch((e) => setErr(e?.status === 404 ? "This booking page doesn't exist." : "Booking is unavailable right now."));
-  }, [slug]);
-  const type = pg?.meetingTypes.find((t) => (t.id ?? "") === typeId) ?? pg?.meetingTypes[0] ?? null;
-  useEffect(() => {
-    if (!pg || !type) return;
-    setSlots(null); setStartsAt("");
-    const staff = pg.staff ? pg.staff.id : "any";
-    void publicApi<{ slots: Slot[] }>(`/api/booking/slots?staff=${encodeURIComponent(staff)}${type.id ? `&type=${encodeURIComponent(type.id)}` : ""}`)
-      .then((r) => setSlots(r.slots)).catch((e) => setErr(e?.message ?? "Booking is unavailable right now."));
-  }, [pg, type]);
-
-  if (done) {
-    return (
-      <main style={page} data-testid="booking-done">
-        <Header title="You're booked" />
-        <div style={okBox} role="status">
-          {type?.name ?? "Meeting"} with {done.booking.staffFirstName || pg?.company} on {dayLabel(done.booking.startsAt, pg!.timeZone)} at {timeLabel(done.booking.startsAt, pg!.timeZone)} ({pg!.zoneLabel}).
-        </div>
-        <p>We've emailed you a confirmation with a link to cancel or pick a new time.{done.booking.joinUrl ? " The video link is in the email." : ""}</p>
-      </main>
-    );
-  }
-  if (!pg) return <main style={page}>{err ? <div style={errorBox} role="alert">{err}</div> : <p>Loading...</p>}</main>;
-
-  const submit = async () => {
-    setErr(null);
-    if (!startsAt) return setErr("Pick a time.");
-    if (!form.name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) return setErr("Enter your name and email.");
-    if (type?.kind === "phone" && form.phone.replace(/\D/g, "").length < 10) return setErr("Enter the phone number we should call.");
-    setBusy(true);
-    try {
-      const r = await publicApi<Booked>("/api/booking", { method: "POST", body: {
-        meetingTypeId: type?.id ?? undefined, kind: type?.kind === "video" ? "teams" : "phone", startsAt, staffId: pg.staff?.id ?? "any",
-        name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), notes: form.notes.trim(),
-        ...(sms ? { sms_reminders: true, casl_consent: true, casl_consent_text: SMS_CONSENT_TEXT, casl_consent_at: new Date().toISOString() } : {}),
-      } });
-      setDone(r);
-    } catch (e: any) {
-      setErr(e?.status === 409 ? "That time was just taken. Please pick another." : (e?.message ?? "We couldn't book that. Please try again."));
-    } finally { setBusy(false); }
-  };
-
-  return (
-    <main style={page} data-testid="booking-page">
-      <Header title={pg.staff ? `Book a time with ${pg.staff.firstName}` : `Book a time with ${pg.company}`} subtitle={`Times are shown in ${pg.zoneLabel}.`} />
-      {pg.meetingTypes.length > 1 && (
-        <section style={cardStyle}>
-          <label htmlFor="bk-type" style={label}>What would you like to book?</label>
-          <select id="bk-type" value={typeId} onChange={(e) => setTypeId(e.target.value)} style={field}>
-            {pg.meetingTypes.map((t) => <option key={t.id ?? t.slug} value={t.id ?? ""}>{t.name} ({t.duration_min} min, {t.kind === "video" ? "video" : "phone"})</option>)}
-          </select>
-        </section>
-      )}
-      <section style={cardStyle}>
-        <p style={{ margin: "0 0 8px", fontWeight: 600 }}>{type?.name} - {type?.duration_min} minutes, {type?.kind === "video" ? "video meeting" : "phone call"}</p>
-        {type?.description ? <p style={{ marginTop: 0, color: "#374151" }}>{type.description}</p> : null}
-        {slots ? <SlotPicker slots={slots} tz={pg.timeZone} value={startsAt} onChange={setStartsAt} /> : <p>Finding open times...</p>}
-      </section>
-      <section style={cardStyle}>
-        <label htmlFor="bk-name" style={label}>Your name</label>
-        <input id="bk-name" autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={field} />
-        <label htmlFor="bk-email" style={label}>Email</label>
-        <input id="bk-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={field} />
-        <label htmlFor="bk-phone" style={label}>Phone{type?.kind === "phone" ? " (we'll call you)" : " (optional)"}</label>
-        <input id="bk-phone" type="tel" autoComplete="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={field} />
-        <label htmlFor="bk-notes" style={label}>Anything we should know? (optional)</label>
-        <textarea id="bk-notes" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} style={field} />
-        <label htmlFor="bk-sms" style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 10, fontSize: 15 }}>
-          <input id="bk-sms" type="checkbox" checked={sms} onChange={(e) => setSms(e.target.checked)} style={{ marginTop: 4 }} />
-          <span>{SMS_CONSENT_TEXT}</span>
-        </label>
-      </section>
-      {err ? <div style={errorBox} role="alert">{err}</div> : null}
-      <button type="button" style={{ ...btn.primary, width: "100%" }} disabled={busy} onClick={() => void submit()}>{busy ? "Booking..." : "Book this time"}</button>
-    </main>
-  );
+  const name = slug.toLowerCase().replace(/[^a-z0-9]/g, "");
+  useEffect(() => { window.location.replace(name && name !== "team" ? `https://www.boreal.financial/book-${name}` : "https://www.boreal.financial/contact"); }, [name]);
+  return <p style={{ padding: 24 }}>Opening the booking page...</p>;
 }
 
 type Managed = { company: string; zoneLabel: string; timeZone: string; booking: { status: string; startsAt: string; durationMin: number; kind: string; staffFirstName: string | null; meetingName: string; meetingTypeId: string | null; staffId: string | null; joinUrl: string | null; canChange: boolean } };
@@ -223,4 +139,4 @@ export function ManageBookingPage() {
   );
 }
 
-export default BookPage;
+export default WebsiteBookingRedirect;
