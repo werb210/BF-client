@@ -18,7 +18,7 @@ const MiniPortalPage     = lazy(() => import("@/pages/MiniPortalPage"));
 const AccountantPage     = lazy(() => import("@/pages/AccountantPage"));
 // BF_CLIENT_v869_SETTINGS_PACK - public booking pages, the post-funding survey and the privacy request page (no
 // sign-in), ported from KS-Client #25.
-const BookPage           = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.BookPage })));
+const BookPage           = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.WebsiteBookingRedirect }))); // BF_CLIENT_v885_BOOKING_ORIGINAL
 const ManageBookingPage  = lazy(() => import("@/pages/publicPages/BookingPage").then((m) => ({ default: m.ManageBookingPage })));
 const SurveyPage         = lazy(() => import("@/pages/publicPages/SurveyPage"));
 const PrivacyRequestPage = lazy(() => import("@/pages/publicPages/PrivacyRequestPage"));

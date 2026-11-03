@@ -23,33 +23,12 @@ function route(path: string, el: JSX.Element, at: string) {
 }
 
 describe("booking page", () => {
-  it("books a meeting type at a chosen time; text reminders only with the box ticked", async () => {
-    const { BookPage } = await import("../BookingPage");
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
-      if (url.includes("/api/booking/page/jane")) return json(PAGE);
-      if (url.includes("/api/booking/slots")) return json(SLOTS);
-      if (url.endsWith("/api/booking") && init?.method === "POST") return json({ ok: true, booking: { startsAt: "2026-12-08T17:00:00.000Z", staffFirstName: "Jane", kind: "teams", joinUrl: null } }, 201);
-      return json({}, 404);
-    });
-    route("/book/:slug", <BookPage />, "/book/jane");
-    expect(await screen.findByText("Book a time with Jane")).toBeTruthy();
-    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("staff=s1&type=t1"))).toBe(true);
-    fireEvent.click(await screen.findByText("11:00 a.m."));
-    fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Pat Lee" } });
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "pat@x.test" } });
-    fireEvent.click(screen.getByText("Book this time"));
-    expect(await screen.findByTestId("booking-done")).toBeTruthy();
-    const body = JSON.parse(String(fetchMock.mock.calls.find(([, i]) => (i as RequestInit | undefined)?.method === "POST")![1]!.body));
-    expect(body).toMatchObject({ meetingTypeId: "t1", startsAt: "2026-12-08T17:00:00.000Z", staffId: "s1", name: "Pat Lee" });
-    expect(body.sms_reminders).toBeUndefined();
-    expect(body.casl_consent).toBeUndefined();
-  });
-
-  it("an unknown page says so", async () => {
-    const { BookPage } = await import("../BookingPage");
-    fetchMock.mockImplementation(() => json({ error: "not_found" }, 404));
-    route("/book/:slug", <BookPage />, "/book/nobody");
-    expect(await screen.findByText("This booking page doesn't exist.")).toBeTruthy();
+  it("old /book/<name> links forward to the website booking page (BF_CLIENT_v885_BOOKING_ORIGINAL)", async () => {
+    const replace = vi.fn();
+    Object.defineProperty(window, "location", { configurable: true, value: { ...window.location, replace } });
+    const { WebsiteBookingRedirect } = await import("../BookingPage");
+    route("/book/:slug", <WebsiteBookingRedirect />, "/book/todd");
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("https://www.boreal.financial/book-todd"));
   });
 
   it("the client's link cancels", async () => {
