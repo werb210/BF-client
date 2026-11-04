@@ -96,7 +96,7 @@ export default function BookCallSheet({ advisorId, advisorFirstName, prefill, on
           <p style={{ fontSize: 17, fontWeight: 700, color: "#0B1F3A", margin: "4px 0 6px" }}>You're booked.</p>
           <p className="cmpx-muted" style={{ margin: "0 0 16px" }}>
             {fmt(booked.startsAt, { weekday: "long", month: "long", day: "numeric" })} at {fmt(booked.startsAt, { hour: "numeric", minute: "2-digit" })}
-            {booked.staffFirstName ? " with " + booked.staffFirstName : ""}. {booked.kind === "teams" ? "The Teams link is in the invitation we emailed you." : "We'll call you at the number you gave."}
+            {booked.staffFirstName ? " with " + booked.staffFirstName : ""}. {booked.kind === "teams" ? "The Teams link is in the invitation we emailed you, and you can join right here in the app from Upcoming calls on Home." : "We'll call you at the number you gave."}
           </p>
           {/* BF_CLIENT_v823_CALENDAR */}
           {bookedCallEvent(booked) ? (

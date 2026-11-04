@@ -38,9 +38,9 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Boreal uses Face ID to unlock your application securely.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Boreal uses the camera so you can photograph and upload documents for your application.</string>
+	<string>Boreal uses the camera so you can photograph and upload documents for your application, and for your video when you join a meeting with your advisor.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Boreal Financial uses the microphone only when you choose to speak with an advisor in the app.</string>
+	<string>Boreal Financial uses the microphone only when you choose to speak with an advisor in the app, by phone or in a video meeting.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Boreal accesses your photo library so you can attach documents and images to your application.</string>
 	<!-- BF_CLIENT_BLOCK_v550_SHARE_TO_BOREAL -->

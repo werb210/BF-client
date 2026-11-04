@@ -52,6 +52,7 @@ import CmpSettings, { type EditableDetails } from "../components/cmp/CmpSettings
 import ReportProblemSheet from "../components/cmp/ReportProblemSheet"; // BF_CLIENT_v807_REPORT
 import BookCallSheet from "../components/cmp/BookCallSheet";
 import LoanCalculatorSheet from "../components/cmp/loanCalculator/LoanCalculatorSheet"; // BF_CLIENT_v852_CALC_QBO
+import UpcomingMeetingsCard from "../components/meetings/UpcomingMeetingsCard"; // BF_CLIENT_v888_TEAMS_IN_APP
 import { STAGE_STEPS, FUNDED_STEP, isFundedState, loadAdvisor, type Advisor } from "../components/cmp/cmpData";
 import { phoneFromToken } from "@/native/deviceSignIn";
 import { trackUsage } from "@/lib/appUsage"; // BF_CLIENT_v811_APP_USAGE
@@ -219,6 +220,7 @@ export default function MiniPortalPage() {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false); // BF_CLIENT_v852_CALC_QBO
+  const [meetingsKey, setMeetingsKey] = useState(0); // BF_CLIENT_v888_TEAMS_IN_APP - reload Upcoming calls after booking
   const [chatTo, setChatTo] = useState<"maya" | "advisor" | null>(null);
   useEffect(() => {
     let alive = true;
@@ -1159,6 +1161,8 @@ export default function MiniPortalPage() {
       </div>
       {isPhone ? <CmpOffersCard count={liveOffers.length} bestAmount={bestOfferAmount} onOpen={() => setOffersOpen(true)} /> : null}
       {isPhone && funded ? <CmpReferCard shareUrl="https://www.boreal.financial/?utm_source=client_app&utm_medium=referral&utm_campaign=refer_a_business" /> : null}
+      {/* BF_CLIENT_v888_TEAMS_IN_APP - upcoming Teams calls, joined right here in the app. */}
+      <UpcomingMeetingsCard refreshKey={meetingsKey} />
       {/* BF_CLIENT_BOOK_CALL_v723 - book a 30-minute phone or Teams call with an advisor. */}
       {/* BF_CLIENT_v802_BOOK_IN_APP - opens the booking sheet here instead of the website. Phones book from the advisor card. */}
       {!isPhone ? <div data-testid="book-call" data-cmp-tab="home" style={{ margin: "0 0 16px", padding: "12px 16px", border: "1px solid #e5e7eb", borderRadius: 12, background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -1603,7 +1607,7 @@ export default function MiniPortalPage() {
         onRemove={(id) => void removeUnfinished(id)}
         onPick={(id) => { setSwitcherOpen(false); if (id !== String(applicationId)) navigate(`/application/${encodeURIComponent(id)}`); }} /> : null}
       {bookOpen ? <BookCallSheet advisorId={advisor?.bookable ? advisor.id : null} advisorFirstName={advisor?.firstName ?? null}
-        prefill={{ name: fullName, email: myEmail, phone: myPhone }} onClose={() => setBookOpen(false)} /> : null}
+        prefill={{ name: fullName, email: myEmail, phone: myPhone }} onClose={() => { setBookOpen(false); setMeetingsKey((k) => k + 1); }} /> : null}
       {/* BF_CLIENT_v852_CALC_QBO - the loan calculator, from More (phone) or the actions panel */}
       {calcOpen ? <LoanCalculatorSheet requestedAmount={Number(currentApp?.requested_amount ?? 0) > 0 ? Number(currentApp?.requested_amount) : null}
         title={businessName} onClose={() => setCalcOpen(false)} /> : null}
