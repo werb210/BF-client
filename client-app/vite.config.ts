@@ -42,7 +42,10 @@ export default defineConfig(({ mode }) => ({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff,woff2,json}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // BF_CLIENT_v888_TEAMS_IN_APP - the in-app Teams video call (Azure Communication Services, about 7 MB)
+        // only works online, so the website downloads it when someone joins. The phone apps ship it in the app.
+        globIgnores: ['**/TeamsMeetingCall-*.js']
       },
       devOptions: { enabled: false, type: 'module' }
     }),
