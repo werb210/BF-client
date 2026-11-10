@@ -1,6 +1,7 @@
 // BF_CLIENT_v865_BROKER_TOOLS_1_FUNDING_CONDITIONS - the last items the lender needs before funding that the client must supply.
 // Staff set them on the application's Funding tab; each one is sent here (a document, or "Done" for the rest).
-// Hidden while there is nothing for the client to do.
+// BF_CLIENT_v936_ONE_TODO_LIST - no longer its own card: the conditions are one group inside "What you need to do"
+// (ActionCenter), counted with everything else, so the client sees one list and one number.
 import { useCallback, useEffect, useState } from "react";
 import { apiCall } from "@/api/client";
 import { ENV } from "@/env";
@@ -14,20 +15,22 @@ export function conditionsHeading(list: ClientCondition[]): string {
   return left === 1 ? "1 item left before your funding" : `${left} items left before your funding`;
 }
 
-export default function FundingConditionsCard({ applicationId }: { applicationId: string }) {
+/** The client's funding conditions and the two ways to send one (a file, or "done"). */
+export function useClientConditions(applicationId: string, refreshKey?: number) {
   const [list, setList] = useState<ClientCondition[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-
   const load = useCallback(async () => {
+    if (!applicationId) return;
     try {
       const r = await apiCall<{ conditions?: ClientCondition[] }>(`/api/client-broker/conditions?applicationId=${encodeURIComponent(applicationId)}`);
       setList(Array.isArray(r?.conditions) ? r.conditions : []);
     } catch { setList([]); }
+    finally { setLoaded(true); }
   }, [applicationId]);
-  useEffect(() => { void load(); }, [load]);
-
-  const send = async (c: ClientCondition, file?: File) => {
+  useEffect(() => { void load(); }, [load, refreshKey]);
+  const send = useCallback(async (c: ClientCondition, file?: File) => {
     setBusy(c.id); setNote(null);
     try {
       if (file) {
@@ -44,13 +47,17 @@ export default function FundingConditionsCard({ applicationId }: { applicationId
     } catch (e) {
       setNote(e instanceof Error && e.message ? e.message : "That did not go through. Try again.");
     } finally { setBusy(null); }
-  };
+  }, [applicationId, load]);
+  const open = list.filter((c) => !c.submitted);
+  return { list, open, loaded, busy, note, send, reload: load };
+}
 
+/** The conditions as rows inside the to-do list. */
+export function ConditionItems({ list, busy, note, send }: { list: ClientCondition[]; busy: string | null; note: string | null; send: (c: ClientCondition, file?: File) => void }) {
   if (!list.length) return null;
   return (
-    <section className="cmpx-card" data-cmp-tab="home" data-testid="cmp-funding-conditions">
-      <div className="cmpx-eyebrow">Before your funding</div>
-      <h2 style={{ margin: "4px 0 8px", fontSize: 18 }}>{conditionsHeading(list)}</h2>
+    <div className="cmpx-todo__group" data-testid="cmp-funding-conditions">
+      <h3 className="cmpx-todo__grouptitle">Before funding ({list.filter((c) => !c.submitted).length})</h3>
       <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
         {list.map((c) => (
           <li key={c.id} style={{ borderTop: "1px solid rgba(127,127,127,0.25)", paddingTop: 10 }}>
@@ -69,6 +76,19 @@ export default function FundingConditionsCard({ applicationId }: { applicationId
         ))}
       </ul>
       {note ? <div className="cmpx-note" role="status">{note}</div> : null}
+    </div>
+  );
+}
+
+/** Kept for callers outside the mini-portal (it was a card of its own). */
+export default function FundingConditionsCard({ applicationId }: { applicationId: string }) {
+  const c = useClientConditions(applicationId);
+  if (!c.list.length) return null;
+  return (
+    <section className="cmpx-card" data-cmp-tab="home">
+      <div className="cmpx-eyebrow">Before your funding</div>
+      <h2 style={{ margin: "4px 0 8px", fontSize: 18 }}>{conditionsHeading(c.list)}</h2>
+      <ConditionItems list={c.list} busy={c.busy} note={c.note} send={c.send} />
     </section>
   );
 }

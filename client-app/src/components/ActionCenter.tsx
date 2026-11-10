@@ -5,6 +5,7 @@
 // It renders the server's answer verbatim. It deliberately does NOT re-derive
 // "is this done" on the client - that second opinion is what let the chat thread
 // and the document picker disagree in the first place.
+import { ConditionItems, type ClientCondition } from "./cmp/FundingConditionsCard"; // BF_CLIENT_v936_ONE_TODO_LIST
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiCall } from "../api/client";
 
@@ -34,6 +35,8 @@ type Props = {
   onData?: (d: { outstanding: ActionItem[]; completed: ActionItem[] }) => void;
   /** BF_CLIENT_v805_PHONE_FIXES - phone layout: progress, then Documents and Forms, three of each until "Show all". */
   grouped?: boolean;
+  /** BF_CLIENT_v936_ONE_TODO_LIST - the funding conditions, shown as one more group and counted with the rest. */
+  conditions?: { list: ClientCondition[]; busy: string | null; note: string | null; send: (c: ClientCondition, file?: File) => void };
 };
 
 const buttonLabel = (item: ActionItem) => (item.kind === "document" ? "Upload" : item.key === "sign" ? "Sign" : item.kind === "form" ? "Fill in" : "Open");
@@ -71,7 +74,7 @@ const wrap: React.CSSProperties = {
   marginBottom: 20,
 };
 
-export default function ActionCenter({ applicationId, onAction, refreshKey, onData, extraItems, grouped }: Props) {
+export default function ActionCenter({ applicationId, onAction, refreshKey, onData, extraItems, grouped, conditions }: Props) {
   // BF_CLIENT_TODO_ACTIONS_v637 - the latest extras, for the badge/widget count inside load().
   const extrasRef = useRef<ActionItem[]>(extraItems ?? []);
   extrasRef.current = extraItems ?? [];
@@ -142,20 +145,26 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
 
   const outstanding = [...(extraItems ?? []), ...data.outstanding]; // BF_CLIENT_TODO_ACTIONS_v637
 
+  // BF_CLIENT_v936_ONE_TODO_LIST - funding conditions count with everything else (one list, one number).
+  const condList = conditions?.list ?? [];
+  const condOpen = condList.filter((c) => !c.submitted).length;
+  const condDone = condList.length - condOpen;
+
   // BF_CLIENT_BLOCK_v562 - nothing to do means nothing to show: no "Completed"
   // list and no "nothing outstanding" banner. The panel exists only for work left.
-  if (outstanding.length === 0) return null;
+  if (outstanding.length === 0 && condOpen === 0) return null;
 
   if (grouped) {
-    const total = outstanding.length + data.completed.length;
+    const total = outstanding.length + data.completed.length + condList.length;
     return (
       <div style={wrap} data-testid="action-center">
         <div className="cmpx-todo__progress">
           <h2 className="cmpx-todo__title">What you need to do</h2>
-          <span className="cmpx-todo__count" data-testid="action-center-progress">{data.completed.length} of {total} done</span>
+          <span className="cmpx-todo__count" data-testid="action-center-progress">{data.completed.length + condDone} of {total} done</span>
         </div>
         <GroupedList title="Documents" items={outstanding.filter((i) => i.kind === "document")} onAction={onAction} testId="action-center-docs" />
         <GroupedList title="Forms" items={outstanding.filter((i) => i.kind !== "document")} onAction={onAction} testId="action-center-forms" />
+        {conditions ? <ConditionItems list={condList} busy={conditions.busy} note={conditions.note} send={conditions.send} /> : null}
       </div>
     );
   }
@@ -165,7 +174,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
       <>
           <div style={{ fontSize: 20, fontWeight: 600, color: "#111827" }}>What you need to do</div>
           <div style={{ fontSize: "var(--bf-text-body-sm)", color: "#6b7280", marginTop: 4, marginBottom: 16 }}>
-            {outstanding.length} item{outstanding.length === 1 ? "" : "s"} remaining
+            {outstanding.length + condOpen} item{outstanding.length + condOpen === 1 ? "" : "s"} remaining
           </div>
           {outstanding.map((item, i) => (
             <div
@@ -213,7 +222,7 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
             </div>
           ))}
       </>
-
+      {conditions ? <ConditionItems list={condList} busy={conditions.busy} note={conditions.note} send={conditions.send} /> : null}
     </div>
   );
 }

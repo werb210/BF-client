@@ -36,7 +36,7 @@ import { useVisiblePoll } from "@/hooks/useVisiblePoll";
 import { toSignSession, signingTodo, signingNotice, signingModalText, type SignSession } from "@/lib/signingText"; // BF_CLIENT_v858_PARTNER_SIGNING
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
-import FundingConditionsCard from "../components/cmp/FundingConditionsCard"; // BF_CLIENT_v865_BROKER_TOOLS
+import { useClientConditions } from "../components/cmp/FundingConditionsCard"; // BF_CLIENT_v865_BROKER_TOOLS BF_CLIENT_v936_ONE_TODO_LIST
 import CreditConsentCard from "../components/cmp/CreditConsentCard"; // BF_CLIENT_v867_BROKER_TOOLS_CREDIT_BUREAU
 import AppUpdateBanner from "../components/AppUpdateBanner"; // BF_CLIENT_APP_UPDATE_v723
 import FeeAgreementSignModal from "../components/FeeAgreementSignModal"; // BF_CLIENT_FEE_AGREEMENT_v709
@@ -72,8 +72,8 @@ const STAGES = [
 type StageKey = (typeof STAGES)[number]["key"];
 const STAGE_BY_KEY: Record<string, number> = STAGES.reduce((acc, s, i) => ({ ...acc, [s.key]: i }), {} as Record<string, number>);
 
-type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean };
-type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean };
+type ServerOffer = { id: string; lender_name?: string; lender_logo_url?: string | null; amount?: string | number | null; rate_factor?: string | null; term?: string | null; payment_frequency?: string | null; expiry_date?: string | null; document_url?: string | null; status?: string; recommended?: boolean; has_term_sheet?: boolean; signing_url?: string | null; signed?: boolean };
+type Offer = { id: string; lenderName: string; lenderLogoUrl?: string; amount?: string; rateOrFactor?: string; term?: string; paymentFrequency?: string; expiresAt?: string; pdfUrl?: string; status?: string; recommended?: boolean; hasTermSheet?: boolean; signingUrl?: string; signed?: boolean };
 // BF_CLIENT_v881_OFFER_DISPLAY - "$85000.00" became "$85,000", "60 months years" became "60 months" (a bare number still reads as years), and the term-sheet
 // buttons only show when the offer has a term sheet (they used to do nothing when it had none).
 export function offerAmountText(amount: string | undefined): string {
@@ -88,7 +88,7 @@ export function offerTermText(term: string | undefined): string {
   return /^[0-9]+(\.[0-9]+)?$/.test(t) ? `${t} years` : t; // a bare number has always meant years here
 }
 
-function normalizeOffer(s: ServerOffer): Offer { return { id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended) }; }
+function normalizeOffer(s: ServerOffer): Offer { return { id: s.id, lenderName: s.lender_name ?? "Unknown lender", lenderLogoUrl: s.lender_logo_url ?? undefined, amount: s.amount == null ? undefined : String(s.amount), rateOrFactor: s.rate_factor ?? undefined, term: s.term ?? undefined, paymentFrequency: s.payment_frequency ?? undefined, expiresAt: s.expiry_date ?? undefined, pdfUrl: s.document_url ?? undefined, status: s.status, recommended: Boolean(s.recommended), hasTermSheet: s.has_term_sheet ?? Boolean(s.document_url), signingUrl: s.signing_url ?? undefined, signed: Boolean(s.signed) }; }
 // BF_CLIENT_OFFERS_IN_THREAD_v3 - an offer past its expiry is greyed, not
 // removed: a client who missed it should still see that it existed.
 function isOfferExpired(expiresAt?: string): boolean {
@@ -127,12 +127,18 @@ export default function MiniPortalPage() {
   const store = useApplicationStore();
   const { app, startNewApplication } = store;
   const applicationId = routeId || searchParams.get("applicationId") || app.applicationId || app.applicationToken || "";
-  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [pendingOfferId, setPendingOfferId] = useState<string | null>(null); const [offersOpen, setOffersOpen] = useState(false); // BF_CLIENT_OFFERS_MODAL_v1
+  const [messages, setMessages] = useState<ThreadMessage[]>([]); const [text, setText] = useState(""); const [stageIndex, setStageIndex] = useState(0); const [offers, setOffers] = useState<Offer[]>([]); const [offersOpen, setOffersOpen] = useState(false); // BF_CLIENT_OFFERS_MODAL_v1
 
   // BF_CLIENT_TERM_SHEET_STREAM_v1 - fetch the PDF from BF-Server (authenticated) and open it
   // as an object URL. Linking straight at the Azure blob URL broke once the SAS expired or the
   // blob was private: Chrome rendered the error page and showed "Failed to load PDF document".
   const openTermSheet = useCallback(async (o: Offer) => {
+    // BF_CLIENT_v936_OFFER_CARD - a short-lived link the phone's browser can open (a PDF, or a Word term sheet as a
+    // page). A blob URL handed to the system browser was an empty page on iPhone.
+    try {
+      const r = await apiCall<{ url?: string }>(`/api/offers/${encodeURIComponent(o.id)}/term-sheet-link`, { method: "POST" });
+      if (r?.url) { window.open(r.url, "_blank", "noreferrer"); return; }
+    } catch { /* fall back to the stream below */ }
     try {
       const base = ENV.API_BASE || "https://server.boreal.financial";
       const res = await fetch(`${base}/api/offers/${o.id}/term-sheet`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
@@ -189,6 +195,7 @@ export default function MiniPortalPage() {
   // BF_CLIENT_TODO_PANEL_v630 - bumped on every refresh and after an upload so
   // "What you need to do" never shows a stale list (the app's WebView rarely fires "focus").
   const [todoRefresh, setTodoRefresh] = useState(0);
+  const fundingConds = useClientConditions(applicationId, todoRefresh); // BF_CLIENT_v936_ONE_TODO_LIST
   // BF_CLIENT_CMP_LAYOUT_v631 - forms staff requested for this application (from the to-do panel's data).
   const [requestedForms, setRequestedForms] = useState<Set<string>>(new Set());
   // BF_CLIENT_CMP_PHONE_TABS_v732 - phone layout: active tab, to-do count for the badge, the next step for Home.
@@ -229,6 +236,7 @@ export default function MiniPortalPage() {
     return () => { alive = false; };
   }, [applicationId]);
   const [docsChecked, setDocsChecked] = useState(false);
+  // BF_CLIENT_v936_ONE_TODO_LIST - funding conditions live inside "What you need to do" and in every count.
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — application detail captured for form prefill
   const [appDetail, setAppDetail] = useState<any>(null);
   // BF_CLIENT_BLOCK_v301_ACCORD_CMP_FORMS_v1 — best-effort prefill for the Personal Statement of Affairs.
@@ -671,72 +679,18 @@ export default function MiniPortalPage() {
     setStagedFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // BF_CLIENT_SIGNED_TERM_SHEET_v4 - goes through the same client upload the
-  // DocPicker uses, tagged with the offer so staff know which one it signs.
-  const [signingOfferId, setSigningOfferId] = useState<string | null>(null);
-
-  async function uploadSignedTermSheet(offerId: string, file: File) {
-    setSigningOfferId(offerId);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("category", "signed_term_sheet");
-      form.append("documentType", "signed_term_sheet");
-      form.append("applicationId", applicationId);
-      form.append("offerId", offerId);
-      const res = await fetch(`${ENV.API_BASE}/api/client/documents/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${getToken() ?? ""}` },
-        body: form,
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      trackUsage("document_uploaded"); // BF_CLIENT_v811_APP_USAGE
-      // Staff still accept it, so say what happens next rather than "done".
-      setMessages((cur) => [...cur, {
-        id: `signed-${offerId}-${Date.now()}`,
-        authorRole: "other",
-        authorName: "Boreal",
-        body: "Signed term sheet received. We'll review it and be in touch shortly.",
-        createdAt: new Date().toISOString(),
-      }]);
-    } catch {
-      window.alert("We couldn't upload that file. Please try again, or reply here and we'll help.");
-    } finally {
-      setSigningOfferId(null);
-    }
-  }
-
-  // BF_CLIENT_v789_OFFER_ACTIONS - Accept and Request Changes had no error
+  // BF_CLIENT_v789_OFFER_ACTIONS (v936: Accept removed - the client signs in SignNow) - Request Changes had no error
   // handling: a failed call was an unhandled rejection, the button stayed live
   // for a second (duplicate) tap, and the client was told nothing either way.
   // One action per offer at a time; the result is said in words on the card.
-  const [offerBusy, setOfferBusy] = useState<{ id: string; action: "accept" | "changes" } | null>(null);
+  const [offerBusy, setOfferBusy] = useState<{ id: string; action: "changes" } | null>(null);
   const [offerNotice, setOfferNotice] = useState<Record<string, { kind: "success" | "error"; text: string }>>({});
   const offerBusyRef = useRef(false);
-  function offerErrorText(err: unknown, action: "accept" | "changes"): string {
+  function offerErrorText(err: unknown): string {
     const status = Number((err as { status?: unknown } | null)?.status ?? 0);
     if (status === 401 || status === 403) return "Your session has ended. Please sign in again, then try once more.";
     if (status === 409) return "This offer has changed since it was sent. Refresh the page to see the latest version.";
-    return action === "accept"
-      ? "We couldn't accept this offer just now. Please check your connection and try again, or message us."
-      : "We couldn't send your change request just now. Please check your connection and try again, or message us.";
-  }
-  async function acceptOffer(offerId: string) {
-    if (offerBusyRef.current) return;
-    offerBusyRef.current = true;
-    setOfferBusy({ id: offerId, action: "accept" });
-    setOfferNotice((cur) => { const next = { ...cur }; delete next[offerId]; return next; });
-    try {
-      await apiCall(`/api/offers/${encodeURIComponent(offerId)}/accept`, { method: "POST" });
-      setPendingOfferId(offerId);
-      setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "pending_acceptance" } : o)));
-      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "success", text: "Offer accepted. We've sent it for staff confirmation." } }));
-    } catch (err) {
-      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "error", text: offerErrorText(err, "accept") } }));
-    } finally {
-      offerBusyRef.current = false;
-      setOfferBusy(null);
-    }
+    return "We couldn't send your change request just now. Please check your connection and try again, or message us.";
   }
   async function requestChanges(offerId: string) {
     if (offerBusyRef.current) return;
@@ -750,7 +704,7 @@ export default function MiniPortalPage() {
       setOffers((cur) => cur.map((o) => (o.id === offerId ? { ...o, status: "changes_requested" } : o)));
       setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "success", text: "Change request sent. Your advisor will reply here." } }));
     } catch (err) {
-      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "error", text: offerErrorText(err, "changes") } }));
+      setOfferNotice((cur) => ({ ...cur, [offerId]: { kind: "error", text: offerErrorText(err) } }));
     } finally {
       offerBusyRef.current = false;
       setOfferBusy(null);
@@ -914,7 +868,7 @@ export default function MiniPortalPage() {
   const firstName = fullName.split(/\s+/)[0] ?? "";
   const myPhone = String(cmpPrefill.cellPhone ?? "").trim() || (() => { const t = getToken(); return (t && phoneFromToken(t)) || ""; })();
   const switcherApps = myApps.map(toSwitcherApp);
-  const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;
+  const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0 && fundingConds.open.length === 0; // BF_CLIENT_v936_ONE_TODO_LIST
   // BF_CLIENT_v805_PHONE_FIXES - "what happens next" says what is actually left (it said "a few short forms
   // are left" next to "you're all caught up"). Nothing left before lenders: we're reviewing.
   // BF_CLIENT_v807_STATUS - Documents Required and Additional Steps mean something is needed from the client,
@@ -925,9 +879,11 @@ export default function MiniPortalPage() {
   const statusNext = (() => {
     const docs = todoKinds.docs;
     const other = todoKinds.other + todoExtras.length;
-    const left = docs + other;
+    const cond = fundingConds.open.length; // BF_CLIENT_v936_ONE_TODO_LIST - the same count as the list below
+    const left = docs + other + cond;
     if (todoLoaded && left > 0) {
-      const parts = [docs ? docs + (docs === 1 ? " document" : " documents") : "", other ? other + (other === 1 ? " form" : " forms") : ""].filter(Boolean).join(" and ");
+      const partList = [docs ? docs + (docs === 1 ? " document" : " documents") : "", other ? other + (other === 1 ? " form" : " forms") : "", cond ? cond + (cond === 1 ? " item before funding" : " items before funding") : ""].filter(Boolean);
+      const parts = partList.length > 1 ? partList.slice(0, -1).join(", ") + " and " + partList[partList.length - 1] : partList.join("");
       if (stageStep.key === "additional_steps_required") return "Lenders need a few more items before your file moves on: " + parts + ". They're listed below.";
       if (stageStep.key === "documents_required") return "We need a few documents before your file can go to lenders: " + parts + ". They're listed below.";
       return left + (left === 1 ? " thing" : " things") + " left: " + parts + ". They're listed below. Once they're done, your file moves to the next step.";
@@ -1155,8 +1111,7 @@ export default function MiniPortalPage() {
       </div>
       {/* BF_CLIENT_v802_PHONE_UI - the to-do list is on Home (To do is no longer a tab). */}
       <div data-cmp-tab="home">
-      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} grouped={isPhone} /> : null}
-      {applicationId ? <FundingConditionsCard applicationId={applicationId} /> : null}{/* BF_CLIENT_v865_BROKER_TOOLS */}
+      {applicationId ? <ActionCenter applicationId={applicationId} onAction={onActionCenterItem} refreshKey={todoRefresh} onData={onTodoData} extraItems={todoExtras} grouped={isPhone} conditions={fundingConds} /> : null}
       {applicationId ? <CreditConsentCard applicationId={applicationId} /> : null}{/* BF_CLIENT_v867_BROKER_TOOLS_CREDIT_BUREAU */}
       </div>
       {isPhone ? <CmpOffersCard count={liveOffers.length} bestAmount={bestOfferAmount} onOpen={() => setOffersOpen(true)} /> : null}
@@ -1291,7 +1246,7 @@ export default function MiniPortalPage() {
         </section>
         )}
         {isPhone ? (
-          <CmpMore forms={moreForms} docsStatus={docsChecked ? (hasOutstandingDocs ? "needed" : "done") : null}
+          <CmpMore forms={moreForms} docsStatus={docsChecked ? (hasOutstandingDocs || fundingConds.open.some((c) => c.requires_document) ? "needed" : "done") : null}
             onForm={(id) => onChip(id)} onUpload={() => { setPickerDoc(null); setShowDocPicker(true); }}
             onNewApplication={() => onChip("new")} onCalculator={() => setCalcOpen(true)} />
         ) : (
@@ -1389,35 +1344,10 @@ export default function MiniPortalPage() {
                       </div>
                       <div className="mp-offer__expires">Expires in {days} days, {hours} hours</div>
 
-                      {/* BF_CLIENT_SIGNED_UPLOAD_PENDING_v5 - outside the
-                          accept/pending branch, because signing and returning
-                          happens AFTER acceptance, not instead of it. */}
-                      {o.pdfUrl ? (
-                      <div className="mp-signed-return">
-                        Download the term sheet, sign it, and send the signed copy back to us.
-                        <div className="mp-signed-return__actions">
-                          <button type="button" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>
-                            Download term sheet
-                          </button>
-                          <label className="mp-btn mp-btn--ghost" style={{ cursor: "pointer" }}>
-                            {signingOfferId === o.id ? "Sending…" : "Upload signed copy"}
-                            <input
-                              type="file"
-                              accept="application/pdf,image/*"
-                              style={{ display: "none" }}
-                              disabled={signingOfferId !== null}
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                e.currentTarget.value = "";
-                                if (f) void uploadSignedTermSheet(o.id, f);
-                              }}
-                            />
-                          </label>
-                        </div>
-                      </div>
-                      ) : (
-                        <div className="mp-signed-return">Your advisor will send the term sheet to sign once you accept.</div>
-                      )}
+                      {/* BF_CLIENT_v936_OFFER_CARD - one action at a time: read the term sheet and ask for changes; once your
+                          advisor sends it for signature, "Review and sign" (SignNow); then "Signed". The old download /
+                          upload-a-signed-copy box and the separate Accept button are gone (they were a second way to do
+                          the same thing, and the upload was refused). */}
                       {offerNotice[o.id] ? (
                         <div
                           data-testid="offer-notice"
@@ -1427,13 +1357,18 @@ export default function MiniPortalPage() {
                           {offerNotice[o.id].text}
                         </div>
                       ) : null}
-                      {expired ? null : o.status === "pending_acceptance" || pendingOfferId === o.id ? (
-                        <div className="mp-offer__pending">Sent for staff confirmation. We'll text you when it's ready to sign.</div>
-                      ) : (
+                      {o.signed ? (
+                        <div className="mp-offer__pending" data-testid="offer-signed">Signed. Your advisor will confirm the next steps with the lender.</div>
+                      ) : expired ? null : (
                         <div className="mp-offer__actions">
-                          {o.pdfUrl ? <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View PDF</button> : null}
-                          <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "changes"} onClick={() => void requestChanges(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "changes" ? "Sending..." : "Request Changes"}</button>
-                          <button type="button" data-testid="accept-offer-btn" className="mp-btn mp-btn--primary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "accept"} onClick={() => void acceptOffer(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "accept" ? "Accepting..." : "Accept"}</button>
+                          {o.signingUrl ? (
+                            <button type="button" data-testid="sign-offer-btn" className="mp-btn mp-btn--primary" onClick={() => window.open(o.signingUrl!, "_blank", "noreferrer")}>Review and sign</button>
+                          ) : null}
+                          {o.hasTermSheet ? <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View term sheet</button> : null}
+                          {o.status === "changes_requested" ? null : (
+                            <button type="button" data-testid="request-changes-btn" className="mp-btn mp-btn--secondary" disabled={offerBusy !== null} aria-busy={offerBusy?.id === o.id && offerBusy.action === "changes"} onClick={() => void requestChanges(o.id)}>{offerBusy?.id === o.id && offerBusy.action === "changes" ? "Sending..." : "Request changes"}</button>
+                          )}
+                          {!o.signingUrl ? <div className="mp-signed-return" data-testid="offer-next">Your advisor will send the term sheet for you to sign here.</div> : null}
                         </div>
                       )}
                     </article>

@@ -1,7 +1,7 @@
 // BF_MINI_PORTAL_FIX_v48
 // The offers list arrives from the server as snake_case rows, in {items}, {data}
 // or a bare array. The page must read every shape, show the normalised fields,
-// and wire View PDF / Accept / Request Changes to the server's offer routes.
+// and wire View term sheet / Review and sign / Request Changes to the server's offer routes.
 // The busy / error / success handling of the two actions lives in offerActions.v789.test.tsx.
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
@@ -64,8 +64,10 @@ describe("BF_MINI_PORTAL_FIX_v48 MiniPortalPage offers", () => {
     const dialog = await openOffers();
     expect(within(dialog).queryByTestId("view-pdf-link")).toBeNull();
     expect(within(dialog).queryByText("Download term sheet")).toBeNull();
-    expect(within(dialog).getByText("Your advisor will send the term sheet to sign once you accept.")).toBeTruthy();
-    expect(within(dialog).getByTestId("accept-offer-btn")).toBeTruthy();
+    expect(within(dialog).getByText("Your advisor will send the term sheet for you to sign here.")).toBeTruthy();
+    // v936: no Accept button - the client accepts by signing the term sheet the advisor sends.
+    expect(within(dialog).queryByTestId("accept-offer-btn")).toBeNull();
+    expect(within(dialog).getByTestId("request-changes-btn")).toBeTruthy();
   });
 
   it("falls back to placeholders when a row has no lender name or amount", async () => {
@@ -104,14 +106,22 @@ describe("BF_MINI_PORTAL_FIX_v48 MiniPortalPage offers", () => {
     expect(open).toHaveBeenCalledWith("https://blob.test/term-sheet.pdf", "_blank", "noreferrer");
   });
 
-  it("Accept posts to the offer's accept route, URL-encoding the id", async () => {
-    setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, id: "off/7" }] } });
+  it("v936: once the advisor sends it for signature, Review and sign opens the SignNow link", async () => {
+    setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, signing_url: "https://app.signnow.test/s/abc" }] } });
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
     const dialog = await openOffers();
-    fireEvent.click(within(dialog).getByTestId("accept-offer-btn"));
-    await settle();
-    const calls = apiCallsTo("/api/offers/");
-    expect(calls.map((c) => c[0])).toEqual(["/api/offers/off%2F7/accept"]);
-    expect(calls[0][1]?.method).toBe("POST");
+    expect(within(dialog).queryByTestId("offer-next")).toBeNull();
+    fireEvent.click(within(dialog).getByTestId("sign-offer-btn"));
+    expect(open).toHaveBeenCalledWith("https://app.signnow.test/s/abc", "_blank", "noreferrer");
+    expect(within(dialog).queryByTestId("accept-offer-btn")).toBeNull();
+  });
+
+  it("v936: a signed offer says so and shows no actions", async () => {
+    setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, signing_url: "https://app.signnow.test/s/abc", signed: true }] } });
+    const dialog = await openOffers();
+    expect(within(dialog).getByTestId("offer-signed").textContent).toMatch(/^Signed\./);
+    expect(within(dialog).queryByTestId("sign-offer-btn")).toBeNull();
+    expect(within(dialog).queryByTestId("request-changes-btn")).toBeNull();
   });
 
   it("Request Changes posts to the offer's request-changes route", async () => {
