@@ -43,7 +43,7 @@ describe("phone tabs v752", () => {
   });
   it("Home says when there is nothing to do (v802: in the status card)", () => {
     expect(home).toContain('data-testid="cmp-home-caught-up"');
-    expect(page).toContain("const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0;");
+    expect(page).toContain("const caughtUp = todoLoaded && todoOpen.count + todoExtras.length === 0 && fundingConds.open.length === 0;"); // v936: open funding conditions count too
   });
   it("opens an application when the app lands on /portal without one", () => {
     expect(page).toContain('navigate("/application/" + encodeURIComponent(String(pick.id)), { replace: true })');
