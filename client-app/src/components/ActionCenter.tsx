@@ -133,12 +133,16 @@ export default function ActionCenter({ applicationId, onAction, refreshKey, onDa
 
   // BF_CLIENT_NO_FALSE_ALL_CLEAR_v728 - keep the last list if a refresh fails; with no list at all,
   // say it could not load instead of silently showing nothing to do.
+  // v936 review fix: the funding conditions come from their own call, so they stay usable while this list is
+  // loading or could not load.
+  const condRows = conditions && conditions.list.length ? <ConditionItems list={conditions.list} busy={conditions.busy} note={conditions.note} send={conditions.send} /> : null;
   if (!isActionCenter(data)) {
-    if (!failed) return null;
+    if (!failed) return condRows ? <div style={wrap} data-testid="action-center">{condRows}</div> : null;
     return (
       <div style={wrap} data-testid="action-center-failed">
         <span style={{ color: "#b91c1c", fontWeight: 600 }}>We couldn't load your to-do list.</span>{" "}
         <button type="button" onClick={() => void load()} style={{ marginLeft: 6, border: "1px solid #0B1F3A", background: "#fff", borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}>Try again</button>
+        {condRows}
       </div>
     );
   }
