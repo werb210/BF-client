@@ -49,4 +49,13 @@ describe("v936 one to-do list", () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(container.querySelector('[data-testid="action-center"]')).toBeNull();
   });
+
+  it("keeps the funding conditions usable when the rest of the list could not load", async () => {
+    apiCall.mockRejectedValue(new Error("HTTP 500"));
+    const send = vi.fn();
+    render(<ActionCenter applicationId="app-1" conditions={{ list: [cond({ requires_document: false })], busy: null, note: null, send }} />);
+    expect(await screen.findByTestId("action-center-failed")).toBeTruthy();
+    fireEvent.click(screen.getByText("Mark as done"));
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ id: "c1" }));
+  });
 });
