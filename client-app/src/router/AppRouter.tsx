@@ -23,7 +23,6 @@ const ManageBookingPage  = lazy(() => import("@/pages/publicPages/BookingPage").
 const SurveyPage         = lazy(() => import("@/pages/publicPages/SurveyPage"));
 const PrivacyRequestPage = lazy(() => import("@/pages/publicPages/PrivacyRequestPage"));
 const VerifyIdentityPage = lazy(() => import("@/pages/verify/VerifyIdentityPage")); // BF_CLIENT_v872_KYC
-const QuotePage          = lazy(() => import("@/pages/quote/QuotePage")); // BF_CLIENT_v872_QUOTES
 // BF_CLIENT_FLINKS_EMBED_DEMO_v1 - lender-facing sales asset. Public and
 // noindex, outside RequireOTP, no API calls. Nothing links to it.
 const FlinksDemoPage      = lazy(() => import("@/pages/FlinksDemoPage"));
@@ -69,7 +68,8 @@ export default function AppRouter() {
         {/* BF_CLIENT_BLOCK_TWO_STAGE_v1 */}
         <Route path="/mini-portal/forms/:applicationId" element={<RequireOTP><Stage2Page /></RequireOTP>} />
         <Route path="/verify/:applicationId" element={<RequireOTP><VerifyIdentityPage /></RequireOTP>} /> {/* BF_CLIENT_v872_KYC */}
-        <Route path="/quote/:quoteId" element={<RequireOTP><QuotePage /></RequireOTP>} /> {/* BF_CLIENT_v872_QUOTES */}
+        {/* BF_CLIENT_v938_NO_QUOTES - quotes were removed (Nov 11 2026); old quote links open the portal, where offers are. */}
+        <Route path="/quote/:quoteId" element={<Navigate to="/portal" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
