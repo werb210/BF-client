@@ -657,6 +657,24 @@ export default function MiniPortalPage() {
     return () => { cancelled = true; clearInterval(id); };
   }, [applicationId, appGone]);
 
+  // BF_CLIENT_v950_REPLY_SHOWS_SOONER - the thread was only re-read every 30 seconds, so a reply could sit unseen for
+  // half a minute after "typing" disappeared. While a reply is expected (the client just wrote, or staff are typing)
+  // the thread is re-read every 8 seconds, for at most 64 seconds; and once more the moment staff stop typing.
+  const [expectReplyUntil, setExpectReplyUntil] = useState(0);
+  const wasTyping = useRef(false);
+  useEffect(() => {
+    if (staffTyping) { wasTyping.current = true; setExpectReplyUntil(Date.now() + 64_000); return; }
+    if (wasTyping.current) { wasTyping.current = false; void loadAll(); }
+  }, [staffTyping, loadAll]);
+  useEffect(() => {
+    if (!applicationId || appGone || expectReplyUntil <= Date.now()) return;
+    const id = window.setInterval(() => {
+      if (Date.now() > expectReplyUntil) { window.clearInterval(id); return; }
+      if (typeof document === "undefined" || !document.hidden) void loadAll();
+    }, 8000);
+    return () => window.clearInterval(id);
+  }, [applicationId, appGone, expectReplyUntil, loadAll]);
+
   useEffect(() => {
     if (!text || !applicationId) return;
     apiCall("/api/client/messages/typing", { method: "POST", body: { applicationId } }).catch((): void => undefined);
@@ -720,6 +738,7 @@ export default function MiniPortalPage() {
     const attach = withAttachments ? attachments : [];
     if (withAttachments) { setText(""); setAttachments([]); setStagedFiles([]); }
     await apiCall("/api/client/messages", { method: "POST", body: { applicationId, body, direction: "inbound", attachments: attach } });
+    setExpectReplyUntil(Date.now() + 64_000); // v950: a reply is expected, so look for it more often for a minute
     setMessages((prev) => [...prev, { id: `local-${Date.now()}`, authorRole: "self", authorName: "You", body, createdAt: new Date().toISOString(), attachments: attach.length ? attach : null }]);
   }
 
