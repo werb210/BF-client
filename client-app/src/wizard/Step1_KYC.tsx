@@ -44,6 +44,7 @@ import { fetchCreditPrefill } from "../services/creditPrefill";
 import { getAttribution } from "../lib/attribution";
 import { getClarityPlaybackUrl } from "../lib/clarityPlayback"; // BF_CLIENT_CLARITY_PLAYBACK_v170
 import { fetchReadinessPrefill } from "@/api/readiness";
+import { getToken } from "@/auth/token"; // BF_CLIENT_v947_PREFILL_SIGNED_IN
 import { isPlaceholderName, prefillName } from "./applicantName"; // BF_CLIENT_v851_APPLICANT_NAME
 import { ENV } from "@/env"; // BF_CLIENT_REPORT_BLOCK_v154
 
@@ -491,10 +492,16 @@ export function Step1_KYC(): JSX.Element {
   // hydration. Runs once on Step 1 mount when the user just OTP'd in with a
   // phone the website already knows about.
   useEffect(() => {
-    const phone = sessionStorage.getItem("verified_phone");
-    if (!phone) return;
+    // BF_CLIENT_v947_PREFILL_SIGNED_IN (Todd, Nov 12 2026) - the just-verified phone is only there right after a
+    // sign-in code, and it is cleared after one use. A client who is still signed in (reopened the app, or started a
+    // second application) had nothing to look up, so every field came up blank. "me" asks the server for the
+    // signed-in client's own details.
+    const verified = (() => { try { return sessionStorage.getItem("verified_phone"); } catch { return null; } })();
+    const lookup = verified ?? (getToken() ? "me" : null);
+    if (!lookup) return;
+    const phone = verified ?? "";
 
-    void fetchReadinessPrefill(phone, "phone")
+    void fetchReadinessPrefill(lookup, "phone")
       .then((response) => {
         if (!response?.found || !response.prefill) return;
         const p = response.prefill as Record<string, unknown>;
@@ -515,7 +522,7 @@ export function Step1_KYC(): JSX.Element {
             companyName: (p.companyName as string) ?? app.kyc.companyName ?? "",
             fullName: fullName || app.kyc.fullName || "",
             email: (p.email as string) ?? app.kyc.email ?? "",
-            phone: (p.phone as string) ?? app.kyc.phone ?? phone,
+            phone: (p.phone as string) ?? (app.kyc.phone || phone),
             // business profile
             industry: (p.industry as string) ?? app.kyc.industry ?? "",
             businessLocation:
@@ -586,7 +593,7 @@ export function Step1_KYC(): JSX.Element {
             firstName: firstName || app.applicant.firstName || "",
             lastName: lastName || app.applicant.lastName || "",
             email: (p.email as string) ?? app.applicant.email ?? "",
-            phone: (p.phone as string) ?? app.applicant.phone ?? phone,
+            phone: (p.phone as string) ?? (app.applicant.phone || phone),
           },
         });
       })
