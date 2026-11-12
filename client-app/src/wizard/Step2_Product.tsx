@@ -35,7 +35,6 @@ import { getEligibilityResult } from "../lender/eligibility";
 import type { NormalizedLenderProduct } from "../lender/eligibility";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
-import { Checkbox } from "../components/ui/Checkbox";
 import { trackEvent } from "../utils/analytics";
 import { components, layout, tokens } from "@/styles";
 import { resolveStepGuard } from "./stepGuard";
@@ -568,6 +567,19 @@ export function Step2_Product() {
     selectCategory(only.bucket, only.products.map((product: any) => product.id));
   }, [app?.kyc, isLoading, loadError, visibleCategoryBuckets]);
 
+  // BF_CLIENT_v947_WIZARD_FIXES (Todd, Nov 12 2026) - one category on the page is not a choice: select it for the
+  // applicant. They still press Continue (equipment asks its closing-costs question first), so nothing is skipped.
+  const onlyOneRef = useRef(false);
+  useEffect(() => {
+    if (onlyOneRef.current || sbaAutoRef.current !== "idle") return;
+    if (isLoading || loadError || selectedBucket) return;
+    const buckets = visibleCategoryBuckets ?? [];
+    if (buckets.length !== 1) return;
+    onlyOneRef.current = true;
+    const b = buckets[0] as any;
+    selectCategory(b.bucket, b.products.map((product: any) => product.id));
+  }, [isLoading, loadError, visibleCategoryBuckets, selectedBucket]);
+
   // selectCategory updates the state that goNext reads. Advance only after that
   // selection has landed, matching the existing human-click flow.
   useEffect(() => {
@@ -779,25 +791,7 @@ export function Step2_Product() {
           companion product would match the computed companion amount.
           Capital&Equipment users do not see this — their capital leg
           already serves the same purpose. */}
-      {(() => {
-        const lf = String(app.kyc?.lookingFor ?? "").toUpperCase();
-        const equipAmt = Number(app.kyc?.equipmentAmount ?? app.kyc.fundingAmount ?? 0);
-        const isEquipmentOnly = lf === "EQUIPMENT" || lf === "EQUIPMENT_FINANCING";
-        if (!isEquipmentOnly || equipAmt <= 0) return null;
-        return (
-          // BF_CLIENT_BLOCK_v91 — original checkbox JSX, unchanged
-          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: 12 }}>
-            <Checkbox
-              checked={Boolean(app.requires_closing_cost_funding)}
-              onChange={(e) => update({ requires_closing_cost_funding: e.target.checked })}
-            />
-            <span style={{ fontSize: "var(--bf-text-label)", color: tokens.colors.textSecondary }}>
-              Also include funding for closing costs (we'll add a small Term/LOC
-              sub-application at 20% of the equipment ask — handled behind the scenes).
-            </span>
-          </label>
-        );
-      })()}
+      {/* BF_CLIENT_v947_WIZARD_FIXES - the closing-costs tick box is gone; the pop-up after choosing equipment asks once. */}
 
       <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
         <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
