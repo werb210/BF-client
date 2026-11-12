@@ -15,7 +15,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // BF_CLIENT_BUILD_NUMBER_v8 - CI sets GITHUB_RUN_NUMBER so every build
         // uploads with a higher versionCode; local builds stay at 1.
-        versionCode((System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
+        // BF_CLIENT_ANDROID_UPLOAD_v1 - ANDROID_VERSION_CODE (set by the upload workflow) wins, so a Play upload
+        // is always numbered above the version already in the store.
+        versionCode((System.getenv("ANDROID_VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger())
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -24,12 +26,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // BF_CLIENT_ANDROID_UPLOAD_v1 - release signing: the upload workflow writes the upload key from secrets and
+    // passes its location in the environment. Without it the release build is unsigned (the pull-request check),
+    // never signed with a made-up key.
+    signingConfigs {
+        upload {
+            def ks = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (ks && file(ks).exists()) {
+                storeFile file(ks)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            def uploadKey = System.getenv("ANDROID_KEYSTORE_FILE")
+            if (uploadKey && file(uploadKey).exists()) signingConfig signingConfigs.upload
             // BF_CLIENT_ANDROID_R8_v119 - shrink/obfuscate release builds; keep rules
             // for Capacitor and every installed plugin live in proguard-rules.pro.
-            // No signingConfig here: CI has no release keystore, so assembleRelease
-            // produces an unsigned APK. Sign for the store outside CI.
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

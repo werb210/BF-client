@@ -1,0 +1,144 @@
+# BF_CLIENT_ANDROID_UPLOAD_v1 - "Upload Android build": the client app's signed release bundle, sent to Google Play.
+# Run by hand: Actions > "Upload Android build" > Run workflow. Like "Upload iOS build".
+#
+# Without the upload key it builds an unsigned bundle and says so; without the Play secret it keeps the signed bundle
+# as a run artifact. Neither case fails the run - read the notices on the run page.
+#
+# Secrets (repository settings > Secrets and variables > Actions):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD   upload key
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON                                                             Play upload
+#   GOOGLE_SERVICES_JSON_BF                                                                      Firebase: push alerts
+name: Upload Android build
+
+on:
+  workflow_dispatch:
+    inputs:
+      play_track:
+        description: Google Play track
+        type: choice
+        default: internal
+        options: [internal, alpha, beta, production]
+      play_status:
+        description: 'Release status ("draft" leaves it in Play Console for you to send out)'
+        type: choice
+        default: completed
+        options: [completed, draft]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-upload
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    outputs:
+      signed: ${{ steps.sign.outputs.signed }}
+      version_code: ${{ steps.version.outputs.code }}
+    env:
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: 21 }
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: 8.14.3
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+        working-directory: client-app
+      - name: Firebase file
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON_BF }}
+        run: node "$GITHUB_WORKSPACE/scripts/ensure-google-services.mjs"
+      # Google Play needs a higher number on every upload. 2000 + this workflow's run number stays above anything
+      # uploaded by hand or numbered by the build check.
+      - name: Version code
+        id: version
+        run: |
+          code=$((2000 + GITHUB_RUN_NUMBER))
+          echo "ANDROID_VERSION_CODE=$code" >> "$GITHUB_ENV"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      - name: Upload key
+        id: sign
+        run: |
+          missing=""
+          for v in KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Android signing::Missing secrets:${missing/KEYSTORE_BASE64/ANDROID_KEYSTORE_BASE64} - building an unsigned bundle (Google Play will not accept it)."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "ANDROID_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - name: Build the release bundle (AAB)
+        run: gradle bundleRelease
+        working-directory: client-app/android
+      - name: Check the signature
+        if: steps.sign.outputs.signed == 'true'
+        run: jarsigner -verify client-app/android/app/build/outputs/bundle/release/app-release.aab > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-client-aab
+          path: client-app/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks"
+      - name: Summary
+        run: |
+          {
+            echo "### Android client app"
+            echo "- Version code: ${{ steps.version.outputs.code }}"
+            echo "- Signed: ${{ steps.sign.outputs.signed }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  upload:
+    needs: release
+    runs-on: ubuntu-24.04
+    env:
+      PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Google Play credentials
+        id: creds
+        run: |
+          if [ "${{ needs.release.outputs.signed }}" != "true" ]; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Google Play::NOT UPLOADED - the bundle is unsigned (no upload key)."
+            echo "### Not uploaded to Google Play: no upload key" >> "$GITHUB_STEP_SUMMARY"
+          elif [ -z "$PLAY_JSON" ]; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Google Play::NOT UPLOADED - no GOOGLE_PLAY_SERVICE_ACCOUNT_JSON secret. The signed bundle is the run artifact android-client-aab."
+            echo "### Not uploaded to Google Play: no Play access file" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "upload=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.creds.outputs.upload == 'true'
+        with:
+          name: android-client-aab
+          path: aab
+      - name: Upload to Google Play
+        if: steps.creds.outputs.upload == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ env.PLAY_JSON }}
+          packageName: com.boreal.client
+          releaseFiles: aab/*.aab
+          track: ${{ inputs.play_track }}
+          status: ${{ inputs.play_status }}
+      - name: Done
+        if: steps.creds.outputs.upload == 'true'
+        run: echo "### Uploaded to Google Play (${{ inputs.play_track }}), version code ${{ needs.release.outputs.version_code }}" >> "$GITHUB_STEP_SUMMARY"
