@@ -35,6 +35,11 @@ export function biometricUnavailableText(android: boolean): string {
     : "Set up Face ID in your iPhone's settings to use this.";
 }
 
+export function isIosAppOnMac(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return Capacitor.getPlatform() === "ios" && /Macintosh/.test(navigator.userAgent ?? "") && (navigator.maxTouchPoints ?? 0) <= 1;
+}
+
 export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}) {
   const [phase, setPhase] = useState<Phase>("checking");
   const [status, setStatus] = useState<BiometryStatus | null>(null);
@@ -91,6 +96,9 @@ export default function FaceIdSignInToggle({ variant }: { variant?: "row" } = {}
 
   // Face ID is a device feature; there is nothing to offer in a browser tab.
   if (phase === "ready" && status && !status.native) return null;
+  // BF_CLIENT_v947_WIZARD_FIXES - the iPhone app running on a Mac has no Face ID and no "iPhone settings" to send the
+  // person to. (An iPad also reports "Macintosh", but has a touch screen.)
+  if (isIosAppOnMac()) return null;
 
   // BF_CLIENT_v805_PHONE_FIXES - in Settings and the account sheet: a settings row with an on/off switch.
   if (variant === "row") {

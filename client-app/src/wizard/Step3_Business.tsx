@@ -769,6 +769,8 @@ export function Step3_Business() {
               <Input
                 id={getWizardFieldId("step3", "startDate")}
                 type="date"
+                // BF_CLIENT_v947_WIZARD_FIXES - Safari gives a date box its own width, which pushed it past the card.
+                style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
                 value={values.startDate || ""}
                 onChange={(e) => setField("startDate", e.target.value)}
                 onKeyDown={(e) => {
@@ -826,7 +828,7 @@ export function Step3_Business() {
 
           {/* BF_CLIENT_SBA_REDUCED_v191 */}
           <div style={{ display: onSbaStartupPath || onMediaPath ? "none" : undefined }}>
-            <label style={components.form.label}>Number of Employees</label>
+            <label style={components.form.label}>Number of Employees (including owners)</label>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 style={{
