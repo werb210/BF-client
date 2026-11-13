@@ -130,6 +130,33 @@ describe("validateBootToken", () => {
     }
   });
 
+  // BF_CLIENT_v956_NOT_MY_APPLICATION
+  it("forgets an application that belongs to another phone, and keeps the drafts", async () => {
+    seedAllKeys();
+    const tokenMod = await import("@/auth/token");
+    vi.spyOn(tokenMod, "getToken").mockReturnValue("client.jwt.token");
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "forbidden" }), { status: 403 }));
+    const redirect = vi.fn();
+    const result = await validateBootToken({ fetchImpl: fetchImpl as any, redirect });
+    expect(result).toEqual({ ok: false, reason: "not_owner" });
+    expect(redirect).not.toHaveBeenCalled();
+    expect(localStorage.getItem("bf_application_token")).toBeNull();
+    expect(localStorage.getItem("client:draft:step:1")).not.toBeNull();
+  });
+
+  it("keeps the application when a signed-in 403 is not an ownership refusal, or nobody is signed in", async () => {
+    const tokenMod = await import("@/auth/token");
+    for (const signedIn of [true, false]) {
+      seedAllKeys();
+      vi.spyOn(tokenMod, "getToken").mockReturnValue(signedIn ? "client.jwt.token" : null);
+      const body = JSON.stringify({ error: signedIn ? "rate_limited" : "forbidden" });
+      const fetchImpl = vi.fn().mockResolvedValue(new Response(body, { status: 403 }));
+      const result = await validateBootToken({ fetchImpl: fetchImpl as any, redirect: vi.fn() });
+      expect(result).toEqual({ ok: false, reason: "signed_out" });
+      expect(localStorage.getItem("bf_application_token")).toBe(VALID_UUID);
+    }
+  });
+
   it("clearAllApplicationDrafts nukes prefixed keys", () => {
     seedAllKeys();
     clearAllApplicationDrafts();
