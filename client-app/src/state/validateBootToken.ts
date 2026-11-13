@@ -57,7 +57,7 @@ export interface ValidateBootTokenOptions {
 
 export async function validateBootToken(
   options: ValidateBootTokenOptions = {},
-): Promise<{ ok: true } | { ok: false; reason: "stale" | "no_token" | "invalid_shape" | "network" | "signed_out" }> {
+): Promise<{ ok: true } | { ok: false; reason: "stale" | "no_token" | "invalid_shape" | "network" | "signed_out" | "not_owner" }> {
   if (typeof window === "undefined") return { ok: false, reason: "no_token" };
 
   const stored = (() => {
@@ -79,12 +79,13 @@ export async function validateBootToken(
   const url = `${apiBase}/api/client/application/${encodeURIComponent(stored)}/status`;
 
   let res: Response;
+  let clientToken: string | null = null;
   try {
     // BF_CLIENT_v800_BOOT_CHECK_AUTH - the status check needs the client's sign-in token since
     // BF-Server v784 (only the owner may read an application). Sent without it, every launch got
     // a 401, which this check read as "expired": it wiped the saved application and sent a
     // signed-in client with a live application to Step 1.
-    const clientToken = (() => { try { return getToken(); } catch { return null; } })();
+    clientToken = (() => { try { return getToken(); } catch { return null; } })();
     const headers: Record<string, string> = { Accept: "application/json" };
     if (clientToken) headers.Authorization = "Bearer " + clientToken;
     res = await fetchImpl(url, {
@@ -100,6 +101,17 @@ export async function validateBootToken(
 
   // BF_CLIENT_v800_BOOT_CHECK_AUTH - only a missing or closed application is stale. 401/403 mean
   // "not signed in as its owner right now", which sign-in handles; the saved application is kept.
+  // BF_CLIENT_v956_NOT_MY_APPLICATION - signed in, and the server says this application belongs to someone else
+  // (a different phone used this device before). Forget which application the device points at, so the app stops
+  // asking for it on every open; the wizard drafts are left alone.
+  if (res.status === 403 && clientToken) {
+    const code = await res.clone().json().then((b: { error?: unknown }) => String(b?.error ?? "")).catch(() => "");
+    // The server answers 503 when it could not check, so a 403 with one of these codes is a real mismatch.
+    if (code === "forbidden" || code === "not_your_application") {
+      clearApplicationToken();
+      return { ok: false, reason: "not_owner" };
+    }
+  }
   if (res.status === 401 || res.status === 403) return { ok: false, reason: "signed_out" };
   const stale = res.status === 404 || res.status === 410;
   if (!stale) return { ok: true };
