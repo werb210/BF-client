@@ -1080,7 +1080,7 @@ export function Step1_KYC(): JSX.Element {
                 }}
                 hasError={showErrors && fieldErrors.lookingFor}
               >
-                <option value="">Select…</option>
+                <option value="">Select...</option>
                 {FUNDING_INTENT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -1251,7 +1251,7 @@ export function Step1_KYC(): JSX.Element {
                 }}
                 hasError={showErrors && fieldErrors.businessLocation}
               >
-                <option value="">Select…</option>
+                <option value="">Select...</option>
                 {BusinessLocationOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -1341,7 +1341,7 @@ export function Step1_KYC(): JSX.Element {
                 }}
                 hasError={showErrors && fieldErrors.purposeOfFunds}
               >
-                <option value="">Select…</option>
+                <option value="">Select...</option>
                 {visiblePurposeOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
