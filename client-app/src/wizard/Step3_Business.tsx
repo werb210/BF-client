@@ -181,6 +181,14 @@ export function Step3_Business() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // BF_CLIENT_EMPLOYEES_FROM_ONE - the field shows 1 when nothing has been entered; store that 1 so what the client
+  // sees is what is saved (an untouched field used to be saved as nothing and shown as 0).
+  const employeesAsked = !onSbaStartupPath && !onMediaPath;
+  useEffect(() => {
+    if (employeesAsked && !Number(values.employees)) setField("employees", 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the stored count is missing
+  }, [employeesAsked, values.employees]);
+
   function setField(key: string, value: unknown) {
     update({ business: { ...values, [key]: value } });
   }
@@ -557,7 +565,7 @@ export function Step3_Business() {
                 handleAutoAdvance("businessStructure", nextValues);
               }}
             >
-              <option value="">Select…</option>
+              <option value="">Select...</option>
               <option value="Sole Proprietorship">Sole Proprietorship</option>
               <option value="Partnership">Partnership</option>
               <option value="LLC">LLC</option>
@@ -828,7 +836,7 @@ export function Step3_Business() {
 
           {/* BF_CLIENT_SBA_REDUCED_v191 */}
           <div style={{ display: onSbaStartupPath || onMediaPath ? "none" : undefined }}>
-            <label style={components.form.label}>Number of Employees (including owners)</label>
+            <label style={components.form.label}>Number of employees (including owners)</label>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 style={{
@@ -843,16 +851,21 @@ export function Step3_Business() {
                 onClick={() =>
                   setField(
                     "employees",
-                    Math.max(0, Number(values.employees || 0) - 1)
+                    Math.max(1, Number(values.employees || 1) - 1)
                   )
                 }
                 type="button"
               >
                 −
               </button>
-              <span style={{ minWidth: 40, textAlign: "center", fontSize: 16, fontWeight: 500 }}>
-                {Number(values.employees || 0)}
-              </span>
+              {/* BF_CLIENT_EMPLOYEES_FROM_ONE - the count includes the owners, so it starts at 1 (never 0) and can be typed. */}
+              <input
+                aria-label="Number of employees (including owners)"
+                type="number" inputMode="numeric" min={1} step={1}
+                value={Number(values.employees || 1)}
+                onChange={(e) => setField("employees", Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                style={{ width: 84, height: 36, textAlign: "center", fontSize: 16, fontWeight: 500, border: "1px solid #d1d5db", borderRadius: 8 }}
+              />
               <button
                 style={{
                   width: 36,
@@ -864,7 +877,7 @@ export function Step3_Business() {
                   fontSize: 18,
                 }}
                 onClick={() =>
-                  setField("employees", Number(values.employees || 0) + 1)
+                  setField("employees", Number(values.employees || 1) + 1)
                 }
                 type="button"
               >

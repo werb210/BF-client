@@ -43,6 +43,9 @@ body {
   overflow-x: hidden;
 }
 
+/* BF_CLIENT_CHAT_BUTTON_ROOM - room for the round chat button (see MayaWidget). Not needed where the button is hidden. */
+body.maya-launcher-shown:not(.cmp-phone-body) { padding-bottom: calc(env(safe-area-inset-bottom) + 4.75rem); }
+
 .native-backgrounded body::after {
   content: "Boreal Financial";
   position: fixed;

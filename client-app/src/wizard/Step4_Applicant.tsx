@@ -130,7 +130,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName = false, isAccord
   const fmtMoney = (v: unknown) => { const n = String(v ?? "").replace(/[^\d]/g, ""); return n ? Number(n).toLocaleString("en-CA") : ""; };
   const yn = (key: string) => (
     <select value={String(data[key] ?? "")} onChange={(e) => setField(key, e.target.value)}>
-      <option value="">—</option><option value="Yes">Yes</option><option value="No">No</option>
+      <option value="">Select...</option><option value="Yes">Yes</option><option value="No">No</option>
     </select>
   );
   const setName = (field: "firstName" | "lastName", v: string) => {
@@ -192,7 +192,7 @@ function OwnerFields({ data, setField, setMany, deriveFullName = false, isAccord
       {isAccordLOC && (
         <div><label style={L}>Own or Rent</label>
           <select value={data.ownRent || ""} onChange={(e) => setField("ownRent", e.target.value)}>
-            <option value="">—</option><option value="Own">Own</option><option value="Rent">Rent</option>
+            <option value="">Select...</option><option value="Own">Own</option><option value="Rent">Rent</option>
           </select>
         </div>
       )}
@@ -397,8 +397,8 @@ function AccordAdditionalShareholders({ list, onChange }: { list: ShareholderRow
           <div><label style={L}>Mobile #</label><Input value={r.mobile || ""} onChange={(e) => setRow(i, "mobile", e.target.value)} /></div>
           <div><label style={L}>Email</label><Input value={r.email || ""} onChange={(e) => setRow(i, "email", e.target.value)} /></div>
           <div><label style={L}>Ownership %</label><Input type="number" min="0" max="100" value={r.ownership || ""} onChange={(e) => setRow(i, "ownership", e.target.value)} /></div>
-          <div><label style={L}>Director?</label><select value={r.director || ""} onChange={(e) => setRow(i, "director", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
-          <div><label style={L}>Officer?</label><select value={r.officer || ""} onChange={(e) => setRow(i, "officer", e.target.value)}><option value="">—</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div><label style={L}>Director?</label><select value={r.director || ""} onChange={(e) => setRow(i, "director", e.target.value)}><option value="">Select...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div><label style={L}>Officer?</label><select value={r.officer || ""} onChange={(e) => setRow(i, "officer", e.target.value)}><option value="">Select...</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
           <div style={{ gridColumn: "1 / -1" }}><button type="button" onClick={() => remove(i)} style={{ background: "transparent", border: `1px solid ${tokens.colors.border}`, borderRadius: 6, padding: "6px 12px", color: "#b91c1c", cursor: "pointer", fontSize: "var(--bf-text-label)" }}>Remove</button></div>
         </div>
       ))}

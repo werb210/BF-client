@@ -91,7 +91,7 @@ export function RegionSelect({
       value={value}
       onChange={(e: unknown) => onChange(e.target.value)}
     >
-      <option value="">Select</option>
+      <option value="">Select...</option>
       {options.map((option) => (
         <option key={option} value={option}>
           {option}

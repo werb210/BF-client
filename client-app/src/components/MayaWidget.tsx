@@ -461,6 +461,13 @@ export default function MayaWidget() {
   // BF_CLIENT_v805_PHONE_FIXES - in the application on a phone the round button covered the form; Maya opens from the step header there.
   const isPhone = useIsPhoneWidth();
   const hideLauncher = location.pathname === "/portal" || location.pathname.startsWith("/application/") || (isPhone && location.pathname.startsWith("/apply"));
+  // BF_CLIENT_CHAT_BUTTON_ROOM - while the round chat button is on screen the page keeps a strip of space at the bottom,
+  // so the button never sits on top of the last line or the Continue button.
+  useEffect(() => {
+    if (hideLauncher) return;
+    document.body.classList.add("maya-launcher-shown");
+    return () => document.body.classList.remove("maya-launcher-shown");
+  }, [hideLauncher]);
   const chatUi = (
     <>
       {open ? (
