@@ -107,6 +107,7 @@
 .mp-offer__actions .mp-btn:disabled{background:#E4EAF2;color:#374151;border-color:#E4EAF2;cursor:not-allowed}
 .mp-offer__actions{display:grid;gap:8px;padding:0 12px 12px}
 .mp-btn{min-height:42px;border-radius:10px;font-weight:600;font-size:var(--bf-text-body-sm);text-align:center;padding:10px 12px;text-decoration:none}
+.mp-offer__actions .mp-btn--primary{background:#0B1F3A;color:#fff;border:0}
 .mp-btn--ghost{background:#E4EAF2;color:#0B1F3A;border:none}
 .mp-btn--secondary{background:#fff;color:#0B1F3A;border:1px solid #0B1F3A}
 
