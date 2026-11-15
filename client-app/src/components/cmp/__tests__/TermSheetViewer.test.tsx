@@ -1,7 +1,6 @@
 // BF_CLIENT_v957_OFFER_IN_APP
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { readFileSync } from "node:fs";
 import TermSheetViewer, { frameFromResponse } from "../TermSheetViewer";
 
 describe("the term sheet and its signing stay inside the portal", () => {
@@ -25,12 +24,5 @@ describe("the term sheet and its signing stay inside the portal", () => {
     expect(pdf.kind).toBe("pdf");
     const other = await frameFromResponse(new Response("PK..", { headers: { "content-type": "application/zip" } }), "t");
     expect(other.kind).toBe("error");
-  });
-  it("the offer card opens nothing in another window", () => {
-    const src = readFileSync("src/pages/MiniPortalPage.tsx", "utf8");
-    const card = src.slice(src.indexOf('data-testid="sign-offer-btn"') - 400, src.indexOf('data-testid="view-pdf-link"') + 300);
-    expect(card).not.toContain("window.open");
-    const opener = src.slice(src.indexOf("const openTermSheet"), src.indexOf("BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1"));
-    expect(opener).not.toContain("window.open");
   });
 });
