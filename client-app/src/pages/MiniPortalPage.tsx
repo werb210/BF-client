@@ -34,6 +34,7 @@ import { wipeSession } from "@/auth/logout"; // BF_CLIENT_v789_SIGN_OUT_WIPE
 import { ensureMicrophonePermission } from "@/lib/microphone"; // BF_CLIENT_v789_MIC_PERMISSION
 import InstallAppPrompt from "@/components/install/InstallAppPrompt";
 import { useVisiblePoll } from "@/hooks/useVisiblePoll";
+import TermSheetViewer, { frameFromResponse, type OfferFrame } from "@/components/cmp/TermSheetViewer"; // BF_CLIENT_v957_OFFER_IN_APP
 import { toSignSession, signingTodo, signingNotice, signingModalText, type SignSession } from "@/lib/signingText"; // BF_CLIENT_v858_PARTNER_SIGNING
 // BF_CLIENT_ACTION_CENTER_v198
 import ActionCenter from "../components/ActionCenter";
@@ -133,23 +134,21 @@ export default function MiniPortalPage() {
   // BF_CLIENT_TERM_SHEET_STREAM_v1 - fetch the PDF from BF-Server (authenticated) and open it
   // as an object URL. Linking straight at the Azure blob URL broke once the SAS expired or the
   // blob was private: Chrome rendered the error page and showed "Failed to load PDF document".
+  // BF_CLIENT_v957_OFFER_IN_APP - the term sheet opens inside the portal, not in another browser window.
+  const [offerFrame, setOfferFrame] = useState<OfferFrame | null>(null);
   const openTermSheet = useCallback(async (o: Offer) => {
-    // BF_CLIENT_v936_OFFER_CARD - a short-lived link the phone's browser can open (a PDF, or a Word term sheet as a
-    // page). A blob URL handed to the system browser was an empty page on iPhone.
+    const title = "Your term sheet";
+    setOfferFrame({ kind: "loading", title });
+    const base = ENV.API_BASE || "https://server.boreal.financial";
+    const headers = { Authorization: `Bearer ${getToken() ?? ""}` };
     try {
-      const r = await apiCall<{ url?: string }>(`/api/offers/${encodeURIComponent(o.id)}/term-sheet-link`, { method: "POST" });
-      if (r?.url) { window.open(r.url, "_blank", "noreferrer"); return; }
-    } catch { /* fall back to the stream below */ }
-    try {
-      const base = ENV.API_BASE || "https://server.boreal.financial";
-      const res = await fetch(`${base}/api/offers/${o.id}/term-sheet`, { headers: { Authorization: `Bearer ${getToken() ?? ""}` } });
+      // The viewing form (a PDF as is, a Word term sheet as a page); the plain PDF stream is the fallback.
+      let res = await fetch(`${base}/api/offers/${encodeURIComponent(o.id)}/term-sheet-view`, { headers });
+      if (!res.ok) res = await fetch(`${base}/api/offers/${encodeURIComponent(o.id)}/term-sheet`, { headers });
       if (!res.ok) throw new Error(`term_sheet_${res.status}`);
-      const blob = await res.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      window.open(objectUrl, "_blank", "noreferrer");
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      setOfferFrame(await frameFromResponse(res, title));
     } catch {
-      if (o?.pdfUrl) window.open(o.pdfUrl, "_blank", "noreferrer"); // legacy fallback
+      setOfferFrame({ kind: "error", title, text: "The term sheet could not be opened. Please try again, or message your advisor." });
     }
   }, []);
   // BF_CLIENT_BLOCK_v727_APP_SWITCHER_v1 — the caller's applications for the switcher
@@ -803,6 +802,7 @@ export default function MiniPortalPage() {
     if (ctaAction in actionByKeyword) { onChip(actionByKeyword[ctaAction]); return; }
     // BF_CLIENT_SIGN_CTA_v294 - "Sign now" messages (e.g. after staff switch the application to Line of Credit) open signing.
     if (ctaAction === "sign" || ctaAction === "sign_application") { onChip("sign"); return; }
+    if (ctaAction === "offers") { setOffersOpen(true); return; } // BF_CLIENT_v957_OFFER_IN_APP - "Review and sign your term sheet"
     if (ctaAction === "sign_fee_agreement") { setShowFeeSign(true); return; } // BF_CLIENT_FEE_AGREEMENT_v709
     if (ctaAction === "lender_qa") { setOpenForm("lender_qa"); return; }
     if (ctaAction === "id_verify") { navigate(`/verify/${encodeURIComponent(applicationId ?? "")}`); return; } // BF_CLIENT_v872_KYC
@@ -1391,7 +1391,7 @@ export default function MiniPortalPage() {
                       ) : expired ? null : (
                         <div className="mp-offer__actions">
                           {o.signingUrl ? (
-                            <button type="button" data-testid="sign-offer-btn" className="mp-btn mp-btn--primary" onClick={() => window.open(o.signingUrl!, "_blank", "noreferrer")}>Review and sign</button>
+                            <button type="button" data-testid="sign-offer-btn" className="mp-btn mp-btn--primary" onClick={() => setOfferFrame({ kind: "sign", title: "Review and sign", url: o.signingUrl! })}>Review and sign</button>
                           ) : null}
                           {o.hasTermSheet ? <button type="button" data-testid="view-pdf-link" className="mp-btn mp-btn--ghost" onClick={() => void openTermSheet(o)}>View term sheet</button> : null}
                           {o.status === "changes_requested" ? null : (
@@ -1532,6 +1532,9 @@ export default function MiniPortalPage() {
       {/* BF_CLIENT_FEE_AGREEMENT_v709 */}
       <FeatureTour />{/* BF_CLIENT_FEATURE_TOUR_v720 - once, first time in the mini-portal, app only */}
       <FeeAgreementSignModal applicationId={applicationId} open={showFeeSign} onClose={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} onSigned={() => { setShowFeeSign(false); setTodoRefresh((n) => n + 1); }} />
+      {offerFrame ? (
+        <TermSheetViewer frame={offerFrame} onClose={() => { const wasSigning = offerFrame.kind === "sign"; setOfferFrame(null); if (wasSigning) { void loadAll(); window.setTimeout(() => { void loadAll(); }, 6000); } }} />
+      ) : null}
       {showSign && (
         <div role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) { setShowSign(false); void markSigningComplete(); } }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>

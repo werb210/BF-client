@@ -77,42 +77,41 @@ describe("BF_MINI_PORTAL_FIX_v48 MiniPortalPage offers", () => {
     expect(within(dialog).getByText("— factor")).toBeTruthy();
   });
 
-  it("View PDF streams the term sheet with the sign-in token", async () => {
+  // BF_CLIENT_v957_OFFER_IN_APP - the term sheet and its signing open inside the portal, never in another window.
+  it("View term sheet fetches it with the sign-in token and shows it inside the portal", async () => {
     setApi({ "/api/client/offers": { items: [SERVER_OFFER] } });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
-    const urlApi = URL as unknown as Record<string, unknown>;
-    const saved = { create: urlApi.createObjectURL, revoke: urlApi.revokeObjectURL };
-    urlApi.createObjectURL = vi.fn(() => "blob:term-sheet");
-    urlApi.revokeObjectURL = vi.fn();
-    setFetch(() => new Response(new Blob(["%PDF"]), { status: 200 }));
+    setFetch(() => new Response("<p>Terms</p>", { status: 200, headers: { "content-type": "text/html; charset=utf-8" } }));
     const dialog = await openOffers();
     fireEvent.click(within(dialog).getByTestId("view-pdf-link"));
     await settle();
     const [url, init] = portalMocks.fetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("https://api.test/api/offers/off-7/term-sheet");
+    expect(url).toBe("https://api.test/api/offers/off-7/term-sheet-view");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer tok-123");
-    expect(open).toHaveBeenCalledWith("blob:term-sheet", "_blank", "noreferrer");
-    urlApi.createObjectURL = saved.create;
-    urlApi.revokeObjectURL = saved.revoke;
+    expect(screen.getByTestId("term-sheet-page").getAttribute("srcdoc")).toContain("Terms");
+    expect(open).not.toHaveBeenCalled();
   });
 
-  it("View PDF falls back to the offer's document_url when the stream fails", async () => {
+  it("View term sheet falls back to the PDF stream, and says so plainly when neither answers", async () => {
     setApi({ "/api/client/offers": { items: [SERVER_OFFER] } });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     setFetch(() => jsonResponse({ error: "gone" }, 404));
     const dialog = await openOffers();
     fireEvent.click(within(dialog).getByTestId("view-pdf-link"));
     await settle();
-    expect(open).toHaveBeenCalledWith("https://blob.test/term-sheet.pdf", "_blank", "noreferrer");
+    expect((portalMocks.fetch.mock.calls[1] as [string])[0]).toBe("https://api.test/api/offers/off-7/term-sheet");
+    expect(screen.getByTestId("offer-frame").textContent).toMatch(/could not be opened/);
+    expect(open).not.toHaveBeenCalled();
   });
 
-  it("v936: once the advisor sends it for signature, Review and sign opens the SignNow link", async () => {
+  it("once the advisor sends it for signature, Review and sign opens SignNow inside the portal", async () => {
     setApi({ "/api/client/offers": { items: [{ ...SERVER_OFFER, signing_url: "https://app.signnow.test/s/abc" }] } });
     const open = vi.spyOn(window, "open").mockReturnValue(null);
     const dialog = await openOffers();
     expect(within(dialog).queryByTestId("offer-next")).toBeNull();
     fireEvent.click(within(dialog).getByTestId("sign-offer-btn"));
-    expect(open).toHaveBeenCalledWith("https://app.signnow.test/s/abc", "_blank", "noreferrer");
+    expect(screen.getByTestId("offer-sign-frame").getAttribute("src")).toBe("https://app.signnow.test/s/abc");
+    expect(open).not.toHaveBeenCalled();
     expect(within(dialog).queryByTestId("accept-offer-btn")).toBeNull();
   });
 
