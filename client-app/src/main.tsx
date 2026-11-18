@@ -25,7 +25,8 @@ import { startUploadQueueWatcher } from "./state/uploadQueueWatcher";
 // BF_CLIENT_BLOCK_v76_FORM_RESPONSE_QUEUE_AND_LP_CACHE_v1
 import { startFormResponseQueueWatcher } from "./state/formResponseQueueWatcher";
 import { validateBootToken } from "./state/validateBootToken";
-import { hydrateToken } from "./auth/token";
+import { hydrateToken, getToken, clearToken } from "./auth/token";
+import { handleBootSignedOut } from "./state/expiredSession";
 import { startBorealRuntime } from "./native/borealRuntime";
 
 try {
@@ -70,7 +71,15 @@ void startBorealRuntime({
   navigate: (route) => window.location.assign(route),
 });
 
-void validateBootToken();
+// BF_CLIENT_EXPIRED_SIGNIN_v1 - an expired sign-in on the portal goes to sign-in instead of an empty portal.
+void validateBootToken().then((result) => {
+  handleBootSignedOut(result, {
+    hasToken: () => { try { return Boolean(getToken()); } catch { return false; } },
+    clearToken: () => { try { clearToken(); } catch { /* storage unavailable */ } },
+    path: window.location.pathname,
+    redirect: (to) => window.location.assign(to),
+  });
+}).catch((): undefined => undefined);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
