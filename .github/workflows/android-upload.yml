@@ -124,6 +124,9 @@ jobs:
             echo "### Not uploaded to Google Play: no Play access file" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "upload=true" >> "$GITHUB_OUTPUT"
+            # BF_CLIENT_PLAY_ACCOUNT_ECHO_v1 - name the account and key id (never the key) so a
+            # "caller does not have permission" error can be matched to Play Console users.
+            echo "Play account: $(echo "$PLAY_JSON" | jq -r '.client_email // "missing"')  key id: $(echo "$PLAY_JSON" | jq -r '.private_key_id // "missing"' | cut -c1-12)  project: $(echo "$PLAY_JSON" | jq -r '.project_id // "missing"')" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
       - uses: actions/download-artifact@v4
         if: steps.creds.outputs.upload == 'true'
