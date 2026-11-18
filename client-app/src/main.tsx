@@ -72,7 +72,8 @@ void startBorealRuntime({
 });
 
 // BF_CLIENT_EXPIRED_SIGNIN_v1 - an expired sign-in on the portal goes to sign-in instead of an empty portal.
-void validateBootToken().then((result) => {
+void Promise.resolve(validateBootToken()).then((result) => {
+  if (!result) return;
   handleBootSignedOut(result, {
     hasToken: () => { try { return Boolean(getToken()); } catch { return false; } },
     clearToken: () => { try { clearToken(); } catch { /* storage unavailable */ } },
