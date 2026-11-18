@@ -1,6 +1,9 @@
 // @ts-nocheck
 import { Select } from "./ui/Select";
 
+// BF_CLIENT_STEP3_TIDY_v1 - lets a step tell a Canadian province from a US state.
+export const CA_PROVINCE_CODES = new Set(["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]);
+
 export function RegionSelect({
   country,
   value,
@@ -82,6 +85,7 @@ export function RegionSelect({
           "WV",
           "WI",
           "WY",
+          "DC", // BF_CLIENT_STEP3_TIDY_v1 - Washington, DC businesses had no option
         ];
 
   return (

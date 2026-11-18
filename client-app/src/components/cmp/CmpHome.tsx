@@ -29,8 +29,13 @@ export function toSwitcherApp(a: any): SwitcherApp {
   const stageRaw = String(a?.pipeline_state ?? "").trim();
   // BF_CLIENT_v805_PHONE_FIXES - an application never submitted (draft, or no submitted_at) is "Not finished"
   // and can be continued; its placeholder name ("Draft application") is not shown as a business.
-  const notFinished = /^draft$/i.test(stageRaw) || (a?.submitted_at == null && "submitted_at" in (a ?? {}));
-  const rawName = String(a?.business_name ?? a?.businessName ?? a?.legal_business_name ?? "").trim();
+  // BF_CLIENT_SWITCHER_TIDY_v1 - an equipment leg or closing-costs application is sent with its parent;
+  // offering "Continue" on it re-ran the wizard and overwrote it with the parent's answers.
+  const linked = /^(capital_and_equipment_leg|closing_costs_companion)$/i.test(String(a?.source ?? ""));
+  const notFinished = !linked && (/^draft$/i.test(stageRaw) || (a?.submitted_at == null && "submitted_at" in (a ?? {})));
+  // Staff-facing name prefixes ("Equipment leg - ", "Closing costs - ") are not shown to the client.
+  const rawName = String(a?.business_name ?? a?.businessName ?? a?.legal_business_name ?? "").trim()
+    .replace(/^(equipment leg|closing costs)\s*-\s*/i, "");
   const saved = Date.parse(String(a?.updated_at ?? a?.created_at ?? ""));
   return {
     id: String(a?.id ?? ""),

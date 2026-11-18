@@ -724,7 +724,9 @@ export function Step2_Product() {
                   </span>
                 </div>
                 <div style={{ color: "#6b7280", fontSize: "var(--bf-text-body-sm)", marginTop: 4 }}>
-                  {bucket.products.length} product{bucket.products.length !== 1 ? "s" : ""} available
+                  {/* BF_CLIENT_STEP2_TIDY_v1 - the badge already shows the count; say what the product is instead. */}
+                  {CATEGORY_INFO[category as BucketId]?.what
+                    ?? `${bucket.products.length} product${bucket.products.length !== 1 ? "s" : ""} available`}
                   {matchPct !== null ? ` (Match score ${matchPct}%)` : ""}
                 </div>
                 {matchPct !== null && (
@@ -800,7 +802,7 @@ export function Step2_Product() {
             style={{ width: "100%", maxWidth: "160px" }}
             onClick={goBack}
           >
-            Back
+            ← Back
           </Button>
           <Button
             style={{ width: "100%", maxWidth: "200px" }}

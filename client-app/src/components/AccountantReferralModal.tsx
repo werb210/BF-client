@@ -158,7 +158,7 @@ export function AccountantReferralModal({
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="(587) 381-5330"
+            placeholder="(555) 555-5555" /* BF_CLIENT_STEP5_TIDY_v1 - was a real-looking Alberta number */
             maxLength={14}
             value={details.phone}
             onChange={set("phone")}

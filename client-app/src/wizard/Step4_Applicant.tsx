@@ -7,10 +7,11 @@ import { ClientAppAPI } from "../api/clientApp";
 import { StepHeader } from "../components/StepHeader";
 import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select"; // BF_CLIENT_STEP4_TIDY_v1
 import { Button } from "../components/ui/Button";
 import { Validate } from "../utils/validate";
 import { WizardLayout } from "../components/WizardLayout";
-import { RegionSelect } from "../components/RegionSelect";
+import { RegionSelect, CA_PROVINCE_CODES } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
 import { isSbaWizardPath } from "./wizardSchema"; // BF_CLIENT_SBA_SKIP_DOCS_v192
 import { REQUIRED_OWNER_FIELDS } from "./stepValidation"; // BF_CLIENT_v790_SHARED_STEP_RULES
@@ -43,7 +44,7 @@ import { persistApplicationStep } from "./saveStepProgress";
 import { useReadiness } from "../state/readinessStore";
 import { fillEmptyText, fillName, prefillName, splitName } from "./applicantName"; // BF_CLIENT_v851_APPLICANT_NAME
 import { useAuth } from "@/auth/useAuth";
-import { CREDIT_SCORE_BANDS } from "./creditScoreBands";
+import { CREDIT_SCORE_BANDS, creditBandLabel } from "./creditScoreBands";
 import { isAccordLOCApp } from "./accordRisk";
 
 // BF_CLIENT_v66_STEP4_CAPITALIZE — title-case helper (Unicode-aware
@@ -203,10 +204,12 @@ function OwnerFields({ data, setField, setMany, deriveFullName = false, isAccord
         </>
       )}
       <div><label style={L}>Credit Score Range <span style={{ color: tokens.colors.textSecondary, fontWeight: 400 }}>(optional)</span></label>
-        <select value={data.creditScoreRange || ""} onChange={(e) => setField("creditScoreRange", e.target.value)}>
+        {/* BF_CLIENT_STEP4_TIDY_v1 - same control as the other fields; the stored band values overlap at the
+            edges and lenders match on them, so only the wording shown is made non-overlapping. */}
+        <Select value={data.creditScoreRange || ""} onChange={(e) => setField("creditScoreRange", e.target.value)}>
           <option value="">Prefer not to say</option>
-          {CREDIT_SCORE_BANDS.map((b) => (<option key={b.label} value={b.label}>{b.label}</option>))}
-        </select>
+          {CREDIT_SCORE_BANDS.map((b) => (<option key={b.label} value={b.label}>{creditBandLabel(b.label)}</option>))}
+        </Select>
       </div>
       {isAccordLOC && (
         <>
@@ -492,6 +495,22 @@ export function Step4_Applicant() {
       update({ currentStep: 4 });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- BF_STEP_RESET_NORACE_v37 (Block 37) — running on every currentStep change caused unmounting step to reset back, fighting next step’s mount effect
+
+  // BF_CLIENT_STEP4_TIDY_v1 - an owner address carried over from an application in the other
+  // country left a hidden Canadian province "filled" on a US application (State showed blank but
+  // counted as answered, and ZIP showed "601"). Clear it so the owner enters their real address.
+  const ownerCountryClearedRef = useRef(false);
+  useEffect(() => {
+    if (ownerCountryClearedRef.current) return;
+    const cur = (app.applicant || {}) as Record<string, any>;
+    const st = String(cur.state ?? "").trim().toUpperCase();
+    if (!st) return;
+    const isCaProvince = CA_PROVINCE_CODES.has(st);
+    if ((regionCountry === "US" && isCaProvince) || (regionCountry === "CA" && !isCaProvince)) {
+      ownerCountryClearedRef.current = true;
+      update({ applicant: { ...(app.applicant as any), street: "", city: "", state: "", zip: "" } });
+    }
+  }, [regionCountry, app.applicant, update]);
 
   // BF_CLIENT_v66_STEP4_NO_PHONE_PREFILL — do not auto-fill the applicant
   // phone with the OTP-login user's phone. The OTP phone identifies the
@@ -840,7 +859,8 @@ export function Step4_Applicant() {
     firstName: "first name", lastName: "last name", email: "email",
     phone: "phone number", street: "street address", city: "city",
     state: "province or state", zip: "postal or ZIP code",
-    dob: "date of birth", ssn: identityLabel.toLowerCase(), ownership: "ownership %",
+    // BF_CLIENT_STEP4_TIDY_v1 - "SIN"/"SSN" stay in capitals (the message read "One thing left: sin.").
+    dob: "date of birth", ssn: identityLabel, ownership: "ownership %",
   };
   const missingStep4 = (() => {
     const out = baseRequiredFields
@@ -924,7 +944,9 @@ export function Step4_Applicant() {
       <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
         <WizardLayout>
           <div className="wizard-step-shell">
-            <StepHeader step={4} title="Applicant Information" subtitle="List everyone with 20%+ ownership - that is the SBA threshold. Each of them signs their own copy." /* BF_CLIENT_OWNERSHIP_20_v145 */ />
+            <StepHeader step={4} title="Applicant Information" subtitle={countryCode === "US"
+              ? "List everyone with 20%+ ownership - that is the SBA threshold. Each of them signs their own copy."
+              : "List everyone who owns 20% or more of the business. Each of them signs their own copy."} /* BF_CLIENT_OWNERSHIP_20_v145 / BF_CLIENT_STEP4_TIDY_v1 - SBA is US-only */ />
             {saveError && (
               <Card variant="muted" data-error={true}>
                 <div style={components.form.errorText}>{saveError}</div>
@@ -989,6 +1011,8 @@ export function Step4_Applicant() {
             )}
 
             <div className="wiz-cta" style={{ ...layout.stickyCta, marginTop: tokens.spacing.lg }}>
+              {/* BF_CLIENT_STEP4_TIDY_v1 - the message also shows beside the button the applicant just pressed. */}
+              {saveError && <div style={{ ...components.form.errorText, marginBottom: 8 }} data-testid="step4-cta-error">{saveError}</div>}
               <div style={{ display: "flex", flexWrap: "wrap", gap: tokens.spacing.sm }}>
                 <Button variant="secondary" style={{ width: "100%", maxWidth: "160px" }} onClick={() => navigate("/apply/step-3")}>← Back</Button>
                 {/* BF_CLIENT_SBA_WIZARD_FLOW_v210 - SBA skips Step 5 because its
@@ -1003,6 +1027,14 @@ export function Step4_Applicant() {
                           ? `One thing left: ${missingStep4[0]}.`
                           : `${missingStep4.length} things left: ${missingStep4.join(", ")}.`,
                       );
+                      // BF_CLIENT_STEP4_TIDY_v1 - the message sits beside this button, but the empty field can be
+                      // far up the page: take the applicant to the first one.
+                      const firstMissing = baseRequiredFields.find((f) => !Validate.required(values[f]));
+                      if (firstMissing) {
+                        const el = document.getElementById(getWizardFieldId("step4", firstMissing)) as HTMLElement | null;
+                        el?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+                        el?.focus?.();
+                      }
                       return;
                     }
                     setSaveError(null);

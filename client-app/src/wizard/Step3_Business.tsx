@@ -9,7 +9,7 @@ import { Card } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Select";
-import { RegionSelect } from "../components/RegionSelect";
+import { RegionSelect, CA_PROVINCE_CODES } from "../components/RegionSelect";
 import { MonthYearSelect } from "./MonthYearSelect";
 import { NaicsPicker } from "./NaicsPicker"; // BF_CLIENT_SBA_1919_STEP3_v196
 import { Validate } from "../utils/validate";
@@ -76,6 +76,22 @@ export function Step3_Business() {
     () => (countryCode === "CA" ? "CA" : "US"),
     [countryCode]
   );
+
+  // BF_CLIENT_STEP3_TIDY_v1 - a returning client's address is carried over from their last
+  // application. When that was in the other country (a Canadian address on a US application),
+  // the province, postal code and phone were nonsense here ("T5J 0N3" became ZIP "503"), so
+  // the old address is cleared instead of half-shown.
+  const crossCountryClearedRef = useRef(false);
+  useEffect(() => {
+    if (crossCountryClearedRef.current) return;
+    const st = String(values.state ?? "").trim().toUpperCase();
+    if (!st) return;
+    const isCaProvince = CA_PROVINCE_CODES.has(st);
+    if ((regionCountry === "US" && isCaProvince) || (regionCountry === "CA" && !isCaProvince)) {
+      crossCountryClearedRef.current = true;
+      update({ business: { ...values, address: "", city: "", state: "", zip: "", phone: "" } });
+    }
+  }, [regionCountry, values, update]);
 
   // BF_CLIENT_BLOCK_v300_ACCORD_LOC_STEP3_v1 — Accord LOC branch.
   // Triggered only for Line of Credit + Canada + funding < $1,000,000
@@ -523,7 +539,9 @@ export function Step3_Business() {
                   // a non-null value during the transition.
                   companyName: businessName,
                 };
-                update({ business: nextValues });
+                // BF_CLIENT_STEP3_TIDY_v1 - the Step 1 profile carries the company name too; it kept an old
+                // application's name ("Canadian Business Financing Inc.") on every new submission.
+                update({ business: nextValues, kyc: { ...app.kyc, companyName: businessName } });
               }}
               disabled={isBusinessNameLocked}
               onKeyDown={(e) => {
@@ -537,7 +555,7 @@ export function Step3_Business() {
           <div>
             {/* BF_CLIENT_v66_STEP3_LEGAL_OPTIONAL — legal name is optional now;
               if blank on continue we copy the DBA/business name into it. */}
-            <label style={components.form.label}>Business Legal Name (if applicable)</label>
+            <label style={components.form.label}>Business Legal Name</label>
             <Input autoComplete="section-business organization"
               id={getWizardFieldId("step3", "legalName")}
               value={values.legalName || ""}
@@ -568,9 +586,10 @@ export function Step3_Business() {
               <option value="">Select...</option>
               <option value="Sole Proprietorship">Sole Proprietorship</option>
               <option value="Partnership">Partnership</option>
-              <option value="LLC">LLC</option>
+              {/* BF_CLIENT_STEP3_TIDY_v1 - LLC and S Corporation are US entity types; Canadian businesses do not see them. */}
+              {countryCode !== "CA" && <option value="LLC">LLC</option>}
               <option value="Corporation">Corporation</option>
-              <option value="S Corporation">S Corporation</option>
+              {countryCode !== "CA" && <option value="S Corporation">S Corporation</option>}
               <option value="Non-Profit">Non-Profit</option>
             </Select>
           </div>

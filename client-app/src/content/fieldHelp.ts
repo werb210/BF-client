@@ -15,6 +15,7 @@ export const FIELD_HELP: Record<string, string> = {
   "Current AR balance": "Money customers currently owe you (accounts receivable). Enter 0 if you are paid up front.",
   "Fixed assets value for loan security": "Rough value of equipment, vehicles, or property the business owns that could back the loan.",
   "Business Name (DBA)": "The name customers know you by. If you only use your legal name, repeat it here.",
+  "Business Legal Name": "The exact name on your incorporation or registration documents.",
   "Business Legal Name (if applicable)": "The exact name on your incorporation or registration documents.",
   "Business Structure": "Corporation, partnership, or sole proprietorship - it is on your registration paperwork.",
   "Business Address": "The main operating address, not a PO box.",

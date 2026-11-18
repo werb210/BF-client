@@ -94,6 +94,16 @@ export function formatDocumentLabel(value: string) {
     partner_applicant_id: "Business partner photo ID",
   };
   if (overrides[value]) return overrides[value];
+  // BF_CLIENT_DOC_LABELS_v2 - the short internal types read as jargon to applicants (mirrors BF-Server prettyDocLabel).
+  const friendly: Array<[RegExp, string]> = [
+    [/^\s*a\s*\/\s*p\s*$/i, "Accounts payable aging report"],
+    [/^\s*a\s*\/\s*r\s*$/i, "Accounts receivable aging report"],
+    [/^\s*(pnl|p&l|profit\s*(and|&)\s*loss)\s*[–—-]\s*interim financials\s*$/i, "Interim profit and loss statement"],
+    [/^\s*balance sheet\s*[–—-]\s*interim financials\s*$/i, "Interim balance sheet"],
+    [/^\s*3 years accountant prepared financials\s*$/i, "Accountant-prepared financial statements (last 3 years)"],
+    [/^\s*6 months business banking statements\s*$/i, "Business bank statements (last 6 months)"],
+  ];
+  for (const [re, name] of friendly) if (re.test(value)) return name;
   const withSpaces = value.replace(/[_-]+/g, " ").trim();
   if (!withSpaces) return value;
   const titled = withSpaces.replace(/\b\w/g, (char) => char.toUpperCase());

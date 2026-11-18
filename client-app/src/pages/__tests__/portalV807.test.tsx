@@ -31,7 +31,7 @@ describe("v807 stage card", () => {
     await renderPortal();
     await act(async () => { actionCenter().onData?.({ outstanding: [{ key: "d1", kind: "document" }, { key: "form:networth", kind: "form" }], completed: [] } as never); });
     expect(screen.getByTestId("cmp-status-stage").textContent).toBe("Additional Steps");
-    expect(screen.getByTestId("cmp-status-next").textContent).toBe("Lenders need a few more items before your file moves on: 1 document and 1 form. They're listed below.");
+    expect(screen.getByTestId("cmp-status-next").textContent).toBe("Before your file moves on, lenders need 1 document and 1 form. They're listed below.");
     expect(screen.queryByTestId("cmp-home-caught-up")).toBeNull();
   });
   it("Additional Steps with nothing left says the advisor is adding what lenders asked for", async () => {

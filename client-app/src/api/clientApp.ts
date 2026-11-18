@@ -124,7 +124,7 @@ export const ClientAppAPI = {
   // server cannot know it yet at Step 5.
   referAccountant(
     applicationId: string,
-    details: { firm: string; contact: string; email: string; phone: string; businessName?: string }
+    details: { firm: string; contact: string; email: string; phone: string; businessName?: string; applicantName?: string }
   ) {
     return withRetry(() =>
       api.post<GenericObjectResponse>("/api/client/accountant", { applicationId, ...details })

@@ -68,8 +68,8 @@ export function StepHeader({ step, title, subtitle, totalSteps = 6 }: StepHeader
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <span aria-hidden style={{ color: "#fff", fontSize: 16, lineHeight: 1 }}>&#9650;</span>
-            <span style={{ color: "#fff", fontSize: "var(--bf-text-body-sm)", fontWeight: 700, letterSpacing: 0.2 }}>Boreal</span>
+            {/* BF_CLIENT_WIZARD_HEADER_LOGO_v1 - the real Boreal Financial logo, not a text triangle. */}
+            <img src="/header_white.png" alt="Boreal Financial" style={{ height: 28, width: "auto", display: "block" }} />
           </div>
           <div style={{ height: 4, borderRadius: 999, background: "rgba(255,255,255,0.14)", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${pct}%`, background: tokens.colors.primary, transition: "width .3s ease" }} />
