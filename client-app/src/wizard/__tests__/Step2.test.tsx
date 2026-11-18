@@ -144,7 +144,7 @@ describe("Step2_Product", () => {
 
     const text = container.textContent || "";
     expect(text).toContain("Purchase Order Financing");
-    expect(text).toContain("2 products available");
+    expect(text).toMatch(/Purchase Order Financing\s*2/); // BF_CLIENT_STEP2_TIDY_v1 - the count is the badge
     expect(text).not.toContain("PURCHASE_ORDER_FINANCE");
 
     root.unmount();

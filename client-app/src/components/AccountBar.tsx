@@ -85,7 +85,7 @@ export default function AccountBar() {
       }}
     >
       <FaceIdSignInToggle />
-      <PasskeySignInToggle />
+      <PasskeySignInToggle hideWhenReady />
       {/* BF_CLIENT_SIGN_OUT_v345 - pushed to the far end so it is never the
           thing a client hits by accident while reaching for Face ID. */}
       <button

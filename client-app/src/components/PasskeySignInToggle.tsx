@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { createPasskey, hasPasskey, PasskeyError, passkeysSupported } from "@/auth/passkeys";
 
-export default function PasskeySignInToggle() {
+// BF_CLIENT_ACCOUNT_BAR_TIDY_v1 - hideWhenReady: the desktop bar above the wizard showed a bare
+// "Passkey sign-in  Ready" line that read like debug output. Settings still shows the status.
+export default function PasskeySignInToggle({ hideWhenReady = false }: { hideWhenReady?: boolean } = {}) {
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +17,7 @@ export default function PasskeySignInToggle() {
   }, []);
 
   if (!passkeysSupported()) return null;
+  if (hideWhenReady && created) return null;
 
   const turnOn = async () => {
     setBusy(true);

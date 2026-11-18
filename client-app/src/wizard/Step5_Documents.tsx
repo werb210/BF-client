@@ -231,6 +231,15 @@ function OptionSeparator() {
 // BF_CLIENT_AUDIT_v748 - the SBA early return used to sit above ~25 hooks, so when a resumed draft or a
 // product change flipped the path while this screen was open React crashed ("Rendered fewer hooks").
 // The guard is its own component now; the document screen always renders its hooks in the same order.
+// BF_CLIENT_STEP5_TIDY_v1 - the accountant invitation names the applicant instead of "your client",
+// and Step 6 confirms the request went out (it used to vanish silently).
+function applicantFullName(a: { firstName?: string; lastName?: string; fullName?: string } | undefined): string {
+  return [a?.firstName, a?.lastName].filter(Boolean).join(" ").trim() || String(a?.fullName ?? "").trim();
+}
+function markAccountantSent(name: string): void {
+  try { sessionStorage.setItem("bf_accountant_sent", name || "your accountant"); } catch { /* storage blocked */ }
+}
+
 export function Step5_Documents() {
   const { app, update } = useApplicationStore();
   const navigate = useNavigate();
@@ -879,6 +888,7 @@ function Step5DocumentsBody() {
       await ClientAppAPI.referAccountant(String(app.applicationId), {
         ...details,
         businessName: app.business?.businessName ?? "",
+        applicantName: applicantFullName(app.applicant), // BF_CLIENT_STEP5_TIDY_v1
       });
     } catch (err) {
       console.error("[step5] referAccountant failed", err);
@@ -890,6 +900,7 @@ function Step5DocumentsBody() {
     }
     setAccountantBusy(false);
     setAccountantOpen(false);
+    markAccountantSent(details.contact || details.firm); // BF_CLIENT_STEP5_TIDY_v1
     await uploadLater();
   }
 
@@ -954,7 +965,7 @@ function Step5DocumentsBody() {
   // BF_CLIENT_BLOCK_v_WIZARD_DIRECTION_A_FINISH_v1 — removed duplicate shell/heading.
   return (
     <WizardLayout>
-      <StepHeader step={5} title="Required Documents" subtitle="Add the files below. You can also finish these later from your portal." />
+      <StepHeader step={5} title="Required Documents" subtitle="Choose how you want to send your documents. You can also finish them later from your portal." /* BF_CLIENT_STEP5_TIDY_v1 */ />
 
       <Card style={{ display: "flex", flexDirection: "column", gap: tokens.spacing.lg }}>
         {isLoading && (
@@ -1136,7 +1147,7 @@ function Step5DocumentsBody() {
             style={{ width: "100%", maxWidth: "160px" }}
             onClick={() => navigate("/apply/step-4")}
           >
-            Back
+            ← Back
           </Button>
           {(missingRequiredDocs.length === 0 || docChoice === "now") && (
           <Button

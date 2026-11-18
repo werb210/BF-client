@@ -913,8 +913,10 @@ export default function MiniPortalPage() {
     if (todoLoaded && left > 0) {
       const partList = [docs ? docs + (docs === 1 ? " document" : " documents") : "", other ? other + (other === 1 ? " form" : " forms") : "", cond ? cond + (cond === 1 ? " item before funding" : " items before funding") : ""].filter(Boolean);
       const parts = partList.length > 1 ? partList.slice(0, -1).join(", ") + " and " + partList[partList.length - 1] : partList.join("");
-      if (stageStep.key === "additional_steps_required") return "Lenders need a few more items before your file moves on: " + parts + ". They're listed below.";
-      if (stageStep.key === "documents_required") return "We need a few documents before your file can go to lenders: " + parts + ". They're listed below.";
+      // BF_CLIENT_CMP_TIDY_v1 - "a few documents: 1 document" read oddly; say what is needed.
+      const listed = left === 1 ? "It's listed below." : "They're listed below.";
+      if (stageStep.key === "additional_steps_required") return "Before your file moves on, lenders need " + parts + ". " + listed;
+      if (stageStep.key === "documents_required") return "Before your file can go to lenders, we need " + parts + ". " + listed;
       return left + (left === 1 ? " thing" : " things") + " left: " + parts + ". They're listed below. Once they're done, your file moves to the next step.";
     }
     if (todoLoaded && needsItemsStage) return "Everything asked for so far is in. Your advisor is checking it and will add anything else lenders need.";

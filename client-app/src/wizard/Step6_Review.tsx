@@ -123,8 +123,17 @@ export function Step6_Review(): JSX.Element {
   const [uploadingDocs, setUploadingDocs] = useState<Record<string, boolean>>(
     {}
   );
-  const today = useMemo(() => new Date().toISOString().split("T")[0], []);
+  // BF_CLIENT_STEP6_TIDY_v1 - the applicant's own calendar date. toISOString() is UTC, so after
+  // 6 pm in Alberta the signature was dated tomorrow.
+  const today = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
   const navigate = useNavigate();
+  // BF_CLIENT_STEP5_TIDY_v1 - set by Step 5 when the accountant request was sent.
+  const [accountantSent] = useState<string | null>(() => {
+    try { const v = sessionStorage.getItem("bf_accountant_sent"); sessionStorage.removeItem("bf_accountant_sent"); return v; } catch { return null; }
+  });
   const { isOffline } = useNetworkStatus();
   const isOnline = !isOffline;
   const [idempotencyKey] = useState(() => getOrCreateSubmissionIdempotencyKey());
@@ -806,8 +815,15 @@ export function Step6_Review(): JSX.Element {
         <style>{`.wizard-step-shell label{display:block;font-size:var(--bf-text-label);font-weight:500;color:#374151;margin-bottom:6px}.wizard-step-shell input,.wizard-step-shell select{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:var(--bf-text-body-sm);color:#111827;background:#fff;box-sizing:border-box}.wizard-step-shell select{appearance:none;cursor:pointer}`}</style>
     <WizardLayout>
       <div className="wizard-step-shell">
-      <StepHeader step={6} title="Terms & Conditions + Typed Signature" subtitle="Check everything is right. You can edit any section before submitting." />
+      <StepHeader step={6} title="Review and sign" subtitle="Check everything is right. Use Back to change anything before you submit." /* BF_CLIENT_STEP6_TIDY_v1 */ />
 
+      {accountantSent && (
+        <Card variant="muted" data-testid="step6-accountant-sent" style={{ marginBottom: tokens.spacing.lg }}>
+          <div style={{ fontSize: "var(--bf-text-body-sm)", color: tokens.colors.textPrimary }}>
+            We emailed {accountantSent} to ask for your documents. You can finish and submit now.
+          </div>
+        </Card>
+      )}
       {/* BF_CLIENT_BLOCK_v_REVIEW_SUMMARY_v1 - read-only "what you entered" summary
           at the top of Step 6 (Direction A mockup). Display only; does not touch the
           T&C / signature / submit logic below. */}
@@ -818,8 +834,22 @@ export function Step6_Review(): JSX.Element {
         const __reviewCat = app.productCategory ? bucketFor(String(app.productCategory)) : null;
         const __reviewCatLabel = __reviewCat ? (CATEGORY_BUCKETS.find((b) => b.id === __reviewCat)?.label ?? null) : null;
         const productLabel = __reviewCatLabel || app.selectedProductType || app.selectedProduct?.product_type || "-";
-        const amount = kyc.fundingAmount ? String(kyc.fundingAmount) : "-";
-        const ownerCount = appl.hasMultipleOwners ? "You + partner(s)" : "You";
+        // BF_CLIENT_STEP6_TIDY_v1 - equipment applications keep their amount in equipmentAmount; the summary
+        // showed the stale fundingAmount (an old draft's 240000). Both halves show for capital + equipment.
+        const money = (v: unknown): string => {
+          const n = parseCurrencyAmount(v as any);
+          return n && n > 0 ? "$" + Math.round(n).toLocaleString("en-US") : "";
+        };
+        const intent = String(kyc.lookingFor ?? "").toUpperCase();
+        const amount = intent === "EQUIPMENT"
+          ? money(kyc.equipmentAmount) || money(kyc.fundingAmount) || "-"
+          : intent === "BOTH"
+            ? [money(kyc.fundingAmount) && money(kyc.fundingAmount) + " capital", money(kyc.equipmentAmount) && money(kyc.equipmentAmount) + " equipment"].filter(Boolean).join(" + ") || "-"
+            : money(kyc.fundingAmount) || "-";
+        const ownerName = [appl.firstName, appl.lastName].filter(Boolean).join(" ").trim() || String(appl.fullName ?? "").trim() || "You";
+        const ownerPct = appl.ownership ? ` (${String(appl.ownership).replace(/%$/, "")}%)` : "";
+        const partnerName = [appl.partner?.firstName, appl.partner?.lastName].filter(Boolean).join(" ").trim();
+        const ownerCount = ownerName + ownerPct + (appl.hasMultipleOwners ? (partnerName ? ", " + partnerName : " + partner") : "");
         const rows: Array<[string, string]> = [
           ["Looking for", getFundingIntentLabel(kyc.lookingFor) || kyc.lookingFor || "-"],
           ["Amount", amount],
@@ -960,7 +990,7 @@ export function Step6_Review(): JSX.Element {
         <div>
           <h2 style={components.form.sectionTitle}>Terms & Conditions</h2>
           <p style={{ fontSize: tokens.typography.body.fontSize, color: tokens.colors.textSecondary, marginTop: tokens.spacing.xs }}>
-            Please review and accept each of the following. Select "View full terms" to read the complete text of each.
+            Please review and accept each of the following. Select a document's name to read it in full.
           </p>
         </div>
 
@@ -1139,7 +1169,7 @@ export function Step6_Review(): JSX.Element {
               style={{ width: "100%", maxWidth: "160px" }}
               onClick={() => navigate(backTarget)}
             >
-              {"<- Back"}
+              {"\u2190 Back"}
             </Button>
             <Button
               style={{ width: "100%", maxWidth: "240px" }}

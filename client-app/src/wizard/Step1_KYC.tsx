@@ -131,6 +131,19 @@ const MonthlyRevenueOptions = [
   "Over $250,000",
 ];
 
+// BF_CLIENT_STEP1_TIDY_v1 - the stored values overlap at the edges ("$100,000 to $250,000" then
+// "$250,000 to $500,000") and lender matching keys on them, so only the wording shown changes.
+const AR_LABELS: Record<string, string> = {
+  "No Account Receivables": "No accounts receivable",
+  "$250,000 to $500,000": "$250,001 to $500,000",
+  "$500,000 to $1,000,000": "$500,001 to $1,000,000",
+  "$1,000,000 to $3,000,000": "$1,000,001 to $3,000,000",
+  "$100,000 to $250,000": "$100,001 to $250,000",
+};
+export function arOptionLabel(value: string): string {
+  return AR_LABELS[value] ?? value;
+}
+
 const AccountsReceivableOptions = [
   "No Account Receivables",
   "Zero to $100,000",
@@ -396,48 +409,48 @@ export function Step1_KYC(): JSX.Element {
       kyc: {
         ...app.kyc,
         // Business profile
-        companyName: (data.companyName as string) ?? app.kyc.companyName ?? "",
-        industry: (data.industry as string) ?? app.kyc.industry ?? "",
+        companyName: app.kyc.companyName || (data.companyName as string) || "",
+        industry: app.kyc.industry || (data.industry as string) || "",
         businessLocation:
-          (data.businessLocation as string) ?? app.kyc.businessLocation ?? "",
+          app.kyc.businessLocation || (data.businessLocation as string) || "",
         // Funding ask
-        fundingType: (data.purposeOfFunds as string) ?? app.kyc.fundingType ?? "",
+        fundingType: app.kyc.fundingType || (data.purposeOfFunds as string) || "",
         requestedAmount:
-          (data.requestedAmount as string) ?? app.kyc.requestedAmount ?? "",
+          app.kyc.requestedAmount || (data.requestedAmount as string) || "",
         fundingAmount:
-          (data.requestedAmount as string) ?? app.kyc.fundingAmount ?? "",
+          app.kyc.fundingAmount || (data.requestedAmount as string) || "",
         purposeOfFunds:
-          (data.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
+          app.kyc.purposeOfFunds || (data.purposeOfFunds as string) || "",
         // Financial profile (range strings from website OR mapped legacy)
         salesHistory:
-          (data.salesHistoryYears as string) ?? app.kyc.salesHistory ?? "",
+          app.kyc.salesHistory || (data.salesHistoryYears as string) || "",
         yearsInBusiness:
-          (data.salesHistoryYears as string) ?? app.kyc.yearsInBusiness ?? "",
+          app.kyc.yearsInBusiness || (data.salesHistoryYears as string) || "",
         revenueLast12Months:
-          (data.annualRevenueRange as string) ?? app.kyc.revenueLast12Months ?? "",
+          app.kyc.revenueLast12Months || (data.annualRevenueRange as string) || "",
         annualRevenue:
-          (data.annualRevenueRange as string) ?? app.kyc.annualRevenue ?? "",
+          app.kyc.annualRevenue || (data.annualRevenueRange as string) || "",
         monthlyRevenue:
-          (data.avgMonthlyRevenueRange as string) ?? app.kyc.monthlyRevenue ?? "",
+          app.kyc.monthlyRevenue || (data.avgMonthlyRevenueRange as string) || "",
         accountsReceivable:
-          (data.accountsReceivableRange as string) ?? app.kyc.accountsReceivable ?? "",
+          app.kyc.accountsReceivable || (data.accountsReceivableRange as string) || "",
         arBalance:
-          (data.accountsReceivableRange as string) ?? app.kyc.arBalance ?? "",
+          app.kyc.arBalance || (data.accountsReceivableRange as string) || "",
         fixedAssets:
-          (data.fixedAssetsValueRange as string) ?? app.kyc.fixedAssets ?? "",
+          app.kyc.fixedAssets || (data.fixedAssetsValueRange as string) || "",
         availableCollateral:
-          (data.fixedAssetsValueRange as string) ?? app.kyc.availableCollateral ?? "",
+          app.kyc.availableCollateral || (data.fixedAssetsValueRange as string) || "",
       },
       business: {
         ...app.business,
-        companyName: (data.companyName as string) ?? app.business?.companyName ?? "",
-        industry: (data.industry as string) ?? app.business?.industry ?? "",
+        companyName: app.business?.companyName || (data.companyName as string) || "",
+        industry: app.business?.industry || (data.industry as string) || "",
       },
       applicant: {
         ...app.applicant,
         fullName: (data.fullName == null ? undefined : prefillName(data.fullName)) ?? app.applicant?.fullName ?? "", // BF_CLIENT_v851_APPLICANT_NAME
-        email: (data.email as string) ?? app.applicant?.email ?? "",
-        phone: (data.phone as string) ?? app.applicant?.phone ?? "",
+        email: app.applicant?.email || (data.email as string) || "",
+        phone: app.applicant?.phone || (data.phone as string) || "",
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- BF_CLIENT_v840_STEP1_NO_LOOP: keyed on readiness only
@@ -519,20 +532,19 @@ export function Step1_KYC(): JSX.Element {
           kyc: {
             ...app.kyc,
             // identity
-            companyName: (p.companyName as string) ?? app.kyc.companyName ?? "",
+            companyName: app.kyc.companyName || (p.companyName as string) || "",
             fullName: fullName || app.kyc.fullName || "",
-            email: (p.email as string) ?? app.kyc.email ?? "",
-            phone: (p.phone as string) ?? (app.kyc.phone || phone),
+            email: app.kyc.email || (p.email as string) || "",
+            phone: app.kyc.phone || (p.phone as string) || phone,
             // business profile
-            industry: (p.industry as string) ?? app.kyc.industry ?? "",
+            industry: app.kyc.industry || (p.industry as string) || "",
             businessLocation:
-              (p.businessLocation as string) ?? app.kyc.businessLocation ?? "",
+              app.kyc.businessLocation || (p.businessLocation as string) || "",
             // funding profile
-            fundingType: (p.fundingType as string) ?? app.kyc.fundingType ?? "",
+            fundingType: app.kyc.fundingType || (p.fundingType as string) || "",
             requestedAmount:
-              p.requestedAmount != null && p.requestedAmount !== ""
-                ? String(p.requestedAmount)
-                : app.kyc.requestedAmount ?? "",
+
+              app.kyc.requestedAmount || (p.requestedAmount != null && p.requestedAmount !== "" ? String(p.requestedAmount) : ""),
             // BF_CLIENT_BLOCK_v160_EQUIPMENT_PREFILL_PROPAGATION_v1
             // Step 1 hides one of these based on lookingFor (WORKING_CAPITAL
             // hides equipmentAmount; EQUIPMENT hides fundingAmount; BOTH shows
@@ -544,56 +556,44 @@ export function Step1_KYC(): JSX.Element {
             // BOTH-intent users still need to adjust the equipment portion;
             // this just removes the friction for the single-leg cases.
             fundingAmount:
-              p.requestedAmount != null && p.requestedAmount !== ""
-                ? String(p.requestedAmount)
-                : app.kyc.fundingAmount ?? "",
+
+              app.kyc.fundingAmount || (p.requestedAmount != null && p.requestedAmount !== "" ? String(p.requestedAmount) : ""),
             equipmentAmount:
-              p.requestedAmount != null && p.requestedAmount !== ""
-                ? String(p.requestedAmount)
-                : (app.kyc.equipmentAmount ?? ""),
+
+              app.kyc.equipmentAmount || (p.requestedAmount != null && p.requestedAmount !== "" ? String(p.requestedAmount) : ""),
             purposeOfFunds:
-              (p.purposeOfFunds as string) ?? app.kyc.purposeOfFunds ?? "",
+              app.kyc.purposeOfFunds || (p.purposeOfFunds as string) || "",
             // financial profile (V1 bucket strings — these are exact matches
             // to the Step 1 select options, no remapping needed)
             yearsInBusiness:
-              (p.salesHistoryYears as string) ??
-              (p.yearsInBusiness as string) ??
-              app.kyc.yearsInBusiness ??
-              "",
+              app.kyc.yearsInBusiness || (p.salesHistoryYears as string) || (p.yearsInBusiness as string) || "",
             annualRevenue:
-              (p.annualRevenueRange as string) ??
-              (p.annualRevenue as string) ??
-              app.kyc.annualRevenue ??
-              "",
+              app.kyc.annualRevenue || (p.annualRevenueRange as string) || (p.annualRevenue as string) || "",
             monthlyRevenue:
-              (p.avgMonthlyRevenueRange as string) ??
-              app.kyc.monthlyRevenue ??
-              "",
+              app.kyc.monthlyRevenue || (p.avgMonthlyRevenueRange as string) || "",
             arBalance:
-              (p.accountsReceivableRange as string) ?? app.kyc.arBalance ?? "",
+              app.kyc.arBalance || (p.accountsReceivableRange as string) || "",
             availableCollateral:
-              (p.fixedAssetsValueRange as string) ??
-              app.kyc.availableCollateral ??
-              "",
+              app.kyc.availableCollateral || (p.fixedAssetsValueRange as string) || "",
           },
           business: {
             // BF_CLIENT_AUTOFILL_v744 - a returning client's business details from their last application fill the gaps
             // (what is already typed always wins).
             ...fillEmpty(app.business as Record<string, unknown>, p.business),
             companyName:
-              (p.companyName as string) ?? app.business.companyName ?? "",
+              app.business.companyName || (p.companyName as string) || "",
             businessName:
-              (p.companyName as string) ?? app.business.businessName ?? "",
+              app.business.businessName || (p.companyName as string) || "",
             legalName:
-              (p.companyName as string) ?? app.business.legalName ?? "",
+              app.business.legalName || (p.companyName as string) || "",
           },
           applicant: {
             ...fillEmpty(app.applicant as Record<string, unknown>, p.applicant), // BF_CLIENT_AUTOFILL_v744 - owner details from the last application
             fullName: fullName || app.applicant.fullName || "",
             firstName: firstName || app.applicant.firstName || "",
             lastName: lastName || app.applicant.lastName || "",
-            email: (p.email as string) ?? app.applicant.email ?? "",
-            phone: (p.phone as string) ?? (app.applicant.phone || phone),
+            email: app.applicant.email || (p.email as string) || "",
+            phone: app.applicant.phone || (p.phone as string) || phone,
           },
         });
       })
@@ -1270,32 +1270,22 @@ export function Step1_KYC(): JSX.Element {
               data-error={showErrors && fieldErrors.industry}
               style={{ display: onSbaStartupPath ? "none" : undefined }}
             >
-              <label style={{ display: "block", fontSize: "var(--bf-text-label)", fontWeight: 500, color: "#374151", marginBottom: 6 }}>
-                Industry *
-              </label>
-              <select
+              {/* BF_CLIENT_STEP1_TIDY_v1 - same label and select styling as every other Step 1 field. */}
+              <label style={components.form.label}>Industry</label>
+              <Select
                 id={getWizardFieldId("step1", "industry")}
                 value={app.kyc.industry || ""}
                 onChange={(e) => {
                   let nextKyc = { ...app.kyc, industry: e.target.value };
                   // BF_CLIENT_MEDIA_PATH_v725 - a media industry means media financing; go straight on.
                   if (e.target.value === MEDIA_INDUSTRY && visiblePurposeOptions.includes("Media Financing")) nextKyc = { ...nextKyc, purposeOfFunds: "Media Financing" };
-                  update({ kyc: nextKyc });
+                  // BF_CLIENT_STEP1_TIDY_v1 - the business record carries the same industry, so a
+                  // returning client's old industry no longer reaches staff after they change it here.
+                  update({ kyc: nextKyc, business: { ...app.business, industry: e.target.value } });
                   if (isMediaPathKyc(nextKyc) && Object.values(getStepErrors(nextKyc)).every((bad) => !bad)) { void startApplication(nextKyc); return; }
                   handleAutoAdvance("industry", nextKyc);
                 }}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: "var(--bf-text-body-sm)",
-                  color: "#111827",
-                  background: "#fff",
-                  boxSizing: "border-box",
-                  appearance: "none",
-                  cursor: "pointer",
-                }}
+                hasError={showErrors && fieldErrors.industry}
               >
                 {/* BF_CLIENT_v66_STEP1_INDUSTRIES — expanded to better
                     cover SMB lending demand. New entries are inserted in
@@ -1320,7 +1310,7 @@ export function Step1_KYC(): JSX.Element {
                 <option>Transportation</option>
                 <option>Wholesale &amp; Distribution</option>
                 <option>Other</option>
-              </select>
+              </Select>
               {showErrors && fieldErrors.industry && (
                 <div style={components.form.errorText}>Select your industry.</div>
               )}
@@ -1425,7 +1415,7 @@ export function Step1_KYC(): JSX.Element {
                 }}
                 hasError={showErrors && fieldErrors.salesHistory}
               >
-                <option value="">Years in business</option>
+                <option value="">Years of sales history</option>
                 {visibleSalesHistoryOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -1498,10 +1488,10 @@ export function Step1_KYC(): JSX.Element {
                   }}
                   hasError={showErrors && fieldErrors.accountsReceivable}
                 >
-                  <option value="">Account Receivables</option>
+                  <option value="">Accounts receivable</option>
                   {AccountsReceivableOptions.map((option) => (
                     <option key={option} value={option}>
-                      {option}
+                      {arOptionLabel(option)}
                     </option>
                   ))}
                 </Select>

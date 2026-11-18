@@ -17,3 +17,13 @@ export function bandUpperBound(label?: string | null): number | null {
   const f = CREDIT_SCORE_BANDS.find((b) => b.label === label);
   return f ? f.upper : null;
 }
+
+// BF_CLIENT_STEP4_TIDY_v1 - wording shown to the applicant; the stored value stays the label above.
+const BAND_DISPLAY: Record<string, string> = {
+  "Under 560": "560 or under",
+  "600 to 660": "601 to 660",
+  "Over 720": "721 or over",
+};
+export function creditBandLabel(label: string): string {
+  return BAND_DISPLAY[label] ?? label;
+}

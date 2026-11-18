@@ -24,12 +24,13 @@ describe("v323 — token-based prefill mirrors all 13 fields (F)", () => {
   ];
   for (const k of expectedKycKeys) {
     it(`token-based effect writes kyc.${k}`, () => {
-      expect(src).toMatch(new RegExp(`\\b${k}:\\s*\\(data\\.`));
+      // BF_CLIENT_PREFILL_FILL_EMPTY_v1 - prefill only fills an empty field (what is typed wins).
+      expect(src).toMatch(new RegExp(`\\b${k}:\\s*app\\.kyc\\.\\w+ \\|\\| \\(data\\.`));
     });
   }
   it("applicant + business slots also hydrated from token", () => {
     expect(src).toMatch(/applicant:\s*\{[\s\S]+fullName:\s*\(data\.fullName/);
-    expect(src).toMatch(/business:\s*\{[\s\S]+companyName:\s*\(data\.companyName/);
+    expect(src).toMatch(/business:\s*\{[\s\S]+companyName:\s*app\.business\?\.companyName \|\| \(data\.companyName/);
   });
 });
 

@@ -116,7 +116,8 @@ describe("Step 5 prefers the server's required documents", () => {
       { id: "s1", document_type: "6 months business banking statements", required: true, stage: 1 },
     ]);
     const text = await renderAndShowList();
-    expect(text).toMatch(/6 months business banking statements/i);
+    // BF_CLIENT_DOC_LABELS_v2 - shown in plain words.
+    expect(text).toMatch(/Business bank statements \(last 6 months\)/i);
     expect(text).not.toMatch(/Accounts receivable aging report/i);
   });
 

@@ -9,7 +9,7 @@ function open(onSubmit = vi.fn()) {
   );
   return onSubmit;
 }
-const phoneBox = () => screen.getByPlaceholderText("(587) 381-5330") as HTMLInputElement;
+const phoneBox = () => screen.getByPlaceholderText("(555) 555-5555") as HTMLInputElement;
 const boxes = () => screen.getAllByRole("textbox") as HTMLInputElement[];
 
 describe("accountant referral formatting", () => {

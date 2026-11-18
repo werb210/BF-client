@@ -148,12 +148,13 @@ describe("Step 4 explains an ownership split, not a blank box", () => {
   it("uses the regional identity label rather than hardcoding SSN", () => {
     let c = renderApp(Step4_Applicant, appWith(4, "applicant", { ssn: "" }));
     fireEvent.click(continueButton());
-    expect(errorBlock(c)?.textContent).toBe("One thing left: sin.");
+    expect(errorBlock(c)?.textContent).toBe("One thing left: SIN.");
     cleanup();
 
-    const us = appWith(4, "applicant", { ssn: "" });
+    // BF_CLIENT_STEP4_TIDY_v1 - a US owner has a US address (a Canadian province is cleared on a US file).
+    const us = appWith(4, "applicant", { ssn: "", state: "CO", city: "Denver", zip: "80202" });
     c = renderApp(Step4_Applicant, { ...us, kyc: { ...us.kyc, businessLocation: "United States" } });
     fireEvent.click(continueButton());
-    expect(errorBlock(c)?.textContent).toBe("One thing left: ssn.");
+    expect(errorBlock(c)?.textContent).toBe("One thing left: SSN.");
   });
 });
