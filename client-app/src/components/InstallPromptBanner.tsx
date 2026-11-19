@@ -15,6 +15,10 @@ export function isSignInPath(pathname: string): boolean {
   return pathname === "/" || /^\/(otp|login|sign-in|signin)(\/|$)/i.test(pathname);
 }
 
+export function isClientPortalPath(pathname: string): boolean {
+  return /^\/(portal|application)(\/|$)/i.test(pathname);
+}
+
 export default function InstallPromptBanner() {
   const { canInstall, promptInstall } = useInstallPrompt();
   // BF_CLIENT_INSTALL_NOT_ON_SIGN_IN_v1 - the banner sat over the sign-in form. It is never shown on the sign-in pages,
@@ -23,7 +27,9 @@ export default function InstallPromptBanner() {
   const [dismissed, setDismissed] = useState(() => {
     try { return Number(localStorage.getItem(DISMISS_KEY) ?? 0) > Date.now(); } catch { return false; }
   });
-  if (!canInstall || dismissed || isSignInPath(pathname)) return null;
+  // BF_CLIENT_INSTALL_NOT_ON_CMP_v1 - the client portal has its own "Add to home screen / get the app" card on first
+  // view (InstallAppPrompt), so this banner stays off there instead of offering the same thing twice.
+  if (!canInstall || dismissed || isSignInPath(pathname) || isClientPortalPath(pathname)) return null;
   const dismiss = () => {
     setDismissed(true);
     try { localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS)); } catch { /* private mode */ }
