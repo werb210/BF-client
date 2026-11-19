@@ -18,7 +18,7 @@ describe("BF_CLIENT_WIZARD_STEP6_PGI_v61 — Step 6 section order", () => {
     // BF_CLIENT_PGI_v176 - both options are rendered from one map, so the
     // value is a variable rather than a literal. Same behaviour.
     expect(src).toContain("update({ pgiOptIn: value })");
-    expect(src).toContain('["yes", "Yes, send me PGI details with my offers"]');
+    expect(src).toContain('["yes", "Yes, send me PGI details"]');
     expect(src).toContain('["no", "No, I will proceed without PGI"]');
   });
 
