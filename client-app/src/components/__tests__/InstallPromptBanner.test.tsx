@@ -2,6 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import InstallPromptBanner from "../InstallPromptBanner";
 
 describe("InstallPromptBanner", () => {
@@ -24,7 +25,7 @@ describe("InstallPromptBanner", () => {
 
   it("renders nothing without a beforeinstallprompt event", async () => {
     await act(async () => {
-      root.render(<InstallPromptBanner />);
+      root.render(<MemoryRouter><InstallPromptBanner /></MemoryRouter>);
     });
 
     expect(container.innerHTML).toBe("");
