@@ -23,7 +23,7 @@ describe("PGI options are visible", () => {
 
 describe("both choices survive", () => {
   it("keeps the opt-in and opt-out wording", () => {
-    expect(SRC).toContain("Yes, send me PGI details with my offers");
+    expect(SRC).toContain("Yes, send me PGI details");
     expect(SRC).toContain("No, I will proceed without PGI");
   });
 

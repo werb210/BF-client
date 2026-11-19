@@ -929,14 +929,15 @@ export function Step6_Review(): JSX.Element {
         <div data-testid="step6-pgi-section">
           <h2 style={components.form.sectionTitle}>Personal Guarantee Insurance (PGI)</h2>
           <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
-            Most lenders require a personal guarantee - meaning you are personally responsible if the business cannot repay. Personal Guarantee Insurance protects you if that happens.
+            {/* BF_CLIENT_PGI_COMPLIANCE_v1 (2026-11-19) - wording limited to what PGI Canada Ltd. has authorized. */}
+            If you are asked to sign a personal guarantee, Personal Guarantee Insurance can cap your personal loss if the business becomes insolvent. It is optional and is never part of a lender&apos;s credit decision.
           </p>
           {/* BF_CLIENT_PGI_v176 - bordered rows, matching the consent rows
             below. These were unstyled browser radios, which on white read as
             barely there. */}
           <div style={{ ...layout.stackTight, marginTop: tokens.spacing.sm }}>
             {([
-              ["yes", "Yes, send me PGI details with my offers"],
+              ["yes", "Yes, send me PGI details"],
               ["no", "No, I will proceed without PGI"],
             ] as const).map(([value, label]) => {
               const selected = app.pgiOptIn === value;
@@ -982,7 +983,7 @@ export function Step6_Review(): JSX.Element {
               Learn more about PGI
             </summary>
             <p style={{ ...components.form.helperText, marginTop: tokens.spacing.xs }}>
-              PGI is an optional insurance product that covers your personal guarantee obligation if your business defaults on the loan. Premiums vary by loan size, term, and credit profile, typically 1-3% of the loan amount. If you opt in, lenders will quote PGI alongside their loan offers; you can still decline at the offer stage. Coverage and pricing are determined by the insurer, not Boreal Financial.
+              Personal Guarantee Insurance covers a personal guarantee given to a recognised lender on a business loan. It is arranged and administered by PGI Canada Ltd., a licensed insurance broker. Boreal makes the introduction through Boreal Risk Management, its referral service, and does not sell insurance. Rates start as low as 1.8% of the limit of insurance. The offer, program details and conditions come from PGI Canada Ltd. Available in Canada except Quebec; not yet available in the United States.
             </p>
           </details>
         </div>
