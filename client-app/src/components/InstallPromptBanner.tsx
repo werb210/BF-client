@@ -1,5 +1,6 @@
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { tokens } from "@/styles";
 
 // BF_CLIENT_INSTALL_v177 - the wizard has a sticky action bar at the bottom of
@@ -7,10 +8,26 @@ import { tokens } from "@/styles";
 // never sit over the button that advances an application.
 const STICKY_FOOTER_CLEARANCE = 88;
 
+const DISMISS_KEY = "install-banner-dismissed-until";
+const DISMISS_MS = 7 * 24 * 60 * 60 * 1000;
+/** The landing page is the sign-in screen; /otp and /login lead to it. */
+export function isSignInPath(pathname: string): boolean {
+  return pathname === "/" || /^\/(otp|login|sign-in|signin)(\/|$)/i.test(pathname);
+}
+
 export default function InstallPromptBanner() {
   const { canInstall, promptInstall } = useInstallPrompt();
-  const [dismissed, setDismissed] = useState(false);
-  if (!canInstall || dismissed) return null;
+  // BF_CLIENT_INSTALL_NOT_ON_SIGN_IN_v1 - the banner sat over the sign-in form. It is never shown on the sign-in pages,
+  // and "Not now" is remembered on this device for a week (it came back on every page load).
+  const { pathname } = useLocation();
+  const [dismissed, setDismissed] = useState(() => {
+    try { return Number(localStorage.getItem(DISMISS_KEY) ?? 0) > Date.now(); } catch { return false; }
+  });
+  if (!canInstall || dismissed || isSignInPath(pathname)) return null;
+  const dismiss = () => {
+    setDismissed(true);
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS)); } catch { /* private mode */ }
+  };
   return (
     <div
       role="region"
@@ -38,7 +55,7 @@ export default function InstallPromptBanner() {
         <div style={{ fontSize: "var(--bf-text-label)", opacity: 0.85 }}>Faster access and offline support</div>
       </div>
       <button
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         style={{
           background: "transparent",
           color: "white",
