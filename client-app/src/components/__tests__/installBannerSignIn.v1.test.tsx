@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/hooks/useInstallPrompt", () => ({ useInstallPrompt: () => ({ canInstall: true, promptInstall: vi.fn() }) }));
-import InstallPromptBanner, { isSignInPath } from "../InstallPromptBanner";
+import InstallPromptBanner, { isClientPortalPath, isSignInPath } from "../InstallPromptBanner";
 
 describe("install banner and the sign-in screen", () => {
   let container: HTMLDivElement;
@@ -30,8 +30,14 @@ describe("install banner and the sign-in screen", () => {
     await show("/");
     expect(container.innerHTML).toBe("");
   });
-  it("shows after sign-in and Not now keeps it away", async () => {
+  it("leaves the client portal to its own get-the-app card", async () => {
+    expect(isClientPortalPath("/portal")).toBe(true);
+    expect(isClientPortalPath("/application/abc")).toBe(true);
     await show("/portal");
+    expect(container.innerHTML).toBe("");
+  });
+  it("shows after sign-in elsewhere and Not now keeps it away", async () => {
+    await show("/apply");
     const notNow = Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Not now")!;
     expect(notNow).toBeTruthy();
     await act(async () => { notNow.click(); });
