@@ -1029,15 +1029,6 @@ export default function MiniPortalPage() {
       {isPhone ? <CmpHello firstName={firstName} advisor={advisor} onCall={() => void startCall()} onMessage={cmpMode === "wide" ? undefined : () => openChat("advisor")} onBook={() => setBookOpen(true)} /> : null}
       {isPhone && callState !== "idle" ? <div style={{ margin: "0 0 12px" }}><CallControl state={callState} error={callError} onStart={() => void startCall()} onEnd={endCall} onReset={() => setCallState("idle")} /></div> : null}
       <InstallAppPrompt />
-      {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
-      <ReactivateHeldFiles
-        apps={myApps}
-        onReactivated={(id) => {
-          setMyApps((prev) => prev.map((a) => (String(a.id) === id ? { ...a, pipeline_state: "In Review" } : a)));
-          if (id === String(applicationId)) void loadAll();
-          else navigate(`/application/${encodeURIComponent(id)}`);
-        }}
-      />
       {/* BF_CLIENT_BLOCK_v467_SIGN_ANY_APP - a signature waiting on another of the
           applicant's applications was invisible unless they picked that one in the
           switcher. Show it here whichever application is open. */}
@@ -1155,6 +1146,18 @@ export default function MiniPortalPage() {
         <span style={{ color: "#0B1F3A", fontSize: 15 }}>Want to talk it through? Book a 30-minute call with an advisor.</span>
         <button type="button" onClick={() => setBookOpen(true)} style={{ background: "#0B1F3A", color: "#ffffff", padding: "8px 16px", borderRadius: 8, fontWeight: 600, border: 0, cursor: "pointer", fontSize: 15 }}>Book a call</button>
       </div> : null}
+      {/* BF_CLIENT_v890_REACTIVATE_LAST - on-hold files sit at the bottom of the left column, below the current file. */}
+      <div data-cmp-tab="home" data-testid="cmp-reactivate-bottom">
+        {/* BF_CLIENT_BLOCK_v548_REACTIVATE_HELD - on-hold files, current or past */}
+        <ReactivateHeldFiles
+          apps={myApps}
+          onReactivated={(id) => {
+            setMyApps((prev) => prev.map((a) => (String(a.id) === id ? { ...a, pipeline_state: "In Review" } : a)));
+            if (id === String(applicationId)) void loadAll();
+            else navigate(`/application/${encodeURIComponent(id)}`);
+          }}
+        />
+      </div>
       <div className={`mp-grid ${showOfferView ? "mp-grid--offers" : ""}`}>
         {/* BF_CLIENT_v802_ONE_THREAD - on a phone: one full-screen thread, Maya first, the advisor a tap away. */}
         {isPhone ? (
