@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const src = readFileSync(new URL("../MiniPortalPage.tsx", import.meta.url), "utf8");
+const src = readFileSync("src/pages/MiniPortalPage.tsx", "utf8");
 
 describe("on-hold files on the client home", () => {
   it("come after the status, to-do, offer and meetings cards", () => {
