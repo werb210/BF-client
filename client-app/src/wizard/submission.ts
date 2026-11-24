@@ -1,6 +1,14 @@
 // @ts-nocheck
 import { filterRequirementsByAmount, type LenderProductRequirement } from "./requirements";
 import type { ApplicationData } from "../types/application";
+// BF_CLIENT_PGI_FEE_DISCLOSURE_v1 - same wording as boreal.insure's application (bi-website QuickApply).
+export const PGI_CONSENT_VERSION = "2026-11-24";
+export const PGI_FEE_DISCLOSURE = "Boreal Risk Management may receive a fee from PGI Canada Ltd. if you buy coverage. We are not an insurance broker, agent, underwriter or representative of PGI. PGI Canada Ltd. alone decides underwriting, pricing, eligibility and policy terms. You do not have to buy coverage to use our services, and it is never a condition of your financing.";
+export const PGI_CONSENT_TEXT = "I consent to Boreal Risk Management sharing the information in this application, and the documents I upload, with PGI Canada Ltd. for intake, eligibility review, underwriting, quote preparation, policy administration, compliance review and related communications.";
+/** True when the PGI choice doesn't block submit: "no", no answer, or "yes" with both boxes ticked. */
+export function pgiConsentComplete(app: { pgiOptIn?: string; pgiFeeAck?: boolean; pgiConsentShare?: boolean }): boolean {
+  return app.pgiOptIn !== "yes" || (app.pgiFeeAck === true && app.pgiConsentShare === true);
+}
 import { ClientProfileStore } from "../state/clientProfiles";
 
 export type SubmissionDocument = {
@@ -48,6 +56,11 @@ export type SubmissionPayload = {
   // explicitly declined; omitted if they didn't choose either way.
   // BF-Server reads this on /submit to fire the BI handoff.
   pgi_opt_in?: "yes" | "no";
+  pgi_fee_disclosure_ack?: boolean; // BF_CLIENT_PGI_FEE_DISCLOSURE_v1
+  pgi_consent_share?: boolean;
+  pgi_fee_disclosure_text?: string;
+  pgi_consent_text?: string;
+  pgi_consent_version?: string;
   ad_measurement_consent?: boolean; // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
   audience_match_consent?: boolean; // BF_CLIENT_SMS_DISCLOSURE_v690 - same optional box
   marketing_sms_consent?: boolean; // BF_CLIENT_v808_MARKETING_OPTIN
@@ -135,6 +148,16 @@ export function buildSubmissionPayload(app: ApplicationData): SubmissionPayload 
     lender_product_id: app.selectedProductId,
     // BF_CLIENT_BLOCK_v163_PGI_OPT_IN_PAYLOAD_v1 — propagate Step 6 choice.
     pgi_opt_in: app.pgiOptIn,
+    // BF_CLIENT_PGI_FEE_DISCLOSURE_v1 - the exact wording the applicant agreed to travels with the application.
+    ...(app.pgiOptIn === "yes"
+      ? {
+          pgi_fee_disclosure_ack: app.pgiFeeAck === true,
+          pgi_consent_share: app.pgiConsentShare === true,
+          pgi_fee_disclosure_text: PGI_FEE_DISCLOSURE,
+          pgi_consent_text: PGI_CONSENT_TEXT,
+          pgi_consent_version: PGI_CONSENT_VERSION,
+        }
+      : {}),
     ad_measurement_consent: app.adMeasurementConsent === true, // BF_CLIENT_AD_MEASUREMENT_CONSENT_v402
     audience_match_consent: app.adMeasurementConsent === true, // BF_CLIENT_SMS_DISCLOSURE_v690
     marketing_sms_consent: app.marketingSmsConsent === true, // BF_CLIENT_v808_MARKETING_OPTIN

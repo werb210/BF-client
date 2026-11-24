@@ -17,6 +17,9 @@ import {
   buildSubmissionPayload,
   canSubmitApplication,
   getMissingRequiredDocs,
+  pgiConsentComplete,
+  PGI_CONSENT_TEXT,
+  PGI_FEE_DISCLOSURE,
   shouldBlockForMissingDocuments,
 } from "./submission";
 import { ClientProfileStore } from "../state/clientProfiles";
@@ -299,6 +302,11 @@ export function Step6_Review(): JSX.Element {
     // BF_CLIENT_BLOCK_v105_SUBMIT_UNBLOCK_v1 - outer guard.
     // BF_CLIENT_v789_NO_FORM_LOGS - the click is no longer logged with the token.
     if (submitting) return;
+    // BF_CLIENT_PGI_FEE_DISCLOSURE_v1 - never send a PGI request without the disclosure and consent.
+    if (!pgiConsentComplete(app)) {
+      setSubmitError('To receive PGI details, tick both boxes under Personal Guarantee Insurance, or choose "No".');
+      return;
+    }
     setSubmitting(true);
     setSubmitError(null);
     setIncompleteStep(null);
@@ -978,6 +986,31 @@ export function Step6_Review(): JSX.Element {
               );
             })}
           </div>
+          {/* BF_CLIENT_PGI_FEE_DISCLOSURE_v1 - shown before the referral (agreement s.9), and express consent to
+            share with PGI Canada Ltd. (s.10). Both required when the applicant asks for PGI details. */}
+          {app.pgiOptIn === "yes" && (
+            <div data-testid="step6-pgi-consents" style={{ ...layout.stackTight, marginTop: tokens.spacing.sm, padding: tokens.spacing.md, border: `1px solid ${tokens.colors.border}`, borderRadius: tokens.radii.md, background: tokens.colors.surface }}>
+              <p style={{ ...components.form.helperText, margin: 0 }}>{PGI_FEE_DISCLOSURE}</p>
+              {([
+                ["pgiFeeAck", "I have read how Boreal Risk Management is paid."],
+                ["pgiConsentShare", PGI_CONSENT_TEXT],
+              ] as const).map(([key, label]) => (
+                <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: tokens.spacing.sm, fontSize: tokens.typography.label.fontSize, color: tokens.colors.textPrimary, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    data-testid={`step6-${key}`}
+                    checked={app[key] === true}
+                    onChange={(e) => update({ [key]: e.target.checked })}
+                    style={{ width: 18, height: 18, marginTop: 1, flexShrink: 0, accentColor: tokens.colors.accent }}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+              {!pgiConsentComplete(app) && (
+                <p style={{ ...components.form.helperText, margin: 0 }}>Tick both boxes to receive PGI details, or choose &quot;No&quot; above.</p>
+              )}
+            </div>
+          )}
           <details style={{ marginTop: tokens.spacing.sm }}>
             <summary style={{ cursor: "pointer", color: tokens.colors.textSecondary, fontSize: tokens.typography.body.fontSize }}>
               Learn more about PGI
@@ -1177,6 +1210,7 @@ export function Step6_Review(): JSX.Element {
               onClick={submit}
               disabled={
                 submitting ||
+                !pgiConsentComplete(app) ||
                 !canSubmitApplication({
                   isOnline,
                   hasIdempotencyKey: Boolean(idempotencyKey),
